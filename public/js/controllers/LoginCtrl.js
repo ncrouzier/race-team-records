@@ -10,10 +10,10 @@ angular.module('LoginCtrl', []).controller('LoginController', function($scope,$h
 
 	$scope.login = function (user) {
 		$http.post("/api/login", user).success(function (data, status) {
-			window.location.href = '/';
+        window.location.href = '/';
       }).error(function (data) {
-			$scope.message = data[0];
-			$state.go('/login'); 
+        $scope.message = data[0];
+        $state.go('/login'); 
       });
   };
 

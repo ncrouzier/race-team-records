@@ -10,12 +10,12 @@
         <!-- LOCAL INFORMATION -->
         <div class="col-sm-6">
             <div class="well">
-                <h3><span class="fa fa-user"></span> Local</h3>
-
+                <h3><span class="fa fa-user"></span> Local</h3> 
                     <p>
                         <strong>id</strong>: {{user._id}}<br>
-                        <strong>email</strong>: {{user.local.email}}<br>
-                        <strong>password</strong>: {{user.local.password}}
+                        <strong>email</strong>: {{user.email}}<br>
+                        <strong>password</strong>: {{user.password}}<br>
+                        <span ng-show="user.role"><strong>role</strong>: {{user.role}}</span>
                     </p>
 
             </div>

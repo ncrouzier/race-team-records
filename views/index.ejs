@@ -21,7 +21,8 @@
 		<% if (user) { %>
 			<ul class="nav navbar-nav" >
 				<li><a ui-sref="/team">Team Members</a></li>
-				<li><a href="/logout">Logout <%= user.local.email %></a></li>
+				<li><a ui-sref="/profile">Profile</a></li>
+				<li><a href="/logout">Logout <%= user.email %></a></li>
 			</ul>
 		<%}else{ %>
 			<ul class="nav navbar-nav" >

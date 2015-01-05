@@ -2,7 +2,7 @@
 <html>
 <head>
 	<!-- <base href="/"> -->
-    <title>Node Authesntication</title>
+    <title>MCRRC Race Team Records</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> 
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> 
 	<link rel="stylesheet" href="dist/css/style.min.css">
@@ -10,19 +10,26 @@
     <script src="libs/angular-ui-router/release/angular-ui-router.js"></script>
 	<script src="dist/js/app.min.js"></script>
 </head>
-<body ng-app="sampleApp" ng-controller="NerdController">
+<body ng-app="mcrrcApp" ng-controller="MainController">
 <div class="container">
 	
 	<!-- HEADER -->
 	<nav class="navbar navbar-inverse">
 		<div class="navbar-header">
-			<a class="navbar-brand" ui-sref="/">Stencil: Node and Angular</a>
+			<a class="navbar-brand" ui-sref="/">Home</a>
 		</div>
-		<ul class="nav navbar-nav" ng-switch="user">
-			<li><a href="/logout">Logout <%= user %></a></li>
-			<li><a ui-sref="/team">Team Members</a></li>
-			<li><a ui-sref="/login">Login</a></li>
-		</ul>
+		<% if (user) { %>
+			<ul class="nav navbar-nav" >
+				<li><a ui-sref="/team">Team Members</a></li>
+				<li><a href="/logout">Logout <%= user.local.email %></a></li>
+			</ul>
+		<%}else{ %>
+			<ul class="nav navbar-nav" >
+				<li><a ui-sref="/team">Team Members</a></li>
+				<li><a ui-sref="/login">Login</a></li>
+			</ul>
+		<%}%>
+		
 	</nav>
 
 	<!-- ANGULAR DYNAMIC CONTENT -->

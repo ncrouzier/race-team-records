@@ -11,7 +11,8 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
       templateUrl: "views/home.html"
     }).state('/team', {
       url: "/team",
-      templateUrl: "views/team.html"
+      templateUrl: "views/team.html",
+      controller: 'TeamController'
     }).state('/login', {
       url: "/login",
       templateUrl: "views/login.html",

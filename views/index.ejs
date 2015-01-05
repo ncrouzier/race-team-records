@@ -3,10 +3,11 @@
 <head>
 	<!-- <base href="/"> -->
     <title>MCRRC Race Team Records</title>
-    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> 
 	<link rel="stylesheet" href="dist/css/style.min.css">
 	<script src="libs/angular/angular.js"></script>
+	<script src="libs/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="libs/angular-ui-router/release/angular-ui-router.js"></script>
 	<script src="dist/js/app.min.js"></script>
 </head>
@@ -21,15 +22,28 @@
 		<% if (user) { %>
 			<ul class="nav navbar-nav" >
 				<li><a ui-sref="/team">Team Members</a></li>
-				<li><a ui-sref="/profile">Profile</a></li>
-				<li><a href="/logout">Logout <%= user.email %></a></li>
+			</ul>
+			<ul class="nav navbar-nav" style="float: right">
+				<li class="dropdown" dropdown on-toggle="toggled(open)">
+			      <a href class="dropdown-toggle" dropdown-toggle>
+			        <%= user.email %> <span class="caret"></span>
+			      </a>
+			      <ul class="dropdown-menu">
+			        <li><a ui-sref="/profile">Profile</a></li>
+			        <li><a href="/logout">Logout</a></li>
+			      </ul>
+			    </li>
 			</ul>
 		<%}else{ %>
 			<ul class="nav navbar-nav" >
 				<li><a ui-sref="/team">Team Members</a></li>
+				
+			</ul>
+			<ul class="nav navbar-nav" style="float: right" >
 				<li><a ui-sref="/login">Login</a></li>
 			</ul>
 		<%}%>
+
 		
 	</nav>
 

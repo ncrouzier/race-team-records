@@ -1,0 +1,9 @@
+{
+  "name": "mcrrcresults",
+  "version": "1.0.0",
+  "dependencies": {
+    "bootstrap": "latest",
+    "angular": "latest",
+    "angular-ui-router": "~0.2.13"
+  }
+}

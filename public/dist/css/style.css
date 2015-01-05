@@ -7,3 +7,7 @@ body {
 .panel-title a {
   cursor: pointer;
 }
+.hoverhand {
+  cursor: pointer;
+  cursor: hand;
+}

@@ -1,4 +1,60 @@
-<div class="jumbotron text-center">
-	<h1>Team members</h1>
+<div class="jumbotron">
+	
+	<div id="member-form" class="row" ng-show="user.role == 'admin'">
+            <div class="col-md-6 col-sm-offset-1">
+                <form>
+                    <div class="form-group">
+
+                        <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
+                        <label class="control-label text-left">firstname:</label>
+                        <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
+                        <label class="control-label text-left">lastname:</label>
+                        <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
+                        <label class="control-label text-left">date of birth:</label>
+					    <div class="row">
+					        <div class="col-md-6">
+					            <p class="input-group">
+					              <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+					              <span class="input-group-btn">
+					                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+					              </span>
+					            </p>
+					        </div>
+					    </div>
+                    </div>
+                <!-- createMember() WILL CREATE NEW Members -->
+                <button type="submit" class="btn btn-primary btn-lg" ng-click="createMember()">Add Member</button>
+            </form>
+        </div>
+    </div>
+
+
+	<!-- Member LIST -->
+	<h2>Team members ({{members.length}})</h2>
+    <div id="member-list" class="row">
+        <div class="col-md-3">
+        	<ul class="list-group">
+	 			<li ng-click="setMember(member)" class="list-group-item hoverhand"  ng-repeat="member in members">
+					<span >[{{$index + 1}}] {{ member.firstname }} {{ member.lastname }} </span> <img ng-show="user.role == 'admin'" ng-click="deleteMember(member._id)" ng-src="images/delete.png" title="remove user" alt="caca">
+	            </li>
+        	</ul>
+            <!-- LOOP OVER THE MEMBERS IN $scope.members -->
+           
+
+        </div>
+        <div class="col-md-9">
+        	<div ng-show="currentMember">
+        		{{currentMember.firstname}} {{currentMember.lastname}}
+        	</div>
+        		
+        </div>
+
+
+    </div>
+
+
+
+
+	
 
 </div>

@@ -94,6 +94,21 @@ module.exports = function(app, passport) {
         });
     });
 
+    app.get('/api/members/:member_id', function(req, res) {
+        Member.findOne({
+            _id : req.params.member_id
+        }, function(err, member) {
+            if (err)
+                res.send(err);
+
+            if(member){
+                res.json(member);
+            }    
+            
+
+        });
+    });
+
     // create member and send back all members after creation
     app.post('/api/members', isAdminLoggedIn, function(req, res) {
 
@@ -119,7 +134,6 @@ module.exports = function(app, passport) {
 
     // delete a member
     app.delete('/api/members/:member_id', isAdminLoggedIn, function(req, res) {
-        console.log("kdshfkjshdf");
         Member.remove({
             _id : req.params.member_id
         }, function(err, member) {

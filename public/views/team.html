@@ -1,7 +1,8 @@
 <div class="jumbotron">
 	
-	<div id="member-form" class="row" ng-show="user.role == 'admin'">
-            <div class="col-md-6 col-sm-offset-1">
+	<button class="btn btn-default" ng-show="user.role == 'admin'" ng-click="adminDivisCollapsed = !adminDivisCollapsed">Admin options</button>
+	<div id="member-form" class="row" collapse="adminDivisCollapsed" ng-show="user.role == 'admin'">
+            <div class="col-md-12">
                 <form>
                     <div class="form-group">
 
@@ -23,7 +24,8 @@
 					    </div>
                     </div>
                 <!-- createMember() WILL CREATE NEW Members -->
-                <button type="submit" class="btn btn-primary btn-lg" ng-click="createMember()">Add Member</button>
+                <button ng-disabled="adminEditMode" type="submit" class="btn btn-primary btn-lg" ng-click="createMember()">Add Member</button>
+                <button ng-disabled="!adminEditMode" type="submit" class="btn btn-primary btn-lg" ng-click="editMember()">Edit Member</button>
             </form>
         </div>
     </div>
@@ -35,7 +37,7 @@
         <div class="col-md-3">
         	<ul class="list-group">
 	 			<li ng-click="setMember(member)" class="list-group-item hoverhand"  ng-repeat="member in members">
-					<span >[{{$index + 1}}] {{ member.firstname }} {{ member.lastname }} </span> <img ng-show="user.role == 'admin'" ng-click="deleteMember(member._id)" ng-src="images/delete.png" title="remove user" alt="caca">
+					<span >[{{$index + 1}}] {{ member.firstname }} {{ member.lastname }} </span> <img ng-show="user.role == 'admin'" ng-click="deleteMember(member._id)" ng-src="images/delete.png" title="remove user" alt="remove user"> <img ng-show="user.role == 'admin'" ng-click="getMember(member._id)" ng-src="images/delete.png" title="edit user" alt="edit user">
 	            </li>
         	</ul>
             <!-- LOOP OVER THE MEMBERS IN $scope.members -->

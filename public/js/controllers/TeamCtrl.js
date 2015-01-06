@@ -3,6 +3,12 @@ angular.module('TeamCtrl', []).controller('TeamController', function($scope, $ht
 	$scope.formData = {};
 
 
+    // =====================================
+    // ADMIN CONFIG ==================
+    // =====================================
+    $scope.adminDivisCollapsed = true;
+    $scope.adminEditMode = false; //edit or add
+
 	// =====================================
     // DATE PICKER CONFIG ==================
     // =====================================
@@ -17,7 +23,6 @@ angular.module('TeamCtrl', []).controller('TeamController', function($scope, $ht
 		$scope.opened = true;
 	};
 
-
 	// =====================================
 	// MEMBER API CALLS ====================
 	// =====================================
@@ -31,6 +36,18 @@ angular.module('TeamCtrl', []).controller('TeamController', function($scope, $ht
         .error(function(data) {
             console.log('Error: ' + data);
         });
+
+    // select a member after checking it
+    $scope.getMember = function(id) {
+        $scope.adminEditMode = true;
+        $http.get('/api/members/' + id)
+            .success(function(data) {
+                $scope.formData  = data;
+            })
+            .error(function(data) {
+                console.log('Error: ' + data);
+            });
+    };
 
     // when submitting the add form, send the text to the node API
     $scope.createMember = function() {
@@ -57,7 +74,7 @@ angular.module('TeamCtrl', []).controller('TeamController', function($scope, $ht
             });
     };
 
-    // delete a member after checking it
+    // set the current member to the display panel
     $scope.setMember = function(member) {
         $scope.currentMember = member;
     };

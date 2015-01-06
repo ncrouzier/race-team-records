@@ -4,6 +4,11 @@ module.exports = function(app, passport) {
 	// handle things like api calls
 	// authentication routes
   
+    members = require('./controllers/members');
+
+    // Server API Routes
+ 
+
 
     // =====================================
     // LOGIN ===============================
@@ -80,17 +85,17 @@ module.exports = function(app, passport) {
     // =====================================
     // TEAM MEMBERS ========================
     // =====================================
-    var Member = require('../app/models/member');
-    app.get('/api/members', function(req, res) {
+    var Member = require('./models/member');
 
+
+
+    app.get('/api/members', function(req, res) {
         // use mongoose to get all members in the database
         Member.find(function(err, members) {
-
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
             if (err)
                 res.send(err)
-
-            res.json({members:members,user:req.user}); // return all members in JSON format
+            res.json(members); // return all members in JSON format
         });
     });
 
@@ -111,7 +116,7 @@ module.exports = function(app, passport) {
 
     // create member and send back all members after creation
     app.post('/api/members', isAdminLoggedIn, function(req, res) {
-
+7
         // create a member, information comes from AJAX request from Angular
         Member.create({
             firstname   : req.body.firstname,
@@ -129,7 +134,27 @@ module.exports = function(app, passport) {
                 res.json(members);
             });
         });
+    });
 
+
+    app.post('/api/members', isAdminLoggedIn, function(req, res) {
+        // create a member, information comes from AJAX request from Angular
+        Member.update({
+            firstname   : req.body.firstname,
+            lastname    : req.body.lastname,  
+            dateofbirth : req.body.dateofbirth,
+            done : false
+        }, function(err, member) {
+            if (err)
+                res.send(err);
+
+            // get and return all the members after you create another
+            Member.find(function(err, members) {
+                if (err)
+                    res.send(err)
+                res.json(members);
+            });
+        });
     });
 
     // delete a member

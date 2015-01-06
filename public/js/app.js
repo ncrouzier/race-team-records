@@ -1,1 +1,1 @@
-angular.module('mcrrcApp', ['ui.bootstrap','ui.router', 'appRoutes', 'MainCtrl', 'TeamCtrl','LoginCtrl','SignUpCtrl','ProfileCtrl', 'NerdService']);
+angular.module('mcrrcApp', ['restangular','ui.bootstrap','ui.router', 'appRoutes', 'MainCtrl', 'TeamCtrl','LoginCtrl','SignUpCtrl','ProfileCtrl', 'MemberService']);

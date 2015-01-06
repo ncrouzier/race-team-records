@@ -5,7 +5,18 @@ var bcrypt   = require('bcrypt-nodejs');
 var memberSchema = mongoose.Schema({
     firstname		: String,
     lastname		: String,
-	dateofbirth		: Date
+	dateofbirth		: Date,
+	createdAt		: Date, 
+  	updatedAt		: Date,
+});
+
+// keep track of when members are updated and created
+memberSchema.pre('save', function(next, done){
+  if (this.isNew) {
+    this.createdAt = Date.now();
+  }
+  this.updatedAt = Date.now();
+  next();
 });
 
 // create the model for users and expose it to our app

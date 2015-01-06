@@ -4,6 +4,7 @@
   "dependencies": {
     "angular": "latest",
     "angular-ui-router": "~0.2.13",
-    "angular-bootstrap": "~0.12.0"
+    "angular-bootstrap": "~0.12.0",
+    "restangular": "~1.4.0"
   }
 }

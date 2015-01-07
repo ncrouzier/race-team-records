@@ -1,7 +1,12 @@
-angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 'Restangular', function($scope, $http, Restangular) {
+angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 'Restangular', 'AuthService', function($scope, $http, Restangular, AuthService) {
 
-    Restangular.setBaseUrl('/api/');
+
+    $scope.user = AuthService.isLoggedIn();
+
+
     var members = Restangular.all('members');
+
+
 
     $scope.formData = {};
     $scope.membersList = [];
@@ -32,32 +37,32 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     // =====================================
 
     // select a member after checking it
-    $scope.retrieveMemberForEdit = function(id) {
-        $http.get('/api/members/' + id)
-            .success(function(member) {
-                if (member) {
-                    $scope.formData = member;
-                    $scope.adminEditMode = true;
-                    $scope.adminDivisCollapsed = false;
-                }
-            })
-            .error(function(data) {
-                console.log('Error: ' + data);
-            });
+    $scope.retrieveMemberForEdit = function(member) {
+        // $http.get('/api/members/' + id)
+        //     .success(function(member) {
+        if (member) {
+            console.log(member);
+            $scope.formData = member;
+            $scope.adminEditMode = true;
+            $scope.adminDivisCollapsed = false;
+        }
+        // })
+        // .error(function(data) {
+        //     console.log('Error: ' + data);
+        // });
     };
 
 
     // set the current member to the display panel
     $scope.setMember = function(member) {
         $scope.currentMember = member;
-        $scope.getMember(member._id);
     };
 
     // =====================================
     // MEMBER API CALLS ====================
     // =====================================
 
-    $scope.user = data.user;
+    // $scope.user = data.user;
     // when landing on the page, get all members and show them
     Restangular.all('members').getList().then(function(members) {
         $scope.membersList = members;
@@ -76,7 +81,13 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
     // when submitting the add form, send the text to the node API
     $scope.createMember = function() {
-        members.post($scope.formData);
+        members.post($scope.formData).then(
+            function(members) {
+                $scope.membersList = members;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
 
         // $http.post('/api/members', $scope.formData)
         //     .success(function(data) {
@@ -93,6 +104,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     // when submitting the add form, send the text to the node API
     $scope.editMember = function() {
         console.log($scope.formData);
+        $scope.formData.save();
         // $http.post('/api/members', $scope.formData)
         //     .success(function(data) {
         //         $scope.formData = {}; // clear the form so our user is ready to enter another
@@ -105,14 +117,14 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     };
 
     // delete a member after checking it
-    $scope.deleteMember = function(id) {
-        $http.delete('/api/members/' + id)
-            .success(function(data) {
-                $scope.members = data;
-                console.log(data);
-            })
-            .error(function(data) {
-                console.log('Error: ' + data);
+    $scope.deleteMember = function(member) {
+        member.remove().then(
+            function() {
+                var index = $scope.membersList.indexOf(member);
+                if (index > -1) $scope.membersList.splice(index, 1);
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
             });
     };
 

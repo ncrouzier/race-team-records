@@ -1,6 +1,5 @@
-angular.module('LoginCtrl', []).controller('LoginController', function($scope, $http, $state) {
+angular.module('LoginCtrl', []).controller('LoginController',['$scope','$http','$state','AuthService', function($scope, $http, $state, AuthService) {
 
-    $scope.tagline = 'Nothing beats a pocket protector!';
     $http({
         url: '/api/login',
         method: 'GET',
@@ -10,6 +9,7 @@ angular.module('LoginCtrl', []).controller('LoginController', function($scope, $
 
     $scope.login = function(user) {
         $http.post("/api/login", user).success(function(data, status) {
+            AuthService.setUser(data.user);
             window.location.href = '/';
         }).error(function(data) {
             $scope.message = data[0];
@@ -21,4 +21,4 @@ angular.module('LoginCtrl', []).controller('LoginController', function($scope, $
 
     // action="/api/login" method="post"
 
-});
+}]);

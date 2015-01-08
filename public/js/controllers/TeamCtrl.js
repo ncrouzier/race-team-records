@@ -1,4 +1,7 @@
-angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 'Restangular', 'AuthService', function($scope, $http, Restangular, AuthService) {
+
+
+
+angular.module('TeamCtrl',[]).controller('TeamController', ['$scope', '$http', '$modal', 'Restangular', 'AuthService', function($scope, $http, $modal, Restangular, AuthService) {
 
 
     $scope.user = AuthService.isLoggedIn();
@@ -8,7 +11,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
 
 
-    $scope.formData = {};
+    
     $scope.membersList = [];
 
     // =====================================
@@ -17,13 +20,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     $scope.adminDivisCollapsed = true;
     $scope.adminEditMode = false; //edit or add
 
-    // =====================================
-    // DATE PICKER CONFIG ==================
-    // =====================================
-    $scope.today = function() {
-        $scope.formData.dateofbirth = new Date();
-    };
-    $scope.today();
+
 
     $scope.open = function($event) {
         $event.preventDefault();
@@ -38,18 +35,42 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
     // select a member after checking it
     $scope.retrieveMemberForEdit = function(member) {
-        // $http.get('/api/members/' + id)
-        //     .success(function(member) {
+
         if (member) {
-            console.log(member);
-            $scope.formData = member;
-            $scope.adminEditMode = true;
-            $scope.adminDivisCollapsed = false;
+            var modalInstance = $modal.open({
+              templateUrl: 'myModalContent.html',
+              controller: 'ModalInstanceCtrl',
+              size: 'lg',
+              resolve: {
+                member: function () {
+                  return member;
+                }
+              }
+            });
+
+            modalInstance.result.then(function (member) {
+                $scope.editMember(member);
+            }, function () {
+                //cancel
+            });     
         }
-        // })
-        // .error(function(data) {
-        //     console.log('Error: ' + data);
-        // });
+    };
+
+    $scope.showAddMemberModal = function() {
+        var modalInstance = $modal.open({
+          templateUrl: 'myModalContent.html',
+          controller: 'ModalInstanceCtrl',
+          size: 'lg',
+          resolve: {
+            member: false
+          }
+        });
+
+        modalInstance.result.then(function (member) {
+            $scope.createMember(member);
+        }, function () {
+            //cancel
+        });     
     };
 
 
@@ -80,8 +101,8 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     };
 
     // when submitting the add form, send the text to the node API
-    $scope.createMember = function() {
-        members.post($scope.formData).then(
+    $scope.createMember = function(member) {
+        members.post(member).then(
             function(members) {
                 $scope.membersList = members;
             },
@@ -102,9 +123,8 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     };
 
     // when submitting the add form, send the text to the node API
-    $scope.editMember = function() {
-        console.log($scope.formData);
-        $scope.formData.save();
+    $scope.editMember = function(member) {
+        member.save();
         // $http.post('/api/members', $scope.formData)
         //     .success(function(data) {
         //         $scope.formData = {}; // clear the form so our user is ready to enter another
@@ -129,6 +149,37 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     };
 
 
+}]);
 
 
+angular.module('TeamCtrl').controller('ModalInstanceCtrl', ['$scope', '$modalInstance', 'member',  function($scope, $modalInstance, member) {
+    $scope.editmode =false;
+    if (member){
+       $scope.formData = member; 
+       $scope.editmode = true;
+    }else{
+        $scope.formData = {};
+        $scope.editmode = false;
+    }
+    
+
+    // =====================================
+    // DATE PICKER CONFIG ==================
+    // =====================================
+    $scope.today = function() {
+       $scope.formData.dateofbirth = new Date();
+    };
+    $scope.today();
+
+    $scope.addMember = function () {
+        $modalInstance.close($scope.formData);
+    };
+
+    $scope.editMember = function () {
+        $modalInstance.close($scope.formData);
+    };
+
+    $scope.cancel = function () {
+        $modalInstance.dismiss('cancel');
+    };
 }]);

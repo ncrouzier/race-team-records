@@ -1,4 +1,4 @@
-var app = angular.module('mcrrcApp', ['restangular', 'ui.bootstrap', 'ui.router', 'appRoutes', 'MainCtrl', 'TeamCtrl', 'LoginCtrl', 'SignUpCtrl', 'ProfileCtrl', 'AuthService']);
+var app = angular.module('mcrrcApp', ['restangular', 'ui.bootstrap', 'ui.router', 'appRoutes', 'MainCtrl', 'TeamCtrl', 'LoginCtrl', 'SignUpCtrl', 'RecCtrl', 'ProfileCtrl', 'AuthService']);
 
 app.run(['$http', 'AuthService','Restangular', function($http, AuthService,Restangular) {
     Restangular.setBaseUrl('/api/');

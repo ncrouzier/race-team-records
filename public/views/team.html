@@ -1,38 +1,9 @@
 <div class="jumbotron">
 	
-	<button class="btn btn-default" ng-show="user.role == 'admin'" ng-click="adminDivisCollapsed = !adminDivisCollapsed">Admin options</button>
-	<div id="member-form" class="row" collapse="adminDivisCollapsed" ng-show="user.role == 'admin'">
-            <div class="col-md-12">
-                <form>
-                    <div class="form-group">
-
-                        <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
-                        <label class="control-label text-left">firstname:</label>
-                        <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
-                        <label class="control-label text-left">lastname:</label>
-                        <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
-                        <label class="control-label text-left">date of birth:</label>
-					    <div class="row">
-					        <div class="col-md-6">
-					            <p class="input-group">
-					              <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
-					              <span class="input-group-btn">
-					                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-					              </span>
-					            </p>
-					        </div>
-					    </div>
-                    </div>
-                <!-- createMember() WILL CREATE NEW Members -->
-                <button ng-disabled="adminEditMode" type="submit" class="btn btn-primary btn-lg" ng-click="createMember()">Add Member</button>
-                <button ng-disabled="!adminEditMode" type="submit" class="btn btn-primary btn-lg" ng-click="editMember()">Edit Member</button>
-            </form>
-        </div>
-    </div>
-
+	
 
 	<!-- Member LIST -->
-	<h2>Team members ({{membersList.length}})</h2>
+	<h2>Team members ({{membersList.length}}) <img ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" ng-src="images/edit.png" title="Add member" alt="Add member"></h2>
     <div id="member-list" class="row">
         <div class="col-md-3">
         	<ul class="list-group">
@@ -54,9 +25,35 @@
 
     </div>
 
-
-
-
-	
-
 </div>
+
+<script type="text/ng-template" id="myModalContent.html">
+	<div class="modal-header">
+			<h3 class="modal-title">Edit Member</h3>
+	</div>
+	<div class="modal-body"  >
+        <form>
+	    	<div class="form-group">
+	            <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
+	            <label class="control-label text-left">firstname:</label>
+	            <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
+	            <label class="control-label text-left">lastname:</label>
+	            <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
+	            <label class="control-label text-left">date of birth:</label>
+		            <p class="input-group">
+		              <input type="text" class="form-control" datepicker-popup="{{format}}" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+		              <span class="input-group-btn">
+		                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+		              </span>
+		            </p>
+		        </div>
+		    </div>	                
+		</form>
+    </div>
+	<div class="modal-footer">
+		<!-- createMember() WILL CREATE NEW Members -->
+	    <button ng-show="editmode" type="submit" class="btn btn-primary btn-lg" ng-click="editMember()">Edit Member</button>
+	    <button ng-show="!editmode" type="submit" class="btn btn-primary btn-lg" ng-click="addMember()">Add Member</button>
+	    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+	</div>
+</script>

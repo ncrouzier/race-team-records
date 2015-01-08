@@ -189,7 +189,7 @@ module.exports = function(app, passport) {
             if (err)
                 res.send(err)
             res.json(results);
-        });
+        }).populate('member');
     });
 
     // get a result
@@ -203,7 +203,7 @@ module.exports = function(app, passport) {
             if (result) {
                 res.json(result);
             }
-        });
+        }).populate('member');
     });
 
     // create result and send back all members after creation
@@ -211,21 +211,21 @@ module.exports = function(app, passport) {
         Result.create({
             racename: req.body.racename,
             racetype: req.body.racetype,
-            date: req.body.date,
-            member: req.body.member,
-            timeout: req.body.timeout,
-            member_category: req.body.member_category,
+            racedate: req.body.racedate,
+            member: req.body.member._id,
+            time: req.body.time,
+            resultlink : req.body.resultlink,
             is_accepted: false,
             done: false
         }, function(err, result) {
             if (err)
                 res.send(err);
 
-            Member.find(function(err, results) {
+            Result.find(function(err, results) {
                 if (err)
                     res.send(err)
                 res.json(results);
-            });
+            }).populate('member');
         });
     });
 
@@ -234,10 +234,10 @@ module.exports = function(app, passport) {
         Result.findById(req.params.result_id, function(err, result) {
             result.racename = req.body.racename;
             result.racetype = req.body.racetype;
-            result.date = req.body.date;
-            result.member = req.body.member;
-            result.timeout = req.body.timeout;
-            result.member_category = req.body.member_category;
+            result.racedate = req.body.racedate;
+            result.member = req.body.member._id;
+            result.time = req.body.time;
+            result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;
 
             result.save(function(err) {

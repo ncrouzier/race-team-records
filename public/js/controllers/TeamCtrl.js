@@ -1,16 +1,8 @@
-
-
-
 angular.module('TeamCtrl',[]).controller('TeamController', ['$scope', '$http', '$modal', 'Restangular', 'AuthService', function($scope, $http, $modal, Restangular, AuthService) {
-
 
     $scope.user = AuthService.isLoggedIn();
 
-
     var members = Restangular.all('members');
-
-
-
     
     $scope.membersList = [];
 
@@ -19,7 +11,6 @@ angular.module('TeamCtrl',[]).controller('TeamController', ['$scope', '$http', '
     // =====================================
     $scope.adminDivisCollapsed = true;
     $scope.adminEditMode = false; //edit or add
-
 
 
     $scope.open = function($event) {

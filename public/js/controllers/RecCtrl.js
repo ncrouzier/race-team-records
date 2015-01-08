@@ -1,4 +1,4 @@
-angular.module('RecCtrl', []).controller('RecordController', function($scope) {
+angular.module('RecCtrl', []).controller('RecordController',[ '$scope', 'AuthService', function($scope,AuthService) {
 
 	
-});
+}]);

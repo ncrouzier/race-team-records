@@ -21,7 +21,8 @@
 			<a class="navbar-brand" ui-sref="/">Home</a>
 		</div>
 		<% if (user) { %>
-			<ul class="nav navbar-nav" >
+			<ul class="nav navbar-nav">
+				<li><a ui-sref="/records">Team Records</a></li>
 				<li><a ui-sref="/team">Team Members</a></li>
 			</ul>
 			<ul class="nav navbar-nav" style="float: right">

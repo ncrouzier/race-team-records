@@ -267,6 +267,87 @@ module.exports = function(app, passport) {
         });
     });
 
+    // =====================================
+    // RaceTypes =============================
+    // =====================================
+    var RaceType = require('./models/racetype');
+
+    // get all racetypes
+    app.get('/api/racetypes', function(req, res) {
+        RaceType.find(function(err, racetypes) {
+            if (err)
+                res.send(err)
+            res.json(racetypes);
+        }).populate('member');
+    });
+
+    // get a racetype
+    app.get('/api/racetypes/:racetype_id', function(req, res) {
+        RaceType.findOne({
+            _id: req.params.racetype_id
+        }, function(err, racetype) {
+            if (err)
+                res.send(err);
+
+            if (racetype) {
+                res.json(racetype);
+            }
+        });
+    });
+
+    // create racetype and send back all racetypes after creation
+    app.post('/api/racetypes', isAdminLoggedIn, function(req, res) {
+        RaceType.create({
+            name: req.body.name,
+            surface: req.body.surface,
+            meters: req.body.meters,
+            miles: req.body.miles
+        }, function(err, racetype) {
+            if (err)
+                res.send(err);
+
+            RaceType.find(function(err, racetypes) {
+                if (err)
+                    res.send(err)
+                res.json(racetypes);
+            });
+        });
+    });
+
+    //update a racetype
+    app.put('/api/racetypes/:racetype_id', isAdminLoggedIn, function(req, res) {
+        RaceType.findById(req.params.racetype_id, function(err, racetype) {
+            result.name = req.body.name;
+            result.surface = req.body.surface;
+            result.meters = req.body.meters;
+            result.miles = req.body.miles;
+            racetype.save(function(err) {
+                if (!err) {
+                    RaceType.find(function(err, racetypes) {
+                        if (err)
+                            res.send(err)
+                        res.json(racetypes);
+                    });
+                } else {
+                    console.log(err);
+                    res.send(err);
+                }
+            });
+        });
+    });
+
+
+    // delete a racetype
+    app.delete('/api/racetypes/:racetype_id', isAdminLoggedIn, function(req, res) {
+        RaceType.remove({
+            _id: req.params.racetype_id
+        }, function(err, racetype) {
+            if (err)
+                res.send(err);
+            res.json(racetype);
+        });
+    });
+
 
     app.get('*', function(req, res) {
         res.render('index.ejs', {

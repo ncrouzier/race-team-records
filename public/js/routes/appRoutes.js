@@ -29,6 +29,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
       url: "/records",
       templateUrl: "views/records.html",
       controller: 'RecordController'
+    }).state('/admin', {
+      url: "/admin",
+      templateUrl: "views/admin.html",
+      controller: 'AdminController'
     });
 
 });

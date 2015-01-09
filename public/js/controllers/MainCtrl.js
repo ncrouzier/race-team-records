@@ -49,6 +49,10 @@ angular.module('MainCtrl').controller('ResultModalInstanceCtrl', ['$scope', '$mo
         $scope.membersList = members;
     });
 
+    Restangular.all('racetypes').getList().then(function(racetypes) {
+        $scope.racetypes = racetypes;
+    });
+
 
     $scope.editmode = false;
     if (result) {
@@ -80,4 +84,7 @@ angular.module('MainCtrl').controller('ResultModalInstanceCtrl', ['$scope', '$mo
     $scope.cancel = function() {
         $modalInstance.dismiss('cancel');
     };
+
+  
+
 }]);

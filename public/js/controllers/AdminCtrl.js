@@ -25,11 +25,50 @@ angular.module('AdminCtrl', []).controller('AdminController', ['$scope', '$modal
         });
     };
 
+    // select a racetype after checking it
+    $scope.retrieveRaceTypeForEdit = function(racetype) {
+        if (racetype) {
+            var modalInstance = $modal.open({
+                templateUrl: 'raceTypeModal.html',
+                controller: 'RaceTypeModalInstanceCtrl',
+                size: 'lg',
+                resolve: {
+                    racetype: function() {
+                        return racetype;
+                    }
+                }
+            });
+
+            modalInstance.result.then(function(racetype) {
+                $scope.editRaceType(racetype);
+            }, function() {
+                //cancel
+            });
+        }
+    };
+
     $scope.createRaceType = function(racetype) {
         console.log(racetype);
         racetypes.post(racetype).then(
             function(racetypes) {
                 $scope.racetypesList = racetypes;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+
+    // when submitting the add form, send the text to the node API
+    $scope.editRaceType = function(racetype) {
+        racetype.save();
+    };
+
+    // delete a racetype after checking it
+    $scope.deleteRaceType = function(racetype) {
+        racetype.remove().then(
+            function() {
+                var index = $scope.racetypesList.indexOf(racetype);
+                if (index > -1) $scope.racetypesList.splice(index, 1);
             },
             function(res) {
                 console.log('Error: ' + res.status);
@@ -50,17 +89,7 @@ angular.module('AdminCtrl').controller('RaceTypeModalInstanceCtrl', ['$scope', '
         $scope.editmode = false;
     }
 
-    $scope.surfaces = [{
-        surface: 'road'
-    }, {
-        surface: 'track'
-    }, {
-        surface: 'cross country'
-    }, {
-        surface: 'ultra'
-    }, {
-        surface: 'other'
-    }];
+    $scope.surfaces = ['road', 'track', 'cross country', 'ultra', 'other'];
 
     $scope.addRaceType = function() {
         $modalInstance.close($scope.formData);

@@ -129,6 +129,7 @@ module.exports = function(app, passport) {
             firstname: req.body.firstname,
             lastname: req.body.lastname,
             dateofbirth: req.body.dateofbirth,
+            bio: req.body.bio,
             done: false
         }, function(err, member) {
             if (err)
@@ -149,7 +150,7 @@ module.exports = function(app, passport) {
             member.firstname = req.body.firstname;
             member.lastname = req.body.lastname;
             member.dateofbirth = req.body.dateofbirth;
-
+            member.bio = req.body.bio;
             member.save(function(err) {
                 if (!err) {
                     Member.find(function(err, members) {
@@ -189,7 +190,7 @@ module.exports = function(app, passport) {
             if (err)
                 res.send(err)
             res.json(results);
-        }).populate('member');
+        }).populate('member racetype');
     });
 
     // get a result
@@ -203,14 +204,14 @@ module.exports = function(app, passport) {
             if (result) {
                 res.json(result);
             }
-        }).populate('member');
+        }).populate('member racetype');
     });
 
     // create result and send back all members after creation
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
         Result.create({
             racename: req.body.racename,
-            racetype: req.body.racetype,
+            racetype: req.body.racetype._id,
             racedate: req.body.racedate,
             member: req.body.member._id,
             time: req.body.time,
@@ -225,7 +226,7 @@ module.exports = function(app, passport) {
                 if (err)
                     res.send(err)
                 res.json(results);
-            }).populate('member');
+            }).populate('member racetype');
         });
     });
 
@@ -233,20 +234,19 @@ module.exports = function(app, passport) {
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
         Result.findById(req.params.result_id, function(err, result) {
             result.racename = req.body.racename;
-            result.racetype = req.body.racetype;
+            result.racetype = req.body.racetype._id;
             result.racedate = req.body.racedate;
             result.member = req.body.member._id;
             result.time = req.body.time;
             result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;
-
             result.save(function(err) {
                 if (!err) {
                     Result.find(function(err, results) {
                         if (err)
                             res.send(err)
                         res.json(results);
-                    });
+                    }).populate('member racetype');
                 } else {
                     console.log(err);
                     res.send(err);
@@ -317,10 +317,10 @@ module.exports = function(app, passport) {
     //update a racetype
     app.put('/api/racetypes/:racetype_id', isAdminLoggedIn, function(req, res) {
         RaceType.findById(req.params.racetype_id, function(err, racetype) {
-            result.name = req.body.name;
-            result.surface = req.body.surface;
-            result.meters = req.body.meters;
-            result.miles = req.body.miles;
+            racetype.name = req.body.name;
+            racetype.surface = req.body.surface;
+            racetype.meters = req.body.meters;
+            racetype.miles = req.body.miles;
             racetype.save(function(err) {
                 if (!err) {
                     RaceType.find(function(err, racetypes) {

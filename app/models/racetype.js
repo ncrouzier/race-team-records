@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
 // define the schema for our raceType model
-var raceTypeSchema = mongoose.Schema({
+var racetypeSchema = mongoose.Schema({
     name: String,
     surface: String,
     meters: Number,
@@ -13,7 +13,7 @@ var raceTypeSchema = mongoose.Schema({
 });
 
 // keep track of when racetypes are updated and created
-raceTypeSchema.pre('save', function(next, done) {
+racetypeSchema.pre('save', function(next, done) {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
@@ -22,4 +22,4 @@ raceTypeSchema.pre('save', function(next, done) {
 });
 
 // create the model for raceType and expose it to our app
-module.exports = mongoose.model('RaceType', raceTypeSchema);
+module.exports = mongoose.model('Racetype', racetypeSchema);

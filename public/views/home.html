@@ -5,8 +5,8 @@
     <div id="member-list" class="row">
         <div class="col-md-6">
             <ul class="list-group">
-                <li class="list-group-item hoverhand" ng-repeat="result in resultsList">
-                    <span>{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member.firstname}}  in {{result.time | secondsToTimeString}} </span>
+                <li class="list-group-item hoverhand text-left" ng-repeat="result in resultsList">
+                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member.firstname}}  in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="deleteResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
                 </li>
             </ul>
             <!-- LOOP OVER THE MEMBERS IN $scope.membersList -->
@@ -33,7 +33,7 @@
                         <label class="control-label text-left">Race name:</label>
                         <input type="text" class="form-control input-md text-left" ng-model="formData.racename">
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="control-label text-left">Race date:</label>
                         <p class="input-group">
                             <input type="text" class="form-control input-md" datepicker-popup="{{format}}" ng-model="formData.racedate" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
@@ -43,9 +43,18 @@
                         </p>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="control-label text-left">Race Type:</label>
-                        <input type="text" class="form-control input-md text-left" ng-model="formData.racetype">
+                    <div class="col-md-5">
+                        <label class="control-label text-left">Race Type:</label><br>
+
+                        <ui-select ng-model="formData.racetype" theme="select2" style="min-width: 300px;">
+                            <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
+                            <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+                                <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div>
+                                <small>length in meters: {{racetype.meters | number}} m</small><br>
+                                <small>length in miles: {{racetype.miles | number}} miles</small>
+                            </ui-select-choices>
+                        </ui-select>
+
                     </div>
                 </div>
                 <div class="row">

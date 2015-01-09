@@ -6,6 +6,7 @@ var memberSchema = mongoose.Schema({
     firstname: String,
     lastname: String,
     dateofbirth: Date,
+    bio: String,
     category: String,
     createdAt: Date,
     updatedAt: Date

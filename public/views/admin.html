@@ -4,7 +4,7 @@
             <h2>Race types <img class="hoverhand" ng-show="user.role == 'admin'" ng-click="showAddRaceTypeModal()" ng-src="images/add.png" title="Add race type" alt="Add race type"></h2>
             <ul class="list-group">
                 <li class="list-group-item hoverhand" ng-repeat="racetype in racetypesList">
-                {{racetype.name}} ({{racetype.surface}})
+                {{racetype.name}} ({{racetype.surface}})<img ng-show="user.role == 'admin'" ng-click="deleteRaceType(racetype)" ng-src="images/delete.png" title="remove race type" alt="remove race type"> <img ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" ng-src="images/edit.png" title="edit race type" alt="edit race type">
                 </li>
             </ul>
         </div>
@@ -32,10 +32,10 @@
                     <div class="col-md-6">
                         <label class="control-label text-left">Surface: {{formData.surface}}</label>
                         <br>
-                        <ui-select ng-model="formData.surface.surface" theme="select2" style="min-width: 300px;">
-                            <ui-select-match placeholder="Select a surface">{{$select.selected.surface}}</ui-select-match>
-                            <ui-select-choices repeat="surface in surfaces | propsFilter: {surface: $select.search,}">
-                                <div ng-bind-html="surface.surface | highlight: $select.search"></div>
+                        <ui-select ng-model="formData.surface" theme="select2" style="min-width: 300px;">
+                            <ui-select-match placeholder="Select a surface">{{$select.selected}}</ui-select-match>
+                            <ui-select-choices repeat="surface in surfaces">
+                                <div ng-bind-html="surface | highlight: $select.search"></div>
                             </ui-select-choices>
                         </ui-select>
                     </div>

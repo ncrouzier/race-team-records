@@ -25,14 +25,14 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
       url: "/profile",
       templateUrl: "views/profile.html",
       controller: 'ProfileController'
-    }).state('/records', {
-      url: "/records",
-      templateUrl: "views/records.html",
-      controller: 'RecordController'
     }).state('/admin', {
       url: "/admin",
       templateUrl: "views/admin.html",
       controller: 'AdminController'
+    }).state('/records', {
+      url: "/records",
+      templateUrl: "views/records.html",
+      controller: 'RecordController'
     });
 
 });

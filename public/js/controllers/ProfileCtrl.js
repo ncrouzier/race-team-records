@@ -1,4 +1,4 @@
-angular.module('ProfileCtrl', []).controller('ProfileController', function($scope,$http,$state) {
+angular.module('mcrrcApp.controllers').controller('ProfileController', function($scope,$http,$state) {
 
 
     $http({

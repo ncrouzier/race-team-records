@@ -1,4 +1,4 @@
-angular.module('RecCtrl', []).controller('RecordController',[ '$scope', 'AuthService', function($scope,AuthService) {
+angular.module('mcrrcApp.controllers').controller('RecordController',[ '$scope', 'AuthService', function($scope,AuthService) {
 
 	
 }]);

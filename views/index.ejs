@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html ng-app="mcrrcApp">
 <head>
     <title>MCRRC Race Team Records</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
@@ -7,16 +7,18 @@
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css">
 	<link rel="stylesheet" href="dist/css/style.min.css">
 	<link rel="stylesheet" href="libs/angular-ui-select/dist/select.min.css">
+	<link rel="stylesheet" href="libs/angular-ui-grid/ui-grid.min.css">
 	<script src="libs/angular/angular.js"></script>
 	<script src="libs/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 	<script src="libs/angular-sanitize/angular-sanitize.min.js"></script>
     <script src="libs/angular-ui-router/release/angular-ui-router.js"></script>
     <script src="libs/angular-ui-select/dist/select.js"></script>
+    <script src="libs/angular-ui-grid/ui-grid.min.js"></script>
     <script src="libs/lodash/dist/lodash.min.js"></script>
     <script src="libs/restangular/dist/restangular.min.js"></script>
 	<script src="dist/js/app.min.js"></script>
 </head>
-<body ng-app="mcrrcApp" ng-controller="MainController">
+<body ng-controller="MainController">
 <div class="container" style="height:800px">
 	
 	<!-- HEADER -->

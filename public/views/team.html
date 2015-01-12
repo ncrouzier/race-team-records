@@ -17,7 +17,7 @@
         </div>
         <div class="col-md-9">
             <div ng-show="currentMember">
-                <h3>{{currentMember.firstname}} {{currentMember.lastname}}</h3>
+                <h3>{{currentMember.firstname}} {{currentMember.lastname}}  {{currentMember.dateofbirth | ageFilter}} years old</h3>
                 <p>{{currentMember.bio}}</p>
             </div>
 

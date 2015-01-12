@@ -98,7 +98,10 @@ module.exports = function(app, passport) {
 
     //get all members
     app.get('/api/members', function(req, res) {
-        Member.find(function(err, members) {
+        console.log(req.query);
+        console.log(req.query.filters.firstname);
+        query = Member.find(req.query.filters).limit(req.query.limit);
+        query.exec(function(err, members) {
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
             if (err)
                 res.send(err)

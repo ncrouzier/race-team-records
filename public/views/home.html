@@ -6,12 +6,15 @@
         <div class="col-md-6">
             <ul class="list-group">
                 <li class="list-group-item hoverhand text-left" ng-repeat="result in resultsList">
-                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member.firstname}}  in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="deleteResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member.firstname}} {{result.member.lastname}} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="deleteResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
                 </li>
             </ul>
             <!-- LOOP OVER THE MEMBERS IN $scope.membersList -->
 
 
+        </div>
+        <div class="col-md-6">
+        <div  ui-grid="gridOptions" class="myGrid"></div>
         </div>
 
     </div>

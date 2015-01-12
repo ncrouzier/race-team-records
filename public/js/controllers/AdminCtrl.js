@@ -1,4 +1,4 @@
-angular.module('AdminCtrl', []).controller('AdminController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
+angular.module('mcrrcApp.controllers').controller('AdminController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
 
     $scope.user = AuthService.isLoggedIn();
     var racetypes = Restangular.all('racetypes');
@@ -21,7 +21,6 @@ angular.module('AdminCtrl', []).controller('AdminController', ['$scope', '$modal
         modalInstance.result.then(function(racetype) {
             $scope.createRaceType(racetype);
         }, function() {
-            //cancel
         });
     };
 
@@ -48,7 +47,6 @@ angular.module('AdminCtrl', []).controller('AdminController', ['$scope', '$modal
     };
 
     $scope.createRaceType = function(racetype) {
-        console.log(racetype);
         racetypes.post(racetype).then(
             function(racetypes) {
                 $scope.racetypesList = racetypes;
@@ -77,7 +75,7 @@ angular.module('AdminCtrl', []).controller('AdminController', ['$scope', '$modal
 
 }]);
 
-angular.module('AdminCtrl').controller('RaceTypeModalInstanceCtrl', ['$scope', '$modalInstance', 'racetype', 'Restangular', function($scope, $modalInstance, racetype, Restangular) {
+angular.module('mcrrcApp.controllers').controller('RaceTypeModalInstanceCtrl', ['$scope', '$modalInstance', 'racetype', 'Restangular', function($scope, $modalInstance, racetype, Restangular) {
 
 
     $scope.editmode = false;

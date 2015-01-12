@@ -1,14 +1,17 @@
-angular.module('AuthService', []).factory('AuthService', [function() {
+angular.module('mcrrcApp.services').factory('AuthService', function() {
 
-    var user;
+	var factory = {};
+    var user; 
 
-    return {
-        setUser: function(aUser) {
+
+        factory.setUser = function(aUser) {
             user = aUser;
-        },
-        isLoggedIn: function() {
-            return (user) ? user : false;
-        }
-    };
+        };
 
-}]);
+        factory.isLoggedIn =function() {
+            return (user) ? user : false;
+        };
+    
+    return factory;
+
+});

@@ -98,7 +98,29 @@ module.exports = function(app, passport) {
 
     //get all members
     app.get('/api/members', function(req, res) {
-        Member.find(function(err, members) {
+        console.log(req.query);
+        var filters = req.query.filters;
+
+
+
+
+        if (filters.category === 'Open') {
+            query = Member.find()
+                .regex('sex', filters.sex)
+                .limit(req.query.limit)
+                .lt('dateofbirth', new Date);
+        } else if (filters.category === 'Master') {
+            query = Member.find()
+                .regex('sex', filters.sex)
+                .limit(req.query.limit)
+                .gte('dateofbirth', new Date);
+        } else {
+            query = Member.find()
+                .regex('sex', filters.sex)
+                .limit(req.query.limit);
+        }
+
+        query.exec(function(err, members) {
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
             if (err)
                 res.send(err)
@@ -217,7 +239,7 @@ module.exports = function(app, passport) {
             racedate: req.body.racedate,
             member: req.body.member._id,
             time: req.body.time,
-            resultlink : req.body.resultlink,
+            resultlink: req.body.resultlink,
             is_accepted: false,
             done: false
         }, function(err, result) {

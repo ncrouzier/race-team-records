@@ -1,4 +1,4 @@
-angular.module('MainCtrl', []).controller('MainController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
+angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
 
     $scope.user = AuthService.isLoggedIn();
     var results = Restangular.all('results');
@@ -7,6 +7,14 @@ angular.module('MainCtrl', []).controller('MainController', ['$scope', '$modal',
 
     Restangular.all('results').getList().then(function(results) {
         $scope.resultsList = results;
+
+        $scope.gridOptions = {
+            enableSorting: true,
+            columnDefs: [{
+                name: 'racename',   field: 'time'
+            }],
+            data: $scope.resultsList
+        };
     });
 
 
@@ -81,7 +89,7 @@ angular.module('MainCtrl', []).controller('MainController', ['$scope', '$modal',
 
 }]);
 
-angular.module('MainCtrl').controller('ResultModalInstanceCtrl', ['$scope', '$modalInstance', 'result', 'Restangular', function($scope, $modalInstance, result, Restangular) {
+angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$scope', '$modalInstance', 'result', 'Restangular', function($scope, $modalInstance, result, Restangular) {
 
     Restangular.all('members').getList().then(function(members) {
         $scope.membersList = members;

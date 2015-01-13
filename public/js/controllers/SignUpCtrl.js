@@ -1,4 +1,4 @@
-angular.module('SignUpCtrl', []).controller('SignUpController', function($scope,$http,$state) {
+angular.module('mcrrcApp.controllers').controller('SignUpController', function($scope,$http,$state) {
 
 	$scope.signup = function (user) {
 		$http.post("/api/signup", user).success(function (data, status) {

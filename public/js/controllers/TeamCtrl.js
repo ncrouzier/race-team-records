@@ -1,10 +1,18 @@
-angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', '$modal', 'Restangular', 'AuthService', function($scope, $http, $modal, Restangular, AuthService) {
+angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '$http', '$modal', 'Restangular', 'AuthService', 'UtilsService', function($scope, $http, $modal, Restangular, AuthService, UtilsService) {
 
     $scope.user = AuthService.isLoggedIn();
 
     var members = Restangular.all('members');
 
     $scope.membersList = [];
+
+
+    // =====================================
+    // FILTER PARAMS CONFIG ==================
+    // =====================================
+    $scope.paramModel ={};
+    $scope.paramModel.sex = '.*';
+    $scope.paramModel.category = '.*';
 
     // =====================================
     // ADMIN CONFIG ==================
@@ -30,7 +38,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
         if (member) {
             var modalInstance = $modal.open({
                 templateUrl: 'memberModal.html',
-                controller: 'ModalInstanceCtrl',
+                controller: 'MemberModalInstanceCtrl',
                 size: 'lg',
                 resolve: {
                     member: function() {
@@ -49,8 +57,8 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
     $scope.showAddMemberModal = function() {
         var modalInstance = $modal.open({
-            templateUrl: 'myModalContent.html',
-            controller: 'ModalInstanceCtrl',
+            templateUrl: 'memberModal.html',
+            controller: 'MemberModalInstanceCtrl',
             size: 'lg',
             resolve: {
                 member: false
@@ -76,9 +84,31 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
     // $scope.user = data.user;
     // when landing on the page, get all members and show them
-    Restangular.all('members').getList().then(function(members) {
+
+    // get all members
+    $scope.getMembers = function() {
+        var params = {
+        "filters[sex]": $scope.paramModel.sex,
+        "filters[category]": $scope.paramModel.category,
+        limit: 10
+        };
+        members.getList(params).then(function(members) {
+            $scope.membersList =  members;
+        });
+    };
+
+
+    var defaultParams = {
+        "filters[sex]": $scope.paramModel.sex,
+        "filters[category]": $scope.paramModel.category,
+        limit: 10
+    };
+
+    members.getList(defaultParams).then(function(members) {
         $scope.membersList = members;
     });
+
+
 
     // select a member after checking it
     $scope.getMember = function(id) {
@@ -95,7 +125,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
     $scope.createMember = function(member) {
         members.post(member).then(
             function(members) {
-                $scope.membersList = members;
+                $scope.membersList.push(member);
             },
             function(res) {
                 console.log('Error: ' + res.status);
@@ -123,7 +153,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 }]);
 
 
-angular.module('TeamCtrl').controller('ModalInstanceCtrl', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
+angular.module('mcrrcApp.controllers').controller('MemberModalInstanceCtrl', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;
@@ -158,4 +188,3 @@ angular.module('TeamCtrl').controller('ModalInstanceCtrl', ['$scope', '$modalIns
     };
 
 }]);
-

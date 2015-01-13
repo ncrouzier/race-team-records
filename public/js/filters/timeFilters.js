@@ -55,3 +55,17 @@ app.filter('propsFilter', function() {
         return out;
     };
 });
+
+
+app.filter('ageFilter', function() {
+     function calculateAge(birthday) { 
+         var bd = new Date(birthday);
+         var ageDifMs = Date.now() - bd.getTime();
+         var ageDate = new Date(ageDifMs);
+         return Math.abs(ageDate.getUTCFullYear() - 1970);
+     }
+
+     return function(birthdate) { 
+           return calculateAge(birthdate);
+     }; 
+});

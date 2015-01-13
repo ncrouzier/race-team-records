@@ -129,6 +129,7 @@ module.exports = function(app, passport) {
             firstname: req.body.firstname,
             lastname: req.body.lastname,
             dateofbirth: req.body.dateofbirth,
+            sex: req.body.sex,
             bio: req.body.bio,
             done: false
         }, function(err, member) {
@@ -150,6 +151,7 @@ module.exports = function(app, passport) {
             member.firstname = req.body.firstname;
             member.lastname = req.body.lastname;
             member.dateofbirth = req.body.dateofbirth;
+            member.sex = req.body.sex;
             member.bio = req.body.bio;
             member.save(function(err) {
                 if (!err) {

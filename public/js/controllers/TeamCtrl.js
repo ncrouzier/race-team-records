@@ -29,7 +29,7 @@ angular.module('TeamCtrl', []).controller('TeamController', ['$scope', '$http', 
 
         if (member) {
             var modalInstance = $modal.open({
-                templateUrl: 'myModalContent.html',
+                templateUrl: 'memberModal.html',
                 controller: 'ModalInstanceCtrl',
                 size: 'lg',
                 resolve: {

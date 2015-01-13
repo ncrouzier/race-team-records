@@ -28,7 +28,7 @@
 
 </div>
 
-<script type="text/ng-template" id="myModalContent.html">
+<script type="text/ng-template" id="memberModal.html">
     <div class="modal-header">
         <h3 ng-show="editmode" class="modal-title">Edit Member</h3>
         <h3 ng-show="!editmode" class="modal-title">Add Member</h3>
@@ -56,10 +56,15 @@
 	                			<button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
 	              			</span>
                         </p>
+                        <label class="control-label text-left">Sex:</label>
+                        <div class="btn-group">
+                            <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Male'">Male</label>
+                            <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Female'">Female</label>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                     	<label class="control-label text-left">member bio:</label>
-                    	<textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
+                        <label class="control-label text-left">member bio:</label>
+                        <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
                     </div>
                 </div>
 
@@ -70,6 +75,6 @@
         <!-- createMember() WILL CREATE NEW Members -->
         <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editMember()">Edit Member</button>
         <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addMember()">Add Member</button>
-        <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+        <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
     </div>
 </script>

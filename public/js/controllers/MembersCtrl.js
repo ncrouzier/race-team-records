@@ -1,8 +1,8 @@
-angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '$http', '$modal', 'Restangular', 'AuthService', 'UtilsService', function($scope, $http, $modal, Restangular, AuthService, UtilsService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'UtilsService', 'MembersService', function($scope, $http, $modal, AuthService, UtilsService, MembersService) {
 
     $scope.user = AuthService.isLoggedIn();
 
-    var members = Restangular.all('members');
+    // var members = Restangular.all('members');
 
     $scope.membersList = [];
 
@@ -10,9 +10,10 @@ angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '
     // =====================================
     // FILTER PARAMS CONFIG ==================
     // =====================================
-    $scope.paramModel ={};
+    $scope.paramModel = {};
     $scope.paramModel.sex = '.*';
     $scope.paramModel.category = '.*';
+    $scope.paramModel.limit = '';
 
     // =====================================
     // ADMIN CONFIG ==================
@@ -48,7 +49,7 @@ angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '
             });
 
             modalInstance.result.then(function(member) {
-                $scope.editMember(member);
+                MembersService.editMember(member);
             }, function() {
                 //cancel
             });
@@ -66,9 +67,16 @@ angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '
         });
 
         modalInstance.result.then(function(member) {
-            $scope.createMember(member);
+            MembersService.createMember(member);
         }, function() {
             //cancel
+        });
+    };
+
+    $scope.removeMember = function(member) {
+        MembersService.deleteMember(member).then(function() {
+            var index = $scope.membersList.indexOf(member);
+            if (index > -1) $scope.membersList.splice(index, 1);
         });
     };
 
@@ -76,6 +84,18 @@ angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '
     // set the current member to the display panel
     $scope.setMember = function(member) {
         $scope.currentMember = member;
+    };
+
+    $scope.getMembers = function() {
+        var params = {
+            "filters[sex]": $scope.paramModel.sex,
+            "filters[category]": $scope.paramModel.category,
+            limit: $scope.paramModel.limit
+        };
+
+        MembersService.getMembers(params).then(function(members) {
+            $scope.membersList = members;
+        });
     };
 
     // =====================================
@@ -86,74 +106,22 @@ angular.module('mcrrcApp.controllers').controller('TeamController', ['$scope', '
     // when landing on the page, get all members and show them
 
     // get all members
-    $scope.getMembers = function() {
-        var params = {
-        "filters[sex]": $scope.paramModel.sex,
-        "filters[category]": $scope.paramModel.category,
-        limit: 10
-        };
-        members.getList(params).then(function(members) {
-            $scope.membersList =  members;
-        });
-    };
-
-
     var defaultParams = {
         "filters[sex]": $scope.paramModel.sex,
         "filters[category]": $scope.paramModel.category,
-        limit: 10
+        limit: $scope.paramModel.limit
     };
 
-    members.getList(defaultParams).then(function(members) {
+    MembersService.getMembers(defaultParams).then(function(members) {
         $scope.membersList = members;
     });
 
 
 
-    // select a member after checking it
-    $scope.getMember = function(id) {
-        return Restangular.one('members', id).get().then(
-            function(member) {
-                return member;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
-
-    // when submitting the add form, send the text to the node API
-    $scope.createMember = function(member) {
-        members.post(member).then(
-            function(members) {
-                $scope.membersList.push(member);
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
-
-    // when submitting the add form, send the text to the node API
-    $scope.editMember = function(member) {
-        member.save();
-    };
-
-    // delete a member after checking it
-    $scope.deleteMember = function(member) {
-        member.remove().then(
-            function() {
-                var index = $scope.membersList.indexOf(member);
-                if (index > -1) $scope.membersList.splice(index, 1);
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
-
-
 }]);
 
 
-angular.module('mcrrcApp.controllers').controller('MemberModalInstanceCtrl', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
+angular.module('mcrrcApp.members').controller('MemberModalInstanceCtrl', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;

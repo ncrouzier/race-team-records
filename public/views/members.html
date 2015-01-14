@@ -1,0 +1,114 @@
+<div class="jumbotron">
+
+    <br>
+    <div class="row">
+        <div class="col-sm-4 text-left" >
+        Gender
+        </div>
+        <div class="col-sm-4 text-left" >
+        Category
+        </div>
+        <div class="col-sm-4 text-center" >
+        
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="btn-group">
+                <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'Male'">Male</label>
+                <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'Female'">Female</label>
+                <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'.*'">Both</label>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="btn-group">
+                <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'Open'">Open</label>
+                <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'Master'">Master</label>
+                <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'.*'">Both</label>
+            </div>
+        </div>
+        <div class="col-sm-4">
+           <!--  <select ng-model="paramModel.limit" ng-change="getMembers()" class="form-control" style="width: 70px;">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="">All</option>
+            </select> -->
+        </div>
+    </div>
+    <div class="row">
+        <!-- Member LIST -->
+        <h2>Team members ({{membersList.length}}) <img class="hoverhand" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" ng-src="images/add.png" title="Add member" alt="Add member"></h2>
+        <div id="member-list" class="row">
+            <div class="col-sm-3">
+                <ul class="list-group">
+                    <li ng-click="setMember(member);" ng-style="memberList" class="list-group-item hoverhand" ng-repeat="member in membersList | orderBy: 'firstname'" ng-class="{ 'list-group-item-male': member.sex == 'Male', 'list-group-item-female': member.sex == 'Female','selected-class-name': member._id == currentMember._id }">
+                        <span>[{{$index + 1}}] {{ member.firstname }} {{ member.lastname }} </span> <img ng-show="user.role == 'admin'" ng-click="removeMember(member)" ng-src="images/delete.png" title="remove user" alt="remove user"> <img ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member)" ng-src="images/edit.png" title="edit user" alt="edit user">
+                    </li>
+                </ul>
+            </div>
+            <div class="col-sm-9">
+                <div class="highlightdark">
+                    <div ng-show="currentMember">
+                        <p>
+                            {{currentMember.firstname}} {{currentMember.lastname}} {{currentMember.dateofbirth | ageFilter}} years old</p>
+                        <p>{{currentMember.bio}}</p>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/ng-template" id="memberModal.html">
+    <div class="modal-header">
+        <h3 ng-show="editmode" class="modal-title">Edit Member</h3>
+        <h3 ng-show="!editmode" class="modal-title">Add Member</h3>
+    </div>
+    <div class="modal-body">
+        <form>
+            <div class="form-group">
+                <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label class="control-label text-left">firstname:</label>
+                        <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="control-label text-left">lastname:</label>
+                        <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <label class="control-label text-left">date of birth:</label>
+                        <p class="input-group">
+                            <input type="text" class="form-control" datepicker-popup="yyyy/MM/dd" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                        </p>
+                        <label class="control-label text-left">Sex:</label>
+                        <div class="btn-group">
+                            <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Male'">Male</label>
+                            <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Female'">Female</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="control-label text-left">member bio:</label>
+                        <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <!-- createMember() WILL CREATE NEW Members -->
+        <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editMember()">Edit Member</button>
+        <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addMember()">Add Member</button>
+        <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+    </div>
+</script>

@@ -98,27 +98,29 @@ module.exports = function(app, passport) {
 
     //get all members
     app.get('/api/members', function(req, res) {
-        console.log(req.query);
         var filters = req.query.filters;
+        if (filters != undefined) {
+            var datetobemaster = getMasterAgeDate()
 
-
-
-
-        if (filters.category === 'Open') {
-            query = Member.find()
-                .regex('sex', filters.sex)
-                .limit(req.query.limit)
-                .lt('dateofbirth', new Date);
-        } else if (filters.category === 'Master') {
-            query = Member.find()
-                .regex('sex', filters.sex)
-                .limit(req.query.limit)
-                .gte('dateofbirth', new Date);
-        } else {
-            query = Member.find()
-                .regex('sex', filters.sex)
-                .limit(req.query.limit);
+            if (filters.category === 'Open') {
+                query = Member.find()
+                    .regex('sex', filters.sex)
+                    .gt('dateofbirth', datetobemaster)
+                    .limit(req.query.limit)
+            } else if (filters.category === 'Master') {
+                query = Member.find()
+                    .regex('sex', filters.sex)
+                    .lte('dateofbirth', datetobemaster)
+                    .limit(req.query.limit)
+            } else {
+                query = Member.find()
+                    .regex('sex', filters.sex)
+                    .limit(req.query.limit);
+            }
+        }else{
+             query = Member.find();
         }
+
 
         query.exec(function(err, members) {
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
@@ -158,12 +160,6 @@ module.exports = function(app, passport) {
             if (err)
                 res.send(err);
 
-            // get and return all the members after you create another
-            Member.find(function(err, members) {
-                if (err)
-                    res.send(err)
-                res.json(members);
-            });
         });
     });
 
@@ -399,4 +395,11 @@ function isAdminLoggedIn(req, res, next) {
     }
     // if they aren't redirect them to the home page
     res.status(401).send("insufficient privileges");
+}
+
+
+function getMasterAgeDate() {
+    var datetobemaster = new Date();
+    datetobemaster.setFullYear(datetobemaster.getFullYear() - 40, datetobemaster.getMonth(), datetobemaster.getDay());
+    return datetobemaster;
 }

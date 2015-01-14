@@ -9,10 +9,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
       url: "/",
       controller: 'MainController',
       templateUrl: "views/home.html"
-    }).state('/team', {
-      url: "/team",
-      templateUrl: "views/team.html",
-      controller: 'TeamController'
+    }).state('/members', {
+      url: "/members",
+      templateUrl: "views/members.html",
+      controller: 'MembersController'
     }).state('/login', {
       url: "/login",
       templateUrl: "views/login.html",

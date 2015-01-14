@@ -1,5 +1,6 @@
-var app = angular.module('mcrrcApp', [ 'mcrrcApp.services','mcrrcApp.controllers','restangular', 'ui.bootstrap','ui.grid','ui.select','ngSanitize', 'ui.router', 'appRoutes']);
+var app = angular.module('mcrrcApp', [ 'mcrrcApp.services','mcrrcApp.controllers','mcrrcApp.members','restangular', 'ui.bootstrap','ui.grid','ui.select','ngSanitize', 'ui.router', 'appRoutes']);
 
+var memberModule = angular.module('mcrrcApp.members',[]);
 var services = angular.module('mcrrcApp.services',[]);
 var controllers = angular.module('mcrrcApp.controllers',[]);
 

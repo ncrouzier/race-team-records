@@ -89,9 +89,9 @@ angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '
 
 }]);
 
-angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$scope', '$modalInstance', 'result', 'Restangular', function($scope, $modalInstance, result, Restangular) {
+angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$scope', '$modalInstance', 'result', 'MembersService','Restangular', function($scope, $modalInstance, result, MembersService,Restangular) {
 
-    Restangular.all('members').getList().then(function(members) {
+    MembersService.getMembers().then(function(members) {
         $scope.membersList = members;
     });
 
@@ -111,7 +111,7 @@ angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$
         $scope.time.minutes = Math.floor($scope.formData.time / 60) % 60;
         $scope.time.seconds = $scope.formData.time % 60;
     } else {
-        $scope.formData = {};
+       // $scope.formData = {};
         $scope.editmode = false;
     }
 
@@ -119,7 +119,6 @@ angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$
 
     $scope.addResult = function() {
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
-        console.log($scope.formData);
         $modalInstance.close($scope.formData);
     };
 

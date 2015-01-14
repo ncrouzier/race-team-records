@@ -1,29 +1,22 @@
-angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$modal', 'AuthService', 'ResultsService', function($scope, $modal, AuthService, ResultsService) {
 
     $scope.user = AuthService.isLoggedIn();
-    var results = Restangular.all('results');
+
     $scope.resultsList = [];
 
 
-    Restangular.all('results').getList().then(function(results) {
+    ResultsService.getResults({
+        limit: 15,
+        sort: '-racedate'
+    }).then(function(results) {
         $scope.resultsList = results;
-
-        $scope.gridOptions = {
-            enableSorting: true,
-            columnDefs: [{
-                name: 'racename',   field: 'time'
-            }],
-            data: $scope.resultsList
-        };
     });
-
-
 
 
     $scope.showAddResultModal = function() {
         var modalInstance = $modal.open({
             templateUrl: 'resultModal.html',
-            controller: 'ResultModalInstanceCtrl',
+            controller: 'ResultModalInstanceController',
             size: 'lg',
             resolve: {
                 result: false
@@ -31,10 +24,9 @@ angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '
         });
 
         modalInstance.result.then(function(result) {
-            $scope.createResult(result);
-        }, function() {
-            //cancel
-        });
+            ResultsService.createResult(result);
+            $scope.resultsList.push(result);
+        }, function() {});
     };
 
     // select a result after checking it
@@ -42,7 +34,7 @@ angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '
         if (result) {
             var modalInstance = $modal.open({
                 templateUrl: 'resultModal.html',
-                controller: 'ResultModalInstanceCtrl',
+                controller: 'ResultModalInstanceController',
                 size: 'lg',
                 resolve: {
                     result: function() {
@@ -52,50 +44,32 @@ angular.module('mcrrcApp.controllers').controller('MainController', ['$scope', '
             });
 
             modalInstance.result.then(function(result) {
-                $scope.editResult(result);
-            }, function() {
-                //cancel
-            });
+                ResultsService.editResult(result);
+            }, function() {});
         }
     };
 
-    $scope.createResult = function(result) {
-        results.post(result).then(
-            function(results) {
-                $scope.resultsList = results;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
+    $scope.removeResult = function(result) {
+        ResultsService.deleteResult(result).then(function() {
+            var index = $scope.resultsList.indexOf(result);
+            if (index > -1) $scope.resultsList.splice(index, 1);
+        });
     };
 
-    // when submitting the add form, send the text to the node API
-    $scope.editResult = function(result) {
-        result.save();
-    };
 
-    // delete a result after checking it
-    $scope.deleteResult = function(result) {
-        result.remove().then(
-            function() {
-                var index = $scope.resultsList.indexOf(result);
-                if (index > -1) $scope.resultsList.splice(index, 1);
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
+
+
 
 
 }]);
 
-angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$scope', '$modalInstance', 'result', 'MembersService','Restangular', function($scope, $modalInstance, result, MembersService,Restangular) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', 'result', 'MembersService', 'ResultsService', function($scope, $modalInstance, result, MembersService, ResultsService) {
 
     MembersService.getMembers().then(function(members) {
         $scope.membersList = members;
     });
 
-    Restangular.all('racetypes').getList().then(function(racetypes) {
+    ResultsService.getRaceTypes().then(function(racetypes) {
         $scope.racetypesList = racetypes;
     });
 
@@ -103,7 +77,6 @@ angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$
     $scope.editmode = false;
     if (result) {
         $scope.formData = result;
-        console.log(result);
         $scope.editmode = true;
         $scope.formData.dateofbirth = new Date();
         $scope.time = {};
@@ -111,7 +84,7 @@ angular.module('mcrrcApp.controllers').controller('ResultModalInstanceCtrl', ['$
         $scope.time.minutes = Math.floor($scope.formData.time / 60) % 60;
         $scope.time.seconds = $scope.formData.time % 60;
     } else {
-       // $scope.formData = {};
+        // $scope.formData = {};
         $scope.editmode = false;
     }
 

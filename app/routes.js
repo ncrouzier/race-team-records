@@ -1,15 +1,5 @@
 module.exports = function(app, passport) {
 
-    // server routes ===========================================================
-    // handle things like api calls
-    // authentication routes
-
-    members = require('./controllers/members');
-
-    // Server API Routes
-
-
-
     // =====================================
     // LOGIN ===============================
     // =====================================
@@ -99,26 +89,28 @@ module.exports = function(app, passport) {
     //get all members
     app.get('/api/members', function(req, res) {
         var filters = req.query.filters;
-        if (filters != undefined) {
-            var datetobemaster = getMasterAgeDate()
+        var sort = req.query.sort;
+        var limit = req.query.limit;
 
-            if (filters.category === 'Open') {
-                query = Member.find()
-                    .regex('sex', filters.sex)
-                    .gt('dateofbirth', datetobemaster)
-                    .limit(req.query.limit)
-            } else if (filters.category === 'Master') {
-                query = Member.find()
-                    .regex('sex', filters.sex)
-                    .lte('dateofbirth', datetobemaster)
-                    .limit(req.query.limit)
-            } else {
-                query = Member.find()
-                    .regex('sex', filters.sex)
-                    .limit(req.query.limit);
+        query = Member.find();
+        if (filters) {
+            if (filters.category) {
+                var datetobemaster = getMasterAgeDate();
+                if (filters.category === 'Open') {
+                    query = query.gt('dateofbirth', datetobemaster);
+                } else if (filters.category === 'Master') {
+                    query = query.lte('dateofbirth', datetobemaster);
+                }
             }
-        }else{
-             query = Member.find();
+            if (filters.sex) {
+                query = query.regex('sex', filters.sex)
+            }
+        }
+        if (sort) {
+            query = query.sort(sort);
+        }
+        if (limit) {
+            query = query.limit(req.query.limit);
         }
 
 
@@ -206,11 +198,43 @@ module.exports = function(app, passport) {
 
     // get all results
     app.get('/api/results', function(req, res) {
-        Result.find(function(err, results) {
+        var sort = req.query.sort;
+        var limit = req.query.limit;
+        var filters = req.query.filters;
+        query = Result.find();
+        if (filters) {
+            if (filters.category) {
+                var datetobemaster = getMasterAgeDate();
+                if (filters.category === 'Open') {
+                    query = query.gt('racedate', datetobemaster);
+                } else if (filters.category === 'Master') {
+                    query = query.lte('racedate', datetobemaster);
+                }
+            }
+            if (filters.sex) {
+                query = query.regex('member.sex', filters.sex);
+            }
+            // if (filters.race) {
+            //     query = query.equals(filters.race_id)
+            // }
+            // if (filters.mode) {
+            //     if (filters.mode === 'Best') {
+            //         query = query.distinct ('member._id')
+            //     }
+            // }
+        }
+        if (sort) {
+            query = query.sort(sort);
+        }
+        if (limit) {
+            query = query.limit(req.query.limit);
+        }
+
+        query.populate('member racetype').exec(function(err, results) {
             if (err)
                 res.send(err)
             res.json(results);
-        }).populate('member racetype');
+        });
     });
 
     // get a result
@@ -229,11 +253,12 @@ module.exports = function(app, passport) {
 
     // create result and send back all members after creation
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
+        console.log(req.body.member);
         Result.create({
             racename: req.body.racename,
             racetype: req.body.racetype._id,
             racedate: req.body.racedate,
-            member: req.body.member._id,
+            member: req.body.member_id,
             time: req.body.time,
             resultlink: req.body.resultlink,
             is_accepted: false,
@@ -246,7 +271,7 @@ module.exports = function(app, passport) {
                 if (err)
                     res.send(err)
                 res.json(results);
-            }).populate('member racetype');
+            }).populate('racetype');
         });
     });
 
@@ -294,11 +319,27 @@ module.exports = function(app, passport) {
 
     // get all racetypes
     app.get('/api/racetypes', function(req, res) {
-        RaceType.find(function(err, racetypes) {
+
+        var sort = req.query.sort;
+        var limit = req.query.limit;
+        var filters = req.query.filters;
+
+        query = RaceType.find();
+        if (filters) {
+
+        }
+        if (sort) {
+            query = query.sort(sort);
+        }
+        if (limit) {
+            query = query.limit(req.query.limit);
+        }
+
+        query.exec(function(err, racetypes) {
             if (err)
                 res.send(err)
             res.json(racetypes);
-        }).populate('member');
+        });
     });
 
     // get a racetype

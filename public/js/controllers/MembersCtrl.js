@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'UtilsService', 'MembersService', function($scope, $http, $modal, AuthService, UtilsService, MembersService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'MembersService', function($scope, $http, $modal, AuthService, MembersService) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -8,7 +8,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
     // =====================================
-    // FILTER PARAMS CONFIG ==================
+    // FILTER PARAMS CONFIG ================
     // =====================================
     $scope.paramModel = {};
     $scope.paramModel.sex = '.*';
@@ -35,11 +35,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     // select a member after checking it
     $scope.retrieveMemberForEdit = function(member) {
-
         if (member) {
             var modalInstance = $modal.open({
                 templateUrl: 'memberModal.html',
-                controller: 'MemberModalInstanceCtrl',
+                controller: 'MemberModalInstanceController',
                 size: 'lg',
                 resolve: {
                     member: function() {
@@ -59,7 +58,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.showAddMemberModal = function() {
         var modalInstance = $modal.open({
             templateUrl: 'memberModal.html',
-            controller: 'MemberModalInstanceCtrl',
+            controller: 'MemberModalInstanceController',
             size: 'lg',
             resolve: {
                 member: false
@@ -68,6 +67,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         modalInstance.result.then(function(member) {
             MembersService.createMember(member);
+            $scope.membersList.push(member);
         }, function() {
             //cancel
         });
@@ -121,7 +121,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 }]);
 
 
-angular.module('mcrrcApp.members').controller('MemberModalInstanceCtrl', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
+angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;

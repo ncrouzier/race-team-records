@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.controllers').controller('LoginController',['$scope','$http','$state','AuthService', function($scope, $http, $state, AuthService) {
+angular.module('mcrrcApp.authentication').controller('LoginController',['$scope','$http','$state','AuthService', function($scope, $http, $state, AuthService) {
 
     $http({
         url: '/api/login',

@@ -4,7 +4,7 @@
             <h2>Race types <img class="hoverhand" ng-show="user.role == 'admin'" ng-click="showAddRaceTypeModal()" ng-src="images/add.png" title="Add race type" alt="Add race type"></h2>
             <ul class="list-group">
                 <li class="list-group-item hoverhand" ng-repeat="racetype in racetypesList">
-                {{racetype.name}} ({{racetype.surface}})<img ng-show="user.role == 'admin'" ng-click="deleteRaceType(racetype)" ng-src="images/delete.png" title="remove race type" alt="remove race type"> <img ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" ng-src="images/edit.png" title="edit race type" alt="edit race type">
+                {{racetype.name}} ({{racetype.surface}})<img ng-show="user.role == 'admin'" ng-click="removeRaceType(racetype)" ng-src="images/delete.png" title="remove race type" alt="remove race type"> <img ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" ng-src="images/edit.png" title="edit race type" alt="edit race type">
                 </li>
             </ul>
         </div>

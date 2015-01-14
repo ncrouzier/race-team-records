@@ -1,4 +1,5 @@
 var app = angular.module('mcrrcApp');
+
 app.directive('onlyDigitsForMinSec', function() {
     return {
         require: 'ngModel',

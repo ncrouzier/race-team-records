@@ -1,17 +1,18 @@
-angular.module('mcrrcApp.controllers').controller('AdminController', ['$scope', '$modal', 'AuthService', 'Restangular', function($scope, $modal, AuthService, Restangular) {
-
+angular.module('mcrrcApp.results').controller('AdminController', ['$scope', '$modal', 'AuthService', 'ResultsService', function($scope, $modal, AuthService, ResultsService) {
     $scope.user = AuthService.isLoggedIn();
-    var racetypes = Restangular.all('racetypes');
 
-    Restangular.all('racetypes').getList().then(function(racetypes) {
-        $scope.racetypesList = racetypes;
+
+    ResultsService.getRaceTypes({
+        sort: 'meters'
+    }).then(function(raceTypes) {
+        $scope.racetypesList = raceTypes;
     });
 
 
     $scope.showAddRaceTypeModal = function() {
         var modalInstance = $modal.open({
             templateUrl: 'raceTypeModal.html',
-            controller: 'RaceTypeModalInstanceCtrl',
+            controller: 'RaceTypeModalInstanceController',
             size: 'lg',
             resolve: {
                 racetype: false
@@ -19,9 +20,9 @@ angular.module('mcrrcApp.controllers').controller('AdminController', ['$scope', 
         });
 
         modalInstance.result.then(function(racetype) {
-            $scope.createRaceType(racetype);
-        }, function() {
-        });
+            ResultsService.createRaceType(racetype);
+            $scope.racetypesList.push(racetype);
+        }, function() {});
     };
 
     // select a racetype after checking it
@@ -29,7 +30,7 @@ angular.module('mcrrcApp.controllers').controller('AdminController', ['$scope', 
         if (racetype) {
             var modalInstance = $modal.open({
                 templateUrl: 'raceTypeModal.html',
-                controller: 'RaceTypeModalInstanceCtrl',
+                controller: 'RaceTypeModalInstanceController',
                 size: 'lg',
                 resolve: {
                     racetype: function() {
@@ -39,43 +40,25 @@ angular.module('mcrrcApp.controllers').controller('AdminController', ['$scope', 
             });
 
             modalInstance.result.then(function(racetype) {
-                $scope.editRaceType(racetype);
+                ResultsService.editRaceType(racetype);
             }, function() {
                 //cancel
             });
         }
     };
 
-    $scope.createRaceType = function(racetype) {
-        racetypes.post(racetype).then(
-            function(racetypes) {
-                $scope.racetypesList = racetypes;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
+    $scope.removeRaceType = function(racetype) {
+        ResultsService.deleteRaceType(racetype).then(function() {
+            var index = $scope.racetypesList.indexOf(racetype);
+            if (index > -1) $scope.racetypesList.splice(index, 1);
+        });
     };
 
-    // when submitting the add form, send the text to the node API
-    $scope.editRaceType = function(racetype) {
-        racetype.save();
-    };
 
-    // delete a racetype after checking it
-    $scope.deleteRaceType = function(racetype) {
-        racetype.remove().then(
-            function() {
-                var index = $scope.racetypesList.indexOf(racetype);
-                if (index > -1) $scope.racetypesList.splice(index, 1);
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
 
 }]);
 
-angular.module('mcrrcApp.controllers').controller('RaceTypeModalInstanceCtrl', ['$scope', '$modalInstance', 'racetype', 'Restangular', function($scope, $modalInstance, racetype, Restangular) {
+angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$modalInstance', 'racetype',  function($scope, $modalInstance, racetype) {
 
 
     $scope.editmode = false;

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.services').factory('AuthService', function() {
+angular.module('mcrrcApp').factory('AuthService', function() {
 
 	var factory = {};
     var user; 

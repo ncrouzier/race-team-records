@@ -1,6 +1,9 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
+
+memberSchema = require('./member');
+
 // define the schema for our user model
 var resultSchema = mongoose.Schema({
     racename: String,
@@ -10,10 +13,7 @@ var resultSchema = mongoose.Schema({
     },
     racedate: Date,
     time: Number,
-    member: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Member'
-    },
+    member: [memberSchema],
     resultlink: String,
     is_accepted: Boolean,
     createdAt: Date,

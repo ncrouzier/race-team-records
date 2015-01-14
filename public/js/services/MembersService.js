@@ -3,6 +3,11 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', fun
     var factory = {};
     var members = Restangular.all('members');
 
+    // =====================================
+    // MEMBERS API CALLS ===================
+    // =====================================
+
+    //retrieve members
     factory.getMembers = function(params) {
         return members.getList(params).then(function(members) {
             return members;
@@ -10,7 +15,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', fun
     };
 
 
-    // select a member after checking it
+    //retrieve a member by id
     factory.getMember = function(id) {
         return Restangular.one('members', id).get().then(
             function(member) {
@@ -21,23 +26,22 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', fun
             });
     };
 
-    // when submitting the add form, send the text to the node API
+    //create a member
     factory.createMember = function(member) {
         return members.post(member).then(
             function(members) {
-
             },
             function(res) {
                 console.log('Error: ' + res.status);
             });
     };
 
-    // when submitting the add form, send the text to the node API
+    //edit a member
     factory.editMember = function(member) {
         member.save();
     };
 
-    // delete a member after checking it
+    //delete a member
     factory.deleteMember = function(member) {
         return member.remove().then(
             function() {},

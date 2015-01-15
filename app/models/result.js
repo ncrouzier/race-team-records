@@ -23,6 +23,7 @@ var resultSchema = mongoose.Schema({
         sex: String,
         dateofbirth: Date
     }],
+    category: String,
     resultlink: String,
     is_accepted: Boolean,
     createdAt: Date,
@@ -36,8 +37,32 @@ resultSchema.pre('save', function(next, done) {
         this.createdAt = Date.now();
     }
     this.updatedAt = Date.now();
+
+    this.updateCategory();
     next();
 });
+
+resultSchema.methods.updateCategory = function() {
+    var membersLength = this.member.length;
+    var isOpen = false;
+    for (var i = 0; i < membersLength; i++) {
+        if (getAddDateToDate(this.racedate,-40,0,0) < this.member[i].dateofbirth){
+            isOpen = true;
+            break;
+        }
+    }
+    if (isOpen){
+        this.category = "Open";
+    }else{
+        this.category = "Master";
+    }
+};
+
+function getAddDateToDate(date, years, months, days) {
+    date.setFullYear(date.getFullYear() + years, date.getMonth() + months, date.getDay() + days);
+    return date;
+}
+
 
 // create the model for users and expose it to our app
 module.exports = mongoose.model('Result', resultSchema);

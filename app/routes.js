@@ -1,4 +1,4 @@
-module.exports = function(app, passport) {
+module.exports = function(app, qs, passport) {
 
     // =====================================
     // LOGIN ===============================
@@ -95,7 +95,7 @@ module.exports = function(app, passport) {
         query = Member.find();
         if (filters) {
             if (filters.category) {
-                var datetobemaster = getMasterAgeDate();
+                var datetobemaster = getAddDateToDate(new Date(), -40, 0, 0);
                 if (filters.category === 'Open') {
                     query = query.gt('dateofbirth', datetobemaster);
                 } else if (filters.category === 'Master') {
@@ -194,38 +194,44 @@ module.exports = function(app, passport) {
 
     // get all results
     app.get('/api/results', function(req, res) {
+        console.log(req.query);
         var sort = req.query.sort;
         var limit = req.query.limit;
-        var filters = req.query.filters;
-        console.log(req.query)
+
         query = Result.find();
-        if (filters) {
-            // if (filters.category) {
-            //     var datetobemaster = getMasterAgeDate();
-            //     if (filters.category === 'Open') {
-            //         query = query.gt('racedate', datetobemaster);
-            //     } else if (filters.category === 'Master') {
-            //         query = query.lte('racedate', datetobemaster);
-            //     }
-            // }
-            if (filters.sex) {
-                query = query.elemMatch('member',{'sex':{ $regex:filters.sex}});
+
+        if (req.query.filters) {
+            var filters = JSON.parse(req.query.filters);
+
+            if (filters.category) {
+                query = query.regex('category', filters.category);
             }
-            // if (filters.race) {
-            //     query = query.equals(filters.race_id)
-            // }
-            // if (filters.mode) {
-            //     if (filters.mode === 'Best') {
-            //         query = query.distinct ('member._id')
-            //     }
-            // }
+
+            if (filters.sex) {
+                query= query.where('member.sex').regex(filters.sex);
+                
+            }
+
+            if (filters.racetype) {
+
+                var racetype = filters.racetype;
+                console.log("SKJDFKSHFD   " + racetype._id);
+                query = query.where('racetype._id').equals(racetype._id);
+            }
+            if (filters.mode) {
+                if (filters.mode === 'Best') {
+                    query = query.distinct ('member._id')
+                }
+            }
         }
-        // if (sort) {
-        //     query = query.sort(sort);
-        // }
+        if (sort) {
+            query = query.sort(sort);
+        }
         if (limit) {
-            query = query.limit(2);
+            query = query.limit(limit);
         }
+
+        
 
         query.exec(function(err, results) {
             if (err)
@@ -441,8 +447,7 @@ function isAdminLoggedIn(req, res, next) {
 }
 
 
-function getMasterAgeDate() {
-    var datetobemaster = new Date();
-    datetobemaster.setFullYear(datetobemaster.getFullYear() - 40, datetobemaster.getMonth(), datetobemaster.getDay());
-    return datetobemaster;
+function getAddDateToDate(date, years, months, days) {
+    date.setFullYear(date.getFullYear() + years, date.getMonth() + months, date.getDay() + days);
+    return date;
 }

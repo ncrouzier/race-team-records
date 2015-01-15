@@ -21,5 +21,7 @@ memberSchema.pre('save', function(next, done) {
     next();
 });
 
+
+
 // create the model for users and expose it to our app
 module.exports = mongoose.model('Member', memberSchema);

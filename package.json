@@ -7,7 +7,7 @@
     "bson": "^0.2.16",
     "cookie-parser": "~1.0.0",
     "ejs": "^2.0.6",
-    "express": "~4.5.1",
+    "express": "latest",
     "express-session": "~1.0.0",
     "method-override": "~2.0.2",
     "mongoose": "~3.8.1",

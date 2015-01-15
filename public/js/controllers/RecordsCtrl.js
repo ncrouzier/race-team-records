@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', function($scope, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', '$http', function($scope, AuthService, ResultsService, $http) {
 
 
     // =====================================
@@ -8,8 +8,9 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
     $scope.paramModel.sex = '.*';
     $scope.paramModel.category = '.*';
     $scope.paramModel.mode = 'All';
-    $scope.paramModel.sort = '';
-    $scope.paramModel.limit = 5;
+    $scope.paramModel.sort = 'time';
+    $scope.paramModel.racetype = "";
+    $scope.paramModel.limit = 10;
 
 
     ResultsService.getRaceTypes().then(function(racetypes) {
@@ -18,15 +19,28 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
 
 
     $scope.getResults = function() {
+
+        // var params = {
+        //     "sex": $scope.paramModel.sex,
+        //     "category": $scope.paramModel.category,
+        //     "mode": $scope.paramModel.mode,
+        //     "racetype": $scope.paramModel.racetype,
+        //     "limit": $scope.paramModel.limit
+        // };
+
         var params = {
-            "filters[sex]": $scope.paramModel.sex,
-            "filters[category]": $scope.paramModel.category,
-            "filters[mode]": $scope.paramModel.mode,
-            "filters[race]": $scope.paramModel.race,
-            limit: $scope.paramModel.race
+            "filters": {
+                "sex": $scope.paramModel.sex,
+                "category": $scope.paramModel.category,
+                "mode": $scope.paramModel.mode,
+                "racetype": $scope.paramModel.racetype,
+            },
+            "limit": $scope.paramModel.limit,
+            "sort": $scope.paramModel.sort
         };
+
+
         ResultsService.getResults(params).then(function(results) {
-            console.log(results);
             $scope.resultsList = results;
         });
     };

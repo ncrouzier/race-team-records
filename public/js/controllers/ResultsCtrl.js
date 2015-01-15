@@ -73,7 +73,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.racetypesList = racetypes;
     });
 
-
     $scope.editmode = false;
     if (result) {
         $scope.formData = result;

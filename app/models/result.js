@@ -8,12 +8,21 @@ memberSchema = require('./member');
 var resultSchema = mongoose.Schema({
     racename: String,
     racetype: {
-        type: mongoose.Schema.ObjectId,
-        ref: 'Racetype'
+        _id: mongoose.Schema.ObjectId,
+        name: String,
+        surface: String,
+        meters: Number,
+        miles: Number
     },
     racedate: Date,
     time: Number,
-    member: [memberSchema],
+    member: [{
+        _id: mongoose.Schema.ObjectId,
+        firstname: String,
+        lastname: String,
+        sex: String,
+        dateofbirth: Date
+    }],
     resultlink: String,
     is_accepted: Boolean,
     createdAt: Date,

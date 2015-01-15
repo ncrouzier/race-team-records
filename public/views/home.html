@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <ul class="list-group">
                 <li class="list-group-item hoverhand text-left" ng-repeat="result in resultsList">
-                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member.firstname}} {{result.member.lastname}} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
                 </li>
             </ul>
 
@@ -45,7 +45,6 @@
                     </div>
                     <div class="col-md-5">
                         <label class="control-label text-left">Race Type:</label><br>
-
                         <ui-select ng-model="formData.racetype" theme="select2" style="min-width: 300px;">
                             <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
                             <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
@@ -61,7 +60,7 @@
                     <div class="col-md-6">
                         <label class="control-label text-left">Racer:</label><br>
 
-                        <ui-select ng-model="formData.member" theme="select2" style="min-width: 300px;">
+                        <ui-select ng-model="formData.member[0]" theme="select2" style="min-width: 300px;">
                             <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
                             <ui-select-choices repeat="member in membersList | propsFilter: {firstname: $select.search, lastname: $select.search}">
                                 <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>

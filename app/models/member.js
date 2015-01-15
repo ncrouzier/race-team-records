@@ -8,7 +8,6 @@ var memberSchema = mongoose.Schema({
     sex: String,
     dateofbirth: Date,
     bio: String,
-    category: String,
     createdAt: Date,
     updatedAt: Date
 });

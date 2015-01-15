@@ -165,11 +165,7 @@ module.exports = function(app, passport) {
             member.bio = req.body.bio;
             member.save(function(err) {
                 if (!err) {
-                    Member.find(function(err, members) {
-                        if (err)
-                            res.send(err)
-                        res.json(members);
-                    });
+                    //TODO update results with member
                 } else {
                     console.log(err);
                     res.send(err);
@@ -201,18 +197,19 @@ module.exports = function(app, passport) {
         var sort = req.query.sort;
         var limit = req.query.limit;
         var filters = req.query.filters;
+        console.log(req.query)
         query = Result.find();
         if (filters) {
-            if (filters.category) {
-                var datetobemaster = getMasterAgeDate();
-                if (filters.category === 'Open') {
-                    query = query.gt('racedate', datetobemaster);
-                } else if (filters.category === 'Master') {
-                    query = query.lte('racedate', datetobemaster);
-                }
-            }
+            // if (filters.category) {
+            //     var datetobemaster = getMasterAgeDate();
+            //     if (filters.category === 'Open') {
+            //         query = query.gt('racedate', datetobemaster);
+            //     } else if (filters.category === 'Master') {
+            //         query = query.lte('racedate', datetobemaster);
+            //     }
+            // }
             if (filters.sex) {
-                query = query.regex('member.sex', filters.sex);
+                query = query.elemMatch('member',{'sex':{ $regex:filters.sex}});
             }
             // if (filters.race) {
             //     query = query.equals(filters.race_id)
@@ -223,16 +220,17 @@ module.exports = function(app, passport) {
             //     }
             // }
         }
-        if (sort) {
-            query = query.sort(sort);
-        }
+        // if (sort) {
+        //     query = query.sort(sort);
+        // }
         if (limit) {
-            query = query.limit(req.query.limit);
+            query = query.limit(2);
         }
 
-        query.populate('member racetype').exec(function(err, results) {
+        query.exec(function(err, results) {
             if (err)
                 res.send(err)
+
             res.json(results);
         });
     });
@@ -248,30 +246,39 @@ module.exports = function(app, passport) {
             if (result) {
                 res.json(result);
             }
-        }).populate('member racetype');
+        });
     });
 
     // create result and send back all members after creation
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
-        console.log(req.body.member);
+        console.log(req.body);
         Result.create({
             racename: req.body.racename,
-            racetype: req.body.racetype._id,
+            racetype: {
+                _id: req.body.racetype._id,
+                name: req.body.racetype.name,
+                surface: req.body.racetype.surface,
+                meters: req.body.racetype.meters,
+                miles: req.body.racetype.miles
+            },
             racedate: req.body.racedate,
-            member: req.body.member_id,
+            member: [{
+                _id: req.body.member[0]._id,
+                firstname: req.body.member[0].firstname,
+                lastname: req.body.member[0].lastname,
+                sex: req.body.member[0].sex,
+                dateofbirth: req.body.member[0].dateofbirth
+            }],
             time: req.body.time,
             resultlink: req.body.resultlink,
             is_accepted: false,
             done: false
         }, function(err, result) {
-            if (err)
+            if (err) {
                 res.send(err);
+            }
 
-            Result.find(function(err, results) {
-                if (err)
-                    res.send(err)
-                res.json(results);
-            }).populate('racetype');
+
         });
     });
 
@@ -279,21 +286,26 @@ module.exports = function(app, passport) {
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
         Result.findById(req.params.result_id, function(err, result) {
             result.racename = req.body.racename;
-            result.racetype = req.body.racetype._id;
+            result.racetype = {
+                _id: req.body.racetype._id,
+                name: req.body.racetype.name,
+                surface: req.body.racetype.surface,
+                meters: req.body.racetype.meters,
+                miles: req.body.racetype.miles
+            };
             result.racedate = req.body.racedate;
-            result.member = req.body.member._id;
+            result.member = [{
+                _id: req.body.member[0]._id,
+                firstname: req.body.member[0].firstname,
+                lastname: req.body.member[0].lastname,
+                sex: req.body.member[0].sex,
+                dateofbirth: req.body.member[0].dateofbirth
+            }];
             result.time = req.body.time;
             result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;
             result.save(function(err) {
-                if (!err) {
-                    Result.find(function(err, results) {
-                        if (err)
-                            res.send(err)
-                        res.json(results);
-                    }).populate('member racetype');
-                } else {
-                    console.log(err);
+                if (err) {
                     res.send(err);
                 }
             });
@@ -367,11 +379,6 @@ module.exports = function(app, passport) {
             if (err)
                 res.send(err);
 
-            RaceType.find(function(err, racetypes) {
-                if (err)
-                    res.send(err)
-                res.json(racetypes);
-            });
         });
     });
 
@@ -384,11 +391,7 @@ module.exports = function(app, passport) {
             racetype.miles = req.body.miles;
             racetype.save(function(err) {
                 if (!err) {
-                    RaceType.find(function(err, racetypes) {
-                        if (err)
-                            res.send(err)
-                        res.json(racetypes);
-                    });
+                    //TODO update results
                 } else {
                     console.log(err);
                     res.send(err);
@@ -405,7 +408,6 @@ module.exports = function(app, passport) {
         }, function(err, racetype) {
             if (err)
                 res.send(err);
-            res.json(racetype);
         });
     });
 

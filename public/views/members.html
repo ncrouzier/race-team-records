@@ -2,14 +2,14 @@
 
     <br>
     <div class="row">
-        <div class="col-sm-4 text-left" >
-        Gender
+        <div class="col-sm-4 text-left">
+            Gender
         </div>
-        <div class="col-sm-4 text-left" >
-        Category
+        <div class="col-sm-4 text-left">
+            Category
         </div>
-        <div class="col-sm-4 text-center" >
-        
+        <div class="col-sm-4 text-center">
+
         </div>
     </div>
     <div class="row">
@@ -28,7 +28,7 @@
             </div>
         </div>
         <div class="col-sm-4">
-           <!--  <select ng-model="paramModel.limit" ng-change="getMembers()" class="form-control" style="width: 70px;">
+            <!--  <select ng-model="paramModel.limit" ng-change="getMembers()" class="form-control" style="width: 70px;">
                 <option value="5">5</option>
                 <option value="10">10</option>
                 <option value="">All</option>
@@ -53,12 +53,21 @@
                             {{currentMember.firstname}} {{currentMember.lastname}} {{currentMember.dateofbirth | ageFilter}} years old</p>
                         <p>{{currentMember.bio}}</p>
 
-                    </div>
-                </div>
+                        Latest Results:<br>
+                        <ul class="list-group">
+                            <li class="list-group-item hoverhand text-left" ng-repeat="result in currentMemberResultList">
+                                <span>{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span>
+                            </li>
+                        </ul>
 
+                    </div>
+
+                </div>
             </div>
+
         </div>
     </div>
+</div>
 
 </div>
 

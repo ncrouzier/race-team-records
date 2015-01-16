@@ -81,10 +81,14 @@ module.exports = function(app, qs, passport) {
     });
 
 
+    var RaceType = require('./models/racetype');
+    var Member = require('./models/member');
+    var Result = require('./models/result');
+
     // =====================================
     // TEAM MEMBERS ========================
     // =====================================
-    var Member = require('./models/member');
+
 
     //get all members
     app.get('/api/members', function(req, res) {
@@ -165,13 +169,37 @@ module.exports = function(app, qs, passport) {
             member.bio = req.body.bio;
             member.save(function(err) {
                 if (!err) {
-                    //TODO update results with member
+                    Result.find({
+                            'member._id': member._id
+                        },
+                        function(err, results) {
+                            for (i = 0; i < results.length; i++) {
+                                results[i].member = [{
+                                    _id: results[i].member[0]._id,
+                                    firstname: req.body.firstname,
+                                    lastname: req.body.lastname,
+                                    sex: req.body.sex,
+                                    dateofbirth: req.body.dateofbirth
+                                }];
+                                results[i].save(function(err) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.send(err);
+                                    }
+                                });
+                            }
+
+                        }
+                    );
                 } else {
                     console.log(err);
                     res.send(err);
                 }
             });
         });
+
+
+
     });
 
 
@@ -190,11 +218,9 @@ module.exports = function(app, qs, passport) {
     // =====================================
     // RESULTS =============================
     // =====================================
-    var Result = require('./models/result');
 
     // get all results
     app.get('/api/results', function(req, res) {
-        console.log(req.query);
         var sort = req.query.sort;
         var limit = req.query.limit;
 
@@ -208,36 +234,59 @@ module.exports = function(app, qs, passport) {
             }
 
             if (filters.sex) {
-                query= query.where('member.sex').regex(filters.sex);
-                
+                query = query.where('member.sex').regex(filters.sex);
+
             }
 
             if (filters.racetype) {
-
                 var racetype = filters.racetype;
-                console.log("SKJDFKSHFD   " + racetype._id);
                 query = query.where('racetype._id').equals(racetype._id);
             }
-            if (filters.mode) {
-                if (filters.mode === 'Best') {
-                    query = query.distinct ('member._id')
+            if (filters.mode && limit) {
+                if (filters.mode === 'All') {
+                    query = query.limit(limit);
                 }
             }
         }
         if (sort) {
             query = query.sort(sort);
         }
-        if (limit) {
-            query = query.limit(limit);
+
+        if (req.query.member) {
+            var member = JSON.parse(req.query.member);
+            query = query.where('member._id').equals(member._id);
         }
 
-        
-
         query.exec(function(err, results) {
-            if (err)
-                res.send(err)
 
-            res.json(results);
+            if (err) {
+                res.send(err)
+            } else {
+                var filteredResult = results;
+                if (req.query.filters) {
+                    var filters = JSON.parse(req.query.filters);
+                    if (filters.mode && limit) {
+                        if (filters.mode === 'Best') {
+                            filteredResult = [];
+                            var resultLength = results.length;
+                            var resCount = 0;
+                            for (var i = 0; i < resultLength && resCount < limit; i++) {
+                                if (!containsMember(filteredResult, results[i].member[0])) {
+                                    filteredResult.push(results[i]);
+                                    resCount++;
+                                }
+                            }
+                        }
+                    }
+                }
+                console.log(filteredResult)
+                res.json(filteredResult);
+
+            }
+
+
+
+
         });
     });
 
@@ -257,7 +306,6 @@ module.exports = function(app, qs, passport) {
 
     // create result and send back all members after creation
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
-        console.log(req.body);
         Result.create({
             racename: req.body.racename,
             racetype: {
@@ -333,7 +381,7 @@ module.exports = function(app, qs, passport) {
     // =====================================
     // RaceTypes =============================
     // =====================================
-    var RaceType = require('./models/racetype');
+
 
     // get all racetypes
     app.get('/api/racetypes', function(req, res) {
@@ -397,7 +445,28 @@ module.exports = function(app, qs, passport) {
             racetype.miles = req.body.miles;
             racetype.save(function(err) {
                 if (!err) {
-                    //TODO update results
+                    Result.find({
+                            'racetype._id': racetype._id
+                        },
+                        function(err, results) {
+                            for (i = 0; i < results.length; i++) {
+                                results[i].racetype = {
+                                    _id: results[i].racetype._id,
+                                    name: req.body.name,
+                                    surface: req.body.surface,
+                                    meters: req.body.meters,
+                                    miles: req.body.miles
+                                };
+                                results[i].save(function(err) {
+                                    if (err) {
+                                        console.log(err);
+                                        res.send(err);
+                                    }
+                                });
+                            }
+
+                        }
+                    );
                 } else {
                     console.log(err);
                     res.send(err);
@@ -448,6 +517,24 @@ function isAdminLoggedIn(req, res, next) {
 
 
 function getAddDateToDate(date, years, months, days) {
-    date.setFullYear(date.getFullYear() + years, date.getMonth() + months, date.getDay() + days);
-    return date;
+    var resDate = new Date(date);
+    resDate.setFullYear(resDate.getFullYear() + years, resDate.getMonth() + months, resDate.getDay() + days);
+    return resDate;
+}
+
+// check if member is in list
+function containsMember(list, member) {
+    if (list.length == 0) {
+        return false;
+    }
+
+    var i;
+    for (i = 0; i < list.length; i++) {
+        if (list[i].member[0]._id.equals(member._id)) {
+            return true;
+        }
+    }
+    return false;
+
+
 }

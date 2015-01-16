@@ -6,11 +6,14 @@
         <div class="col-sm-4 text-left">
             Race type
         </div>
-        <div class="col-sm-4 text-left">
+        <div class="col-sm-3 text-left">
             Gender
         </div>
-        <div class="col-sm-4 text-center">
+        <div class="col-sm-3 text-left">
             Division
+        </div>
+        <div class="col-sm-2 text-left">
+            Allow duplicates?
         </div>
     </div>
     <div class="row">
@@ -38,17 +41,17 @@
         </div>
         <div class="col-sm-2">
             <div class="btn-group">
-                <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'Best'">Best</label>
-                <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'All'">All</label>
+                <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'All'">Yes</label>
+                <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'Best'">No</label>
             </div>
         </div>
     </div>
     <div class="row">
-        <br>{{paramModel}}
+        <br>
         <div class="col-md-8">
             <ul class="list-group">
                 <li class="list-group-item hoverhand text-left" ng-repeat="result in resultsList">
-                    <span>{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                    <span>{{$index + 1}} - <b>{{result.member[0].firstname}} {{result.member[0].lastname}}</b> at {{ result.racename }} on {{ result.racedate | date:'MM/dd/yyyy' }} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
                 </li>
             </ul>
 

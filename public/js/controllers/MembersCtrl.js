@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'MembersService', function($scope, $http, $modal, AuthService, MembersService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'MembersService', 'ResultsService', function($scope, $http, $modal, AuthService, MembersService, ResultsService) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -83,7 +83,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     // set the current member to the display panel
     $scope.setMember = function(member) {
+        ResultsService.getResults({
+            limit: 10,
+            sort: '-racedate',
+            member: member
+        }).then(function(results) {
+            $scope.currentMemberResultList = results;
+        });
         $scope.currentMember = member;
+
     };
 
     $scope.getMembers = function() {

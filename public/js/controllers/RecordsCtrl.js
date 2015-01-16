@@ -10,7 +10,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
     $scope.paramModel.mode = 'All';
     $scope.paramModel.sort = 'time';
     $scope.paramModel.racetype = "";
-    $scope.paramModel.limit = 10;
+    $scope.paramModel.limit = 5;
 
 
     ResultsService.getRaceTypes().then(function(racetypes) {
@@ -19,14 +19,6 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
 
 
     $scope.getResults = function() {
-
-        // var params = {
-        //     "sex": $scope.paramModel.sex,
-        //     "category": $scope.paramModel.category,
-        //     "mode": $scope.paramModel.mode,
-        //     "racetype": $scope.paramModel.racetype,
-        //     "limit": $scope.paramModel.limit
-        // };
 
         var params = {
             "filters": {
@@ -45,7 +37,5 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
         });
     };
 
-
-    $scope.getResults();
 
 }]);

@@ -59,8 +59,9 @@ resultSchema.methods.updateCategory = function() {
 };
 
 function getAddDateToDate(date, years, months, days) {
-    date.setFullYear(date.getFullYear() + years, date.getMonth() + months, date.getDay() + days);
-    return date;
+    var resDate = new Date(date);
+    resDate.setFullYear(resDate.getFullYear() + years, resDate.getMonth() + months, resDate.getDay() + days);
+    return resDate;
 }
 
 

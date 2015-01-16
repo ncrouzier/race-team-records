@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <ul class="list-group">
                 <li class="list-group-item hoverhand text-left" ng-repeat="result in resultsList">
-                    <span >{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                    <span>{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span> <span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result"> </span >
                 </li>
             </ul>
 
@@ -38,70 +38,67 @@
                         <p class="input-group">
                             <input type="text" class="form-control input-md" datepicker-popup="{{format}}" ng-model="formData.racedate" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
                             <span class="input-group-btn">
-				                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-				            </span>
-                        </p>
-                        </select>
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                    </p>
+        </div>
+        <div class="col-md-5">
+            <label class="control-label text-left">Race Type:</label>
+            <br>
+            <ui-select ng-model="formData.racetype" theme="select2" style="min-width: 300px;">
+                <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
+                <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+                    <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                    <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div>
+                    <small>length in meters: {{racetype.meters | number}} m</small>
+                    <br>
+                    <small>length in miles: {{racetype.miles | number}} miles</small>
                     </div>
-                    <div class="col-md-5">
-                        <label class="control-label text-left">Race Type:</label><br>
-                        <ui-select ng-model="formData.racetype" theme="select2" style="min-width: 300px;">
-                            <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
-                            <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
-                                <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div>
-                                <small>length in meters: {{racetype.meters | number}} m</small><br>
-                                <small>length in miles: {{racetype.miles | number}} miles</small>
-                            </ui-select-choices>
-                        </ui-select>
+                </ui-select-choices>
+            </ui-select>
 
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="control-label text-left">Racer:</label><br>
-
-                        <ui-select ng-model="formData.member[0]" theme="select2" style="min-width: 300px;">
-                            <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
-                            <ui-select-choices repeat="member in membersList | propsFilter: {firstname: $select.search, lastname: $select.search}">
-                                <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
-                                <small>
-						        category: {{member.category}}						   
-						      </small>
-                            </ui-select-choices>
-                        </ui-select>
-
-
-
-
-
-
-                    </div>
-                    <div class="col-md-2">
-                        <label class="control-label text-left">Hours:</label>
-                        <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="control-label text-left">Minutes:</label>
-                        <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="control-label text-left">Seconds:</label>
-                        <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <label class="control-label text-left">Result web link:</label>
-                        <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
-                    </div>
-                </div>
-            </div>
-        </form>
+        </div>
     </div>
-    <div class="modal-footer">
-        <!-- createMember() WILL CREATE NEW Members -->
-        <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()">Edit Result</button>
-        <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()">Add Result</button>
-        <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+    <div class="row">
+        <div class="col-md-6">
+            <label class="control-label text-left">Racer:</label>
+            <br>
+            <ui-select ng-model="formData.member[0]" theme="select2" style="min-width: 300px;">
+                <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
+                <ui-select-choices repeat="member in membersList | propsFilter: {firstname: $select.search, lastname: $select.search}">
+                    <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                    <small>
+                        category: {{member.category}}                          
+                    </small>
+                </ui-select-choices>
+            </ui-select>
+        </div>
+        <div class="col-md-2">
+            <label class="control-label text-left">Hours:</label>
+            <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left">
+        </div>
+        <div class="col-md-2">
+            <label class="control-label text-left">Minutes:</label>
+            <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left">
+        </div>
+        <div class="col-md-2">
+            <label class="control-label text-left">Seconds:</label>
+            <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left">
+        </div>
     </div>
+    <div class="row">
+        <div class="col-md-12">
+            <label class="control-label text-left">Result web link:</label>
+            <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
+        </div>
+    </div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+    <!-- createMember() WILL CREATE NEW Members -->
+    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()">Edit Result</button>
+    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()">Add Result</button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>
 </script>

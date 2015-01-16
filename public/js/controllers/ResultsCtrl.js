@@ -83,7 +83,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.time.minutes = Math.floor($scope.formData.time / 60) % 60;
         $scope.time.seconds = $scope.formData.time % 60;
     } else {
-        // $scope.formData = {};
+        $scope.formData = {};
         $scope.editmode = false;
     }
 

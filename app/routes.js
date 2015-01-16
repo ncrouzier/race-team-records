@@ -153,8 +153,11 @@ module.exports = function(app, qs, passport) {
             bio: req.body.bio,
             done: false
         }, function(err, member) {
-            if (err)
+            if (err){
                 res.send(err);
+            } else {
+                res.end('{"success" : "Member created successfully", "status" : 200}');
+            }
 
         });
     });
@@ -173,22 +176,28 @@ module.exports = function(app, qs, passport) {
                             'member._id': member._id
                         },
                         function(err, results) {
-                            for (i = 0; i < results.length; i++) {
-                                results[i].member = [{
-                                    _id: results[i].member[0]._id,
-                                    firstname: req.body.firstname,
-                                    lastname: req.body.lastname,
-                                    sex: req.body.sex,
-                                    dateofbirth: req.body.dateofbirth
-                                }];
-                                results[i].save(function(err) {
-                                    if (err) {
-                                        console.log(err);
-                                        res.send(err);
-                                    }
-                                });
-                            }
+                            if (err) {
+                                console.log(err);
+                                res.send(err);
+                            } else {
 
+                                for (i = 0; i < results.length; i++) {
+                                    results[i].member = [{
+                                        _id: results[i].member[0]._id,
+                                        firstname: req.body.firstname,
+                                        lastname: req.body.lastname,
+                                        sex: req.body.sex,
+                                        dateofbirth: req.body.dateofbirth
+                                    }];
+                                    results[i].save(function(err) {
+                                        if (err) {
+                                            console.log(err);
+                                            res.send(err);
+                                        }
+                                    });
+                                }
+                                res.end('{"success" : "Member updated successfully", "status" : 200}');
+                            }
                         }
                     );
                 } else {
@@ -208,9 +217,11 @@ module.exports = function(app, qs, passport) {
         Member.remove({
             _id: req.params.member_id
         }, function(err, member) {
-            if (err)
+            if (err) {
                 res.send(err);
-            res.json(member);
+            } else {
+                res.end('{"success" : "Member deleted successfully", "status" : 200}');
+            }
         });
     });
 
@@ -279,7 +290,6 @@ module.exports = function(app, qs, passport) {
                         }
                     }
                 }
-                console.log(filteredResult)
                 res.json(filteredResult);
 
             }
@@ -330,6 +340,8 @@ module.exports = function(app, qs, passport) {
         }, function(err, result) {
             if (err) {
                 res.send(err);
+            } else {
+                res.end('{"success" : "Result created successfully", "status" : 200}');
             }
 
 
@@ -361,6 +373,8 @@ module.exports = function(app, qs, passport) {
             result.save(function(err) {
                 if (err) {
                     res.send(err);
+                } else {
+                    res.end('{"success" : "Result updated successfully", "status" : 200}');
                 }
             });
         });
@@ -372,9 +386,11 @@ module.exports = function(app, qs, passport) {
         Result.remove({
             _id: req.params.result_id
         }, function(err, result) {
-            if (err)
+            if (err) {
                 res.send(err);
-            res.json(result);
+            } else {
+                res.end('{"success" : "Result deleted successfully", "status" : 200}');
+            }
         });
     });
 
@@ -430,8 +446,11 @@ module.exports = function(app, qs, passport) {
             meters: req.body.meters,
             miles: req.body.miles
         }, function(err, racetype) {
-            if (err)
+            if (err) {
                 res.send(err);
+            } else {
+                res.end('{"success" : "Result created successfully", "status" : 200}');
+            }
 
         });
     });
@@ -449,22 +468,27 @@ module.exports = function(app, qs, passport) {
                             'racetype._id': racetype._id
                         },
                         function(err, results) {
-                            for (i = 0; i < results.length; i++) {
-                                results[i].racetype = {
-                                    _id: results[i].racetype._id,
-                                    name: req.body.name,
-                                    surface: req.body.surface,
-                                    meters: req.body.meters,
-                                    miles: req.body.miles
-                                };
-                                results[i].save(function(err) {
-                                    if (err) {
-                                        console.log(err);
-                                        res.send(err);
-                                    }
-                                });
+                            if (err) {
+                                console.log(err);
+                                res.send(err);
+                            } else {
+                                for (i = 0; i < results.length; i++) {
+                                    results[i].racetype = {
+                                        _id: results[i].racetype._id,
+                                        name: req.body.name,
+                                        surface: req.body.surface,
+                                        meters: req.body.meters,
+                                        miles: req.body.miles
+                                    };
+                                    results[i].save(function(err) {
+                                        if (err) {
+                                            console.log(err);
+                                            res.send(err);
+                                        }
+                                    });
+                                }
+                                res.end('{"success" : "Result updated successfully", "status" : 200}');
                             }
-
                         }
                     );
                 } else {
@@ -481,8 +505,11 @@ module.exports = function(app, qs, passport) {
         RaceType.remove({
             _id: req.params.racetype_id
         }, function(err, racetype) {
-            if (err)
+            if (err) {
                 res.send(err);
+            } else {
+                res.end('{"success" : "Racetype deleted successfully", "status" : 200}');
+            }
         });
     });
 

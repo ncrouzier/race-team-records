@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', function(Restangular) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$modal', function(Restangular, $modal) {
 
     var factory = {};
     var members = Restangular.all('members');
@@ -29,8 +29,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', fun
     //create a member
     factory.createMember = function(member) {
         return members.post(member).then(
-            function(members) {
-            },
+            function(members) {},
             function(res) {
                 console.log('Error: ' + res.status);
             });
@@ -50,7 +49,44 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', fun
             });
     };
 
+    // =====================================
+    // MEMBER MODALS ======================
+    // =====================================
 
+    factory.showAddMemberModal = function() {
+        var modalInstance = $modal.open({
+            templateUrl: 'views/modals/memberModal.html',
+            controller: 'MemberModalInstanceController',
+            size: 'lg',
+            resolve: {
+                member: false
+            }
+        });
+
+        return modalInstance.result.then(function(member) {
+            factory.createMember(member);
+            return member;
+        }, function() {});
+    };
+
+    factory.retrieveMemberForEdit = function(member) {
+        if (member) {
+            var modalInstance = $modal.open({
+                templateUrl: 'views/modals/memberModal.html',
+                controller: 'MemberModalInstanceController',
+                size: 'lg',
+                resolve: {
+                    member: function() {
+                        return member;
+                    }
+                }
+            });
+
+            return modalInstance.result.then(function(member) {
+                factory.editMember(member);
+            }, function() {});
+        }
+    };
 
     return factory;
 

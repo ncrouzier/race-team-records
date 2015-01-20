@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$modal', 'AuthService', 'ResultsService', function($scope, $modal, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'AuthService', 'ResultsService', function($scope, AuthService, ResultsService) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -6,47 +6,23 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResults({
-        limit: 15,
-        sort: '-racedate'
+        "limit": 15,
+        "sort": '-updatedAt'
     }).then(function(results) {
         $scope.resultsList = results;
     });
 
 
-    $scope.showAddResultModal = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'resultModal.html',
-            controller: 'ResultModalInstanceController',
-            size: 'lg',
-            resolve: {
-                result: false
-            }
-        });
 
-        modalInstance.result.then(function(result) {
-            ResultsService.createResult(result);
+    $scope.showAddResultModal = function() {
+        ResultsService.showAddResultModal().then(function(result) {
             $scope.resultsList.push(result);
-        }, function() {});
+        });
     };
 
-    // select a result after checking it
     $scope.retrieveResultForEdit = function(result) {
-        if (result) {
-            var modalInstance = $modal.open({
-                templateUrl: 'resultModal.html',
-                controller: 'ResultModalInstanceController',
-                size: 'lg',
-                resolve: {
-                    result: function() {
-                        return result;
-                    }
-                }
-            });
-
-            modalInstance.result.then(function(result) {
-                ResultsService.editResult(result);
-            }, function() {});
-        }
+        ResultsService.retrieveResultForEdit(result).then(function() {
+        });
     };
 
     $scope.removeResult = function(result) {
@@ -55,11 +31,6 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             if (index > -1) $scope.resultsList.splice(index, 1);
         });
     };
-
-
-
-
-
 
 }]);
 

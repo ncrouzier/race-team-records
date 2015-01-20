@@ -262,6 +262,9 @@ module.exports = function(app, qs, passport) {
         if (sort) {
             query = query.sort(sort);
         }
+        if (limit && ((filters && !filters.mode) || !filters)){
+            query = query.limit(limit);
+        }
 
         if (req.query.member) {
             var member = JSON.parse(req.query.member);

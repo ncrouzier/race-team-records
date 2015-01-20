@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$modal', 'AuthService', 'MembersService', 'ResultsService', function($scope, $http, $modal, AuthService, MembersService, ResultsService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', 'AuthService', 'MembersService', 'ResultsService', function($scope, $http, AuthService, MembersService, ResultsService) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -33,44 +33,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // ADMIN OPTIONS ====================
     // =====================================
 
-    // select a member after checking it
-    $scope.retrieveMemberForEdit = function(member) {
-        if (member) {
-            var modalInstance = $modal.open({
-                templateUrl: 'memberModal.html',
-                controller: 'MemberModalInstanceController',
-                size: 'lg',
-                resolve: {
-                    member: function() {
-                        return member;
-                    }
-                }
-            });
-
-            modalInstance.result.then(function(member) {
-                MembersService.editMember(member);
-            }, function() {
-                //cancel
-            });
-        }
+    $scope.showAddMemberModal = function() {
+        MembersService.showAddMemberModal().then(function(member) {
+            $scope.membersList.push(member);
+        });
     };
 
-    $scope.showAddMemberModal = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'memberModal.html',
-            controller: 'MemberModalInstanceController',
-            size: 'lg',
-            resolve: {
-                member: false
-            }
-        });
-
-        modalInstance.result.then(function(member) {
-            MembersService.createMember(member);
-            $scope.membersList.push(member);
-        }, function() {
-            //cancel
-        });
+    // select a member after checking it
+    $scope.retrieveMemberForEdit = function(member) {
+        MembersService.retrieveMemberForEdit(member).then(function() {});
     };
 
     $scope.removeMember = function(member) {
@@ -104,6 +75,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         MembersService.getMembers(params).then(function(members) {
             $scope.membersList = members;
         });
+    };
+
+    $scope.retrieveResultForEdit = function(result) {
+        ResultsService.retrieveResultForEdit(result).then(function(result) {});
     };
 
     // =====================================

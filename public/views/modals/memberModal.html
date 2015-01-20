@@ -1,0 +1,48 @@
+<div class="modal-header">
+    <h3 ng-show="editmode" class="modal-title">Edit Member</h3>
+    <h3 ng-show="!editmode" class="modal-title">Add Member</h3>
+</div>
+<div class="modal-body">
+    <form>
+        <div class="form-group">
+            <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
+            <div class="row">
+                <div class="col-sm-6">
+                    <label class="control-label text-left">firstname:</label>
+                    <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
+                </div>
+                <div class="col-sm-6">
+                    <label class="control-label text-left">lastname:</label>
+                    <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <label class="control-label text-left">date of birth:</label>
+                    <p class="input-group">
+                        <input type="text" class="form-control" datepicker-popup="yyyy/MM/dd" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+                        <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                    </p>
+                    <label class="control-label text-left">Sex:</label>
+                    <div class="btn-group">
+                        <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Male'">Male</label>
+                        <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Female'">Female</label>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <label class="control-label text-left">member bio:</label>
+                    <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <!-- createMember() WILL CREATE NEW Members -->
+    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editMember()">Edit Member</button>
+    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addMember()">Add Member</button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>

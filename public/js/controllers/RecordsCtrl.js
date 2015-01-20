@@ -1,5 +1,6 @@
 angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', '$http', function($scope, AuthService, ResultsService, $http) {
 
+    $scope.user = AuthService.isLoggedIn();
 
     // =====================================
     // FILTER PARAMS CONFIG ================
@@ -35,6 +36,10 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
         ResultsService.getResults(params).then(function(results) {
             $scope.resultsList = results;
         });
+    };
+
+    $scope.retrieveResultForEdit = function(result) {
+        ResultsService.retrieveResultForEdit(result).then(function(result) {});
     };
 
 

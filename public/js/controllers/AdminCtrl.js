@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('AdminController', ['$scope', '$modal', 'AuthService', 'ResultsService', function($scope, $modal, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'AuthService', 'ResultsService', function($scope, AuthService, ResultsService) {
     $scope.user = AuthService.isLoggedIn();
 
 
@@ -10,41 +10,14 @@ angular.module('mcrrcApp.results').controller('AdminController', ['$scope', '$mo
 
 
     $scope.showAddRaceTypeModal = function() {
-        var modalInstance = $modal.open({
-            templateUrl: 'raceTypeModal.html',
-            controller: 'RaceTypeModalInstanceController',
-            size: 'lg',
-            resolve: {
-                racetype: false
-            }
-        });
-
-        modalInstance.result.then(function(racetype) {
-            ResultsService.createRaceType(racetype);
+        ResultsService.showAddRaceTypeModal().then(function(racetype) {
             $scope.racetypesList.push(racetype);
-        }, function() {});
+        });
     };
 
     // select a racetype after checking it
     $scope.retrieveRaceTypeForEdit = function(racetype) {
-        if (racetype) {
-            var modalInstance = $modal.open({
-                templateUrl: 'raceTypeModal.html',
-                controller: 'RaceTypeModalInstanceController',
-                size: 'lg',
-                resolve: {
-                    racetype: function() {
-                        return racetype;
-                    }
-                }
-            });
-
-            modalInstance.result.then(function(racetype) {
-                ResultsService.editRaceType(racetype);
-            }, function() {
-                //cancel
-            });
-        }
+        ResultsService.retrieveRaceTypeForEdit(racetype).then(function() {});
     };
 
     $scope.removeRaceType = function(racetype) {
@@ -58,7 +31,7 @@ angular.module('mcrrcApp.results').controller('AdminController', ['$scope', '$mo
 
 }]);
 
-angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$modalInstance', 'racetype',  function($scope, $modalInstance, racetype) {
+angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$modalInstance', 'racetype', function($scope, $modalInstance, racetype) {
 
 
     $scope.editmode = false;

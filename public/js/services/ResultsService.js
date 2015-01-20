@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', function(Restangular) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$modal', function(Restangular, $modal) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -39,6 +39,45 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', fun
             });
     };
 
+    // =====================================
+    // RESULTS MODALS ======================
+    // =====================================
+
+    factory.showAddResultModal = function() {
+        var modalInstance = $modal.open({
+            templateUrl: 'views/modals/resultModal.html',
+            controller: 'ResultModalInstanceController',
+            size: 'lg',
+            resolve: {
+                result: false
+            }
+        });
+
+        return modalInstance.result.then(function(result) {
+            factory.createResult(result);
+            return result;
+        }, function() {});
+    };
+
+    factory.retrieveResultForEdit = function(result) {
+        if (result) {
+            var modalInstance = $modal.open({
+                templateUrl: 'views/modals/resultModal.html',
+                controller: 'ResultModalInstanceController',
+                size: 'lg',
+                resolve: {
+                    result: function() {
+                        return result;
+                    }
+                }
+            });
+
+            return modalInstance.result.then(function(result) {
+                factory.editResult(result);
+            }, function() {});
+        }
+    };
+
 
     // =====================================
     // RACETYPE API CALLS ==================
@@ -73,6 +112,49 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', fun
                 console.log('Error: ' + res.status);
             });
     };
+
+    // =====================================
+    // RACETYPE MODALS ======================
+    // =====================================
+
+    factory.showAddRaceTypeModal = function() {
+        var modalInstance = $modal.open({
+            templateUrl: 'views/modals/raceTypeModal.html',
+            controller: 'RaceTypeModalInstanceController',
+            size: 'lg',
+            resolve: {
+                racetype: false
+            }
+        });
+
+        return modalInstance.result.then(function(racetype) {
+            factory.createRaceType(racetype);
+            return racetype;
+        }, function() {});
+    };
+
+    factory.retrieveRaceTypeForEdit = function(racetype) {
+        if (racetype) {
+            var modalInstance = $modal.open({
+                templateUrl: 'views/modals/raceTypeModal.html',
+                controller: 'RaceTypeModalInstanceController',
+                size: 'lg',
+                resolve: {
+                    racetype: function() {
+                        return racetype;
+                    }
+                }
+            });
+
+            return modalInstance.result.then(function(racetype) {
+                factory.editRaceType(racetype);
+            }, function() {});
+        }
+    };
+
+
+
+
 
 
     return factory;

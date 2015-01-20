@@ -1,6 +1,4 @@
 <div class="jumbotron">
-
-
     <br>
     <div class="row">
         <div class="col-sm-4 text-left">
@@ -51,7 +49,7 @@
         <div class="col-md-8">
             <ul class="list-group">
                 <li class="list-group-item hoverhand text-left" ng-class="{ 'gold': $index == 0,  'silver': $index == 1 , 'bronze': $index == 2}" ng-repeat="result in resultsList">
-                    <span>{{$index + 1}} - <b>{{result.member[0].firstname}} {{result.member[0].lastname}}</b> at {{ result.racename }} on {{ result.racedate | date:'MM/dd/yyyy' }} in {{result.time | secondsToTimeString}} </span><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                    <span>{{$index + 1}} - <b>{{result.member[0].firstname}} {{result.member[0].lastname}}</b> at {{ result.racename }} on {{ result.racedate | date:'MM/dd/yyyy' }} in {{result.time | secondsToTimeString}} </span><span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result"></span>
                 </li>
             </ul>
 

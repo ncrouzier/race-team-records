@@ -21,7 +21,34 @@ app.filter('secondsToTimeString', function() {
         var timeString = '';
         if (minutes < 10) minutes = "0" + minutes;
         if (seconds < 10) seconds = "0" + seconds;
-        return hours + ":" + minutes + ":" + seconds;
+
+        if (hours === 0) {
+            return minutes + ":" + seconds;
+
+        } else {
+            return hours + ":" + minutes + ":" + seconds;
+
+        }
+
+    };
+});
+
+app.filter('secondsToTimeDiff', function() {
+    return function(sec) {
+        var hours = Math.floor((sec % 86400) / 3600);
+        var minutes = Math.floor(((sec % 86400) % 3600) / 60);
+        var seconds = Math.floor(((sec % 86400) % 3600) % 60);
+        var timeString = '';
+        if (seconds < 10) seconds = "0" + seconds;
+
+        if (hours === 0) {
+            return minutes + ":" + seconds;
+
+        } else {
+            return hours + ":" + minutes + ":" + seconds;
+
+        }
+
     };
 });
 
@@ -58,14 +85,14 @@ app.filter('propsFilter', function() {
 
 
 app.filter('ageFilter', function() {
-     function calculateAge(birthday) { 
-         var bd = new Date(birthday);
-         var ageDifMs = Date.now() - bd.getTime();
-         var ageDate = new Date(ageDifMs);
-         return Math.abs(ageDate.getUTCFullYear() - 1970);
-     }
+    function calculateAge(birthday) {
+        var bd = new Date(birthday);
+        var ageDifMs = Date.now() - bd.getTime();
+        var ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
 
-     return function(birthdate) { 
-           return calculateAge(birthdate);
-     }; 
+    return function(birthdate) {
+        return calculateAge(birthdate);
+    };
 });

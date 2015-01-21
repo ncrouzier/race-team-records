@@ -73,3 +73,6 @@ body {
   background: -ms-linear-gradient(left, #e1bb71 0%, #ffffff 55);
   background: linear-gradient(to right, #e1bb71 0%, #ffffff 55);
 }
+.timediff {
+  color: red;
+}

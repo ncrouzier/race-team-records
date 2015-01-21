@@ -407,11 +407,11 @@ module.exports = function(app, qs, passport) {
 
         var sort = req.query.sort;
         var limit = req.query.limit;
-        var filters = req.query.filters;
+        var surface = req.query.surface;
 
         query = RaceType.find();
-        if (filters) {
-
+        if (surface) {
+             query = query.where('surface').equals(surface);
         }
         if (sort) {
             query = query.sort(sort);

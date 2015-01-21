@@ -1,43 +1,37 @@
 <div class="jumbotron">
     <br>
     <div class="row">
-        <div class="col-sm-3 text-left">
-            Race type
-        </div>
-        <div class="col-sm-3 text-left">
-            Gender
-        </div>
-        <div class="col-sm-3 text-left">
-            Division
-        </div>
-        <div class="col-sm-3 text-left">
-            Allow duplicates?
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-3 col-xs-2">
-            <ui-select ng-model="paramModel.racetype" ng-change="getResults()" theme="select2" style="min-width: 0px;">
+        <div class="col-sm-6 col-md-3">
+            <span>Race type</span>
+            <br>
+            <ui-select ng-model="paramModel.racetype" ng-change="getResults()" theme="select2" style="min-width: 200px;">
                 <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
                 <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                     <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div>
                 </ui-select-choices>
             </ui-select>
         </div>
-        <div class="col-sm-3 col-xs-6">
+        <div class="col-sm-6 col-md-3">
+            <span>Gender</span>
+            <br>
             <div class="btn-group">
                 <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getResults()" btn-radio="'Male'">Male</label>
                 <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getResults()" btn-radio="'Female'">Female</label>
                 <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getResults()" btn-radio="'.*'">Both</label>
             </div>
         </div>
-        <div class="col-sm-3 col-xs-4">
+        <div class="col-sm-6 col-md-4">
+            <span>Division</span>
+            <br>
             <div class="btn-group">
                 <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getResults()" btn-radio="'Open'">Open</label>
                 <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getResults()" btn-radio="'Master'">Master</label>
                 <label class="btn btn-primary" ng-model="paramModel.category" ng-change="getResults()" btn-radio="'.*'">Both</label>
             </div>
         </div>
-        <div class="col-sm-3 col-xs-2">
+        <div class="col-sm-6 col-md-2">
+            <span>Allow duplicates?</span>
+            <br>
             <div class="btn-group">
                 <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'All'">Yes</label>
                 <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'Best'">No</label>
@@ -48,24 +42,44 @@
         <br>
         <div class="col-md-12">
             <ul class="list-group">
-                <li class="list-group-item hoverhand text-left" ng-class="{ 'gold': $index == 0,  'silver': $index == 1 , 'bronze': $index == 2}" ng-repeat="result in resultsList | orderBy:predicate:reverse">
+                <li class="list-group-item text-left listheaderrow" ng-show="resultsList.length >0">
+                    <div class="row">
+                        <div class="col-sm-1">
+                            <span class="listheader" title="Rank">#</span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="listheader" title="Race's name">Racer</span>
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="listheader" title="Event and date">Event</span>
+                        </div>
+                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
+                            <span class="listheader" title="Net Time">Net Time</span>
+                        </div>
+                        <div class="col-sm-1" ng-show="user.role == 'admin'">
+                            <span class="listheader" title="Edit">Edit</span>
+                        </div>
+                    </div>
+
+                </li>
+                <li class="list-group-item  text-left" ng-class="{ 'gold': $index == 0,  'silver': $index == 1 , 'bronze': $index == 2}" ng-repeat="result in resultsList | orderBy:predicate:reverse">
                     <div class="row">
                         <div class="col-sm-1">
                             {{$index + 1}}
                         </div>
-                        <div class="col-sm-3">
-                            <b>{{result.member[0].firstname}} {{result.member[0].lastname}}</b>
+                        <div class="col-sm-4">
+                            {{result.member[0].firstname}} {{result.member[0].lastname}}
                         </div>
                         <div class="col-sm-4">
                             {{ result.racename }}
                             <br>
                             <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                         </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :col-sm-3">
+                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
                             {{result.time | secondsToTimeString}} <span class="timediff" ng-if="$index >0">+{{(result.time -resultsList[$index - 1].time ) | secondsToTimeDiff}}</span>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                            <img ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
                         </div>
                     </div>
 

@@ -14,28 +14,32 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
     $scope.paramModel.limit = 5;
 
 
-    ResultsService.getRaceTypes().then(function(racetypes) {
+    ResultsService.getRaceTypes({
+        sort: 'meters'
+    }).then(function(racetypes) {
         $scope.racetypesList = racetypes;
     });
 
 
     $scope.getResults = function() {
+        if ($scope.paramModel.racetype !== '') {
+            var params = {
+                "filters": {
+                    "sex": $scope.paramModel.sex,
+                    "category": $scope.paramModel.category,
+                    "mode": $scope.paramModel.mode,
+                    "racetype": $scope.paramModel.racetype,
+                },
+                "limit": $scope.paramModel.limit,
+                "sort": $scope.paramModel.sort
+            };
 
-        var params = {
-            "filters": {
-                "sex": $scope.paramModel.sex,
-                "category": $scope.paramModel.category,
-                "mode": $scope.paramModel.mode,
-                "racetype": $scope.paramModel.racetype,
-            },
-            "limit": $scope.paramModel.limit,
-            "sort": $scope.paramModel.sort
-        };
 
+            ResultsService.getResults(params).then(function(results) {
+                $scope.resultsList = results;
+            });
+        }
 
-        ResultsService.getResults(params).then(function(results) {
-            $scope.resultsList = results;
-        });
     };
 
     $scope.retrieveResultForEdit = function(result) {

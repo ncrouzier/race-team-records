@@ -42,15 +42,33 @@ app.filter('secondsToTimeDiff', function() {
         if (seconds < 10) seconds = "0" + seconds;
 
         if (hours === 0) {
-            return minutes + ":" + seconds;
+
 
         } else {
             return hours + ":" + minutes + ":" + seconds;
-
         }
-
     };
 });
+
+app.filter('resultToPace', function() {
+    return function(result) {
+        var seconds = result.time;
+
+
+        var miles = result.racetype.miles;
+
+
+        var paceS = seconds / miles;
+        var m = Math.floor(((paceS % 86400) % 3600) / 60);
+        var s = Math.floor(((paceS % 86400) % 3600) % 60);
+
+        if (m < 10) m = "0" + m;
+        if (s < 10) s = "0" + s;
+        return  m + ":" + s;
+    };
+});
+
+
 
 app.filter('propsFilter', function() {
     return function(items, props) {
@@ -94,5 +112,21 @@ app.filter('ageFilter', function() {
 
     return function(birthdate) {
         return calculateAge(birthdate);
+    };
+
+
+
+
+});
+app.filter('memberFilter', function(query) {
+    return function(members, query) {
+        var filtered = [];
+        angular.forEach(members, function(member) {
+            var name = member.firstname + ' ' + member.lastname;
+            if (name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                filtered.push(member);
+            }
+        });
+        return filtered;
     };
 });

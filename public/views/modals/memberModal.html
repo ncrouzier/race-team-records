@@ -8,31 +8,48 @@
             <!-- BIND THIS VALUE TO formData.text IN ANGULAR -->
             <div class="row">
                 <div class="col-sm-6">
-                    <label class="control-label text-left">firstname:</label>
+                    <label class="control-label text-left">Firstname:</label>
                     <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname">
                 </div>
                 <div class="col-sm-6">
-                    <label class="control-label text-left">lastname:</label>
+                    <label class="control-label text-left">Lastname:</label>
                     <input type="text" class="form-control input-md text-left" ng-model="formData.lastname">
                 </div>
             </div>
             <div class="row">
                 <div class="col-sm-6">
-                    <label class="control-label text-left">date of birth:</label>
-                    <p class="input-group">
-                        <input type="text" class="form-control" datepicker-popup="yyyy/MM/dd" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
-                        <span class="input-group-btn">
+                    <label class="control-label text-left">Date of Birth:</label>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <p class="input-group">
+                                <input type="text" class="form-control" datepicker-popup="yyyy/MM/dd" ng-model="formData.dateofbirth" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+                                <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
-                    </p>
-                    <label class="control-label text-left">Sex:</label>
-                    <div class="btn-group">
-                        <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Male'">Male</label>
-                        <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Female'">Female</label>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <label class="control-label text-left">Sex:</label>
+                            <br>
+                            <div class="btn-group">
+                                <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Male'">Male</label>
+                                <label class="btn btn-primary" ng-model="formData.sex" btn-radio="'Female'">Female</label>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="control-label text-left">Member Status</label>
+                            <br>
+                            <div class="btn-group">
+                                <label class="btn btn-primary" ng-model="formData.memberStatus" btn-radio="'current'">Current</label>
+                                <label class="btn btn-primary" ng-model="formData.memberStatus" btn-radio="'past'">Past</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-sm-6">
-                    <label class="control-label text-left">member bio:</label>
+                    <label class="control-label text-left">Member bio:</label>
                     <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
                 </div>
             </div>

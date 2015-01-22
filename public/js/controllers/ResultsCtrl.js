@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'AuthService', 'ResultsService', function($scope, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'AuthService', 'ResultsService','dialogs', function($scope, AuthService, ResultsService,dialogs) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -7,7 +7,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'A
 
     ResultsService.getResults({
         "limit": 15,
-        "sort": '-updatedAt'
+        "sort": '-racedate'
     }).then(function(results) {
         $scope.resultsList = results;
     });
@@ -16,20 +16,24 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'A
 
     $scope.showAddResultModal = function() {
         ResultsService.showAddResultModal().then(function(result) {
-            $scope.resultsList.push(result);
+            if (result !== null) {
+                $scope.resultsList.push(result);
+            }
         });
     };
 
     $scope.retrieveResultForEdit = function(result) {
-        ResultsService.retrieveResultForEdit(result).then(function() {
-        });
+        ResultsService.retrieveResultForEdit(result).then(function() {});
     };
 
     $scope.removeResult = function(result) {
-        ResultsService.deleteResult(result).then(function() {
-            var index = $scope.resultsList.indexOf(result);
-            if (index > -1) $scope.resultsList.splice(index, 1);
-        });
+        var dlg = dialogs.confirm();
+        dlg.result.then(function(btn) {
+            ResultsService.deleteResult(result).then(function() {
+                var index = $scope.resultsList.indexOf(result);
+                if (index > -1) $scope.resultsList.splice(index, 1);
+            });
+        }, function(btn) {});
     };
 
 }]);

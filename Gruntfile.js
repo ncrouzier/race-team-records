@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 			},
 			build: {
 				files: {
-					'public/dist/js/app.min.js': ['public/js/**/*.js', 'public/js/*.js']
+					'public/dist/js/app.min.js': ['public/js/**/*.js', 'public/js/*.js', 'public/libs/angular-dialog-service/dist/dialogs.min.js']
 				}
 			}
 		},
@@ -37,7 +37,7 @@ module.exports = function(grunt) {
 		cssmin: {
 			build: {
 				files: {
-					'public/dist/css/style.min.css': 'public/dist/css/style.css'
+					'public/dist/css/style.min.css': ['public/dist/css/style.css', 'public/libs/angular-dialog-service/dist/dialogs.min.css']
 				}
 			}
 		},

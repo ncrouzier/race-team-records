@@ -56,7 +56,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
         return modalInstance.result.then(function(result) {
             factory.createResult(result);
             return result;
-        }, function() {});
+        }, function() {
+            return null;
+        });
     };
 
     factory.retrieveResultForEdit = function(result) {
@@ -74,7 +76,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
 
             return modalInstance.result.then(function(result) {
                 factory.editResult(result);
-            }, function() {});
+            }, function() {
+                return null;
+            });
         }
     };
 

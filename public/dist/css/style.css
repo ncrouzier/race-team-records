@@ -76,8 +76,12 @@ body {
 .timediff {
   color: red;
 }
-.listheaderrow {
+.resultlistheader {
   border-bottom: thick solid;
+}
+.resultlistrow {
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 .listheader {
   font-weight: bold;

@@ -107,7 +107,14 @@ module.exports = function(app, qs, passport) {
                 }
             }
             if (filters.sex) {
-                query = query.regex('sex', filters.sex)
+                query = query.regex('sex', filters.sex);
+            }
+            if (filters.memberStatus) {
+                if (filters.memberStatus !== 'all') {
+                    console.log(filters.memberStatus);
+                    query = query.where('memberStatus').equals(filters.memberStatus);
+                }
+
             }
         }
         if (sort) {
@@ -151,9 +158,10 @@ module.exports = function(app, qs, passport) {
             dateofbirth: req.body.dateofbirth,
             sex: req.body.sex,
             bio: req.body.bio,
+            memberStatus: req.body.memberStatus,
             done: false
         }, function(err, member) {
-            if (err){
+            if (err) {
                 res.send(err);
             } else {
                 res.end('{"success" : "Member created successfully", "status" : 200}');
@@ -170,6 +178,7 @@ module.exports = function(app, qs, passport) {
             member.dateofbirth = req.body.dateofbirth;
             member.sex = req.body.sex;
             member.bio = req.body.bio;
+            member.memberStatus = req.body.memberStatus;
             member.save(function(err) {
                 if (!err) {
                     Result.find({
@@ -262,7 +271,7 @@ module.exports = function(app, qs, passport) {
         if (sort) {
             query = query.sort(sort);
         }
-        if (limit && ((filters && !filters.mode) || !filters)){
+        if (limit && ((filters && !filters.mode) || !filters)) {
             query = query.limit(limit);
         }
 
@@ -411,7 +420,7 @@ module.exports = function(app, qs, passport) {
 
         query = RaceType.find();
         if (surface) {
-             query = query.where('surface').equals(surface);
+            query = query.where('surface').equals(surface);
         }
         if (sort) {
             query = query.sort(sort);

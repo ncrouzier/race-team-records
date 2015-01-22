@@ -1,11 +1,11 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', 'AuthService', 'MembersService', 'ResultsService', function($scope, $http, AuthService, MembersService, ResultsService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $http, AuthService, MembersService, ResultsService, dialogs) {
 
     $scope.user = AuthService.isLoggedIn();
 
     // var members = Restangular.all('members');
 
     $scope.membersList = [];
-
+    $scope.query = "";
 
     // =====================================
     // FILTER PARAMS CONFIG ================
@@ -14,6 +14,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.paramModel.sex = '.*';
     $scope.paramModel.category = '.*';
     $scope.paramModel.limit = '';
+    $scope.paramModel.memberStatus = 'current';
 
     // =====================================
     // ADMIN CONFIG ==================
@@ -35,7 +36,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     $scope.showAddMemberModal = function() {
         MembersService.showAddMemberModal().then(function(member) {
-            $scope.membersList.push(member);
+            if (member !== null) {
+                $scope.membersList.push(member);
+            }
         });
     };
 
@@ -44,13 +47,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         MembersService.retrieveMemberForEdit(member).then(function() {});
     };
 
-    $scope.removeMember = function(member) {
-        MembersService.deleteMember(member).then(function() {
-            var index = $scope.membersList.indexOf(member);
-            if (index > -1) $scope.membersList.splice(index, 1);
-        });
-    };
 
+    $scope.removeMember = function(member) {
+        var dlg = dialogs.confirm();
+        dlg.result.then(function(btn) {
+            MembersService.deleteMember(member).then(function() {
+                var index = $scope.membersList.indexOf(member);
+                if (index > -1) $scope.membersList.splice(index, 1);
+            });
+        }, function(btn) {});
+    };
 
     // set the current member to the display panel
     $scope.setMember = function(member) {
@@ -69,6 +75,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         var params = {
             "filters[sex]": $scope.paramModel.sex,
             "filters[category]": $scope.paramModel.category,
+            "filters[memberStatus]": $scope.paramModel.memberStatus,
             limit: $scope.paramModel.limit
         };
 
@@ -81,6 +88,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         ResultsService.retrieveResultForEdit(result).then(function(result) {});
     };
 
+
+
+
     // =====================================
     // MEMBER API CALLS ====================
     // =====================================
@@ -92,6 +102,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     var defaultParams = {
         "filters[sex]": $scope.paramModel.sex,
         "filters[category]": $scope.paramModel.category,
+        "filters[memberStatus]": $scope.paramModel.memberStatus,
         limit: $scope.paramModel.limit
     };
 
@@ -110,7 +121,7 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.formData = member;
         $scope.editmode = true;
     } else {
-        $scope.formData = {};
+        $scope.formData = {memberStatus:true};
         $scope.editmode = false;
         $scope.formData.dateofbirth = new Date();
     }

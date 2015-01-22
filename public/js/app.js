@@ -1,4 +1,4 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members','mcrrcApp.results','mcrrcApp.authentication','restangular', 'ui.bootstrap','ui.grid','ui.select','ngSanitize', 'ui.router', 'appRoutes']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members','mcrrcApp.results','mcrrcApp.authentication','restangular','dialogs.main', 'ui.bootstrap','ui.grid','ui.select','ngSanitize', 'ui.router', 'appRoutes']);
 
 var membersModule = angular.module('mcrrcApp.members',[]);
 var resultsModule = angular.module('mcrrcApp.results',[]);

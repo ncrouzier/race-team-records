@@ -66,7 +66,9 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$m
         return modalInstance.result.then(function(member) {
             factory.createMember(member);
             return member;
-        }, function() {});
+        }, function() {
+            return null;
+        });
     };
 
     factory.retrieveMemberForEdit = function(member) {
@@ -84,7 +86,9 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$m
 
             return modalInstance.result.then(function(member) {
                 factory.editMember(member);
-            }, function() {});
+            }, function() {
+                return null;
+            });
         }
     };
 

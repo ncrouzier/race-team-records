@@ -42,7 +42,7 @@ app.filter('secondsToTimeDiff', function() {
         if (seconds < 10) seconds = "0" + seconds;
 
         if (hours === 0) {
-
+            return minutes + ":" + seconds;
 
         } else {
             return hours + ":" + minutes + ":" + seconds;
@@ -52,22 +52,58 @@ app.filter('secondsToTimeDiff', function() {
 
 app.filter('resultToPace', function() {
     return function(result) {
+
+
         var seconds = result.time;
+        var distance = result.racetype.miles;
 
+        var m = Math.floor((seconds / 60) / distance);
 
-        var miles = result.racetype.miles;
-
-
-        var paceS = seconds / miles;
-        var m = Math.floor(((paceS % 86400) % 3600) / 60);
-        var s = Math.floor(((paceS % 86400) % 3600) % 60);
+        var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
 
         if (m < 10) m = "0" + m;
         if (s < 10) s = "0" + s;
-        return  m + ":" + s;
+        return m + ":" + s;
     };
 });
 
+app.filter('membersNamesFilter', function() {
+    return function(members) {
+        var res = "";
+        members.forEach(function(member) {
+            res += member.firstname + ' ' + member.lastname + ', ';
+
+        });
+        res = res.slice(0, -2);
+
+        return res;
+    };
+});
+
+
+
+// Options:
+// wordwise (boolean) - if true, cut only by words bounds,
+// max (integer) - max length of the text, cut to this number of chars,
+// tail (string, default: ' …') - add this string to the input string if the string was cut.
+app.filter('cut', function() {
+    return function(value, wordwise, max, tail) {
+        if (!value) return '';
+
+        max = parseInt(max, 10);
+        if (!max) return value;
+        if (value.length <= max) return value;
+
+        value = value.substr(0, max);
+        if (wordwise) {
+            var lastspace = value.lastIndexOf(' ');
+            if (lastspace != -1) {
+                value = value.substr(0, lastspace);
+            }
+        }
+        return value + (tail || ' …');
+    };
+});
 
 
 app.filter('propsFilter', function() {

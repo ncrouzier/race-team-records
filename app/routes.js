@@ -328,6 +328,16 @@ module.exports = function(app, qs, passport) {
 
     // create result and send back all members after creation
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
+        var members = [];
+        for (i = 0; i < req.body.member.length; i++) {
+            members.push({
+                _id: req.body.member[i]._id,
+                firstname: req.body.member[i].firstname,
+                lastname: req.body.member[i].lastname,
+                sex: req.body.member[i].sex,
+                dateofbirth: req.body.member[i].dateofbirth
+            });
+        }
         Result.create({
             racename: req.body.racename,
             racetype: {
@@ -338,13 +348,7 @@ module.exports = function(app, qs, passport) {
                 miles: req.body.racetype.miles
             },
             racedate: req.body.racedate,
-            member: [{
-                _id: req.body.member[0]._id,
-                firstname: req.body.member[0].firstname,
-                lastname: req.body.member[0].lastname,
-                sex: req.body.member[0].sex,
-                dateofbirth: req.body.member[0].dateofbirth
-            }],
+            member: members,
             time: req.body.time,
             resultlink: req.body.resultlink,
             is_accepted: false,
@@ -362,6 +366,20 @@ module.exports = function(app, qs, passport) {
 
     //update a result
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
+        var members = [];
+        for (i = 0; i < req.body.member.length; i++) {
+            members.push({
+                _id: req.body.member[i]._id,
+                firstname: req.body.member[i].firstname,
+                lastname: req.body.member[i].lastname,
+                sex: req.body.member[i].sex,
+                dateofbirth: req.body.member[i].dateofbirth
+            });
+        }
+        console.log(req.body.member);
+        console.log(members);
+
+
         Result.findById(req.params.result_id, function(err, result) {
             result.racename = req.body.racename;
             result.racetype = {
@@ -372,13 +390,7 @@ module.exports = function(app, qs, passport) {
                 miles: req.body.racetype.miles
             };
             result.racedate = req.body.racedate;
-            result.member = [{
-                _id: req.body.member[0]._id,
-                firstname: req.body.member[0].firstname,
-                lastname: req.body.member[0].lastname,
-                sex: req.body.member[0].sex,
-                dateofbirth: req.body.member[0].dateofbirth
-            }];
+            result.member = members;
             result.time = req.body.time;
             result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;

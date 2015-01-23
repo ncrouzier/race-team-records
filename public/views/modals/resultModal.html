@@ -36,18 +36,14 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-6">
+
+                <div class="col-md-6 resultmembers">
                     <label class="control-label text-left">Racer:</label>
                     <br>
-                    <ui-select ng-model="formData.member[0]" theme="select2" style="min-width: 300px;">
-                        <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
-                        <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
-                            <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
-                            <small>
-                        category: {{member.category}}                          
-                    </small>
-                        </ui-select-choices>
-                    </ui-select>
+                    <memberselector index="0" datamembers="formData.member" members="membersList"></memberselector>
+                    <img class="hoverhand" ng-click="addMember()" ng-src="images/add.png" title="Add member" alt="Add member">
+
+                    <memberselector index="1" datamembers="formData.member" members="membersList"></memberselector>
                 </div>
                 <div class="col-md-2">
                     <label class="control-label text-left">Hours:</label>

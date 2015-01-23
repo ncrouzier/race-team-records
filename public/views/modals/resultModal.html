@@ -36,14 +36,10 @@
                 </div>
             </div>
             <div class="row">
-
-                <div class="col-md-6 resultmembers">
-                    <label class="control-label text-left">Racer:</label>
-                    <br>
-                    <memberselector index="0" datamembers="formData.member" members="membersList"></memberselector>
-                    <img class="hoverhand" ng-click="addMember()" ng-src="images/add.png" title="Add member" alt="Add member">
-
-                    <memberselector index="1" datamembers="formData.member" members="membersList"></memberselector>
+                <div class="col-md-6" id="resultmembers">
+                    <label class="control-label text-left">Racer:</label> <img class="hoverhand" ng-show="user.role != 'admin'" ng-click="addNbMembers()" ng-src="images/add.png" title="Add Member" alt="Add Member">
+                        <br>
+                        <memberselector ng-repeat="member in formData.member track by $index" index="{{$index}}" datamembers="formData.member" members="membersList"></memberselector>
                 </div>
                 <div class="col-md-2">
                     <label class="control-label text-left">Hours:</label>

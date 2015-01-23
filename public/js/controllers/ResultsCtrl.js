@@ -42,24 +42,32 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     MembersService.getMembers().then(function(members) {
         $scope.membersList = members;
+
     });
 
     ResultsService.getRaceTypes().then(function(racetypes) {
         $scope.racetypesList = racetypes;
     });
 
+
     $scope.editmode = false;
     if (result) {
         $scope.formData = result;
         $scope.editmode = true;
         $scope.formData.dateofbirth = new Date();
+        $scope.nbOfMembers = result.member.length;
         $scope.time = {};
         $scope.time.hours = Math.floor($scope.formData.time / 3600);
         $scope.time.minutes = Math.floor($scope.formData.time / 60) % 60;
         $scope.time.seconds = $scope.formData.time % 60;
     } else {
         $scope.formData = {};
+        $scope.formData.member = [];
+        $scope.formData.member[0] = {};
+        $scope.nbOfMembers = 1;
+        $scope.time = {};
         $scope.editmode = false;
+
     }
 
 
@@ -89,9 +97,25 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $modalInstance.dismiss('cancel');
     };
 
-    $scope.addMember = function() {
-        console.log("coucu");
+    $scope.addNbMembers = function() {
+        $scope.nbOfMembers = $scope.formData.member.length+1;
+        $scope.updateNbMembers();
     };
+
+    $scope.updateNbMembers = function() {
+        var num = $scope.nbOfMembers;
+        var size = $scope.formData.member.length;
+        if (num > size) {
+            for (i = 0; i < num - size; i++) {
+                $scope.formData.member.push({});
+            }
+        } else {
+            $scope.formData.member.splice($scope.nbOfMembers, size - $scope.nbOfMembers);
+        }
+    };
+
+
+
 
     // =====================================
     // DATE PICKER CONFIG ==================

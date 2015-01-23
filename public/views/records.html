@@ -70,7 +70,7 @@
                             {{$index + 1}}
                         </div>
                         <div class="col-sm-3">
-                            {{result.member[0].firstname}} {{result.member[0].lastname}}
+                            <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
                             {{ result.racename }} <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank" ><img ng-src="images/link.png" title="view result" alt="view result"></a>

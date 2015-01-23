@@ -111,7 +111,6 @@ module.exports = function(app, qs, passport) {
             }
             if (filters.memberStatus) {
                 if (filters.memberStatus !== 'all') {
-                    console.log(filters.memberStatus);
                     query = query.where('memberStatus').equals(filters.memberStatus);
                 }
 
@@ -191,13 +190,17 @@ module.exports = function(app, qs, passport) {
                             } else {
 
                                 for (i = 0; i < results.length; i++) {
-                                    results[i].member = [{
-                                        _id: results[i].member[0]._id,
-                                        firstname: req.body.firstname,
-                                        lastname: req.body.lastname,
-                                        sex: req.body.sex,
-                                        dateofbirth: req.body.dateofbirth
-                                    }];
+                                    for (j = 0; j < results[i].member.length; j++) { //itirates members if relay race
+                                        if (results[i].member[j]._id.equals(req.body._id)) {
+
+                                            results[i].member[j].firstname = req.body.firstname;
+                                            results[i].member[j].lastname = req.body.lastname;
+                                            results[i].member[j].sex = req.body.sex;
+                                            results[i].member[j].dateofbirth = req.body.dateofbirth;
+
+                                        }
+
+                                    }
                                     results[i].save(function(err) {
                                         if (err) {
                                             console.log(err);
@@ -376,9 +379,6 @@ module.exports = function(app, qs, passport) {
                 dateofbirth: req.body.member[i].dateofbirth
             });
         }
-        console.log(req.body.member);
-        console.log(members);
-
 
         Result.findById(req.params.result_id, function(err, result) {
             result.racename = req.body.racename;

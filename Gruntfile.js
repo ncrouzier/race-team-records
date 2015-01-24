@@ -8,7 +8,7 @@ module.exports = function(grunt) {
             options: {
                 smarttabs: true
             },
-            all: ['public/js/**/*.js']
+            all: ['public/js/**/*.js', '!public/js/libs/*.js']
         },
 
         // take all the js files and minify them into app.min.js
@@ -18,7 +18,7 @@ module.exports = function(grunt) {
             },
             build: {
                 files: {
-                    'public/dist/js/app.min.js': ['public/js/**/*.js', 'public/js/*.js', 'public/libs/angular-dialog-service/dist/dialogs.min.js']
+                    'public/dist/js/app.min.js': ['public/js/libs/angular.js', 'public/js/**/*.js', 'public/js/*.js']
                 }
             }
         },
@@ -28,7 +28,7 @@ module.exports = function(grunt) {
         less: {
             build: {
                 files: {
-                    'public/dist/css/style.css': 'public/css/style.less'
+                    'public/dist/css/style.css': 'public/css/*.less'
                 }
             }
         },
@@ -37,7 +37,7 @@ module.exports = function(grunt) {
         cssmin: {
             build: {
                 files: {
-                    'public/dist/css/style.min.css': ['public/dist/css/style.css', 'public/libs/angular-dialog-service/dist/dialogs.min.css']
+                    'public/dist/css/style.min.css': ['public/css/libs/*.css','public/dist/css/style.css']
                 }
             }
         },
@@ -46,7 +46,7 @@ module.exports = function(grunt) {
         // watch css and js files and process the above tasks
         watch: {
             css: {
-                files: ['public/css/**/*.less'],
+                files: ['public/css/**/*.less','public/css/**/*.css'],
                 tasks: ['less', 'cssmin']
             },
             js: {

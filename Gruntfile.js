@@ -68,7 +68,16 @@ module.exports = function(grunt) {
                 logConcurrentOutput: true
             },
             tasks: ['nodemon', 'watch']
-        }
+        },
+
+        copy: {
+            build: {
+                cwd: 'public',
+                src: ['**'],
+                dest: '../recordsbuild/public',
+                expand: true
+            },
+        },
 
     });
 

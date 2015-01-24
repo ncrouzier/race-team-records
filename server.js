@@ -20,13 +20,12 @@ var bson = require('bson');
 
 var qs = require('querystring');
 
-var configDB = require('./config/db.js');
+// var configDB = require('./config/db.js');
 
 // configuration ===============================================================
-
-if (process.env.OPENSHIFT_MONGODB_DB_URL && process.env.OPENSHIFT_MONGODB_DB_USERNAME && process.env.OPENSHIFT_MONGODB_DB_PASSWORD) {
-    mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records',{user:process.env.OPENSHIFT_MONGODB_DB_USERNAME,pass:process.env.OPENSHIFT_MONGODB_DB_PASSWORD}); // connect to our database
-} else {
+// mongoose.connect(configDB.url); // connect to our database
+if (process.env.OPENSHIFT_MONGODB_DB_URL) {
+    mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records');} else {
     mongoose.connect('mongodb://127.0.0.1:27017/records'); // connect to our database
 }
 

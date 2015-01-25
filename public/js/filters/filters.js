@@ -149,9 +149,20 @@ app.filter('ageFilter', function() {
     return function(birthdate) {
         return calculateAge(birthdate);
     };
+});
 
+app.filter('categoryFilter', function() {
+    function calculateCategory(birthday) {
+        var bd = new Date(birthday);
+        var ageDifMs = Date.now() - bd.getTime();
+        var ageDate = new Date(ageDifMs);
+        var age = Math.abs(ageDate.getUTCFullYear() - 1970);
+        return (age >= 40 ?  "Master": "Open");
+    }
 
-
+    return function(birthdate) {
+        return calculateCategory(birthdate);
+    };
 
 });
 app.filter('memberFilter', function(query) {

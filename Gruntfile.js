@@ -18,7 +18,20 @@ module.exports = function(grunt) {
             },
             build: {
                 files: {
-                    'public/dist/js/app.min.js': ['public/js/libs/angular.js', 'public/js/**/*.js', 'public/js/*.js']
+                    'public/dist/js/app.min.js': [
+                        'public/libs/angular/angular.js',
+                        'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                        'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                        'public/libs/angular-loading-bar/build/loading-bar.js',
+                        'public/libs/angular-sanitize/angular-sanitize.js',
+                        'public/libs/angular-translate/angular-translate.js',
+                        'public/libs/angular-ui-router/release/angular-ui-router.js',
+                        'public/libs/angular-ui-select/dist/select.js',
+                        'public/libs/lodash/dist/lodash.js',
+                        'public/libs/restangular/dist/restangular.js',
+                        'public/js/**/*.js',
+                        'public/js/*.js'
+                    ]
                 }
             }
         },
@@ -37,7 +50,28 @@ module.exports = function(grunt) {
         cssmin: {
             build: {
                 files: {
-                    'public/dist/css/style.min.css': ['public/css/libs/*.css','public/dist/css/style.css']
+                    'public/dist/css/style.min.css': [
+                        'public/css/libs/font-awesome.css',
+                        'public/css/libs/select2.css',
+                        'public/libs/bootstrap/dist/css/bootstrap.css',
+                        'public/libs/angular-loading-bar/build/loading-bar.css',
+                        'public/libs/angular-ui-select/dist/select.css',
+                        'public/dist/css/style.css'
+                    ]
+                }
+            }
+        },
+
+        copy: {
+            fonts: {
+                options: {
+                    flatten: true
+                },
+                files: {
+                    'public/dist/fonts/glyphicons-halflings-regular.eot': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot',
+                    'public/dist/fonts/glyphicons-halflings-regular.ttf': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf',
+                    'public/dist/fonts/glyphicons-halflings-regular.woff2': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff',
+                    'public/dist/fonts/glyphicons-halflings-regular.woff2': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2'
                 }
             }
         },
@@ -46,7 +80,7 @@ module.exports = function(grunt) {
         // watch css and js files and process the above tasks
         watch: {
             css: {
-                files: ['public/css/**/*.less','public/css/**/*.css'],
+                files: ['public/css/**/*.less', 'public/css/**/*.css'],
                 tasks: ['less', 'cssmin']
             },
             js: {
@@ -68,16 +102,9 @@ module.exports = function(grunt) {
                 logConcurrentOutput: true
             },
             tasks: ['nodemon', 'watch']
-        },
+        }
 
-        copy: {
-            build: {
-                cwd: 'public',
-                src: ['**'],
-                dest: '../recordsbuild/public',
-                expand: true
-            },
-        },
+
 
     });
 
@@ -90,6 +117,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-concurrent');
     grunt.loadNpmTasks('grunt-contrib-copy');
 
-    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'uglify', 'concurrent', 'copy']);
+    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'uglify','copy', 'concurrent']);
+    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'uglify','copy']);
 
 };

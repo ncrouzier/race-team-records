@@ -20,6 +20,7 @@ module.exports = function(grunt) {
                 files: {
                     'public/dist/js/app.min.js': [
                         'public/libs/angular/angular.js',
+                        'public/libs/jquery/dist/jquery.js',
                         'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
                         'public/libs/angular-dialog-service/dist/dialogs.min.js',
                         'public/libs/angular-loading-bar/build/loading-bar.js',

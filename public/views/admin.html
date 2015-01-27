@@ -1,15 +1,15 @@
 <div class="jumbotron">
     <div class="row">
         <div class="col-md-6">
-            <h2>Race types <img class="hoverhand" ng-show="user.role == 'admin'" ng-click="showAddRaceTypeModal()" ng-src="images/add.png" title="Add race type" alt="Add race type"></h2>
+            <h2>Race types <i  class="hoverhand fa fa-plus-square"  style="color:#03C03C;"ng-show="user.role == 'admin'" ng-click="showAddRaceTypeModal()" title="Add race type"></i></h2>
             <ul class="list-group">
                 <li class="list-group-item hoverhand" ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}" ng-repeat="racetype in racetypesList">
-                {{racetype.name}} ({{racetype.surface}})<span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="removeRaceType(racetype)" ng-src="images/delete.png" title="remove race type" alt="remove race type"> <img ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" ng-src="images/edit.png" title="edit race type" alt="edit race type"></span>
+                    {{racetype.name}} ({{racetype.surface}})<span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" title="edit race type"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeRaceType(racetype)" title="remove race type"></i> </span>
                 </li>
             </ul>
         </div>
         <div class="col-md-6">
-            
+
         </div>
     </div>
 

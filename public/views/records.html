@@ -73,7 +73,9 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            {{ result.racename }} <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank" ><img ng-src="images/link.png" title="view result" alt="view result"></a>
+                            {{ result.racename }}
+                            <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank"><img ng-src="images/link.png" title="view result" alt="view result">
+                            </a>
                             <br>
                             <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                         </div>
@@ -84,12 +86,10 @@
                             {{result | resultToPace}}</span>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <img ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result">
+                            <i class="hoverhand fa fa-pencil-square-o" ng-click="retrieveResultForEdit(result)" title="edit result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result"></i>
                         </div>
                     </div>
 
-
-                    <!--   <span> - at  on  in  <span class="timediff" ng-if="$index >0">{{(result.time -resultsList[$index - 1].time ) | secondsToTimeDiff}}</span> </span><span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result"></span> -->
                 </li>
             </ul>
 

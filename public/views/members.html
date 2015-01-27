@@ -37,12 +37,12 @@
     </div>
     <div class="row">
         <!-- Member LIST -->
-        <h2>Team members ({{membersList.length}}) <img class="hoverhand" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" ng-src="images/add.png" title="Add member" alt="Add member"></h2>
+        <h2>Team members ({{membersList.length}}) <i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" title="Add member"></i></h2>
         <div id="member-list" class="row">
             <div class="col-sm-3">
                 <ul class="list-group">
                     <li ng-click="setMember(member);" ng-style="memberList" class="list-group-item hoverhand" ng-repeat="member in membersList | memberFilter:query | orderBy: 'firstname'" ng-class="{ 'list-group-item-male': member.sex == 'Male', 'list-group-item-female': member.sex == 'Female','selected-class-name': member._id == currentMember._id }">
-                        <span>{{ member.firstname }} {{ member.lastname }} </span><span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="removeMember(member)" ng-src="images/delete.png" title="remove user" alt="remove user"> <img ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member)" ng-src="images/edit.png" title="edit user" alt="edit user"></span>
+                        <span>{{ member.firstname }} {{ member.lastname }} </span><span class="pull-right"> <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(member)" title="remove user" ></i></span>
                     </li>
                 </ul>
             </div>
@@ -78,7 +78,6 @@
                             <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
                                 <div class="row">
                                     <div class="col-sm-3">
-                                        <!-- <span memberInfo >{{result.member | membersNamesFilter | cut:false:25:' ...'}}</span> -->
                                         <result-members-names></result-members-names>
                                     </div>
                                     <div class="col-sm-4">
@@ -95,7 +94,7 @@
                                         {{result | resultToPace}}</span>
                                     </div>
                                     <div class="col-sm-1" ng-show="user.role == 'admin'">
-                                        <span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="removeResult(result)" ng-src="images/delete.png" title="remove result" alt="remove result"> <img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result"> </span >
+                                        <span class="pull-right"><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)"  title="remove result"></i> </span >
                         </div>
                     </div>
 
@@ -107,13 +106,6 @@
 
 
 
-                            <!-- <li class="list-group-item hoverhand text-left" ng-repeat="result in currentMemberResultList">
-
-
-
-
-                                <span>{{ result.racename }} {{ result.racedate | date:'MM/dd/yyyy' }} by {{result.member[0].firstname}} {{result.member[0].lastname}} in {{result.time | secondsToTimeString}} </span><span class="pull-right"><img ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" ng-src="images/edit.png" title="edit result" alt="edit result"> </span >
-                            </li> -->
                         </ul>
 
                     </div>

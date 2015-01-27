@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'AuthService', 'ResultsService', function($scope, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', function($scope, AuthService, ResultsService, dialogs) {
     $scope.user = AuthService.isLoggedIn();
 
 
@@ -21,10 +21,13 @@ angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'Aut
     };
 
     $scope.removeRaceType = function(racetype) {
-        ResultsService.deleteRaceType(racetype).then(function() {
-            var index = $scope.racetypesList.indexOf(racetype);
-            if (index > -1) $scope.racetypesList.splice(index, 1);
-        });
+        var dlg = dialogs.confirm("Remove RaceType?", "Are you sure you want to remove this racetype?");
+        dlg.result.then(function(btn) {
+            ResultsService.deleteRaceType(racetype).then(function() {
+                var index = $scope.racetypesList.indexOf(racetype);
+                if (index > -1) $scope.racetypesList.splice(index, 1);
+            });
+        }, function(btn) {});
     };
 
 

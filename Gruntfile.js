@@ -22,14 +22,14 @@ module.exports = function(grunt) {
                         'public/libs/angular/angular.js',
                         'public/libs/jquery/dist/jquery.js',
                         'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
-                        'public/libs/angular-dialog-service/dist/dialogs.min.js',
                         'public/libs/angular-loading-bar/build/loading-bar.js',
                         'public/libs/angular-sanitize/angular-sanitize.js',
-                        'public/libs/angular-translate/angular-translate.js',
                         'public/libs/angular-ui-router/release/angular-ui-router.js',
                         'public/libs/angular-ui-select/dist/select.js',
                         'public/libs/lodash/dist/lodash.js',
                         'public/libs/restangular/dist/restangular.js',
+                        'public/libs/angular-utils-pagination/dirPagination.js',
+                        'public/libs/angular-dialog-service/dist/dialogs.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]
@@ -52,7 +52,7 @@ module.exports = function(grunt) {
             build: {
                 files: {
                     'public/dist/css/style.min.css': [
-                        'public/css/libs/font-awesome.css',
+                        'public/libs/fontawesome/css/font-awesome.css',
                         'public/css/libs/select2.css',
                         'public/libs/bootstrap/dist/css/bootstrap.css',
                         'public/libs/angular-loading-bar/build/loading-bar.css',
@@ -69,10 +69,22 @@ module.exports = function(grunt) {
                     flatten: true
                 },
                 files: {
+                    'public/dist/fonts/fontawesome-webfont.eot': 'public/libs/fontawesome/fonts/fontawesome-webfont.eot',
+                    'public/dist/fonts/fontawesome-webfont.ttf': 'public/libs/fontawesome/fonts/fontawesome-webfont.ttf',
+                    'public/dist/fonts/fontawesome-webfont.woff': 'public/libs/fontawesome/fonts/fontawesome-webfont.woff',
+                    'public/dist/fonts/fontawesome-webfont.woff2': 'public/libs/fontawesome/fonts/fontawesome-webfont.woff2',
                     'public/dist/fonts/glyphicons-halflings-regular.eot': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot',
                     'public/dist/fonts/glyphicons-halflings-regular.ttf': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf',
-                    'public/dist/fonts/glyphicons-halflings-regular.woff2': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff',
+                    'public/dist/fonts/glyphicons-halflings-regular.woff': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff',
                     'public/dist/fonts/glyphicons-halflings-regular.woff2': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2'
+                }
+            },
+            templates: {
+                options: {
+                    flatten: true
+                },
+                files: {
+                    'public/views/templates/dirPagination.tpl.html': 'public/libs/angular-utils-pagination/dirPagination.tpl.html'
                 }
             }
         },
@@ -118,7 +130,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-concurrent');
     grunt.loadNpmTasks('grunt-contrib-copy');
 
-    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'uglify','copy', 'concurrent']);
-    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'uglify','copy']);
+    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'uglify', 'copy', 'concurrent']);
+    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'uglify', 'copy']);
 
 };

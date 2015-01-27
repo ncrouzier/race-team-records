@@ -13,6 +13,24 @@ app.filter('secondsToTimeStringLong', function() {
     };
 });
 
+
+function secondsToTimeString(sec) {
+    var hours = Math.floor((sec % 86400) / 3600);
+    var minutes = Math.floor(((sec % 86400) % 3600) / 60);
+    var seconds = Math.floor(((sec % 86400) % 3600) % 60);
+    var timeString = '';
+    if (minutes < 10) minutes = "0" + minutes;
+    if (seconds < 10) seconds = "0" + seconds;
+
+    if (hours === 0) {
+        return minutes + ":" + seconds;
+
+    } else {
+        return hours + ":" + minutes + ":" + seconds;
+
+    }
+}
+
 app.filter('secondsToTimeString', function() {
     return function(sec) {
         var hours = Math.floor((sec % 86400) / 3600);
@@ -33,6 +51,10 @@ app.filter('secondsToTimeString', function() {
     };
 });
 
+
+
+
+
 app.filter('secondsToTimeDiff', function() {
     return function(sec) {
         var hours = Math.floor((sec % 86400) / 3600);
@@ -50,10 +72,22 @@ app.filter('secondsToTimeDiff', function() {
     };
 });
 
+
+function resultToPace(result) {
+    var seconds = result.time;
+    var distance = result.racetype.miles;
+
+    var m = Math.floor((seconds / 60) / distance);
+
+    var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
+
+    if (m < 10) m = "0" + m;
+    if (s < 10) s = "0" + s;
+    return m + ":" + s;
+}
+
 app.filter('resultToPace', function() {
     return function(result) {
-
-
         var seconds = result.time;
         var distance = result.racetype.miles;
 
@@ -66,6 +100,8 @@ app.filter('resultToPace', function() {
         return m + ":" + s;
     };
 });
+
+
 
 app.filter('membersNamesFilter', function() {
     return function(members) {
@@ -157,7 +193,7 @@ app.filter('categoryFilter', function() {
         var ageDifMs = Date.now() - bd.getTime();
         var ageDate = new Date(ageDifMs);
         var age = Math.abs(ageDate.getUTCFullYear() - 1970);
-        return (age >= 40 ?  "Master": "Open");
+        return (age >= 40 ? "Master" : "Open");
     }
 
     return function(birthdate) {
@@ -175,5 +211,60 @@ app.filter('memberFilter', function(query) {
             }
         });
         return filtered;
+    };
+});
+app.filter('resultSuperFilter', function(query) {
+    return function(results, query) {
+        if (undefined !== query) {
+            var filtered = [];
+            angular.forEach(results, function(result) {
+                //race name
+                if (result.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    filtered.push(result);
+                    return;
+                }
+                //racetype
+                if (result.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    filtered.push(result);
+                    return;
+                }
+                //racetype surface
+                if (result.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    filtered.push(result);
+                    return;
+                }
+
+                //member name
+                var foundname = false;
+                result.member.forEach(function(member) {
+                    name = member.firstname + ' ' + member.lastname + ', ';
+                    if (name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(result);
+                        foundname = true;
+                        return;
+                    }
+                });
+                if (foundname) return;
+
+                //time 
+                var time = secondsToTimeString(result.time);
+                if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                    filtered.push(result);
+                    return;
+                }
+
+                //pace
+                var pace = resultToPace(result);
+                if (pace.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                    filtered.push(result);
+                    return;
+                }
+            });
+            return filtered;
+        } else {
+            return results;
+        }
+
+
     };
 });

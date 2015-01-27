@@ -260,7 +260,14 @@ module.exports = function(app, qs, passport) {
                 query = query.where('member.sex').regex(filters.sex);
 
             }
+            if (filters.datefrom) {
+                query = query.gte('racedate', filters.datefrom);
 
+            }
+            if (filters.dateto) {
+                query = query.lte('racedate', filters.dateto);
+
+            }
             if (filters.racetype) {
                 var racetype = filters.racetype;
                 query = query.where('racetype._id').equals(racetype._id);

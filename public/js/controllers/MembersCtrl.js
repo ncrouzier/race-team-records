@@ -49,7 +49,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
     $scope.removeMember = function(member) {
-        var dlg = dialogs.confirm();
+        var dlg = dialogs.confirm("Remove Member?", "Are you sure you want to remove this member?");
         dlg.result.then(function(btn) {
             MembersService.deleteMember(member).then(function() {
                 var index = $scope.membersList.indexOf(member);

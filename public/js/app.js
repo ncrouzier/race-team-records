@@ -1,10 +1,13 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members','mcrrcApp.results','mcrrcApp.authentication','restangular','dialogs.main', 'ui.bootstrap','ui.select','ngSanitize', 'ui.router', 'appRoutes' ,'angular-loading-bar']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members','mcrrcApp.results','mcrrcApp.authentication','restangular','dialogs.main', 'ui.bootstrap','ui.select','ngSanitize', 'ui.router', 'appRoutes' ,'angular-loading-bar','angularUtils.directives.dirPagination']);
 
 var membersModule = angular.module('mcrrcApp.members',[]);
 var resultsModule = angular.module('mcrrcApp.results',[]);
 var authenticationModule = angular.module('mcrrcApp.authentication',[]);
-// var services = angular.module('mcrrcApp.services',[]);
-// var controllers = angular.module('mcrrcApp.controllers',[]);
+
+app.config(function(paginationTemplateProvider) {
+    paginationTemplateProvider.setPath('views/templates/dirPagination.tpl.html');
+
+});
 
 
 app.run(['$http', 'AuthService','Restangular', function($http, AuthService,Restangular) {

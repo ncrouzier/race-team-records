@@ -8,11 +8,15 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         .state('/', {
             url: "/",
             templateUrl: "views/home.html",
-            controller: 'ResultsController'
+            controller: 'HomeController'
         }).state('/members', {
             url: "/members",
             templateUrl: "views/members.html",
             controller: 'MembersController'
+        }).state('/results', {
+            url: "/results",
+            templateUrl: "views/results.html",
+            controller: 'ResultsController'
         }).state('/login', {
             url: "/login",
             templateUrl: "views/login.html",

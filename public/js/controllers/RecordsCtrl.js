@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', '$http', function($scope, AuthService, ResultsService, $http) {
+angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', '$http', 'dialogs', function($scope, AuthService, ResultsService, $http, dialogs) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -44,6 +44,16 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'A
 
     $scope.retrieveResultForEdit = function(result) {
         ResultsService.retrieveResultForEdit(result).then(function(result) {});
+    };
+
+    $scope.removeResult = function(result) {
+        var dlg = dialogs.confirm("Remove Result?", "Are you sure you want to remove this result?");
+        dlg.result.then(function(btn) {
+            ResultsService.deleteResult(result).then(function() {
+                var index = $scope.resultsList.indexOf(result);
+                if (index > -1) $scope.resultsList.splice(index, 1);
+            });
+        }, function(btn) {});
     };
 
 

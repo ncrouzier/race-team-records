@@ -1,7 +1,10 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', function($scope, $analytics, AuthService, ResultsService, dialogs) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', function($scope, $analytics,    AuthService, ResultsService, dialogs) {
 
-    $scope.user = AuthService.isLoggedIn();
-
+    $scope.authService = AuthService;
+    $scope.$watch('authService.isLoggedIn()', function(user) {
+        $scope.user = user;
+    });
+    
     $scope.resultsList = [];
 
 

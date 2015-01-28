@@ -49,6 +49,17 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$m
             });
     };
 
+        //retrieve a member by id
+    factory.getMemberPbs = function(member) {
+         return Restangular.one('members', member._id).customGET("pbs").then(
+            function(results) {
+                return results;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+
     // =====================================
     // MEMBER MODALS ======================
     // =====================================

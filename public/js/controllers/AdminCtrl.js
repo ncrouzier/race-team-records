@@ -1,6 +1,9 @@
 angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', function($scope, AuthService, ResultsService, dialogs) {
-    $scope.user = AuthService.isLoggedIn();
-
+    
+    $scope.authService = AuthService;
+    $scope.$watch('authService.isLoggedIn()', function(user) {
+        $scope.user = user;
+    });
 
     ResultsService.getRaceTypes({
         sort: 'meters'

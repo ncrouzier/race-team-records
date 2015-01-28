@@ -1,6 +1,9 @@
 angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', function($scope, $analytics, AuthService, ResultsService, $http, dialogs) {
 
-    $scope.user = AuthService.isLoggedIn();
+    $scope.authService = AuthService;
+    $scope.$watch('authService.isLoggedIn()', function(user) {
+        $scope.user = user;
+    });
 
     // =====================================
     // FILTER PARAMS CONFIG ================
@@ -41,7 +44,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         }
         $analytics.eventTrack('viewRecords', {
             category: 'Records',
-            label: 'viewing record for ' + $scope.paramModel.racetype.name + ' (' + $scope.paramModel.racetype.surface+') sex= '+$scope.paramModel.sex+' category= '+$scope.paramModel.category+ ' mode= '+$scope.paramModel.mode
+            label: 'viewing record for ' + $scope.paramModel.racetype.name + ' (' + $scope.paramModel.racetype.surface + ') sex= ' + $scope.paramModel.sex + ' category= ' + $scope.paramModel.category + ' mode= ' + $scope.paramModel.mode
         });
 
     };

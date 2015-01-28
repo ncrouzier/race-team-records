@@ -52,6 +52,9 @@ module.exports = function(grunt) {
         // take the processed style.css file and minify
         cssmin: {
             build: {
+                options: {
+                    keepSpecialComments: 0
+                },
                 files: {
                     'public/dist/css/style.min.css': [
                         'public/libs/fontawesome/css/font-awesome.css',

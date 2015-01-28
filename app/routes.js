@@ -1,4 +1,4 @@
-module.exports = function(app, qs, passport) {
+module.exports = function(app, qs, passport, async) {
 
     // =====================================
     // LOGIN ===============================
@@ -145,6 +145,46 @@ module.exports = function(app, qs, passport) {
             }
 
 
+        });
+    });
+
+    app.get('/api/members/:member_id/pbs', function(req, res) {
+        var pbraces = ['5k', '10k', 'Half Marathon', 'Marathon'];
+        var pbs = [];
+        var calls = [];
+
+        pbraces.forEach(function(pb) {
+            calls.push(function(callback) {
+
+
+                Result.find({
+                        'member._id': req.params.member_id,
+                        'racetype.name': pb
+                    },
+                    function(err, results) {
+                        if (err) {
+                            return callback(err);
+                        } else {
+                            if (results.length > 0) {
+                                pbs.push(results[0]);
+                                callback(null);
+                            } else {
+                                callback(null);
+                            }
+                        }
+                    }
+                ).sort('-time').limit(1);
+
+
+            });
+        });
+
+        async.parallel(calls, function(err) {
+            /* this code will run after all calls finished the job or
+               when any of the calls passes an error */
+            if (err)
+                return res.send(err);
+            res.json(pbs);
         });
     });
 

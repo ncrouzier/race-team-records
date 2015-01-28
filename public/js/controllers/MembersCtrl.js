@@ -1,7 +1,9 @@
 angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
 
-    $scope.user = AuthService.isLoggedIn();
-
+    $scope.authService = AuthService;
+    $scope.$watch('authService.isLoggedIn()', function(user) {
+        $scope.user = user;
+    });
     // var members = Restangular.all('members');
 
     $scope.membersList = [];
@@ -68,9 +70,14 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             $scope.currentMemberResultList = results;
         });
         $scope.currentMember = member;
+
+        MembersService.getMemberPbs(member).then(function(results) {
+            $scope.currentMemberPbsList = results;
+        });
+
         $analytics.eventTrack('viewMember', {
             category: 'Member',
-            label: 'viewing member '+member.firstname + ' ' +member.lastname
+            label: 'viewing member ' + member.firstname + ' ' + member.lastname
         });
     };
 

@@ -81,7 +81,6 @@ function resultToPace(result) {
 
     var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
 
-    if (m < 10) m = "0" + m;
     if (s < 10) s = "0" + s;
     return m + ":" + s;
 }
@@ -95,7 +94,6 @@ app.filter('resultToPace', function() {
 
         var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
 
-        if (m < 10) m = "0" + m;
         if (s < 10) s = "0" + s;
         return m + ":" + s;
     };

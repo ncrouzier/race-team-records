@@ -1,7 +1,7 @@
 <div class="jumbotron">
 
     <div class="row text-left" style="padding-left:15px; margin-bottom:10px;">
-        <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" autofocus>
+        <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus>
  <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result" ></i></span>
 
     </div>

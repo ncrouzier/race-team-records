@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $http, AuthService, MembersService, ResultsService, dialogs) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
 
     $scope.user = AuthService.isLoggedIn();
 
@@ -68,7 +68,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             $scope.currentMemberResultList = results;
         });
         $scope.currentMember = member;
-
+        $analytics.eventTrack('viewMember', {
+            category: 'Member',
+            label: 'viewing member '+member.firstname + ' ' +member.lastname
+        });
     };
 
     $scope.getMembers = function() {
@@ -121,7 +124,9 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.formData = member;
         $scope.editmode = true;
     } else {
-        $scope.formData = {memberStatus:true};
+        $scope.formData = {
+            memberStatus: true
+        };
         $scope.editmode = false;
         $scope.formData.dateofbirth = new Date();
     }

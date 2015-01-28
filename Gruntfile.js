@@ -30,6 +30,8 @@ module.exports = function(grunt) {
                         'public/libs/restangular/dist/restangular.js',
                         'public/libs/angular-utils-pagination/dirPagination.js',
                         'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                        'public/libs/angulartics/dist/angulartics.min.js',
+                        'public/libs/angulartics/dist/angulartics-ga.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]

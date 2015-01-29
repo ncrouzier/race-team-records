@@ -149,7 +149,7 @@ module.exports = function(app, qs, passport, async) {
     });
 
     app.get('/api/members/:member_id/pbs', function(req, res) {
-        var pbraces = ['5k', '10k', 'Half Marathon', 'Marathon'];
+        var pbraces = ['1 mile', '5k', '10k', 'Half Marathon', 'Marathon'];
         var pbs = [];
         var calls = [];
 

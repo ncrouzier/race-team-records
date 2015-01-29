@@ -19,15 +19,15 @@ function secondsToTimeString(sec) {
     var minutes = Math.floor(((sec % 86400) % 3600) / 60);
     var seconds = Math.floor(((sec % 86400) % 3600) % 60);
     var timeString = '';
-    if (minutes < 10) minutes = "0" + minutes;
-    if (seconds < 10) seconds = "0" + seconds;
-
+    
     if (hours === 0) {
+        if (seconds < 10) seconds = "0" + seconds;
         return minutes + ":" + seconds;
 
     } else {
+        if (minutes < 10) minutes = "0" + minutes;
+        if (seconds < 10) seconds = "0" + seconds;
         return hours + ":" + minutes + ":" + seconds;
-
     }
 }
 
@@ -37,15 +37,15 @@ app.filter('secondsToTimeString', function() {
         var minutes = Math.floor(((sec % 86400) % 3600) / 60);
         var seconds = Math.floor(((sec % 86400) % 3600) % 60);
         var timeString = '';
-        if (minutes < 10) minutes = "0" + minutes;
-        if (seconds < 10) seconds = "0" + seconds;
 
         if (hours === 0) {
+            if (seconds < 10) seconds = "0" + seconds;
             return minutes + ":" + seconds;
 
         } else {
+            if (minutes < 10) minutes = "0" + minutes;
+            if (seconds < 10) seconds = "0" + seconds;
             return hours + ":" + minutes + ":" + seconds;
-
         }
 
     };

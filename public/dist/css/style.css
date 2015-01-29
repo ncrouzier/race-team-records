@@ -11,8 +11,19 @@ body {
   cursor: pointer;
   cursor: hand;
 }
+.navbar-inverse {
+  background-color: #7DD6FE;
+  border: color: #7DD6FE;
+}
+.navbar-inverse .navbar-nav > li > a {
+  color: #006699;
+}
+.navbar-inverse .navbar-brand {
+  color: #006699;
+}
 .jumbotron {
   min-height: 700px;
+  color: #006699;
 }
 .highlightdark {
   background-color: #E6E2EB;
@@ -25,6 +36,9 @@ body {
   border-width: 2px;
   border-color: #9C1138;
   margin-bottom: 0px;
+}
+.list-group-item {
+  color: #000000;
 }
 .list-group-item-male {
   background-color: #d9edf7;
@@ -81,6 +95,7 @@ body {
 }
 .resultlistheader {
   border-bottom: thick solid;
+  color: #006699;
 }
 .resultlistrow {
   padding-top: 3px;

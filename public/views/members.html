@@ -56,14 +56,14 @@
                         <div class="row">
                             <div class="col-sm-6">
                                 <h4>Member Info:</h4>
-                                <span style="color:#000;"><b>Category:</b> {{currentMember.dateofbirth | categoryFilter}}</span>
+                                <span class="black"><b>Category:</b> {{currentMember.dateofbirth | categoryFilter}}</span>
                                 <br>
                                 <!-- <b>Member Bio:</b> <span ng-bind-html="currentMember.bio"></span> -->
                             </div>
                             <div class="col-sm-6">
-                                <h4 title="Personal bests as MCRRC race team member">Personal Bests:</h4>
+                                <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
                                 <ul class="list-group">
-                                    <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberPbsList">
+                                    <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <span> {{result.racetype.name}}</span>

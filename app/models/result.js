@@ -31,7 +31,7 @@ var resultSchema = mongoose.Schema({
 
 });
 
-// keep track of when members are updated and created
+// keep track of when results are updated and created
 resultSchema.pre('save', function(next, done) {
     if (this.isNew) {
         this.createdAt = Date.now();

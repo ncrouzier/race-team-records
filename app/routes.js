@@ -149,7 +149,7 @@ module.exports = function(app, qs, passport, async) {
     });
 
     app.get('/api/members/:member_id/pbs', function(req, res) {
-        var pbraces = ['1 mile', '5k', '10k', 'Half Marathon', 'Marathon'];
+        var pbraces = ['1 mile', '5k', '8k', '10k', 'Half Marathon', 'Marathon'];
         var pbs = [];
         var calls = [];
 
@@ -184,6 +184,10 @@ module.exports = function(app, qs, passport, async) {
                when any of the calls passes an error */
             if (err)
                 return res.send(err);
+
+            //sort
+            pbs.sort(sortResultsByDistance);
+
             res.json(pbs);
         });
     });
@@ -232,12 +236,10 @@ module.exports = function(app, qs, passport, async) {
                                 for (i = 0; i < results.length; i++) {
                                     for (j = 0; j < results[i].member.length; j++) { //itirates members if relay race
                                         if (results[i].member[j]._id.equals(req.body._id)) {
-
                                             results[i].member[j].firstname = req.body.firstname;
                                             results[i].member[j].lastname = req.body.lastname;
                                             results[i].member[j].sex = req.body.sex;
                                             results[i].member[j].dateofbirth = req.body.dateofbirth;
-
                                         }
 
                                     }
@@ -633,6 +635,12 @@ function containsMember(list, member) {
         }
     }
     return false;
+}
 
-
+function sortResultsByDistance(a, b) {
+    if (a.racetype.meters < b.racetype.meters)
+        return -1;
+    if (a.racetype.meters > b.racetype.meters)
+        return 1;
+    return 0;
 }

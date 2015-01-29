@@ -47,79 +47,74 @@
                 </ul>
             </div>
             <div class="col-sm-9">
-                <div class="highlightdark">
-
-                    <div ng-show="currentMember" >
-                        <div class="row text-center">
-                            <h2>{{currentMember.firstname}} {{currentMember.lastname}} </h2>
+                <div class="detailscontainer" ng-show="currentMember">
+                    <div class="row text-center">
+                        <h2>{{currentMember.firstname}} {{currentMember.lastname}} </h2>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <h4 style="margin-bottom:1px">Member Info:</h4>
+                            <span class="black"><b>Category:</b> {{currentMember.dateofbirth | categoryFilter}}</span>
+                            <br>
+                            <b class="black">Member Bio:</b> <span class="black" ng-bind-html="currentMember.bio"></span>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <h4>Member Info:</h4>
-                                <span class="black"><b>Category:</b> {{currentMember.dateofbirth | categoryFilter}}</span>
-                                <br>
-                                <b class="black">Member Bio:</b> <span class="black" ng-bind-html="currentMember.bio"></span>
-                            </div>
-                            <div class="col-sm-6">
-                                <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
-                                <ul class="list-group">
-                                    <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
-                                        <div class="row">
-                                            <div class="col-sm-6">
-                                                <span> {{result.racetype.name}}</span>
-                                            </div>
-                                            <div class="row">
-                                                <span> {{result.time | secondsToTimeString}}</span>
-                                            </div>
+                        <div class="col-sm-6">
+                            <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
+                            <ul class="list-group">
+                                <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <span> {{result.racetype.name}}</span>
                                         </div>
-                                    </li>
-                                </ul>
-                            </div>
+                                        <div class="row">
+                                            <span> {{result.time | secondsToTimeString}}</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
                         </div>
-                        <h3>Latest Results:</h3>
-                        <ul class="list-group">
-                            <li class="list-group-item text-left resultlistheader" ng-show="currentMemberResultList.length >0">
-                                <div class="row">
-                                    <div class="col-sm-5">
-                                        <span class="listheader" title="Event and date">Event</span>
-                                    </div>
-                                    <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
-                                        <span class="listheader" title="Net Time">Net Time</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <span class="listheader" title="Pace">Pace</span>
-                                    </div>
-                                    <div class="col-sm-1" ng-show="user.role == 'admin'">
-                                        <span class="listheader" title="Edit">Edit</span>
-                                    </div>
+                    </div>
+                    <h3>Latest Results:</h3>
+                    <ul class="list-group">
+                        <li class="list-group-item text-left resultlistheader" ng-show="currentMemberResultList.length >0">
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    <span class="listheader" title="Event and date">Event</span>
                                 </div>
-                            </li>
-                            <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
-                                <div class="row">
-                                    <div class="col-sm-5">
-                                        {{ result.racename }}
-                                        <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><img ng-show="result.resultlink !== ''" ng-src="images/link.png" title="view result" alt="view result">
-                                        </a>
-                                        <br>
-                                        <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
-                                    </div>
-                                    <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
-                                        <span> {{result.time | secondsToTimeString}}</span>
-                                    </div>
-                                    <div class="col-sm-3">
-                                        <span>{{result | resultToPace}}</span>
-                                    </div>
-                                    <div class="col-sm-1" ng-show="user.role == 'admin'">
-                                        <span class="pull-right"><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)"  title="remove result"></i> </span >
+                                <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
+                                    <span class="listheader" title="Net Time">Net Time</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span class="listheader" title="Pace">Pace</span>
+                                </div>
+                                <div class="col-sm-1" ng-show="user.role == 'admin'">
+                                    <span class="listheader" title="Edit">Edit</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
+                            <div class="row">
+                                <div class="col-sm-5">
+                                    {{ result.racename }}
+                                    <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><img ng-show="result.resultlink !== ''" ng-src="images/link.png" title="view result" alt="view result">
+                                    </a>
+                                    <br>
+                                    <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
+                                </div>
+                                <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
+                                    <span> {{result.time | secondsToTimeString}}</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span>{{result | resultToPace}}</span>
+                                </div>
+                                <div class="col-sm-1" ng-show="user.role == 'admin'">
+                                    <span class="pull-right"><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)"  title="remove result"></i> </span >
                                     </div>
                                 </div>
                             </li> 
                         </ul>
-
-                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>

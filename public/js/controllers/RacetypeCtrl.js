@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('AdminController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', function($scope, AuthService, ResultsService, dialogs) {
+angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', function($scope, AuthService, ResultsService, dialogs) {
     
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {

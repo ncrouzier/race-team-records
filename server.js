@@ -20,6 +20,9 @@ var bson = require('bson');
 
 var async = require('async');
 
+var nodemailer = require("nodemailer");
+
+
 var qs = require('querystring');
 
 // var configDB = require('./config/db.js');
@@ -35,6 +38,7 @@ if (process.env.OPENSHIFT_MONGODB_DB_URL) {
 app.use(express.static(__dirname + '/public'));
 
 require('./config/passport')(passport); // pass passport for configuration
+var mail = require('./config/mail')(nodemailer);
 
 // set up our express application
 app.use(morgan('dev')); // log every request to the console

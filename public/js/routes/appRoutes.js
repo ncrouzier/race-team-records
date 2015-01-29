@@ -29,14 +29,18 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/profile",
             templateUrl: "views/profile.html",
             controller: 'ProfileController'
-        }).state('/admin', {
-            url: "/admin",
-            templateUrl: "views/admin.html",
-            controller: 'AdminController'
+        }).state('/racetypes', {
+            url: "/racetypes",
+            templateUrl: "views/racetypes.html",
+            controller: 'RaceTypeController'
         }).state('/records', {
             url: "/records",
             templateUrl: "views/records.html",
             controller: 'RecordsController'
+        }).state('/contact', {
+            url: "/contact",
+            templateUrl: "views/contact.html",
+            controller: 'ContactController'
         });
 
 });

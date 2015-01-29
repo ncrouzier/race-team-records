@@ -14,7 +14,7 @@
 	</script>
 </head>
 <body ng-controller="MainController">
-<div class="container" style="height:800px">
+<div class="container">
 	
 	<!-- HEADER -->
 	<nav class="navbar navbar-inverse">
@@ -26,7 +26,7 @@
 				<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
 				<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 				<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-				<li><a ui-sref="/admin">Administration</a></li>
+				<li><a ui-sref="/racetypes">Race Types</a></li>
 			</ul>
 			<ul class="nav navbar-nav" style="float: right">
 				<li class="dropdown" dropdown on-toggle="toggled(open)">
@@ -52,9 +52,9 @@
 	</nav>
 
 	<div ui-view></div>
-
+	<footer><div class="row"><div class="col-sm-4 text-left"><small>remarks, questions or request? <a ui-sref="/contact">contact us<i class="fa fa-email"></i></a></small></div><div class="col-sm-4"></div><div class="col-sm-4 text-right"><small><a href="http://www.mcrrc.org" target="_blank">MCRRC</a></small></div></div></footer>
 </div>
-<footer></footer>
+
 </body>
 
 </html>

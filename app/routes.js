@@ -586,6 +586,24 @@ module.exports = function(app, qs, passport, async) {
         });
     });
 
+    // MAIL
+
+    app.post('/sendEmail', function(req, res) {
+        var data = req.body;
+        transport.sendMail({
+            from: {name:data.name,address: data.from},
+            to: {name:"MCRRC RACE TEAM SITE ADMIN",address: process.env.MCRRC_EMAIL_ADDRESS},
+            subject: data.subject, // Subject line
+            text: data.body // plaintext body
+        }, function(error, response) {
+            if (error) {
+                res.sendStatus(404);
+            } else {
+                res.end('{"success" : "Email sent successfully", "status" : 200}');
+            }
+        });
+    });
+
 
     app.get('*', function(req, res) {
         res.render('index.ejs', {

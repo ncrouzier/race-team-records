@@ -1,0 +1,40 @@
+<div class="jumbotron ">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="row" style="padding-left:15px;padding-bottom:15px;">
+            Any comments, question or request? Please leave a message!
+        </div>
+        <div class="alert alert-danger" ng-show="error">
+            <button class="close" data-dismiss="alert">x</button>
+            <strong>Error!</strong> An error occured while trying to send message.
+        </div>
+        <div class="alert alert-success" ng-show="success">
+            <button class="close" data-dismiss="alert">x</button>
+            <strong>Success! </strong> Your message was successfully sent.
+        </div>
+        <form role="form" name="contactForm">
+            <div class="row">
+                <div class="col-sm-6 form-group" ng-class="{error: contactForm.name.$invalid}">
+                    <label>Full Name</label>
+                    <input class="form-control" type="text" name="name" ng-model="user.name" required="required" placeholder="Your name">
+                    <span class="help-block" ng-show="contactForm.name.$error.required">Required</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-6 form-group" ng-class="{error: contactForm.email.$invalid}">
+                    <label>Email</label>
+                    <input class="form-control" type="email" name="email" ng-model="user.email" required="required" placeholder="Your email address">
+                    <span class="help-block" ng-show="contactForm.email.$error.required">Required</span>
+                    <span class="help-block" ng-show="contactForm.email.$error.email">Invalid email address</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-10 form-group" ng-class="{error: contactForm.message.$invalid}">
+                    <label>Message</label>
+                    <textarea class="form-control" rows="6" name="message" ng-model="user.body" required="required" placeholder="Your messsage"></textarea>
+                    <span class="help-block" ng-show="contactForm.message.$error.required">Required</span>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-lg" ng-click="send()" ng-disabled="contactForm.$invalid">Send</button>
+        </form>
+    </div>
+</div>

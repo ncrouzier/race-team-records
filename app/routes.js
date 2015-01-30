@@ -402,6 +402,7 @@ module.exports = function(app, qs, passport, async) {
             racedate: req.body.racedate,
             member: members,
             time: req.body.time,
+            comments: req.body.comments,
             resultlink: req.body.resultlink,
             is_accepted: false,
             done: false
@@ -441,6 +442,7 @@ module.exports = function(app, qs, passport, async) {
             result.racedate = req.body.racedate;
             result.member = members;
             result.time = req.body.time;
+            result.comments = req.body.comments;
             result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;
             result.save(function(err) {

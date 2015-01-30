@@ -24,6 +24,7 @@ var resultSchema = mongoose.Schema({
         dateofbirth: Date
     }],
     category: String,
+    comments: String,
     resultlink: String,
     is_accepted: Boolean,
     createdAt: Date,

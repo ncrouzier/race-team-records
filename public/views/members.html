@@ -95,14 +95,12 @@
                         <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
                             <div class="row">
                                 <div class="col-sm-5">
-                                    {{ result.racename }}
-                                    <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><img ng-show="result.resultlink !== ''" ng-src="images/link.png" title="view result" alt="view result">
-                                    </a>
+                                    {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined" tooltip-html-unsafe="{{result.comments}}"></i>
                                     <br>
                                     <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                                 </div>
                                 <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
-                                    <span> {{result.time | secondsToTimeString}}</span>
+                                    <span> {{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
                                 </div>
                                 <div class="col-sm-3">
                                     <span>{{result | resultToPace}}</span>

@@ -26,6 +26,10 @@ footer {
 .navbar-inverse .navbar-nav > li > a {
   color: #006699;
 }
+.activeNav {
+  color: #FFF;
+  background-color: transparent;
+}
 .navbar-inverse .navbar-brand {
   color: #006699;
 }
@@ -108,6 +112,15 @@ footer {
 }
 .black {
   color: #4D5153;
+}
+.red {
+  color: red;
+}
+.navbar-inverse .navbar-nav > li > .submitmenu {
+  color: red;
+}
+.navbar-inverse .navbar-nav > li > .loginmenu {
+  color: #7DD6FE;
 }
 .resultlistheader {
   border-bottom: thick solid;

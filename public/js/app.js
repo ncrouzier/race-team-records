@@ -1,9 +1,9 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members','mcrrcApp.results','mcrrcApp.admin','mcrrcApp.authentication','restangular','dialogs.main', 'ui.bootstrap','ui.select','ngSanitize', 'ui.router', 'appRoutes' ,'angular-loading-bar','angularUtils.directives.dirPagination','angulartics', 'angulartics.google.analytics']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics']);
 
-var membersModule = angular.module('mcrrcApp.members',[]);
-var resultsModule = angular.module('mcrrcApp.results',[]);
-var adminModule = angular.module('mcrrcApp.admin',[]);
-var authenticationModule = angular.module('mcrrcApp.authentication',[]);
+var membersModule = angular.module('mcrrcApp.members', []);
+var resultsModule = angular.module('mcrrcApp.results', []);
+var adminModule = angular.module('mcrrcApp.admin', []);
+var authenticationModule = angular.module('mcrrcApp.authentication', []);
 
 app.config(function(paginationTemplateProvider) {
     paginationTemplateProvider.setPath('views/templates/dirPagination.tpl.html');
@@ -11,10 +11,10 @@ app.config(function(paginationTemplateProvider) {
 });
 
 
-app.run(['$http', 'AuthService','Restangular', function($http, AuthService,Restangular) {
+app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Restangular) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
-      id: "_id"
+        id: "_id"
     });
 
     $http.get("/api/login").success(function(data, status) {
@@ -27,7 +27,7 @@ app.run(['$http', 'AuthService','Restangular', function($http, AuthService,Resta
 
 
 
-angular.module('mcrrcApp.results').controller('MainController',[ '$scope', 'AuthService', function($scope,AuthService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', function($scope, AuthService) {
 
-    
+
 }]);

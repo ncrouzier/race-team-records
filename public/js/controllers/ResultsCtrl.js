@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', function($scope, $analytics,    AuthService, ResultsService, dialogs) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', function($scope, $analytics, AuthService, ResultsService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -9,7 +9,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResults({
-        "sort": '-racedate'
+        "sort": '-racedate +racename +time'
     }).then(function(results) {
         $scope.resultsList = results;
     });

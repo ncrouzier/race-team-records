@@ -14,49 +14,51 @@
 	</script>
 </head>
 <body ng-controller="MainController">
-<div class="container">
-	
-	<!-- HEADER -->
-	<nav class="navbar navbar-inverse" >
-		<div class="navbar-header">
-			<a class="navbar-brand" ui-sref="/">Home</a>
+	<div class="container">
+		<div class="logo row">
+			<h1>MCRRC Racing Team</h1>
 		</div>
-		<% if (user && user.role === 'admin') { %>
-			<ul class="nav navbar-nav">
-				<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-				<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-				<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-				<li><a ui-sref="/racetypes">Race Types</a></li>
-				<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
-			</ul>
-			<ul class="nav navbar-nav" style="float: right">
-				<li class="dropdown" dropdown on-toggle="toggled(open)">
-			  	    <a href class="dropdown-toggle" dropdown-toggle>
-			        <%= user.email %> <span class="caret"></span>
-			      </a>
-			      <ul class="dropdown-menu">
-			        <li><a ui-sref="/profile">Profile</a></li>
-			        <li><a href="/logout">Logout</a></li>
-			      </ul>
-			    </li>
-			</ul>
-		<%}else{ %>
-			<ul class="nav navbar-nav" >
-				<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-				<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-				<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-				<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
-			</ul>
-			<ul class="nav navbar-nav" style="float: right" >
-				<li><a class="loginmenu" ui-sref="/login">Login</a></li>
-			</ul>
-		<%}%>	
-	</nav>
 
-	<div ui-view></div>
-	<footer><div class="row"><div class="col-sm-4 text-left"><small>remarks, questions or request? <a ui-sref="/contact">contact us<i class="fa fa-email"></i></a></small></div><div class="col-sm-4"></div><div class="col-sm-4 text-right"><small><a href="http://www.mcrrc.org" target="_blank">MCRRC</a></small></div></div></footer>
-</div>
+		<!-- HEADER -->
+		<nav class="navbar navbar-inverse" >
+			<div class="navbar-header">
+				<a class="navbar-brand" ui-sref="/">Home</a>
+			</div>
+			<% if (user && user.role === 'admin') { %>
+				<ul class="nav navbar-nav">
+					<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
+					<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
+					<li><a ui-sref="/racetypes">Race Types</a></li>
+				</ul>
+				<ul class="nav navbar-nav" style="float: right">
+					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
+					<li class="dropdown" dropdown on-toggle="toggled(open)">
+				  	    <a href class="dropdown-toggle" dropdown-toggle>
+				        <%= user.email %> <span class="caret"></span>
+				      </a>
+				      <ul class="dropdown-menu">
+				        <li><a ui-sref="/profile">Profile</a></li>
+				        <li><a href="/logout">Logout</a></li>
+				      </ul>
+				    </li>
+				</ul>
+			<%}else{ %>
+				<ul class="nav navbar-nav" >
+					<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
+					<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
+					
+				</ul>
+				<ul class="nav navbar-nav" style="float: right" >
+					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
+				</ul>
+			<%}%>	
+		</nav>
 
+		<div ui-view></div>
+		<footer><div class="row"><div class="col-sm-4 text-left">Comments, questions or request? <a ui-sref="/contact">contact us<i class="fa fa-email"></i></a></div><div class="col-sm-4 text-center"><a class="transparent" ui-sref="/login">admin login</a></div><div class="col-sm-4 text-right"><a title="Montgomery County Road Runners Club" href="http://www.mcrrc.org" target="_blank">MCRRC</a></div></div></footer>
+	</div>
 </body>
 
 </html>

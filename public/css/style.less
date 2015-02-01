@@ -2,48 +2,67 @@ body {
     padding-top: 10px;
     color: #4D5153;
 }
-
-footer{
-    color:#606568;
-    padding-bottom:15px;
+footer {
+    color: #606568;
+    padding-bottom: 15px;
+    font-size: 0.7em;
 }
-
-.container{
-    min-height:800px;
+.container {
+    min-height: 800px;
 }
-.nav, .pagination, .carousel, .panel-title a {
-    cursor: pointer;
+.logo {
+    background: #7dd6fe;
+    border-radius: 4px 4px 0px 0px;
+    height: 80px;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-left: 15px;
 }
-.hoverhand {
-    cursor: pointer;
-    cursor: hand;
+.logo >h1 {
+    font-size: 40px;
+}
+@media (max-width: 350px) {
+    .logo >h1 {
+        font-size: 16px;
+        color:red;
+    }
+}
+@media (min-width: 351px) and (max-width: 445px) {
+    .logo >h1 {
+        font-size: 30px;
+    }
+}
+.navbar {
+    border-radius: 0px 0px 4px 4px;
 }
 .navbar-inverse {
+    background: #7dd6fe;
     background-color: #7DD6FE;
     border: color: #7DD6FE;
 }
 .navbar-inverse .navbar-nav > li > a {
     color: #006699;
 }
-
-.activeNav{
+.activeNav {
     color: #FFF;
     background-color: transparent;
 }
-
 .navbar-inverse .navbar-brand {
     color: #006699;
+}
+.nav, .pagination, .carousel, .panel-title a {
+    cursor: pointer;
 }
 .jumbotron {
     min-height: 730px;
     color: #006699;
-    background-color:#D3DFE4;
-    margin-bottom:10px;
+    background-color: #D3DFE4;
+    margin-bottom: 10px;
 }
 .detailscontainer {
-    padding-left:5px;
-    padding-bottom:5px;
-    padding-right:5px;
+    padding-left: 5px;
+    padding-bottom: 5px;
+    padding-right: 5px;
     background-color: #EBF0F3;
     height: 100%;
     -webkit-border-radius: 4px;
@@ -55,7 +74,7 @@ footer{
     border-color: #9C1138;
     margin-bottom: 0px;
 }
-.list-group-item{
+.list-group-item {
     color: #606568;
 }
 .list-group-item-male {
@@ -111,21 +130,18 @@ footer{
 .timediff {
     color: red;
 }
-
 .black {
     color: #4D5153;
 }
 .red {
-    color: red;
+    color: #FF0010;
+}
+.transparent{
+    color: transparent;
 }
 .navbar-inverse .navbar-nav > li > .submitmenu {
-    color: red;
+    color: #FF0010;
 }
-
-.navbar-inverse .navbar-nav > li > .loginmenu {
-    color: #7DD6FE;
-}
-
 .resultlistheader {
     border-bottom: thick solid;
     color: #006699;
@@ -134,16 +150,22 @@ footer{
     padding-top: 3px;
     padding-bottom: 3px;
 }
-.pblistrow{
+.pblistrow {
     padding-top: 1px;
     padding-bottom: 1px;
-    border:0px;
+    border: 0px;
 }
 .listheader {
     font-weight: bold;
 }
-
 .tooltip-inner {
-    text-align:left;
+    text-align: left;
     max-width: 500px;
+}
+.hoverhand {
+    cursor: pointer;
+    cursor: hand;
+}
+.introtext{
+    line-height: 1.1;
 }

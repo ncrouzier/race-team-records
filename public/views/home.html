@@ -1,8 +1,10 @@
 <div class="jumbotron ">
 
-<p class="text-left">Welcome to the MCRRC racing team result and record site.</p>
+    <p class="text-left">Welcome to the MCRRC racing team result and record site.</p>
+    <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and recognize highly talented and competitive members of MCRRC, promote competitive distance running among club members, and increase the visibility of MCRRC within the broader running community. The program establishes racing teams to compete at races in the metropolitan Washington, DC area.  <a href="http://www.mcrrc.org/competitive-racing-team" target="_blank"><b>learn more...<b></a></i></small>
+    </p>
 
-    <p class="text-center">Last 30 days results.<i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result" ></i>
+    <p class="text-center">Last 30 days results:<i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i>
     </p>
 
     <div id="member-list" class="row">
@@ -34,7 +36,7 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            {{ result.racename }} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                            {{ result.racename }} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                             <br>
                             <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                         </div>

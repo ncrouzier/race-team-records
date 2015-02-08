@@ -22,14 +22,14 @@
 		<!-- HEADER -->
 		<nav class="navbar navbar-inverse" >
 			<div class="navbar-header">
-				<a class="navbar-brand" ui-sref="/">Home</a>
+				<a ng-class="{active: $state.includes('/')}" class="navbar-brand" ui-sref="/">Home</a>
 			</div>
 			<% if (user && user.role === 'admin') { %>
 				<ul class="nav navbar-nav">
-					<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-					<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-					<li><a ui-sref="/racetypes">Race Types</a></li>
+					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
+					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
+					<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
 				</ul>
 				<ul class="nav navbar-nav" style="float: right">
 					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
@@ -45,9 +45,9 @@
 				</ul>
 			<%}else{ %>
 				<ul class="nav navbar-nav" >
-					<li><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-					<li><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
+					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
+					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					
 				</ul>
 				<ul class="nav navbar-nav" style="float: right" >

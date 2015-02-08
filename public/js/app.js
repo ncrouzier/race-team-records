@@ -1,4 +1,4 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule']);
 
 var membersModule = angular.module('mcrrcApp.members', []);
 var resultsModule = angular.module('mcrrcApp.results', []);
@@ -10,6 +10,9 @@ app.config(function(paginationTemplateProvider) {
 
 });
 
+app.config(function(localStorageServiceProvider) {
+    localStorageServiceProvider.setPrefix('mcrrcApp');
+});
 
 app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Restangular) {
     Restangular.setBaseUrl('/api/');
@@ -27,7 +30,8 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
 
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', function($scope, AuthService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', function($scope, AuthService, $state) {
+    $scope.$state =$state;
 
 
 }]);

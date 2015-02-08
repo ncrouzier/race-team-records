@@ -60,10 +60,20 @@ app.directive("memberselector", function() {
         link: function(scope, element) {
             scope.deleteMemberSelector = function(datamembers, index) {
                 datamembers.splice(index, 1);
-                element.remove();
             };
         }
     };
 });
 
+//fix for datePicker format bug
+app.directive('datepickerPopup', function (){
+  return {
+    restrict: 'EAC',
+    require: 'ngModel',
+    link: function(scope, element, attr, controller) {
+      //remove the default formatter from the input directive to prevent conflict
+      controller.$formatters.shift();
+    }
+  };
+});
 

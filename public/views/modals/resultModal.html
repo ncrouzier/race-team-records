@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h3 class="modal-title">Add Result</h3>
+    <h3 class="modal-title">Add Result <i class="hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
 </div>
 <div class="modal-body">
     <form>
@@ -12,7 +12,7 @@
                 <div class="col-md-3">
                     <label class="control-label text-left">Race date:</label>
                     <p class="input-group">
-                        <input type="text" class="form-control input-md" datepicker-popup="{{format}}" ng-model="formData.racedate" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+                        <input type="text" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="formData.racedate" is-open="opened" min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'"  datepicker-options="dateOptions" ng-required="true" close-text="Close" />
                         <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
@@ -56,14 +56,14 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <label class="control-label text-left">Result web link:</label>
-                    <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left" >
+                    <label class="control-label text-left">Comments/remarks</label>
+                    <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <label class="control-label text-left">Comments/remarks</label>
-                    <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
+                    <label class="control-label text-left">Result web link:</label>
+                    <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left" >
                 </div>
             </div>
         </div>

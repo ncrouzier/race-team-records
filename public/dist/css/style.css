@@ -49,7 +49,10 @@ footer {
 .navbar-inverse .navbar-nav > li > a {
   color: #006699;
 }
-.activeNav {
+.navbar-inverse .navbar-header > .active,
+.navbar-inverse .navbar-nav > .active > a,
+.navbar-inverse .navbar-nav > .active > a:focus,
+.navbar-inverse .navbar-nav > .active > a:hover {
   color: #FFF;
   background-color: transparent;
 }

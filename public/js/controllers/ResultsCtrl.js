@@ -4,7 +4,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
-    
+
     $scope.resultsList = [];
 
 
@@ -40,7 +40,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', 'result', 'MembersService', 'ResultsService', function($scope, $modalInstance, result, MembersService, ResultsService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance','$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
     MembersService.getMembers().then(function(members) {
         $scope.membersList = members;
@@ -64,6 +64,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.time.seconds = $scope.formData.time % 60;
     } else {
         $scope.formData = {};
+        $scope.formData.racename = localStorageService.get('raceName');
+        $scope.formData.racedate = localStorageService.get('raceDate');
+        $scope.formData.racetype = localStorageService.get('raceType');
+        $scope.formData.resultlink = localStorageService.get('resultLink');
+
         $scope.formData.member = [];
         $scope.formData.member[0] = {};
         $scope.nbOfMembers = 1;
@@ -85,9 +90,25 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         });
         $scope.formData.member = members;
 
+        //if we are adding a result, save race related info for futur addition
+        if (!$scope.editMode) {
+            localStorageService.set('raceName', $scope.formData.racename);
+            localStorageService.set('raceDate', $filter('date')($scope.formData.racedate,"yyyy-MM-dd"));
+            console.log($filter('date')($scope.formData.racedate,"yyyy-MM-dd"));
 
+            localStorageService.set('raceType', $scope.formData.racetype);
+            localStorageService.set('resultLink', $scope.formData.resultlink);
+        }
 
         $modalInstance.close($scope.formData);
+    };
+
+    $scope.clearForm = function() {
+        $scope.formData = {};
+        localStorageService.remove('raceName');
+        localStorageService.remove('raceDate');
+        localStorageService.remove('raceType');
+        localStorageService.remove('resultLink');
     };
 
     $scope.editResult = function() {
@@ -122,6 +143,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     // =====================================
     // DATE PICKER CONFIG ==================
     // =====================================
+
 
     $scope.open = function($event) {
         $event.preventDefault();

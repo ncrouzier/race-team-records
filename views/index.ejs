@@ -29,11 +29,20 @@
 					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
 					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-					<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
+					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report'))}" class="dropdown" dropdown on-toggle="toggled(open)">
+				  	    <a href class="dropdown-toggle" dropdown-toggle>
+				        Admin tools <span class="caret"></span>
+				      </a>
+				      <ul class="dropdown-menu">
+				        <li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
+				       	<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
+				      </ul>
+				    </li>
+					
 				</ul>
 				<ul class="nav navbar-nav" style="float: right">
 					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
-					<li class="dropdown" dropdown on-toggle="toggled(open)">
+					<li ng-class="{active: ($state.includes('/profile'))}" class="dropdown" dropdown on-toggle="toggled(open)">
 				  	    <a href class="dropdown-toggle" dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
 				      </a>

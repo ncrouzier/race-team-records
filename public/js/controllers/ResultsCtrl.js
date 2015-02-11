@@ -9,7 +9,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResults({
-        "sort": '-racedate +racename +time'
+        "sort": '-racedate racename time'
     }).then(function(results) {
         $scope.resultsList = results;
     });

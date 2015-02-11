@@ -52,8 +52,18 @@ footer {
 .navbar-inverse .navbar-header > .active,
 .navbar-inverse .navbar-nav > .active > a,
 .navbar-inverse .navbar-nav > .active > a:focus,
-.navbar-inverse .navbar-nav > .active > a:hover {
+.navbar-inverse .navbar-nav > .active > a:hover,
+.navbar-inverse .navbar-nav .open,
+.navbar-inverse .navbar-nav .open > a:hover,
+.navbar-inverse .navbar-nav > .open > a,
+.navbar-inverse .navbar-nav > .open > a:focus {
   color: #FFF;
+  background-color: transparent;
+}
+.dropdown-toggle {
+  background-color: transparent;
+}
+.dropdown {
   background-color: transparent;
 }
 .navbar-inverse .navbar-brand {

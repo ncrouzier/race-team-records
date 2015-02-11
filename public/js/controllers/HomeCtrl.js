@@ -13,7 +13,7 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
         "filters": {
             "datefrom": new Date().setDate((new Date()).getDate()-30)
         },
-        "sort": '-racedate'
+        "sort": '-racedate racename time'
     }).then(function(results) {
         $scope.resultsList = results;
     });

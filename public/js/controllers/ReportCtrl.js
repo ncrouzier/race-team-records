@@ -34,9 +34,9 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                         $scope.report += '\n';
                     }
                     $scope.report += result.racename + " " + $filter('date')(result.racedate, "yyyy-MM-dd") + "\n";
-                    $scope.report += members + " " + $filter('secondsToTimeString')(result.time) + ' ' +result.time +"\n";
+                    $scope.report += members + " " + $filter('secondsToTimeString')(result.time) +"\n";
                 } else {
-                    $scope.report += members + " " + $filter('secondsToTimeString')(result.time) + ' ' +result.time  + "\n";
+                    $scope.report += members + " " + $filter('secondsToTimeString')(result.time) + "\n";
                 }
 
                 lastEvent = result.racename;

@@ -469,6 +469,94 @@ module.exports = function(app, qs, passport, async) {
         });
     });
 
+
+    //pdf
+    app.get('/api/pdfreport', function(req, res) {
+
+        var calls = [];
+        var fullreport = [];
+
+
+        raceTypeQuery = RaceType.find().sort('meters');
+        raceTypeQuery.exec(function(err, racetypes) {
+            if (err) {
+                res.send(err)
+            }
+            var openMaleRecords = [];
+            racetypes.forEach(function(rt) {
+
+                calls.push(function(callback) {
+                    query = Result.find();
+                    query = query.regex('category', 'Open').where('member.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query.exec(function(err, results) {
+                        if (err) {
+                            callback(err);
+                        }
+                        fullreport.push(results);
+                        callback(null);
+                    });
+
+                });
+                calls.push(function(callback) {
+                    query = Result.find();
+                    query = query.regex('category', 'Master').where('member.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query.exec(function(err, results) {
+                        if (err) {
+                            callback(err);
+                        }
+                        fullreport.push(results);
+                        callback(null);
+                    });
+                });
+                calls.push(function(callback) {
+                    query = Result.find();
+                    query = query.regex('category', 'Open').where('member.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query.exec(function(err, results) {
+                        if (err) {
+                            callback(err);
+                        }
+                        fullreport.push(results);
+                        callback(null);
+                    });
+                });
+                calls.push(function(callback) {
+                    query = Result.find();
+                    query = query.regex('category', 'Master').where('member.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query.exec(function(err, results) {
+                        if (err) {
+                            callback(err);
+                        }
+                        fullreport.push(results);
+                        callback(null);
+                    });
+                });
+            });
+
+
+            async.parallel(calls, function(err, results) {
+                if (err)
+                    return res.send(err);
+                res.json(fullreport);
+
+            });
+
+
+
+
+
+
+        });
+
+
+
+
+
+
+
+
+
+    });
+
     // =====================================
     // RaceTypes =============================
     // =====================================
@@ -593,8 +681,14 @@ module.exports = function(app, qs, passport, async) {
     app.post('/sendEmail', function(req, res) {
         var data = req.body;
         transport.sendMail({
-            from: {name:data.name,address: data.from},
-            to: {name:"MCRRC RACE TEAM SITE ADMIN",address: process.env.MCRRC_EMAIL_ADDRESS},
+            from: {
+                name: data.name,
+                address: data.from
+            },
+            to: {
+                name: "MCRRC RACE TEAM SITE ADMIN",
+                address: process.env.MCRRC_EMAIL_ADDRESS
+            },
             subject: data.subject, // Subject line
             text: data.body // plaintext body
         }, function(error, response) {

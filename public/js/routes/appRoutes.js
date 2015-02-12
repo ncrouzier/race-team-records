@@ -41,6 +41,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/report",
             templateUrl: "views/report.html",
             controller: 'ReportController'
+        }).state('/pdf', {
+            url: "/pdf",
+            templateUrl: "views/pdf.html",
+            controller: 'PdfGeneratorController'
         }).state('/contact', {
             url: "/contact",
             templateUrl: "views/contact.html",

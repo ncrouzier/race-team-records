@@ -33,6 +33,7 @@ module.exports = function(grunt) {
                         'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
                         'public/libs/angulartics/dist/angulartics.min.js',
                         'public/libs/angulartics/dist/angulartics-ga.min.js',
+                        'public/libs/jspdf/dist/jspdf.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]

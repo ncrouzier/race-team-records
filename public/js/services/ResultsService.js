@@ -118,7 +118,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
     };
 
     // =====================================
-    // RACETYPE MODALS ======================
+    // RACETYPE MODALS =====================
     // =====================================
 
     factory.showAddRaceTypeModal = function() {
@@ -158,9 +158,19 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
 
 
 
-
-
-
+    // =====================================
+    // PCD API =====================
+    // =====================================
+    factory.getResultsForPdf = function(params) {
+        return Restangular.all('pdfreport').getList(params).then(
+            function(results) {
+                console.log(results);
+                return results;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
     return factory;
 
 }]);

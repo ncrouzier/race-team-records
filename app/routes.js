@@ -492,7 +492,7 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push(results);
+                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Open','sex':'Male','records': results});
                         callback(null);
                     });
 
@@ -504,7 +504,7 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push(results);
+                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Master','sex':'Male','records': results});
                         callback(null);
                     });
                 });
@@ -515,7 +515,7 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push(results);
+                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Open','sex':'Female','records': results});
                         callback(null);
                     });
                 });
@@ -526,7 +526,7 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push(results);
+                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Master','sex':'Female','records': results});
                         callback(null);
                     });
                 });
@@ -536,6 +536,7 @@ module.exports = function(app, qs, passport, async) {
             async.parallel(calls, function(err, results) {
                 if (err)
                     return res.send(err);
+                console.log(fullreport);
                 res.json(fullreport);
 
             });

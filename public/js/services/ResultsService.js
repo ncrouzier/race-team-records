@@ -162,14 +162,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
     // PCD API =====================
     // =====================================
     factory.getResultsForPdf = function(params) {
-        return Restangular.all('pdfreport').getList(params).then(
+
+        return Restangular.one('pdfreport').get(params).then(
             function(results) {
-                console.log(results);
                 return results;
             },
             function(res) {
                 console.log('Error: ' + res.status);
             });
+
     };
     return factory;
 

@@ -474,15 +474,17 @@ module.exports = function(app, qs, passport, async) {
     app.get('/api/pdfreport', function(req, res) {
 
         var calls = [];
-        var fullreport = [];
-
+        var fullreport = {};
+        var openMaleRecords = [];
+        var masterMaleRecords = [];
+        var openFemaleRecords = [];
+        var masterFemaleRecords = [];
 
         raceTypeQuery = RaceType.find().sort('meters');
         raceTypeQuery.exec(function(err, racetypes) {
             if (err) {
                 res.send(err)
             }
-            var openMaleRecords = [];
             racetypes.forEach(function(rt) {
 
                 calls.push(function(callback) {
@@ -492,7 +494,10 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Open','sex':'Male','records': results});
+                        openMaleRecords.push({
+                            'racetype': rt,
+                            'records': results
+                        });
                         callback(null);
                     });
 
@@ -504,7 +509,10 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Master','sex':'Male','records': results});
+                        masterMaleRecords.push({
+                            'racetype': rt,
+                            'records': results
+                        });
                         callback(null);
                     });
                 });
@@ -515,7 +523,10 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Open','sex':'Female','records': results});
+                        openFemaleRecords.push({
+                            'racetype': rt,
+                            'records': results
+                        });
                         callback(null);
                     });
                 });
@@ -526,19 +537,52 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             callback(err);
                         }
-                        fullreport.push({'racetype':rt.name+' '+rt.surface,'category':'Master','sex':'Female','records': results});
+                        masterFemaleRecords.push({
+                            'racetype': rt,
+                            'records': results
+                        });
                         callback(null);
                     });
                 });
             });
 
 
-            async.parallel(calls, function(err, results) {
+            async.parallel(calls, function(err) {
                 if (err)
                     return res.send(err);
-                console.log(fullreport);
-                res.json(fullreport);
 
+                openMaleRecords.sort(sortRecordDistanceByDistance);
+                masterMaleRecords.sort(sortRecordDistanceByDistance);
+                openFemaleRecords.sort(sortRecordDistanceByDistance);
+                masterFemaleRecords.sort(sortRecordDistanceByDistance);
+
+                fullreport = {
+                    'openMaleRecords': {
+                        'category': 'Open',
+                        'sex': 'Male',
+                        'recordsList': openMaleRecords
+                    },
+
+                    'masterMaleRecords': {
+                        'category': 'Master',
+                        'sex': 'Male',
+                        'recordsList': masterMaleRecords
+                    },
+
+                    'openFemaleRecords': {
+                        'category': 'Open',
+                        'sex': 'Female',
+                        'recordsList': openFemaleRecords
+                    },
+
+                    'masterFemaleRecords': {
+                        'category': 'Matser',
+                        'sex': 'Female',
+                        'recordsList': masterFemaleRecords
+                    }
+                };
+
+                res.json(fullreport);
             });
 
 
@@ -759,3 +803,13 @@ function sortResultsByDistance(a, b) {
         return 1;
     return 0;
 }
+
+function sortRecordDistanceByDistance(a, b) {
+    if (a.racetype.meters < b.racetype.meters)
+        return -1;
+    if (a.racetype.meters > b.racetype.meters)
+        return 1;
+    return 0;
+}
+
+

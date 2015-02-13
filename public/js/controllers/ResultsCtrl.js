@@ -40,7 +40,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance','$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
     MembersService.getMembers().then(function(members) {
         $scope.membersList = members;
@@ -80,9 +80,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
     $scope.addResult = function() {
-        if ($scope.time.hours === undefined) $scope.time.hours = 0;
-        if ($scope.time.minutes === undefined) $scope.time.minutes = 0;
-        if ($scope.time.seconds === undefined) $scope.time.seconds = 0;
+        if ($scope.time.hours === null) $scope.time.hours = 0;
+        if ($scope.time.minutes === null) $scope.time.minutes = 0;
+        if ($scope.time.seconds === null) $scope.time.seconds = 0;
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
 
         var members = $.map($scope.formData.member, function(value, index) {
@@ -93,8 +93,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         //if we are adding a result, save race related info for futur addition
         if (!$scope.editMode) {
             localStorageService.set('raceName', $scope.formData.racename);
-            localStorageService.set('raceDate', $filter('date')($scope.formData.racedate,"yyyy-MM-dd"));
-            console.log($filter('date')($scope.formData.racedate,"yyyy-MM-dd"));
+            localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
 
             localStorageService.set('raceType', $scope.formData.racetype);
             localStorageService.set('resultLink', $scope.formData.resultlink);
@@ -105,6 +104,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.clearForm = function() {
         $scope.formData = {};
+        $scope.formData.member = [{}];
+        $scope.nbOfMembers = 1;
         localStorageService.remove('raceName');
         localStorageService.remove('raceDate');
         localStorageService.remove('raceType');
@@ -137,6 +138,15 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
     };
 
+    $scope.checkMembers = function() {
+        var res = true;
+        $scope.formData.member.forEach(function(m) {
+            if (m._id === undefined) {
+                res = false;
+            }
+        });
+        return res;
+    };
 
 
 

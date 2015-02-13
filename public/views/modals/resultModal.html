@@ -1,27 +1,32 @@
 <div class="modal-header">
-    <h3 class="modal-title">Add Result <i class="hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
+    <h3 class="modal-title">Add Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
 </div>
 <div class="modal-body">
-    <form>
-        <div class="form-group css-form">
-            <div class="row">
-                <div class="col-md-4">
-                    <label class="control-label text-left">Race name:</label>
-                    <input type="text" class="form-control input-md text-left" ng-model="formData.racename" ng-required="true">
+    <form name="formresult">
+        <!-- <div class="form-group css-form"> -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.raceename.$invalid && !formresult.raceename.$pristine}">
+                    <label class="text-left">Race name:</label>
+                    <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.racename" ng-required="true" required auto-focus>
                 </div>
-                <div class="col-md-3">
-                    <label class="control-label text-left">Race date:</label>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.racedate.$invalid && !formresult.racedate.$pristine}">
+                    <label class="text-left">Race date:</label>
                     <p class="input-group">
-                        <input type="text" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="formData.racedate" is-open="opened" min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'"  datepicker-options="dateOptions" ng-required="true" close-text="Close" />
+                        <input type="text" name="racedate" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="formData.racedate" is-open="opened" min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'" datepicker-options="dateOptions" required close-text="Close" />
                         <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                                    <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
                     </p>
                 </div>
-                <div class="col-md-5">
-                    <label class="control-label text-left">Race Type:</label>
+            </div>
+            <div class="col-md-5">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.$invalid }">
+                    <label class="text-left">Race Type:</label>
                     <br>
-                    <ui-select ng-model="formData.racetype" theme="select2" style="min-width: 300px;" ng-required="true">
+                    <ui-select name="racetype" ng-model="formData.racetype" theme="select2" style="min-width: 300px;" required>
                         <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
                         <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                             <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
@@ -32,46 +37,58 @@
                             </div>
                         </ui-select-choices>
                     </ui-select>
-
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6" id="resultmembers">
-                    <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a race"></i>
-                        <br>
-                        <memberselector ng-repeat="member in formData.member track by $index" index="{{$index}}" datamembers="formData.member" members="membersList"></memberselector>
-                </div>
-                <div class="col-md-2">
-                    <label class="control-label text-left">Hours:</label>
-                    <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left" ng-required="true">
-                </div>
-                <div class="col-md-2">
-                    <label class="control-label text-left">Minutes:</label>
-                    <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left" ng-required="true">
-                </div>
-                <div class="col-md-2">
-                    <label class="control-label text-left">Seconds:</label>
-                    <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" ng-required="true">
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <label class="control-label text-left">Comments/remarks</label>
-                    <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <label class="control-label text-left">Result web link:</label>
-                    <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left" >
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group" >
+                    <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a race"></i>
+                    <br>
+                    <span ng-repeat="member in formData.member track by $index">
+                        <ui-select name="member_{{$index}}"  ng-model="formData.member[$index]" theme="select2" style="min-width: 300px;" required>
+                            <ui-select-match   placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
+                            <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                                <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                                <small>age: {{member.dateofbirth | ageFilter}}</small>
+                            </ui-select-choices>
+                        </ui-select>
+                        <i ng-show="$index !=0" class="hoverhand fa fa-times" ng-click="formData.member.splice($index, 1);" title="Delete member"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <label class=" text-left">Hours:</label>
+                <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left" placeholder="0">
+            </div>
+            <div class="col-md-2">
+                <label class="text-left">Minutes:</label>
+                <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+            </div>
+            <div class="col-md-2">
+                <label class="text-left">Seconds:</label>
+                <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <label class="text-left">Comments/remarks</label>
+                <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <label class="text-left">Result web link:</label>
+                <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
+            </div>
+        </div>
+        <!-- </div> -->
     </form>
 </div>
 <div class="modal-footer">
     <!-- createMember() WILL CREATE NEW Members -->
-    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()">Edit Result</button>
-    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()">Add Result</button>
+    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid">Edit Result</button>
+    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
     <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
 </div>

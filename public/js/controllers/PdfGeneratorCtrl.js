@@ -17,15 +17,21 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
             doc.setFontSize(30);
             doc.text(35, 25, "MCRRC Race Team Records");
             doc.setFontSize(8);
-            doc.text(35, 200, "Document generated on "+ $filter('date')(new Date(), "MM/dd/yyyy"));
+            doc.text(10, 290, "Document generated on "+ $filter('date')(new Date(), "MM/dd/yyyy"));
             doc.addPage();
 
-
-            var h = 9;
+            doc.setFontSize(11);
+            doc.setFontType("bold");
+            doc.setTextColor(26, 90, 133);
+            doc.text(8, 7, "Open Male:" );
+            doc.setTextColor(0, 0, 0);
+            doc.setFontType("normal");
+            var h = 12;
             pdfreport.openMaleRecords.recordsList.forEach(function(divRecords) {
-                h++;
-                var rt = divRecords.racetype;
                 var results = divRecords.records;
+                if (results.length === 0) return;
+                var rt = divRecords.racetype;
+                h++;
                 doc.setFontSize(8);
                 doc.setFontType("bold");
                 doc.text(8, h, rt.name + ' (' + rt.surface + ')');
@@ -46,11 +52,19 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
 
             });
             doc.addPage();
-            h = 15;
+
+			doc.setFontSize(11);
+            doc.setFontType("bold");
+            doc.setTextColor(26, 90, 133);
+            doc.text(8, 7, "Master Male:" );
+            doc.setTextColor(0, 0, 0);
+            doc.setFontType("normal");
+            h = 12;
             pdfreport.masterMaleRecords.recordsList.forEach(function(divRecords) {
-                h++;
-                var rt = divRecords.racetype;
                 var results = divRecords.records;
+                if (results.length === 0) return;
+                var rt = divRecords.racetype;
+                h++;
                 doc.setFontSize(8);
                 doc.setFontType("bold");
                 doc.text(8, h, rt.name + ' (' + rt.surface + ')');
@@ -70,11 +84,19 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 });
             });
             doc.addPage();
-            h = 15;
+
+            doc.setFontSize(11);
+            doc.setFontType("bold");
+            doc.setTextColor(26, 90, 133);
+            doc.text(8, 7, "Open Female:" );
+            doc.setTextColor(0, 0, 0);
+            doc.setFontType("normal");
+            h = 12;
             pdfreport.openFemaleRecords.recordsList.forEach(function(divRecords) {
-                h++;
-                var rt = divRecords.racetype;
                 var results = divRecords.records;
+                if (results.length === 0) return;
+                var rt = divRecords.racetype;
+                h++;
                 doc.setFontSize(8);
                 doc.setFontType("bold");
                 doc.text(8, h, rt.name + ' (' + rt.surface + ')');
@@ -94,11 +116,19 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 });
             });
             doc.addPage();
-            h = 15;
+
+            doc.setFontSize(11);
+            doc.setFontType("bold");
+            doc.setTextColor(26, 90, 133);
+            doc.text(8, 7, "Master Female:" );
+            doc.setTextColor(0, 0, 0);
+            doc.setFontType("normal");
+            h = 12;
             pdfreport.masterFemaleRecords.recordsList.forEach(function(divRecords) {
-                h++;
-                var rt = divRecords.racetype;
                 var results = divRecords.records;
+                if (results.length === 0) return;
+                var rt = divRecords.racetype;
+                h++;
                 doc.setFontSize(8);
                 doc.setFontType("bold");
                 doc.text(8, h, rt.name + ' (' + rt.surface + ')');

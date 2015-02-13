@@ -47,23 +47,30 @@ app.directive('onlyDigits', function() {
 
 
 
-app.directive("memberselector", function() {
-    return {
-        restrict: "E",
-        transclude: true,
-        scope: {
-            datamembers: "=",
-            members: "=",
-            index: "@"
-        },
-        templateUrl: "views/templates/memberDropdown.html",
-        link: function(scope, element) {
-            scope.deleteMemberSelector = function(datamembers, index) {
-                datamembers.splice(index, 1);
-            };
-        }
-    };
-});
+// app.directive("memberselector", function() {
+//     return {
+//         restrict: "E",
+//         transclude: true,
+//         scope: {
+//             datamembers: "=",
+//             members: "=",
+//             index: "@",
+//             form: "formResult"
+//         },
+//         templateUrl: "views/templates/memberDropdown.html",
+//         link: function(scope, element, attrs, ngModelCtrl) {
+//              if (angular.isUndefined(attrs.multiple)) {
+//                  return;
+//             }
+//             ngModelCtrl.$isEmpty = function (modelValue) {
+//                 return !modelValue.length;
+//             };
+//             scope.deleteMemberSelector = function(datamembers, index) {
+//                 datamembers.splice(index, 1);
+//             };
+//         }
+//     };
+// });
 
 //fix for datePicker format bug
 app.directive('datepickerPopup', function (){
@@ -77,3 +84,13 @@ app.directive('datepickerPopup', function (){
   };
 });
 
+app.directive('autoFocus', function($timeout) {
+    return {
+        restrict: 'AC',
+        link: function(_scope, _element) {
+            $timeout(function(){
+                _element[0].focus();
+            }, 100);
+        }
+    };
+});

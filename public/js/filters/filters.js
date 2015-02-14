@@ -234,7 +234,7 @@ app.filter('resultSuperFilter', function(query) {
 
                 //member name
                 var foundname = false;
-                result.member.forEach(function(member) {
+                result.members.forEach(function(member) {
                     name = member.firstname + ' ' + member.lastname + ', ';
                     if (name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);

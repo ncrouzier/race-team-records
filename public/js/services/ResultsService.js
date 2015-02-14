@@ -134,7 +134,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
         return modalInstance.result.then(function(racetype) {
             factory.createRaceType(racetype);
             return racetype;
-        }, function() {});
+        }, function() {
+            return null;
+        });
     };
 
     factory.retrieveRaceTypeForEdit = function(racetype) {
@@ -152,7 +154,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
 
             return modalInstance.result.then(function(racetype) {
                 factory.editRaceType(racetype);
-            }, function() {});
+            }, function() {
+                return null;
+            });
         }
     };
 

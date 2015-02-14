@@ -44,33 +44,27 @@ app.directive('onlyDigits', function() {
     };
 });
 
+app.directive('onlyDecimals', function() {
+    return {
+        require: 'ngModel',
+        restrict: 'A',
+        link: function(scope, element, attr, ctrl) {
+            function inputValue(val) {
+                if (val) {
+                    var digits = val.replace(/[^0-9.]/g, '');
+                    if (digits !== val) {
+                        ctrl.$setViewValue(digits);
+                        ctrl.$render();
+                    }
+                    return parseInt(digits, 10);
+                }
+                return undefined;
+            }
+            ctrl.$parsers.push(inputValue);
+        }
+    };
+});
 
-
-
-// app.directive("memberselector", function() {
-//     return {
-//         restrict: "E",
-//         transclude: true,
-//         scope: {
-//             datamembers: "=",
-//             members: "=",
-//             index: "@",
-//             form: "formResult"
-//         },
-//         templateUrl: "views/templates/memberDropdown.html",
-//         link: function(scope, element, attrs, ngModelCtrl) {
-//              if (angular.isUndefined(attrs.multiple)) {
-//                  return;
-//             }
-//             ngModelCtrl.$isEmpty = function (modelValue) {
-//                 return !modelValue.length;
-//             };
-//             scope.deleteMemberSelector = function(datamembers, index) {
-//                 datamembers.splice(index, 1);
-//             };
-//         }
-//     };
-// });
 
 //fix for datePicker format bug
 app.directive('datepickerPopup', function (){

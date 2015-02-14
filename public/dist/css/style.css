@@ -107,19 +107,34 @@ footer {
   background-color: #F4D7E7;
   color: #8E3163;
 }
-.tracksurface {
+.track-col {
+  color: #AD757F;
+}
+.crosscountry-col {
+  color: #84CC97;
+}
+.road-col {
+  color: #8AB5DB;
+}
+.ultra-col {
+  color: #8C895F;
+}
+.other-col {
+  color: #F3F78C;
+}
+.tracksurface-bg {
   background: #AD757F;
 }
-.xcsurface {
+.xcsurface-bg {
   background: #84CC97;
 }
-.roadsurface {
+.roadsurface-bg {
   background: #8AB5DB;
 }
-.ultrasurface {
+.ultrasurface-bg {
   background: #8C895F;
 }
-.othersurface {
+.othersurface-bg {
   background: #F3F78C;
 }
 .gold {

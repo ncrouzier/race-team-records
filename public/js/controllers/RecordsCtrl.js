@@ -20,7 +20,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     ResultsService.getRaceTypes({
         sort: 'meters'
     }).then(function(racetypes) {
-        $scope.racetypesList = racetypes;
+        $scope.racetypesList =racetypes;
     });
 
 
@@ -63,5 +63,8 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         }, function(btn) {});
     };
 
+    $scope.getRaceTypeClass = function(s){
+        return s.replace(/ /g, '')+'-col';
+    };
 
 }]);

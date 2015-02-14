@@ -43,7 +43,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 h += 3;
                 results.forEach(function(result) {
                     var members = '';
-                    result.member.forEach(function(m) {
+                    result.members.forEach(function(m) {
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
@@ -76,7 +76,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 h += 3;
                 results.forEach(function(result) {
                     var members = '';
-                    result.member.forEach(function(m) {
+                    result.members.forEach(function(m) {
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
@@ -108,7 +108,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 h += 3;
                 results.forEach(function(result) {
                     var members = '';
-                    result.member.forEach(function(m) {
+                    result.members.forEach(function(m) {
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
@@ -140,7 +140,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                 h += 3;
                 results.forEach(function(result) {
                     var members = '';
-                    result.member.forEach(function(m) {
+                    result.members.forEach(function(m) {
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);

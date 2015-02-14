@@ -25,7 +25,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
             var lastDate = "";
             results.forEach(function(result) {
                 var members = '';
-                result.member.forEach(function(m) {
+                result.members.forEach(function(m) {
                     members += m.firstname + ' ' + m.lastname + ' & ';
                 });
                 members = members.slice(0,-3);

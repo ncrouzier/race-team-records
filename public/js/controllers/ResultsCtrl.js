@@ -47,9 +47,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     });
 
-    ResultsService.getRaceTypes().then(function(racetypes) {
+    ResultsService.getRaceTypes({
+        sort: 'meters'
+    }).then(function(racetypes) {
         $scope.racetypesList = racetypes;
     });
+
+    
 
 
     $scope.editmode = false;
@@ -57,7 +61,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData = result;
         $scope.editmode = true;
         $scope.formData.dateofbirth = new Date();
-        $scope.nbOfMembers = result.member.length;
+        $scope.nbOfMembers = result.members.length;
         $scope.time = {};
         $scope.time.hours = Math.floor($scope.formData.time / 3600);
         $scope.time.minutes = Math.floor($scope.formData.time / 60) % 60;
@@ -69,8 +73,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.racetype = localStorageService.get('raceType');
         $scope.formData.resultlink = localStorageService.get('resultLink');
 
-        $scope.formData.member = [];
-        $scope.formData.member[0] = {};
+        $scope.formData.members = [];
+        $scope.formData.members[0] = {};
         $scope.nbOfMembers = 1;
         $scope.time = {};
         $scope.editmode = false;
@@ -85,10 +89,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.time.seconds === null) $scope.time.seconds = 0;
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
 
-        var members = $.map($scope.formData.member, function(value, index) {
+        var members = $.map($scope.formData.members, function(value, index) {
             return [value];
         });
-        $scope.formData.member = members;
+        $scope.formData.members = members;
 
         //if we are adding a result, save race related info for futur addition
         if (!$scope.editMode) {
@@ -104,7 +108,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.clearForm = function() {
         $scope.formData = {};
-        $scope.formData.member = [{}];
+        $scope.formData.members = [{}];
         $scope.nbOfMembers = 1;
         localStorageService.remove('raceName');
         localStorageService.remove('raceDate');
@@ -122,25 +126,25 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
     $scope.addNbMembers = function() {
-        $scope.nbOfMembers = $scope.formData.member.length + 1;
+        $scope.nbOfMembers = $scope.formData.members.length + 1;
         $scope.updateNbMembers();
     };
 
     $scope.updateNbMembers = function() {
         var num = $scope.nbOfMembers;
-        var size = $scope.formData.member.length;
+        var size = $scope.formData.members.length;
         if (num > size) {
             for (i = 0; i < num - size; i++) {
-                $scope.formData.member.push({});
+                $scope.formData.members.push({});
             }
         } else {
-            $scope.formData.member.splice($scope.nbOfMembers, size - $scope.nbOfMembers);
+            $scope.formData.members.splice($scope.nbOfMembers, size - $scope.nbOfMembers);
         }
     };
 
     $scope.checkMembers = function() {
         var res = true;
-        $scope.formData.member.forEach(function(m) {
+        $scope.formData.members.forEach(function(m) {
             if (m._id === undefined) {
                 res = false;
             }

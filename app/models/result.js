@@ -16,7 +16,7 @@ var resultSchema = mongoose.Schema({
     },
     racedate: Date,
     time: Number,
-    member: [{
+    members: [{
         _id: mongoose.Schema.ObjectId,
         firstname: String,
         lastname: String,
@@ -44,10 +44,10 @@ resultSchema.pre('save', function(next, done) {
 });
 
 resultSchema.methods.updateCategory = function() {
-    var membersLength = this.member.length;
+    var membersLength = this.members.length;
     var isOpen = false;
     for (var i = 0; i < membersLength; i++) {
-        if (getAddDateToDate(this.racedate,-40,0,0) < this.member[i].dateofbirth){
+        if (getAddDateToDate(this.racedate,-40,0,0) < this.members[i].dateofbirth){
             isOpen = true;
             break;
         }

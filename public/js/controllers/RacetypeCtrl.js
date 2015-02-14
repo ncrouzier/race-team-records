@@ -1,5 +1,5 @@
 angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', function($scope, AuthService, ResultsService, dialogs) {
-    
+
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
@@ -14,7 +14,9 @@ angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', '
 
     $scope.showAddRaceTypeModal = function() {
         ResultsService.showAddRaceTypeModal().then(function(racetype) {
-            $scope.racetypesList.push(racetype);
+            if (racetype !== null) {
+                $scope.racetypesList.push(racetype);
+            }
         });
     };
 
@@ -38,8 +40,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', '
 }]);
 
 angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$modalInstance', 'racetype', function($scope, $modalInstance, racetype) {
-
-
+    $scope.autoconvert = true;
     $scope.editmode = false;
     if (racetype) {
         $scope.formData = racetype;
@@ -50,6 +51,18 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
     }
 
     $scope.surfaces = ['road', 'track', 'cross country', 'ultra', 'other'];
+
+    $scope.onMetersChange = function() {
+        if ($scope.autoconvert) {
+            $scope.formData.miles = $scope.formData.meters * 0.000621371;
+        }
+    };
+
+    $scope.onMilesChange = function() {
+        if ($scope.autoconvert) {
+            $scope.formData.meters = $scope.formData.miles * 1609.3440;
+        }
+    };
 
     $scope.addRaceType = function() {
         $modalInstance.close($scope.formData);

@@ -187,12 +187,11 @@ module.exports = function(app, qs, passport, async) {
 
             //sort
             pbs.sort(sortResultsByDistance);
-
             res.json(pbs);
         });
     });
 
-    // create member and send back all members after creation
+    // create member 
     app.post('/api/members', isAdminLoggedIn, function(req, res) {
         // create a member, information comes from AJAX request from Angular
         Member.create({
@@ -234,12 +233,12 @@ module.exports = function(app, qs, passport, async) {
                             } else {
 
                                 for (i = 0; i < results.length; i++) {
-                                    for (j = 0; j < results[i].member.length; j++) { //itirates members if relay race
-                                        if (results[i].member[j]._id.equals(req.body._id)) {
-                                            results[i].member[j].firstname = req.body.firstname;
-                                            results[i].member[j].lastname = req.body.lastname;
-                                            results[i].member[j].sex = req.body.sex;
-                                            results[i].member[j].dateofbirth = req.body.dateofbirth;
+                                    for (j = 0; j < results[i].members.length; j++) { //itirates members if relay race
+                                        if (results[i].members[j]._id.equals(req.body._id)) {
+                                            results[i].members[j].firstname = req.body.firstname;
+                                            results[i].members[j].lastname = req.body.lastname;
+                                            results[i].members[j].sex = req.body.sex;
+                                            results[i].members[j].dateofbirth = req.body.dateofbirth;
                                         }
 
                                     }
@@ -299,7 +298,7 @@ module.exports = function(app, qs, passport, async) {
             }
 
             if (filters.sex) {
-                query = query.where('member.sex').regex(filters.sex);
+                query = query.where('members.sex').regex(filters.sex);
 
             }
             if (filters.datefrom) {
@@ -329,7 +328,7 @@ module.exports = function(app, qs, passport, async) {
 
         if (req.query.member) {
             var member = JSON.parse(req.query.member);
-            query = query.where('member._id').equals(member._id);
+            query = query.where('members._id').equals(member._id);
         }
 
         query.exec(function(err, results) {
@@ -378,16 +377,16 @@ module.exports = function(app, qs, passport, async) {
         });
     });
 
-    // create result and send back all members after creation
+    // create result 
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
         var members = [];
-        for (i = 0; i < req.body.member.length; i++) {
+        for (i = 0; i < req.body.members.length; i++) {
             members.push({
-                _id: req.body.member[i]._id,
-                firstname: req.body.member[i].firstname,
-                lastname: req.body.member[i].lastname,
-                sex: req.body.member[i].sex,
-                dateofbirth: req.body.member[i].dateofbirth
+                _id: req.body.members[i]._id,
+                firstname: req.body.members[i].firstname,
+                lastname: req.body.members[i].lastname,
+                sex: req.body.members[i].sex,
+                dateofbirth: req.body.members[i].dateofbirth
             });
         }
         Result.create({
@@ -400,7 +399,7 @@ module.exports = function(app, qs, passport, async) {
                 miles: req.body.racetype.miles
             },
             racedate: req.body.racedate,
-            member: members,
+            members: members,
             time: req.body.time,
             comments: req.body.comments,
             resultlink: req.body.resultlink,
@@ -420,13 +419,13 @@ module.exports = function(app, qs, passport, async) {
     //update a result
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
         var members = [];
-        for (i = 0; i < req.body.member.length; i++) {
+        for (i = 0; i < req.body.members.length; i++) {
             members.push({
-                _id: req.body.member[i]._id,
-                firstname: req.body.member[i].firstname,
-                lastname: req.body.member[i].lastname,
-                sex: req.body.member[i].sex,
-                dateofbirth: req.body.member[i].dateofbirth
+                _id: req.body.members[i]._id,
+                firstname: req.body.members[i].firstname,
+                lastname: req.body.members[i].lastname,
+                sex: req.body.members[i].sex,
+                dateofbirth: req.body.members[i].dateofbirth
             });
         }
 
@@ -440,7 +439,7 @@ module.exports = function(app, qs, passport, async) {
                 miles: req.body.racetype.miles
             };
             result.racedate = req.body.racedate;
-            result.member = members;
+            result.members = members;
             result.time = req.body.time;
             result.comments = req.body.comments;
             result.resultlink = req.body.resultlink;
@@ -489,7 +488,7 @@ module.exports = function(app, qs, passport, async) {
 
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Open').where('member.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.regex('category', 'Open').where('members.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -504,7 +503,7 @@ module.exports = function(app, qs, passport, async) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Master').where('member.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.regex('category', 'Master').where('members.sex').regex('Male').where('racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -518,7 +517,7 @@ module.exports = function(app, qs, passport, async) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Open').where('member.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.regex('category', 'Open').where('members.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -532,7 +531,7 @@ module.exports = function(app, qs, passport, async) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Master').where('member.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.regex('category', 'Master').where('members.sex').regex('Female').where('racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);

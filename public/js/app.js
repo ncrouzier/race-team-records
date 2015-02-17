@@ -30,8 +30,16 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
 
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', function($scope, AuthService, $state) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService', function($scope, AuthService, $state, ResultsService) {
     $scope.$state =$state;
 
+    $scope.currentYear = new Date().getFullYear();
+
+    ResultsService.getMilesRaced({'date':$scope.currentYear}).then(function(sum) {
+       $scope.milesRaced = parseFloat(sum).toFixed(2);
+    });
+
+
+    
     
 }]);

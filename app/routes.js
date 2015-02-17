@@ -471,7 +471,6 @@ module.exports = function(app, qs, passport, async) {
 
     //pdf
     app.get('/api/pdfreport', function(req, res) {
-
         var calls = [];
         var fullreport = {};
         var openMaleRecords = [];
@@ -583,24 +582,28 @@ module.exports = function(app, qs, passport, async) {
 
                 res.json(fullreport);
             });
-
-
-
-
-
-
         });
-
-
-
-
-
-
-
-
 
     });
 
+
+    app.get('/api/milesraced', function(req, res) {
+        var date = req.query.date;
+        var query = Result.find();
+        query = query.gte('racedate', new Date(date));
+        query.exec(function(err, results) {
+            if (err) {
+                res.send(err)
+            } else {
+                var sum =0;
+                results.forEach(function(r) {
+                    sum += r.racetype.miles;
+                });
+                res.json(sum);
+
+            }
+        });
+    });
     // =====================================
     // RaceTypes =============================
     // =====================================
@@ -810,5 +813,3 @@ function sortRecordDistanceByDistance(a, b) {
         return 1;
     return 0;
 }
-
-

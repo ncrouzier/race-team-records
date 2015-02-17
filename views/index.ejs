@@ -16,7 +16,13 @@
 <body ng-controller="MainController">
 	<div class="container">
 		<div class="logo row">
-			<h1><a ui-sref="/">MCRRC Racing Team</a></h1>
+			<div class="col-xs-9 col-sm-9 col-md-10 text-left noleftpadding" >
+				<h1><a ui-sref="/">MCRRC Racing Team</a></h1>
+				<span style="float: right"></span>
+			</div>
+			<div class="col-xs-3 col-sm-3 col-md-2 text-right logo-stats" >
+				<span>{{milesRaced}} miles raced in {{currentYear}}!</span>
+			</div>
 		</div>
 
 		<!-- HEADER -->

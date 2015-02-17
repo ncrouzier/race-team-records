@@ -163,7 +163,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
 
 
     // =====================================
-    // PCD API =====================
+    // PDF API =====================
     // =====================================
     factory.getResultsForPdf = function(params) {
 
@@ -176,6 +176,22 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
             });
 
     };
+
+
+    // =====================================
+    // STATS API =====================
+    // =====================================
+    factory.getMilesRaced = function(params) {
+        return Restangular.one('milesraced').get(params).then(
+            function(sum) {
+                return sum;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+
+    };
+    
     return factory;
 
 }]);

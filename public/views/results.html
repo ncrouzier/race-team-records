@@ -1,8 +1,11 @@
 <div class="jumbotron">
 
     <div class="row text-left" style="padding-left:15px; margin-bottom:10px;">
-        <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus>
- <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result" ></i></span>
+        <div class="btn-group">
+            <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus><span id="searchclear" class="fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+            </span>
+        </div>
+        <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i>
 
     </div>
     <div id="member-list" class="row">
@@ -33,7 +36,7 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                            {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                             <br>
                             <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                         </div>

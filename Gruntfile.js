@@ -62,7 +62,7 @@ module.exports = function(grunt) {
                     'public/dist/css/style.min.css': [
                         'public/libs/fontawesome/css/font-awesome.css',
                         'public/css/libs/select2.css',
-                        'public/libs/bootstrap/dist/css/bootstrap.css',
+                        'public/css/libs/bootstrap.css',
                         'public/libs/angular-loading-bar/build/loading-bar.css',
                         'public/libs/angular-ui-select/dist/select.css',
                         'public/dist/css/style.css'

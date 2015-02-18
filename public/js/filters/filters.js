@@ -19,7 +19,7 @@ function secondsToTimeString(sec) {
     var minutes = Math.floor(((sec % 86400) % 3600) / 60);
     var seconds = Math.floor(((sec % 86400) % 3600) % 60);
     var timeString = '';
-    
+
     if (hours === 0) {
         if (seconds < 10) seconds = "0" + seconds;
         return minutes + ":" + seconds;
@@ -264,5 +264,17 @@ app.filter('resultSuperFilter', function(query) {
         }
 
 
+    };
+});
+
+app.filter('highlightignorespan', function() {
+    function escapeRegexp(queryToEscape) {
+        var esc = queryToEscape.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
+        return esc +'(?![^<]*>)';
+    }
+
+    return function(matchItem, query) {
+        var cleanedItem = matchItem.replace(new RegExp("(<([^>]+)>)", 'gi'),'');
+        return query  && matchItem ? matchItem.replace(new RegExp(escapeRegexp(query), 'gi'), '<span class="ui-select-highlight">$&</span>') : matchItem;
     };
 });

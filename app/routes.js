@@ -345,7 +345,7 @@ module.exports = function(app, qs, passport, async) {
                             var resultLength = results.length;
                             var resCount = 0;
                             for (var i = 0; i < resultLength && resCount < limit; i++) {
-                                if (!containsMember(filteredResult, results[i].member[0])) {
+                                if (!containsMember(filteredResult, results[i].members[0])) {
                                     filteredResult.push(results[i]);
                                     resCount++;
                                 }

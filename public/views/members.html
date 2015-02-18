@@ -5,7 +5,9 @@
         <div class="col-sm-3" style="padding-left:0px">
             <span>Search members:</span>
             <br>
-            <input ng-model="query" class="form-control" type="text" placeholder="Search by name" auto-focus>
+            <div class="btn-group">
+                <input ng-model="query"  class="form-control" type="text" placeholder="Search by name" auto-focus><span id="searchclear" class="fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+            </div>
         </div>
         <div class="col-sm-3">
             <span>Gender:</span>
@@ -40,7 +42,7 @@
         <h2>Team members ({{membersList.length}}) <i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" title="Add member"></i></h2>
         <div id="member-list" class="row">
             <div class="col-sm-3">
-                <ul class="list-group">
+                <ul class="list-group member-list">
                     <li ng-click="setMember(member);" ng-style="memberList" class="list-group-item hoverhand" ng-repeat="member in membersList | memberFilter:query | orderBy: 'firstname'" ng-class="{ 'list-group-item-male': member.sex == 'Male', 'list-group-item-female': member.sex == 'Female','selected-class-name': member._id == currentMember._id }">
                         <span>{{ member.firstname }} {{ member.lastname }} </span><span class="pull-right"> <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(member)" title="remove user" ></i></span>
                     </li>
@@ -95,7 +97,7 @@
                         <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
                             <div class="row">
                                 <div class="col-sm-5">
-                                    {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                                    {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                                     <br>
                                     <small>{{ result.racedate | date:'MM/dd/yyyy' }}</small>
                                 </div>

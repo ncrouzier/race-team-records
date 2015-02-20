@@ -42,7 +42,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
-    MembersService.getMembers().then(function(members) {
+    MembersService.getMembers({sort: 'firstname'}).then(function(members) {
         $scope.membersList = members;
 
     });
@@ -53,7 +53,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.racetypesList = racetypes;
     });
 
-    
+
 
 
     $scope.editmode = false;
@@ -152,6 +152,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         return res;
     };
 
+    $scope.getRaceTypeClass = function(s) {
+        if (s !== undefined) {
+            return s.replace(/ /g, '') + '-col';
+        }
+    };
 
 
     // =====================================

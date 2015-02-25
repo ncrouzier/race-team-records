@@ -153,19 +153,23 @@ module.exports = function(app, qs, passport, async) {
         var pbs = [];
         var calls = [];
 
+
+
         pbraces.forEach(function(pb) {
             calls.push(function(callback) {
 
-
+                console.log(pb);
                 Result.find({
-                        'member._id': req.params.member_id,
+                        'members._id': req.params.member_id,
                         'racetype.name': pb
                     },
                     function(err, results) {
                         if (err) {
                             return callback(err);
                         } else {
+                            console.log(results);
                             if (results.length > 0) {
+
                                 pbs.push(results[0]);
                                 callback(null);
                             } else {

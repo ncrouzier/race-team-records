@@ -270,11 +270,59 @@ app.filter('resultSuperFilter', function(query) {
 app.filter('highlightignorespan', function() {
     function escapeRegexp(queryToEscape) {
         var esc = queryToEscape.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
-        return esc +'(?![^<]*>)';
+        return esc + '(?![^<]*>)';
     }
 
     return function(matchItem, query) {
-        var cleanedItem = matchItem.replace(new RegExp("(<([^>]+)>)", 'gi'),'');
-        return query  && matchItem ? matchItem.replace(new RegExp(escapeRegexp(query), 'gi'), '<span class="ui-select-highlight">$&</span>') : matchItem;
+        var cleanedItem = matchItem.replace(new RegExp("(<([^>]+)>)", 'gi'), '');
+        return query && matchItem ? matchItem.replace(new RegExp(escapeRegexp(query), 'gi'), '<span class="ui-select-highlight">$&</span>') : matchItem;
     };
 });
+
+
+
+app.filter('rankTooltip', function() {
+    return function(ranking) {
+        if (ranking) {
+            var res = "";
+            if (ranking.agerank) {
+                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank);
+                if (ranking.agetotal) {
+                    res += " / " + ranking.agetotal;
+                }
+                res += "<br>";
+            }
+            if (ranking.genderrank) {
+                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank);
+                if (ranking.agetotal) {
+                    res += " / " + ranking.gendertotal;
+                }
+                res += "<br>";
+            }
+            if (ranking.overallrank) {
+                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank);
+            if (ranking.overalltotal) {
+                res += " / " + ranking.overalltotal;
+            }
+            res += "<br>";
+        }
+        return res;
+    }
+
+};
+});
+
+function ordinal_suffix_of(i) {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + "st";
+    }
+    if (j == 2 && k != 12) {
+        return i + "nd";
+    }
+    if (j == 3 && k != 13) {
+        return i + "rd";
+    }
+    return i + "th";
+}

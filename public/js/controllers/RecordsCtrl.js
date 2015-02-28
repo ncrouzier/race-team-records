@@ -64,7 +64,6 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     };
 
     $scope.getRaceTypeClass = function(s){
-        console.log(s);
         if (s !== undefined){
             return s.replace(/ /g, '')+'-col';
         }

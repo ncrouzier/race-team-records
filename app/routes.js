@@ -157,8 +157,6 @@ module.exports = function(app, qs, passport, async) {
 
         pbraces.forEach(function(pb) {
             calls.push(function(callback) {
-
-                console.log(pb);
                 Result.find({
                         'members._id': req.params.member_id,
                         'racetype.name': pb
@@ -169,7 +167,6 @@ module.exports = function(app, qs, passport, async) {
                         } else {
                             console.log(results);
                             if (results.length > 0) {
-
                                 pbs.push(results[0]);
                                 callback(null);
                             } else {
@@ -178,7 +175,6 @@ module.exports = function(app, qs, passport, async) {
                         }
                     }
                 ).sort('-time').limit(1);
-
 
             });
         });
@@ -405,6 +401,7 @@ module.exports = function(app, qs, passport, async) {
             racedate: req.body.racedate,
             members: members,
             time: req.body.time,
+            ranking: req.body.ranking,
             comments: req.body.comments,
             resultlink: req.body.resultlink,
             is_accepted: false,
@@ -445,6 +442,7 @@ module.exports = function(app, qs, passport, async) {
             result.racedate = req.body.racedate;
             result.members = members;
             result.time = req.body.time;
+            result.ranking = req.body.ranking;
             result.comments = req.body.comments;
             result.resultlink = req.body.resultlink;
             result.is_accepted = req.body.is_accepted;
@@ -599,7 +597,7 @@ module.exports = function(app, qs, passport, async) {
             if (err) {
                 res.send(err)
             } else {
-                var sum =0;
+                var sum = 0;
                 results.forEach(function(r) {
                     sum += r.racetype.miles;
                 });

@@ -29,7 +29,6 @@
                         <ui-select-match placeholder="Select a race type">
                             <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
                         </ui-select-match>
-                        <!-- {{$select.selected.name}} <span class="+getRaceTypeClass(racetype.surface)+">"({{$select.selected.surface}})</span> -->
 
                         <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                             <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
@@ -47,7 +46,7 @@
         </div>
         <div class="row">
             <div class="col-md-6">
-                <div class="form-group" >
+                <div class="form-group">
                     <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a race"></i>
                     <br>
                     <span ng-repeat="member in formData.members track by $index">
@@ -74,6 +73,23 @@
             <div class="col-md-2">
                 <label class="text-left">Seconds:</label>
                 <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <label class=" text-left">Age:</label>
+                <input type="text" ng-model="formData.ranking.agerank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+                <input type="text" ng-model="formData.ranking.agetotal" only-digits class="form-inline  input-md text-left" style="width: 50px;">
+            </div>
+            <div class="col-md-4">
+                <label class=" text-left">Gender:</label>
+                <input type="text" ng-model="formData.ranking.genderrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+                <input type="text" ng-model="formData.ranking.gendertotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
+            </div>
+            <div class="col-md-4">
+                <label class=" text-left">Overall:</label>
+                <input type="text" ng-model="formData.ranking.overallrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+                <input type="text" ng-model="formData.ranking.overalltotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
             </div>
         </div>
         <div class="row">

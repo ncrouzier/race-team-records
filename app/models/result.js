@@ -16,6 +16,14 @@ var resultSchema = mongoose.Schema({
     },
     racedate: Date,
     time: Number,
+    ranking: {
+        agerank: Number,
+        agetotal: Number,
+        genderrank: Number,
+        gendertotal: Number,
+        overallrank: Number,
+        overalltotal: Number
+    },
     members: [{
         _id: mongoose.Schema.ObjectId,
         firstname: String,
@@ -47,14 +55,14 @@ resultSchema.methods.updateCategory = function() {
     var membersLength = this.members.length;
     var isOpen = false;
     for (var i = 0; i < membersLength; i++) {
-        if (getAddDateToDate(this.racedate,-40,0,0) < this.members[i].dateofbirth){
+        if (getAddDateToDate(this.racedate, -40, 0, 0) < this.members[i].dateofbirth) {
             isOpen = true;
             break;
         }
     }
-    if (isOpen){
+    if (isOpen) {
         this.category = "Open";
-    }else{
+    } else {
         this.category = "Master";
     }
 };

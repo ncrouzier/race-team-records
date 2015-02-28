@@ -42,7 +42,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
-    MembersService.getMembers({sort: 'firstname'}).then(function(members) {
+    MembersService.getMembers({
+        sort: 'firstname'
+    }).then(function(members) {
         $scope.membersList = members;
 
     });
@@ -88,6 +90,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.time.minutes === null) $scope.time.minutes = 0;
         if ($scope.time.seconds === null) $scope.time.seconds = 0;
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
+        var r = $scope.formData.ranking;
+        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined ||r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "") ) {
+            $scope.formData.ranking = undefined;
+        }
 
         var members = $.map($scope.formData.members, function(value, index) {
             return [value];
@@ -118,6 +124,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.editResult = function() {
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
+        var r = $scope.formData.ranking;
+        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined ||r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "") ) {
+            $scope.formData.ranking = undefined;
+        }
         $modalInstance.close($scope.formData);
     };
 

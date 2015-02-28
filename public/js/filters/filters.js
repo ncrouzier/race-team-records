@@ -301,14 +301,43 @@ app.filter('rankTooltip', function() {
             }
             if (ranking.overallrank) {
                 res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank);
+                if (ranking.overalltotal) {
+                    res += " / " + ranking.overalltotal;
+                }
+                res += "<br>";
+            }
+            return res;
+        }
+    };
+});
+
+app.filter('rankTooltipOneLine', function() {
+    return function(ranking) {
+        if (ranking) {
+            var res = "";
+            if (ranking.agerank) {
+                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank);
+                if (ranking.agetotal) {
+                    res += "/" + ranking.agetotal;
+                }
+                res += ", ";
+            }
+            if (ranking.genderrank) {
+                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank);
+                if (ranking.agetotal) {
+                    res += "/" + ranking.gendertotal;
+                }
+                res += ", ";
+            }
+            if (ranking.overallrank) {
+                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank);
             if (ranking.overalltotal) {
                 res += " / " + ranking.overalltotal;
             }
-            res += "<br>";
+            res += ", ";
         }
-        return res;
+        return res.slice(0, -2);
     }
-
 };
 });
 

@@ -332,7 +332,7 @@ app.filter('rankTooltipOneLine', function() {
             if (ranking.overallrank) {
                 res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank,false);
                 if (ranking.overalltotal) {
-                    res += " of  " + ranking.overalltotal;
+                    res += " of " + ranking.overalltotal;
                 }
                 res += ", ";
             }

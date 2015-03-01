@@ -793,7 +793,7 @@ function containsMember(list, member) {
 
     var i;
     for (i = 0; i < list.length; i++) {
-        if (list[i].member[0]._id.equals(member._id)) {
+        if (list[i].members[0]._id.equals(member._id)) {
             return true;
         }
     }

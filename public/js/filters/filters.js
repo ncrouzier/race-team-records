@@ -306,7 +306,7 @@ app.filter('rankTooltip', function() {
                 }
                 res += "<br>";
             }
-            return res;
+            return "<div>"+res+"</div>";
         }
     };
 });

@@ -3,22 +3,24 @@
     <div class="row">
         <div class="col-md-5">
             <p class="input-group">
+                <label class="text-left">From:</label>
                 <input type="text" class="form-control input-md" datepicker-popup="MM/dd/yyyy" ng-model="datefrom" is-open="opened1    " min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                <span class="input-group-btn">
+                <span class="input-group-btn" style="vertical-align: bottom;" >
                     <button type="button" class="btn btn-default" ng-click="open($event,'opened1')"><i class="glyphicon glyphicon-calendar"></i></button>
                 </span>
             </p>
         </div>
         <div class="col-md-5">
             <p class="input-group">
+                <label class="text-left">To:</label>
                 <input type="text" class="form-control input-md" datepicker-popup="MM/dd/yyyy" ng-model="dateto" is-open="opened2" min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                <span class="input-group-btn">
+                <span class="input-group-btn" style="vertical-align: bottom;" >
                     <button type="button" class="btn btn-default" ng-click="open($event,'opened2')"><i class="glyphicon glyphicon-calendar"></i></button>
                 </span>
             </p>
         </div>
         <div class="col-md-2">
-            <button type="button" class="btn btn-primary" ng-click="getResults()" ng-disabled="datefrom == null || datefrom == null " >
+            <button type="button" style="margin-top:34px" class="btn btn-primary" ng-click="getResults()" ng-disabled="datefrom == null || datefrom == null ">
                 Get Report
             </button>
         </div>

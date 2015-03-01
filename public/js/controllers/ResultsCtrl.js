@@ -19,7 +19,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.showAddResultModal = function() {
         ResultsService.showAddResultModal().then(function(result) {
             if (result !== null) {
-                $scope.resultsList.push(result);
+                $scope.resultsList.unshift(result);
             }
         });
     };
@@ -86,12 +86,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
     $scope.addResult = function() {
-        if ($scope.time.hours === null) $scope.time.hours = 0;
-        if ($scope.time.minutes === null) $scope.time.minutes = 0;
-        if ($scope.time.seconds === null) $scope.time.seconds = 0;
+        if ($scope.time.hours === null || $scope.time.hours === undefined || $scope.time.hours === "") $scope.time.hours = 0;
+        if ($scope.time.minutes === null || $scope.time.minutes === undefined || $scope.time.minutes === "") $scope.time.minutes = 0;
+        if ($scope.time.seconds === null || $scope.time.seconds === undefined || $scope.time.seconds === "") $scope.time.seconds = 0;
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
+
         var r = $scope.formData.ranking;
-        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined ||r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "") ) {
+        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined || r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "")) {
             $scope.formData.ranking = undefined;
         }
 
@@ -100,14 +101,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         });
         $scope.formData.members = members;
 
-        //if we are adding a result, save race related info for futur addition
-        if (!$scope.editMode) {
-            localStorageService.set('raceName', $scope.formData.racename);
-            localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
-
-            localStorageService.set('raceType', $scope.formData.racetype);
-            localStorageService.set('resultLink', $scope.formData.resultlink);
-        }
+        //save race related info for futur addition
+        localStorageService.set('raceName', $scope.formData.racename);
+        localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
+        localStorageService.set('raceType', $scope.formData.racetype);
+        localStorageService.set('resultLink', $scope.formData.resultlink);
 
         $modalInstance.close($scope.formData);
     };
@@ -123,9 +121,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
     $scope.editResult = function() {
+        if ($scope.time.hours === null || $scope.time.hours === undefined || $scope.time.hours === "") $scope.time.hours = 0;
+        if ($scope.time.minutes === null || $scope.time.minutes === undefined || $scope.time.minutes === "") $scope.time.minutes = 0;
+        if ($scope.time.seconds === null || $scope.time.seconds === undefined || $scope.time.seconds === "") $scope.time.seconds = 0;
         $scope.formData.time = $scope.time.hours * 3600 + $scope.time.minutes * 60 + $scope.time.seconds;
         var r = $scope.formData.ranking;
-        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined ||r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "") ) {
+        if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined || r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "")) {
             $scope.formData.ranking = undefined;
         }
         $modalInstance.close($scope.formData);

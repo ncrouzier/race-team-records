@@ -286,27 +286,27 @@ app.filter('rankTooltip', function() {
         if (ranking) {
             var res = "";
             if (ranking.agerank) {
-                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank);
+                res += '<span class="ranking-tooltip-cat">Age group rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.agerank,true);
                 if (ranking.agetotal) {
-                    res += " / " + ranking.agetotal;
+                    res += ' of ' + ranking.agetotal;
                 }
-                res += "<br>";
+                res += '</span><br>';
             }
             if (ranking.genderrank) {
-                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank);
+                res += '<span class="ranking-tooltip-cat">Gender rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.genderrank,true);
                 if (ranking.agetotal) {
-                    res += " / " + ranking.gendertotal;
+                    res += ' of ' + ranking.gendertotal;
                 }
-                res += "<br>";
+                res += '</span><br>';
             }
             if (ranking.overallrank) {
-                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank);
+                res += '<span class="ranking-tooltip-cat">Overall rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.overallrank,true);
                 if (ranking.overalltotal) {
-                    res += " / " + ranking.overalltotal;
+                    res += ' of ' + ranking.overalltotal;
                 }
-                res += "<br>";
+                res += '</span>';
             }
-            return "<div>"+res+"</div>";
+            return res;
         }
     };
 });
@@ -316,42 +316,59 @@ app.filter('rankTooltipOneLine', function() {
         if (ranking) {
             var res = "";
             if (ranking.agerank) {
-                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank);
+                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank,false);
                 if (ranking.agetotal) {
-                    res += "/" + ranking.agetotal;
+                    res += " of " + ranking.agetotal;
                 }
                 res += ", ";
             }
             if (ranking.genderrank) {
-                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank);
+                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank,false);
                 if (ranking.agetotal) {
-                    res += "/" + ranking.gendertotal;
+                    res += " of " + ranking.gendertotal;
                 }
                 res += ", ";
             }
             if (ranking.overallrank) {
-                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank);
-            if (ranking.overalltotal) {
-                res += " / " + ranking.overalltotal;
+                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank,false);
+                if (ranking.overalltotal) {
+                    res += " of  " + ranking.overalltotal;
+                }
+                res += ", ";
             }
-            res += ", ";
+            return res.slice(0, -2);
         }
-        return res.slice(0, -2);
-    }
-};
+    };
 });
 
-function ordinal_suffix_of(i) {
+function ordinal_suffix_of(i, withStyle) {
     var j = i % 10,
         k = i % 100;
     if (j == 1 && k != 11) {
-        return i + "st";
+        if (withStyle) {
+            return i + '<span class="ordinal_suffix ordinal_suffix_st">st</span>';
+        } else {
+            return i + "st";
+        }
     }
     if (j == 2 && k != 12) {
-        return i + "nd";
+        if (withStyle) {
+            return i + '<span class="ordinal_suffix ordinal_suffix_nd">nd</span>';
+        } else {
+            return i + "nd";
+        }
     }
     if (j == 3 && k != 13) {
-        return i + "rd";
+        if (withStyle) {
+            return i + '<span class="ordinal_suffix ordinal_suffix_rd">rd</span>';
+        } else {
+            return i + "rd";
+        }
     }
-    return i + "th";
+    if (withStyle) {
+        return i + '<span class="ordinal_suffix ordinal_suffix_th">th</span>';
+    } else {
+        return i + "th";
+    }
 }
+

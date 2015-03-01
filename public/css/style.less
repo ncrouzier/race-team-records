@@ -215,6 +215,9 @@ footer {
 .red {
     color: #FF0010;
 }
+.orange {
+    color: #FF8300;
+}
 .transparent {
     color: transparent;
 }
@@ -237,6 +240,11 @@ footer {
 .tooltip-inner {
     text-align: left;
     max-width: 500px;
+    white-space:nowrap;
+}
+.tooltip.in {
+  opacity: 1;
+  filter: alpha(opacity=100);
 }
 .hoverhand {
     cursor: pointer;
@@ -411,3 +419,18 @@ footer {
 }
 
 
+.ranking-tooltip-cat{
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.ranking-tooltip-rank{
+    font-size: 1.3em;
+    color:#FF8300;
+}
+
+.ranking-tooltip-rank > .ordinal_suffix{
+    font-style: italic;
+    vertical-align: super;
+    font-size: 0.6em;
+}

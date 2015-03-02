@@ -223,14 +223,13 @@ module.exports = function(app, qs, passport, async) {
             member.save(function(err) {
                 if (!err) {
                     Result.find({
-                            'member._id': member._id
+                            'members._id': member._id
                         },
                         function(err, results) {
                             if (err) {
                                 console.log(err);
                                 res.send(err);
                             } else {
-
                                 for (i = 0; i < results.length; i++) {
                                     for (j = 0; j < results[i].members.length; j++) { //itirates members if relay race
                                         if (results[i].members[j]._id.equals(req.body._id)) {
@@ -239,7 +238,6 @@ module.exports = function(app, qs, passport, async) {
                                             results[i].members[j].sex = req.body.sex;
                                             results[i].members[j].dateofbirth = req.body.dateofbirth;
                                         }
-
                                     }
                                     results[i].save(function(err) {
                                         if (err) {
@@ -247,6 +245,7 @@ module.exports = function(app, qs, passport, async) {
                                             res.send(err);
                                         }
                                     });
+
                                 }
                                 res.end('{"success" : "Member updated successfully", "status" : 200}');
                             }

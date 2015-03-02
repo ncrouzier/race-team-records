@@ -12,7 +12,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.racedate.$invalid && !formresult.racedate.$pristine}">
-                    <label class="text-left">Race date:</label> {{formData.racedate}}
+                    <label class="text-left">Race date:</label>
                     <p class="input-group">
                         <input type="text" name="racedate" class="form-control input-md" datepicker-popup="yyyy/MM/dd" ng-model="formData.racedate" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
                         <span class="input-group-btn">

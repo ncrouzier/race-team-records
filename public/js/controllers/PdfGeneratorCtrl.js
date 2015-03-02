@@ -19,7 +19,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
 			doc.addImage(mcrrcImg, 'JPEG', 70, 40, 100, 100);
 
             doc.setFontSize(8);
-            doc.text(10, 290, "Document generated on " + $filter('date')(new Date(), "MM/dd/yyyy"));
+            doc.text(10, 290, "Document generated on " + $filter('date')(new Date(), "MM/dd/yyyy", 'UTC'));
             doc.addPage();
 
             doc.setFontSize(11);
@@ -47,7 +47,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy"));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -80,7 +80,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy"));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -112,7 +112,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy"));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -144,7 +144,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy"));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "MM/dd/yyyy", 'UTC'));
                     place++;
                     h = h + 2;
                 });

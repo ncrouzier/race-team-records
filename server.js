@@ -26,6 +26,7 @@ var nodemailer = require("nodemailer");
 var qs = require('querystring');
 
 // var configDB = require('./config/db.js');
+process.env.TZ = 'UTC';
 
 // configuration ===============================================================
 // mongoose.connect(configDB.url); // connect to our database

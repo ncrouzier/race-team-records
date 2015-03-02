@@ -55,12 +55,17 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.racetypesList = racetypes;
     });
 
-
+    // make sure dates are always UTC
+    $scope.$watch('formData.racedate ', function(date) {
+        $scope.formData.racedate = $filter('date')(result.racedate, 'MM/dd/yyyy', 'UTC');
+    });
 
 
     $scope.editmode = false;
     if (result) {
+        console.log(result.racedate);
         $scope.formData = result;
+        // $scope.formData.racedate = $filter('date')(result.racedate, 'MM/dd/yyyy', 'UTC');
         $scope.editmode = true;
         $scope.formData.dateofbirth = new Date();
         $scope.nbOfMembers = result.members.length;
@@ -129,6 +134,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined || r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "")) {
             $scope.formData.ranking = undefined;
         }
+
         $modalInstance.close($scope.formData);
     };
 
@@ -174,6 +180,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     // DATE PICKER CONFIG ==================
     // =====================================
 
+    $scope.dateOptions = {
+        formatDay: 'dd',
+        formatMonth: 'MM',
+        formatYear: 'yy',
+
+        startingDay: 1
+    };
 
     $scope.open = function($event) {
         $event.preventDefault();

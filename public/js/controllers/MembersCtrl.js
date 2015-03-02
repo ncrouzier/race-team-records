@@ -125,7 +125,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 }]);
 
 
-angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$modalInstance', 'member', function($scope, $modalInstance, member) {
+angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$modalInstance', '$filter', 'member', function($scope, $modalInstance, $filter, member) {
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;
@@ -138,6 +138,10 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.formData.dateofbirth = new Date();
     }
 
+    // make sure dates are always UTC
+    $scope.$watch('formData.dateofbirth ', function(date) {
+        $scope.formData.dateofbirth = $filter('date')(member.dateofbirth, 'MM/dd/yyyy', 'UTC');
+    });
 
     $scope.addMember = function() {
         $modalInstance.close($scope.formData);

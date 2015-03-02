@@ -165,7 +165,6 @@ module.exports = function(app, qs, passport, async) {
                         if (err) {
                             return callback(err);
                         } else {
-                            console.log(results);
                             if (results.length > 0) {
                                 pbs.push(results[0]);
                                 callback(null);

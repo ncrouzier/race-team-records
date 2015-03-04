@@ -1,0 +1,284 @@
+
+// Colors
+@mcrrc-blue:            #008cba;
+
+
+@racetype-track:        #AD757F;
+@racetype-crosscountry: #84CC97;
+@racetype-road:         #8AB5DB;
+@racetype-ultra:        #8C895F;
+@racetype-other:        #F3F78C;
+
+@gold:                  #F3DA1D;
+@silver:                #A4A4A4;
+@bronze:                #E1BB71;
+
+@male-bg:               #ADEBFF;
+@male-color:            #31708f;
+@female-bg:             #E7C2FF;
+@female-color:           #8E3163;
+
+
+body {
+    padding-top: 10px;
+    color: #4D5153;
+}
+footer {
+    color: #606568;
+    padding-bottom: 15px;
+    font-size: 0.7em;
+}
+.container {
+    min-height: 800px;
+}
+.logo {
+    background: #FFFFF;
+    height: 80px;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-left: 15px;
+}
+.logo h1 {
+    font-size: 40px;
+}
+.logo h1 a {
+    text-decoration: none;
+}
+.logo h1 a:hover {
+    color: #337AB7;
+}
+.noleftpadding {
+    padding-left: 0px;
+}
+.logo-stats {
+    font-size: 10px;
+}
+@media (max-width: 422px) {
+    .logo h1 {
+        font-size: 16px;
+        color: red;
+    }
+}
+@media (min-width: 423px) and (max-width: 598px) {
+    .logo h1 {
+        font-size: 30px;
+    }
+}
+
+.jumbotron {
+    min-height: 730px;
+    color: #006699;
+    background-color: #D3DFE4;
+    margin-bottom: 10px;
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+}
+.container .jumbotron {
+    -webkit-border-radius: 0px;
+    -moz-border-radius: 0px;
+    border-radius: 0px;
+}
+.detailscontainer {
+    padding-left: 5px;
+    padding-bottom: 5px;
+    padding-right: 5px;
+    background-color: #EBF0F3;
+    height: 100%;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+.member-list  {
+    font-size: 14px;
+
+    >.list-group {
+
+        &-item {
+            color: #606568;
+
+            &-male {
+                background-color: @male-bg;
+                color: @male-color;
+
+                &.selected-class-name,
+                &:hover.selected-class-name{
+                    border-width: 2px;
+                    border-color: #FFF;
+                    margin-bottom: 0px;
+                    background-color: darken(@male-bg, 58%);
+                    font-size: 18px;
+                    color: #FFF;
+                }
+
+                &:hover:not(.selected-class-name){
+                    background-color: darken(@male-bg, 58%);
+                    font-size: 16px;
+                    color: #FFF;
+                }
+
+            }
+            &-female {
+                background-color: @female-bg;
+                color: @female-color;
+
+                &.selected-class-name,
+                &:hover.selected-class-name{
+                    border-width: 2px;
+                    border-color: #FFF;
+                    margin-bottom: 0px;
+                    background-color: darken(@female-bg, 58%);
+                    font-size: 18px;
+                    color: #FFF;
+                }
+
+                &:hover:not(.selected-class-name){
+                    background-color: darken(@female-bg, 58%);
+                    font-size: 16px;
+                    color: #FFF;
+                }
+
+            }
+
+        }
+
+    }
+}
+
+
+
+
+.track-col {
+    color: #FF8300;
+}
+.crosscountry-col {
+    color: #84CC97;
+}
+.road-col {
+    color: #333333;
+}
+.ultra-col {
+    color: #F04124;
+}
+.other-col {
+    color: #FCF8E3;
+}
+.tracksurface-bg {
+    background: @racetype-track;
+}
+.xcsurface-bg {
+    background: @racetype-crosscountry;
+}
+.roadsurface-bg {
+    background: @racetype-road;
+}
+.ultrasurface-bg {
+    background: @racetype-ultra;
+}
+.othersurface-bg {
+    background: racetype-other;
+}
+
+.gold {
+    background: @gold;
+    background: -moz-linear-gradient(left, @gold 0%, #ffffff 95%);
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%, @gold), color-stop(95%, #ffffff));
+    background: -webkit-linear-gradient(left, @gold 0%, #ffffff 95);
+    background: -o-linear-gradient(left, @gold 0%, #ffffff 95);
+    background: -ms-linear-gradient(left, @gold 0%, #ffffff 95);
+    background: linear-gradient(to right, @gold 0%, #ffffff 95);
+}
+.silver {
+    background: @silver;
+    background: -moz-linear-gradient(left, @silver 0%, #ffffff 75%);
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%, @silver), color-stop(75%, #ffffff));
+    background: -webkit-linear-gradient(left, @silver 0%, #ffffff 75);
+    background: -o-linear-gradient(left, @silver 0%, #ffffff 75);
+    background: -ms-linear-gradient(left, @silver 0%, #ffffff 75);
+    background: linear-gradient(to right, @silver 0%, #ffffff 75);
+}
+.bronze {
+    background: @bronze;
+    background: -moz-linear-gradient(left, @bronze 0%, #ffffff 55%);
+    background: -webkit-gradient(linear, left top, right top, color-stop(0%, @bronze), color-stop(55%, #ffffff));
+    background: -webkit-linear-gradient(left, @bronze 0%, #ffffff 55);
+    background: -o-linear-gradient(left, @bronze 0%, #ffffff 55);
+    background: -ms-linear-gradient(left, @bronze 0%, #ffffff 55);
+    background: linear-gradient(to right, @bronze 0%, #ffffff 55);
+}
+.timediff {
+    color: red;
+}
+.black {
+    color: #4D5153;
+}
+.red {
+    color: #FF0010;
+}
+.orange {
+    color: #FF8300;
+}
+.transparent {
+    color: transparent;
+}
+.resultlistheader {
+    border-bottom: thick solid;
+    color: #006699;
+}
+.resultlistrow {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.pblistrow {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    border: 0px;
+}
+.listheader {
+    font-weight: bold;
+}
+.tooltip-inner {
+    text-align: left;
+    max-width: 500px;
+    white-space:nowrap;
+}
+.tooltip.in {
+  opacity: 1;
+  filter: alpha(opacity=100);
+}
+.hoverhand {
+    cursor: pointer;
+    cursor: hand;
+}
+.introtext {
+    line-height: 1.1;
+}
+
+#searchclear {
+    position: absolute;
+    right: 5px;
+    top: 0;
+    bottom: 0;
+    height: 14px;
+    margin: auto;
+    font-size: 14px;
+    cursor: pointer;
+    color: #ccc;
+}
+
+
+.ranking-tooltip-cat{
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.ranking-tooltip-rank{
+    font-size: 1.3em;
+    color:#FF8300;
+}
+
+.ranking-tooltip-rank > .ordinal_suffix{
+    font-style: italic;
+    vertical-align: super;
+    font-size: 0.6em;
+}

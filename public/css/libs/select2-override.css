@@ -1,0 +1,150 @@
+.select2-container {
+    margin: 0;
+    position: relative;
+    display: inline-block;
+    /* inline-block for ie7 */
+    zoom: 1;
+    *display: inline;
+    vertical-align: middle;
+}
+.select2-container .select2-choice {
+    display: block;
+    height: 39px;
+    padding: 0 0 0 8px;
+    overflow: hidden;
+    position: relative;
+
+    border: 1px solid #aaa;
+    white-space: nowrap;
+    line-height: 39px;
+    color: #FFF;
+    text-decoration: none;
+
+    border-radius: 0px;
+
+    background-clip: padding-box;
+
+    -webkit-touch-callout: none;
+      -webkit-user-select: none;
+         -moz-user-select: none;
+          -ms-user-select: none;
+              user-select: none;
+
+    background-color: #008CBA;
+    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #008CBA), color-stop(0.5, #008CBA));
+    background-image: -webkit-linear-gradient(center bottom, #008CBA 0%, #008CBA 50%);
+    background-image: -moz-linear-gradient(center bottom, #008CBA 0%, #008CBA 50%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#008CBA', endColorstr = '#008CBA', GradientType = 0);
+    background-image: linear-gradient(top, #008CBA 0%, #008CBA 50%);
+}
+
+.select2-container .select2-choice .select2-arrow {
+    display: inline-block;
+    width: 18px;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+
+    border-left: 1px solid #aaa;
+    border-radius: 0px;
+
+    background-clip: padding-box;
+
+    background: #ccc;
+    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #ccc), color-stop(0.6, #eee));
+    background-image: -webkit-linear-gradient(center bottom, #ccc 0%, #eee 60%);
+    background-image: -moz-linear-gradient(center bottom, #ccc 0%, #eee 60%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#eeeeee', endColorstr = '#cccccc', GradientType = 0);
+    background-image: linear-gradient(top, #ccc 0%, #eee 60%);
+}
+
+.select2-drop {
+    width: 100%;
+    margin-top: -1px;
+    position: absolute;
+    z-index: 9999;
+    top: 100%;
+
+    background: #008CBA;
+    color: #FFF;
+    border: 1px solid #aaa;
+    border-top: 0;
+
+    border-radius: 0 0 4px 4px;
+
+    
+}
+
+.select2-search {
+    display: inline-block;
+    width: 100%;
+    min-height: 26px;
+    margin: 0;
+    padding-left: 0px;
+    padding-right: 0px;
+    position: relative;
+    z-index: 10000;
+    white-space: nowrap;
+}
+
+.select2-chosen{
+    color:#FFF;
+}
+
+.select2-input{
+    color:#6F6F6F;
+}
+
+
+/* results */
+.select2-results {
+    max-height: 200px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.select2-results ul.select2-result-sub {
+    margin: 0;
+    padding-left: 0;
+}
+
+
+.select2-results .select2-result-label {
+    padding: 3px 7px 4px;
+    margin: 0;
+    cursor: pointer;
+
+    min-height: 1em;
+
+    -webkit-touch-callout: none;
+      -webkit-user-select: none;
+         -moz-user-select: none;
+          -ms-user-select: none;
+              user-select: none;
+}
+
+.select2-results .select2-highlighted {
+    background: #006080;
+    color: #fff;
+}
+
+
+.ui-select-highlight{
+    font-weight: bold;
+    font-style: italic;
+}
+
+
+.select2-dropdown-open .select2-choice {
+    border-bottom-color: transparent;
+    -webkit-box-shadow: 0 0px 0 #fff inset;
+            box-shadow: 0 0px 0 #fff inset;
+
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}

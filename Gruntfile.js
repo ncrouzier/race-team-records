@@ -46,7 +46,7 @@ module.exports = function(grunt) {
         less: {
             build: {
                 files: {
-                    'public/dist/css/style.css': 'public/css/*.less'
+                    'public/dist/css/style.css': 'public/less/**/*.less'
                 }
             }
         },
@@ -62,6 +62,7 @@ module.exports = function(grunt) {
                     'public/dist/css/style.min.css': [
                         'public/libs/fontawesome/css/font-awesome.css',
                         'public/css/libs/select2.css',
+                        'public/css/libs/select2-override.css',
                         'public/css/libs/bootstrap.css',
                         'public/libs/angular-loading-bar/build/loading-bar.css',
                         'public/libs/angular-ui-select/dist/select.css',
@@ -101,7 +102,7 @@ module.exports = function(grunt) {
         // watch css and js files and process the above tasks
         watch: {
             css: {
-                files: ['public/css/**/*.less', 'public/css/**/*.css'],
+                files: ['public/less/**/*.less', 'public/css/**/*.css'],
                 tasks: ['less', 'cssmin']
             },
             js: {

@@ -17,16 +17,16 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var bson = require('bson');
-
+var crypto = require('crypto');
 var async = require('async');
 
 var nodemailer = require("nodemailer");
-
+var favicon = require('serve-favicon');
 
 var qs = require('querystring');
 
-// var configDB = require('./config/db.js');
 process.env.TZ = 'UTC';
+app.use(favicon(__dirname + '/public/images/favicon.ico'));
 
 // configuration ===============================================================
 // mongoose.connect(configDB.url); // connect to our database
@@ -54,7 +54,7 @@ app.set('view engine', 'ejs'); // set up ejs for templating
 
 // required for passport
 app.use(session({
-    secret: 'ilovescotchscotchyscotchscotch'
+    secret: crypto.randomBytes(20).toString('hex')
 })); // session secret
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions

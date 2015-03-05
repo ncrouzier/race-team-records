@@ -6,7 +6,7 @@
             <span>Search members:</span>
             <br>
             <div class="btn-group">
-                <input ng-model="query"  class="form-control" type="text" placeholder="Search by name" auto-focus><span id="searchclear" class="fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+                <input ng-model="query"  class="form-control" type="text" placeholder="Search by name" auto-focus><span class="searchclear fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
             </div>
         </div>
         <div class="col-sm-3">
@@ -62,13 +62,24 @@
                         </div>
                         <div class="col-sm-6">
                             <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
-                            <ul class="list-group">
+                            <ul class="pb-list list-group">
+                                <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <span class="listheader" title="Race">Race</span>
+                                        </div>
+                                        
+                                        <div class="col-sm-6">
+                                            <span class="listheader" title="Time">Time</span>
+                                        </div>
+                                    </div>
+                                </li>
                                 <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <span> {{result.racetype.name}}</span>
                                         </div>
-                                        <div class="row">
+                                        <div class="col-sm-6">
                                             <span> {{result.time | secondsToTimeString}}</span>
                                         </div>
                                     </div>
@@ -77,7 +88,7 @@
                         </div>
                     </div>
                     <h3>Latest Results:</h3>
-                    <ul class="list-group">
+                    <ul class="results-list list-group">
                         <li class="list-group-item text-left resultlistheader" ng-show="currentMemberResultList.length >0">
                             <div class="row">
                                 <div class="col-sm-5">

@@ -2,7 +2,7 @@
 
     <div class="row text-left" style="padding-left:15px; margin-bottom:10px;">
         <div class="btn-group">
-            <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus><span id="searchclear" class="fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+            <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus><span class="searchclear fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
             </span>
         </div>
         <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i>
@@ -10,7 +10,7 @@
     </div>
     <div id="member-list" class="row">
         <div class="col-md-12">
-            <ul class="list-group">
+            <ul class="results-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
                     <div class="row">
                         <div class="col-sm-3">

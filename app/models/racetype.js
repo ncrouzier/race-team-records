@@ -7,6 +7,7 @@ var racetypeSchema = mongoose.Schema({
     surface: String,
     meters: Number,
     miles: Number,
+    isVariable: Boolean,
     createdAt: Date,
     updatedAt: Date
 

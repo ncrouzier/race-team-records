@@ -18,7 +18,8 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
 
 
     ResultsService.getRaceTypes({
-        sort: 'meters'
+        sort: 'meters',
+        isVariable: 'false'
     }).then(function(racetypes) {
         $scope.racetypesList =racetypes;
     });

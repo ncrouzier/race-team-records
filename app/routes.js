@@ -393,6 +393,7 @@ module.exports = function(app, qs, passport, async) {
                 _id: req.body.racetype._id,
                 name: req.body.racetype.name,
                 surface: req.body.racetype.surface,
+                isVariable: req.body.racetype.isVariable,
                 meters: req.body.racetype.meters,
                 miles: req.body.racetype.miles
             },
@@ -434,8 +435,9 @@ module.exports = function(app, qs, passport, async) {
                 _id: req.body.racetype._id,
                 name: req.body.racetype.name,
                 surface: req.body.racetype.surface,
+                isVariable: req.body.racetype.isVariable,
                 meters: req.body.racetype.meters,
-                miles: req.body.racetype.miles
+                miles: req.body.racetype.miles              
             };
             result.racedate = req.body.racedate;
             result.members = members;
@@ -615,10 +617,14 @@ module.exports = function(app, qs, passport, async) {
         var sort = req.query.sort;
         var limit = req.query.limit;
         var surface = req.query.surface;
+        var isVariable = req.query.isVariable;
 
         query = RaceType.find();
         if (surface) {
             query = query.where('surface').equals(surface);
+        }
+        if (isVariable){
+            query = query.where('isVariable').equals(isVariable);
         }
         if (sort) {
             query = query.sort(sort);
@@ -654,7 +660,8 @@ module.exports = function(app, qs, passport, async) {
             name: req.body.name,
             surface: req.body.surface,
             meters: req.body.meters,
-            miles: req.body.miles
+            miles: req.body.miles,
+            isVariable :req.body.isVariable
         }, function(err, racetype) {
             if (err) {
                 res.send(err);
@@ -672,6 +679,7 @@ module.exports = function(app, qs, passport, async) {
             racetype.surface = req.body.surface;
             racetype.meters = req.body.meters;
             racetype.miles = req.body.miles;
+            racetype.isVariable = req.body.isVariable;
             racetype.save(function(err) {
                 if (!err) {
                     Result.find({
@@ -683,13 +691,26 @@ module.exports = function(app, qs, passport, async) {
                                 res.send(err);
                             } else {
                                 for (i = 0; i < results.length; i++) {
-                                    results[i].racetype = {
-                                        _id: results[i].racetype._id,
-                                        name: req.body.name,
-                                        surface: req.body.surface,
-                                        meters: req.body.meters,
-                                        miles: req.body.miles
-                                    };
+                                    if (!req.body.isVariable){
+                                        results[i].racetype = {
+                                            _id: results[i].racetype._id,
+                                            name: req.body.name,
+                                            surface: req.body.surface,
+                                            meters: req.body.meters,
+                                            miles: req.body.miles,
+                                            isVariable :req.body.isVariable
+                                        };
+                                    }else{
+                                        results[i].racetype = {
+                                            _id: results[i].racetype._id,
+                                            name: req.body.name,
+                                            surface: req.body.surface,
+                                            meters: results[i].racetype.meters,
+                                            miles: results[i].racetype.miles,
+                                            isVariable :req.body.isVariable
+                                        };
+                                    }
+                                    
                                     results[i].save(function(err) {
                                         if (err) {
                                             console.log(err);

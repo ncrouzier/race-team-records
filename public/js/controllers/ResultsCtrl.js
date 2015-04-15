@@ -42,6 +42,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
+    $scope.autoconvert = true;
     MembersService.getMembers({
         sort: 'firstname'
     }).then(function(members) {
@@ -55,17 +56,16 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.racetypesList = racetypes;
     });
 
+
     // make sure dates are always UTC
     $scope.$watch('formData.racedate ', function(date) {
-        $scope.formData.racedate = $filter('date')(result.racedate, 'MM/dd/yyyy', 'UTC');
+        $scope.formData.racedate = $filter('date')($scope.formData.racedate, 'MM/dd/yyyy', 'UTC');
     });
 
 
     $scope.editmode = false;
     if (result) {
-        console.log(result.racedate);
         $scope.formData = result;
-        // $scope.formData.racedate = $filter('date')(result.racedate, 'MM/dd/yyyy', 'UTC');
         $scope.editmode = true;
         $scope.formData.dateofbirth = new Date();
         $scope.nbOfMembers = result.members.length;
@@ -175,6 +175,17 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
     };
 
+    $scope.onMetersChange = function() {
+        if ($scope.autoconvert) {
+            $scope.formData.racetype.miles = parseFloat($scope.formData.racetype.meters) * 0.000621371;
+        }
+    };
+
+    $scope.onMilesChange = function() {
+        if ($scope.autoconvert) {
+            $scope.formData.racetype.meters = parseFloat($scope.formData.racetype.miles) * 1609.3440;
+        }
+    };
 
     // =====================================
     // DATE PICKER CONFIG ==================

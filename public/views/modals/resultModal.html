@@ -34,13 +34,35 @@
                             <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
                                 <!-- <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div> -->
                                 <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
-
-                                <small>length in meters: {{racetype.meters | number}} m</small>
-                                <br>
-                                <small>length in miles: {{racetype.miles | number}} miles</small>
+                                <span ng-show="!racetype.isVariable">
+                                    <small>length in meters: {{racetype.meters | number}} m</small>
+                                    <br>
+                                    <small>length in miles: {{racetype.miles | number}} miles</small>
+                                </span>
+                                <span ng-show="racetype.isVariable">
+                                <small>Specify distance for each race result</small>
+                                </span>
                             </div>
                         </ui-select-choices>
                     </ui-select>
+                </div>
+            </div>
+        </div>
+        <div class="row" ng-show="formData.racetype.isVariable">
+            <div class="col-md-5">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.meters.$invalid && !formresult.racetype.meters.$pristine}">
+                    <label class="text-left">Distance in meters:</label>
+                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.racetype.meters" class="form-control input-md text-left" required>
+                </div>
+            </div>
+            <div class="col-md-1 text-center">
+                <label><small>Auto convert</small></label>
+                <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
+            </div>
+            <div class="col-md-5">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.miles.$invalid && !formresult.racetype.miles.$pristine}">
+                    <label class="text-left">Distance in miles:</label>
+                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.racetype.miles" class="form-control input-md text-left" required>
                 </div>
             </div>
         </div>

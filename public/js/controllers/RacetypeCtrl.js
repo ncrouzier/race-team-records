@@ -47,6 +47,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
         $scope.editmode = true;
     } else {
         $scope.formData = {};
+        $scope.formData.isVariable = false;
         $scope.editmode = false;
     }
 
@@ -65,10 +66,18 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
     };
 
     $scope.addRaceType = function() {
+        if ($scope.formData.isVariable){
+            $scope.formData.meters = null;
+            $scope.formData.miles = null;
+        }
         $modalInstance.close($scope.formData);
     };
 
     $scope.editRaceType = function() {
+        if ($scope.formData.isVariable){
+            $scope.formData.meters = null;
+            $scope.formData.miles = null;
+        }
         $modalInstance.close($scope.formData);
     };
 

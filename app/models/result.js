@@ -12,7 +12,8 @@ var resultSchema = mongoose.Schema({
         name: String,
         surface: String,
         meters: Number,
-        miles: Number
+        miles: Number,
+        isVariable: Boolean
     },
     racedate: Date,
     time: Number,

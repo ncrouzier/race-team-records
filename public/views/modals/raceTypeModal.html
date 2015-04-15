@@ -3,6 +3,7 @@
 </div>
 <div class="modal-body">
     <form name="formracetype">
+        
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.racetypename.$invalid && !formracetype.racetypename.$pristine}">
@@ -24,10 +25,18 @@
             </div>
         </div>
         <div class="row">
+            <div class="col-md-12">
+                <label class="text-left">Variable Distance?</label><br>
+                <button type="button" class="btn btn-primary" ng-model="formData.isVariable" btn-checkbox>
+                    {{formData.isVariable}}
+                </button>
+            </div>
+        </div>
+        <div class="row" ng-show="!formData.isVariable">
             <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.meters.$invalid && !formracetype.meters.$pristine}">
                     <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters" only-decimals ng-model="formData.meters" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMetersChange()" name="meters" ng-model="formData.meters" class="form-control input-md text-left" ng-required="!formData.isVariable">
                 </div>
             </div>
             <div class="col-md-1 text-center">
@@ -37,7 +46,7 @@
             <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.miles.$invalid && !formracetype.miles.$pristine}">
                     <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles" only-decimals ng-model="formData.miles" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMilesChange()" name="miles" ng-model="formData.miles" class="form-control input-md text-left" ng-required="!formData.isVariable">
                 </div>
             </div>
         </div>

@@ -149,19 +149,18 @@ module.exports = function(app, qs, passport, async) {
     });
 
     app.get('/api/members/:member_id/pbs', function(req, res) {
-        var pbraces = ['1 mile', '5k', '8k', '10k', 'Half Marathon', 'Marathon'];
+        var pbraces = ['1 mile', '5k', '8k', '10k', '10 miles', 'Half Marathon', 'Marathon'];
         var pbs = [];
         var calls = [];
 
-
-
         pbraces.forEach(function(pb) {
             calls.push(function(callback) {
-                Result.find({
+                var query = Result.find({
                         'members._id': req.params.member_id,
                         'racetype.name': pb
-                    },
-                    function(err, results) {
+                });
+                query = query.sort('time');
+                    query.exec(function(err, results) {
                         if (err) {
                             return callback(err);
                         } else {
@@ -173,8 +172,7 @@ module.exports = function(app, qs, passport, async) {
                             }
                         }
                     }
-                ).sort('-time').limit(1);
-
+                );
             });
         });
 

@@ -140,7 +140,7 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
 
     // make sure dates are always UTC
     $scope.$watch('formData.dateofbirth ', function(date) {
-        $scope.formData.dateofbirth = $filter('date')(member.dateofbirth, 'MM/dd/yyyy', 'UTC');
+        $scope.formData.dateofbirth = $filter('date')(member.dateofbirth, 'yyyy-MM-dd', 'UTC');
     });
 
     $scope.addMember = function() {

@@ -59,7 +59,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     // make sure dates are always UTC
     $scope.$watch('formData.racedate ', function(date) {
-        $scope.formData.racedate = $filter('date')($scope.formData.racedate, 'MM/dd/yyyy', 'UTC');
+        $scope.formData.racedate = $filter('date')($scope.formData.racedate, 'yyyy-MM-dd', 'UTC');
     });
 
 

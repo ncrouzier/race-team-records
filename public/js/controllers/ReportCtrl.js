@@ -33,7 +33,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                     if ($scope.report !== '') {
                         $scope.report += '\n';
                     }
-                    $scope.report += result.racename + " -- " + $filter('date')(result.racedate, "MM/dd/yyyy", 'UTC') + "\n";
+                    $scope.report += result.racename + " -- " + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC') + "\n";
                     $scope.report += members + " " + $filter('secondsToTimeString')(result.time);
                     if (result.ranking){
                         $scope.report += " ("+$filter('rankTooltipOneLine')(result.ranking) +")";

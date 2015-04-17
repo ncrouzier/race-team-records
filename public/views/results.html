@@ -38,7 +38,7 @@
                         <div class="col-sm-4">
                             {{ result.racename}} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                             <br>
-                            <small>{{ result.racedate | date:'MM/dd/yyyy':'UTC' }}</small>
+                            <small>{{ result.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                         </div>
                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
                             <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="result.ranking !== undefined && result.ranking !== ''" tooltip-html-unsafe="{{result.ranking | rankTooltip}}"></i>

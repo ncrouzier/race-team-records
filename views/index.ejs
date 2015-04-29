@@ -17,16 +17,22 @@
 </head>
 <body ng-controller="MainController">
 	<div class="container">
-		<div class="row">
-			<div class="col-xs-9 col-sm-9 col-md-10 text-left logo-title" >
-				<h1><a ui-sref="/">MCRRC Racing Team</a></h1>
-				<span style="float: right"></span>
+		<div class="row navimg" >
+			<div class="row">
+				<div class="col-xs-8 col-sm-8 col-md-9 text-left logo-title" >
+					<h1><a ui-sref="/">MCRRC Racing Team</a></h1>
+					<span style="float: right"></span>
+				</div>
+				<div class="col-xs-4 col-sm-4 col-md-3 text-right logo-stats" >
+					<span>{{milesRaced}} miles raced in {{currentYear}}!</span>
+				</div>
 			</div>
-			<div class="col-xs-3 col-sm-3 col-md-2 text-right logo-stats" >
-				<span>{{milesRaced}} miles raced in {{currentYear}}!</span>
-			</div>
+			<div class="row copyrightrow">
+			<span><a href="http://www.mcrrcphotos.com/2015-Photos/Race-Photos/Pikes-Peak-10K/Pikes-Peak-10K-Reichmann/i-xhKnZVr" target="_blank" title="Photo by Alex Reichmann at Pike's Peek 10k 2015">© Alex Reichmann</a></span>
 		</div>
-
+		</div>
+		
+		
 		<!-- HEADER -->
 		<nav class="navbar navbar-inverse" >
 			<% if (user && user.role === 'admin') { %>

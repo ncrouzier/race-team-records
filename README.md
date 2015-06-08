@@ -1,7 +1,7 @@
 #Running site for results and records
  ___
 MEAN web application to record and display runners (or other athletes) results and records.Far from perfect but a good start to create your own MEAN application :)  
-Author: **[Nicolas Crouzier](https://github.com/coockiejr)**
+Author: **[Nicolas Crouzier](https://github.com/ncrouzier)**
 
 ## Technology/framework used
 * [Node.js](http://nodejs.org)
@@ -20,5 +20,5 @@ Dist folder structure is not great will be reworked later.
 Also routes files will be separated for clarity.
 
 ##### GitHub
-https://github.com/coockiejr/race-team-records
+https://github.com/ncrouzier/race-team-records
 

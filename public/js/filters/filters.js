@@ -1,10 +1,11 @@
 var app = angular.module('mcrrcApp');
 
 app.filter('secondsToTimeStringLong', function() {
-    return function(sec) {
-        var hours = Math.floor((sec % 86400) / 3600);
-        var minutes = Math.floor(((sec % 86400) % 3600) / 60);
-        var seconds = Math.floor(((sec % 86400) % 3600) % 60);
+    return function(centisec) {
+        var hours = Math.floor((centisec % 8640000) / 360000);
+        var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
+        var seconds = Math.floor((((sec % 8640000) % 360000) % 6000) / 100);
+        var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
         var timeString = '';
         if (hours > 0) timeString += (hours > 1) ? (hours + " hours ") : (hours + " hour ");
         if (minutes > 0) timeString += (minutes > 1) ? (minutes + " minutes ") : (minutes + " minute ");
@@ -14,38 +15,60 @@ app.filter('secondsToTimeStringLong', function() {
 });
 
 
-function secondsToTimeString(sec) {
-    var hours = Math.floor((sec % 86400) / 3600);
-    var minutes = Math.floor(((sec % 86400) % 3600) / 60);
-    var seconds = Math.floor(((sec % 86400) % 3600) % 60);
+function secondsToTimeString(centisec) {
+    var hours = Math.floor((centisec % 8640000) / 360000);
+    var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
+    var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
+    var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
     var timeString = '';
 
     if (hours === 0) {
-        if (seconds < 10) seconds = "0" + seconds;
-        return minutes + ":" + seconds;
-
-    } else {
-        if (minutes < 10) minutes = "0" + minutes;
-        if (seconds < 10) seconds = "0" + seconds;
-        return hours + ":" + minutes + ":" + seconds;
-    }
-}
-
-app.filter('secondsToTimeString', function() {
-    return function(sec) {
-        var hours = Math.floor((sec % 86400) / 3600);
-        var minutes = Math.floor(((sec % 86400) % 3600) / 60);
-        var seconds = Math.floor(((sec % 86400) % 3600) % 60);
-        var timeString = '';
-
-        if (hours === 0) {
             if (seconds < 10) seconds = "0" + seconds;
-            return minutes + ":" + seconds;
-
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return minutes + ":" + seconds;
+            }
+            
         } else {
             if (minutes < 10) minutes = "0" + minutes;
             if (seconds < 10) seconds = "0" + seconds;
-            return hours + ":" + minutes + ":" + seconds;
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return hours + ":" + minutes + ":" + seconds;
+            }
+        }
+}
+
+app.filter('secondsToTimeString', function() {
+    return function(centisec) {
+        var hours = Math.floor((centisec % 8640000) / 360000);
+        var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
+        var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
+        var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
+        var timeString = '';
+
+        if (hours === 0) {
+            if (seconds < 10) seconds = "0" + seconds;    
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return minutes + ":" + seconds;
+            }
+            
+        } else {
+            if (minutes < 10) minutes = "0" + minutes;
+            if (seconds < 10) seconds = "0" + seconds;
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return hours + ":" + minutes + ":" + seconds;
+            }
         }
 
     };
@@ -56,25 +79,36 @@ app.filter('secondsToTimeString', function() {
 
 
 app.filter('secondsToTimeDiff', function() {
-    return function(sec) {
-        var hours = Math.floor((sec % 86400) / 3600);
-        var minutes = Math.floor(((sec % 86400) % 3600) / 60);
-        var seconds = Math.floor(((sec % 86400) % 3600) % 60);
+    return function(centisec) {
+        var hours = Math.floor((centisec % 8640000) / 360000);
+        var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
+        var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
+        var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
         var timeString = '';
         if (seconds < 10) seconds = "0" + seconds;
-
+        
         if (hours === 0) {
-            return minutes + ":" + seconds;
-
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return minutes + ":" + seconds;
+            }
         } else {
-            return hours + ":" + minutes + ":" + seconds;
+            if (centiseconds !== 0){
+                if (centiseconds < 10) centiseconds = "0" + centiseconds;
+                return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
+            }else{
+                return hours + ":" + minutes + ":" + seconds;
+            }
         }
     };
 });
 
 
 function resultToPace(result) {
-    var seconds = result.time;
+    //round up!
+    var seconds = Math.ceil(result.time / 100);
     var distance = result.racetype.miles;
 
     var m = Math.floor((seconds / 60) / distance);
@@ -87,7 +121,8 @@ function resultToPace(result) {
 
 app.filter('resultToPace', function() {
     return function(result) {
-        var seconds = result.time;
+        //round up!
+        var seconds = Math.ceil(result.time / 100);
         var distance = result.racetype.miles;
 
         var m = Math.floor((seconds / 60) / distance);
@@ -253,7 +288,7 @@ app.filter('resultSuperFilter', function(query) {
 
                 //pace
                 var pace = resultToPace(result);
-                if (pace.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                     filtered.push(result);
                     return;
                 }

@@ -15,8 +15,8 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
     $scope.getResults = function() {
         ResultsService.getResults({
             "filters": {
-                "datefrom": $scope.datefrom,
-                "dateto": $scope.dateto,
+                "datefrom": $filter('date')($scope.datefrom, "yyyy-MM-dd", 'UTC'),
+                "dateto": $filter('date')($scope.dateto, "yyyy-MM-dd", 'UTC')
             },
             "sort": '-racedate racename time'
         }).then(function(results) {

@@ -26,6 +26,32 @@ app.directive('onlyDigitsForMinSec', function() {
     };
 });
 
+app.directive('onlyDigitsForCentisec', function() {
+    return {
+        require: 'ngModel',
+        restrict: 'A',
+        link: function(scope, element, attr, ctrl) {
+            function inputValue(val) {
+                if (val || val === "") {
+                    if (val === "") { //accept nothing
+                        return null;
+                    }
+                    var digits = val.replace(/[^0-9]/g, '');
+                    if (digits < 0) digits = '0';
+                    if (digits > 99) digits = '99';
+                    if (digits !== val) {
+                        ctrl.$setViewValue(digits);
+                        ctrl.$render();
+                    }
+                    return parseInt(digits, 10);
+                }
+                return undefined;
+            }
+            ctrl.$parsers.push(inputValue);
+        }
+    };
+});
+
 app.directive('onlyDigits', function() {
     return {
         require: 'ngModel',

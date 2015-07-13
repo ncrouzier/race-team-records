@@ -67,7 +67,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <div class="form-group">
                     <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a race"></i>
                     <br>
@@ -84,17 +84,21 @@
                 </div>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class=" text-left">Hours:</label>
                 <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left" placeholder="0">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="text-left">Minutes:</label>
                 <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="text-left">Seconds:</label>
                 <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+            </div>
+            <div class="col-md-1">
+                <label class="text-left">Centiseconds:</label>
+                <input type="text" ng-model="time.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
             </div>
         </div>
         <div class="row">

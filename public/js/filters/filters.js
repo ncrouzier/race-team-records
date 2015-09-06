@@ -114,6 +114,7 @@ function resultToPace(result) {
     var m = Math.floor((seconds / 60) / distance);
 
     var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
+    if (s === 60){m=m+1; s=0;}
 
     if (s < 10) s = "0" + s;
     return m + ":" + s;
@@ -128,6 +129,7 @@ app.filter('resultToPace', function() {
         var m = Math.floor((seconds / 60) / distance);
 
         var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
+        if (s === 60){m=m+1; s=0;}
 
         if (s < 10) s = "0" + s;
         return m + ":" + s;

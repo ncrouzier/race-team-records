@@ -489,3 +489,9 @@ function inline_ordinal_suffix_of(i, withStyle) {
     }
 }
 
+app.filter("sanitize", ['$sce', function($sce) {
+    return function(htmlCode) {
+        return $sce.trustAsHtml(htmlCode);
+    };
+}]);
+

@@ -25,9 +25,10 @@
             </button>
         </div>
     </div>
+    <div ng-show="showhtlm" class="row" style="background-color:#FFF;height:150px;overflow: scroll;" ng-bind-html="reportHTLM | sanitize"></div>
      <div class="row">
-        HTML
-        <textarea class="form-control" rows="30" name="message" ng-model="reportHTLM"></textarea>
+        HTML <span class="hoverhand" ng-click="showhtlm = !showhtlm">(show rendered html)</span>
+        <textarea class="form-control" rows="5" name="message" ng-model="reportHTLM"></textarea>
     </div>
     <div class="row">
         Text

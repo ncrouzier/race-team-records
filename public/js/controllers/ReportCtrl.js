@@ -7,7 +7,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
 
     $scope.datefrom = new Date().setDate((new Date()).getDate() - 30);
     $scope.dateto = new Date();
-
+    $scope.showhtml = false;
 
 
     $scope.getReports =function(){
@@ -102,8 +102,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                 lastEvent = result.racename;
                 lastDate = result.racedate;
             });
-console.log($scope.reportHTLM);
-        $scope.reportHTLM += '</table><span style="font-size:12px;">See all results from the MCRRC racing team at <a href="http://raceteam.mcrrc.org" target="_blank">raceteam.mcrrc.org</a></span>';
+        $scope.reportHTLM += '</table><span style="color:#646464;font-size:12px;">See all results from the MCRRC racing team at <a href="http://raceteam.mcrrc.org" target="_blank">raceteam.mcrrc.org</a></span>';
         });
     };
 

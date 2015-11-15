@@ -1,11 +1,10 @@
 <div class="jumbotron">
-
     <div class="row">
         <div class="col-md-5">
             <p class="input-group">
                 <label class="text-left">From:</label>
                 <input type="text" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="datefrom" is-open="opened1    " min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                <span class="input-group-btn" style="vertical-align: bottom;" >
+                <span class="input-group-btn" style="vertical-align: bottom;">
                     <button type="button" class="btn btn-default" ng-click="open($event,'opened1')"><i class="glyphicon glyphicon-calendar"></i></button>
                 </span>
             </p>
@@ -14,7 +13,7 @@
             <p class="input-group">
                 <label class="text-left">To:</label>
                 <input type="text" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="dateto" is-open="opened2" min-date="'2013-01-01'" date-disabled="disabled(date, mode)" max-date="'3015-06-22'" datepicker-options="dateOptions" ng-required="true" close-text="Close" />
-                <span class="input-group-btn" style="vertical-align: bottom;" >
+                <span class="input-group-btn" style="vertical-align: bottom;">
                     <button type="button" class="btn btn-default" ng-click="open($event,'opened2')"><i class="glyphicon glyphicon-calendar"></i></button>
                 </span>
             </p>
@@ -25,18 +24,20 @@
             </button>
         </div>
     </div>
-    <div ng-show="showhtlm" class="row" style="background-color:#FFF;height:150px;overflow: scroll;" ng-bind-html="reportHTLM | sanitize"></div>
-     <div class="row">
-        HTML <span class="hoverhand" ng-click="showhtlm = !showhtlm">(show rendered html)</span>
-        <textarea class="form-control" rows="5" name="message" ng-model="reportHTLM"></textarea>
+    <div class="row">
+        <div class="col-md-6">
+            HTML
+            <textarea class="form-control" style="height:200px;" name="message" ng-model="reportHTLM"></textarea>
+        </div>
+        <div class="col-md-6">
+            Rendered HTML
+            <div select-on-click style="background-color:#FFF;height:200px;overflow: scroll;" ng-bind-html="reportHTLM | sanitize"></div>
+        </div>
     </div>
     <div class="row">
-        Text
-        <textarea class="form-control" rows="30" name="message" ng-model="report"></textarea>
+        <div class="col-md-12">
+            Text
+            <textarea class="form-control" rows="30" name="message" ng-model="report"></textarea>
+        </div>
     </div>
-   
-
-
-
-
 </div>

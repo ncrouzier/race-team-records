@@ -16,7 +16,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
             doc.setFont("courier");
             doc.setFontSize(30);
             doc.text(35, 25, "MCRRC Race Team Records");
-			doc.addImage(mcrrcImg, 'JPEG', 70, 40, 100, 100);
+			doc.addImage(mcrrcImg, 'JPEG', 60, 40, 100, 100);
 
             doc.setFontSize(8);
             doc.text(10, 290, "Document generated on " + $filter('date')(new Date(), "yyyy-MM-dd", 'UTC'));

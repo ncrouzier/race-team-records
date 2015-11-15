@@ -36,7 +36,7 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            {{ result.racename }} <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                            {{ result.racename }}<span ng-show="result.comments !== undefined && result.comments !== ''"> </span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                             <br>
                             <small>{{ result.racedate | date:'yyyy-MM-dd':'UTC' }}</small> 
                         </div>

@@ -361,7 +361,7 @@ app.filter('rankTooltipOneLine', function() {
             }
             if (ranking.genderrank) {
                 res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank,false);
-                if (ranking.agetotal) {
+                if (ranking.gendertotal) {
                     res += " of " + ranking.gendertotal;
                 }
                 res += ", ";

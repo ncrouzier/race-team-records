@@ -20,14 +20,20 @@
             </p>
         </div>
         <div class="col-md-2">
-            <button type="button" style="margin-top:34px" class="btn btn-primary" ng-click="getResults()" ng-disabled="datefrom == null || datefrom == null ">
-                Get Report
+            <button type="button" style="margin-top:34px" class="btn btn-primary" ng-click="getReports()" ng-disabled="datefrom == null || datefrom == null ">
+                Generate Reports
             </button>
         </div>
     </div>
+     <div class="row">
+        HTML
+        <textarea class="form-control" rows="30" name="message" ng-model="reportHTLM"></textarea>
+    </div>
     <div class="row">
+        Text
         <textarea class="form-control" rows="30" name="message" ng-model="report"></textarea>
     </div>
+   
 
 
 

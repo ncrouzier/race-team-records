@@ -378,6 +378,55 @@ app.filter('rankTooltipOneLine', function() {
     };
 });
 
+app.filter('rankTooltipTd', function() {
+    return function(ranking) {
+        if (ranking) {
+            var res = '';
+            if (ranking.agerank) {
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.agetotal+'">'+inline_ordinal_suffix_of(ranking.agerank,true)+'</span></td>';
+            }else{
+                res += '<td></td>';
+            }
+            if (ranking.genderrank) {
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.gendertotal+'">'+inline_ordinal_suffix_of(ranking.genderrank,true)+'</span></td>';
+            }else{
+                res += '<td></td>';
+            }
+            if (ranking.overallrank) {
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.overalltotal+'">'+inline_ordinal_suffix_of(ranking.overallrank,true)+'</span></td>';
+            }else{
+                res += '<td></td>';
+            }
+            // if (ranking.agerank) {
+            //     res += "Age group rank: " + ordinal_suffix_of(ranking.agerank,false);
+            //     if (ranking.agetotal) {
+            //         res += " of " + ranking.agetotal;
+            //     }
+            //     res += ", ";
+            // }
+            // if (ranking.genderrank) {
+            //     res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank,false);
+            //     if (ranking.agetotal) {
+            //         res += " of " + ranking.gendertotal;
+            //     }
+            //     res += ", ";
+            // }
+            // if (ranking.overallrank) {
+            //     res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank,false);
+            //     if (ranking.overalltotal) {
+            //         res += " of " + ranking.overalltotal;
+            //     }
+            //     res += ", ";
+            // }
+
+            return res;
+            // return res.slice(0, -2);
+        }else{
+            return '<td></td><td></td><td></td>';
+        }
+    };
+});
+
 function ordinal_suffix_of(i, withStyle) {
     var j = i % 10,
         k = i % 100;
@@ -404,6 +453,37 @@ function ordinal_suffix_of(i, withStyle) {
     }
     if (withStyle) {
         return i + '<span class="ordinal_suffix ordinal_suffix_th">th</span>';
+    } else {
+        return i + "th";
+    }
+}
+
+function inline_ordinal_suffix_of(i, withStyle) {
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        if (withStyle) {
+            return i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">st</span>';
+        } else {
+            return i + "st";
+        }
+    }
+    if (j == 2 && k != 12) {
+        if (withStyle) {
+            return i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">nd</span>';
+        } else {
+            return i + "nd";
+        }
+    }
+    if (j == 3 && k != 13) {
+        if (withStyle) {
+            return i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">rd</span>';
+        } else {
+            return i + "rd";
+        }
+    }
+    if (withStyle) {
+        return i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">th</span>';
     } else {
         return i + "th";
     }

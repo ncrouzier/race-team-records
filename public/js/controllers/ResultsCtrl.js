@@ -83,6 +83,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.racedate = localStorageService.get('raceDate');
         $scope.formData.racetype = localStorageService.get('raceType');
         $scope.formData.resultlink = localStorageService.get('resultLink');
+        $scope.formData.ranking = {};
+        $scope.formData.ranking.agetotal = localStorageService.get('agetotal');
+        $scope.formData.ranking.gendertotal = localStorageService.get('gendertotal');
+        $scope.formData.ranking.overalltotal = localStorageService.get('overalltotal');
+
 
         $scope.formData.members = [];
         $scope.formData.members[0] = {};
@@ -117,6 +122,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
         localStorageService.set('raceType', $scope.formData.racetype);
         localStorageService.set('resultLink', $scope.formData.resultlink);
+        localStorageService.set('agetotal', $scope.formData.ranking.agetotal);
+        localStorageService.set('gendertotal', $scope.formData.ranking.gendertotal);
+        localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
 
         $modalInstance.close($scope.formData);
     };
@@ -129,6 +137,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.remove('raceDate');
         localStorageService.remove('raceType');
         localStorageService.remove('resultLink');
+        localStorageService.remove('agetotal');
+        localStorageService.remove('gendertotal');
+        localStorageService.remove('overalltotal');
+
     };
 
     $scope.editResult = function() {

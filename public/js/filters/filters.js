@@ -331,7 +331,7 @@ app.filter('rankTooltip', function() {
             }
             if (ranking.genderrank) {
                 res += '<span class="ranking-tooltip-cat">Gender rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.genderrank,true);
-                if (ranking.agetotal) {
+                if (ranking.gendertotal) {
                     res += ' of ' + ranking.gendertotal;
                 }
                 res += '</span><br>';
@@ -397,28 +397,6 @@ app.filter('rankTooltipTd', function() {
             }else{
                 res += '<td></td>';
             }
-            // if (ranking.agerank) {
-            //     res += "Age group rank: " + ordinal_suffix_of(ranking.agerank,false);
-            //     if (ranking.agetotal) {
-            //         res += " of " + ranking.agetotal;
-            //     }
-            //     res += ", ";
-            // }
-            // if (ranking.genderrank) {
-            //     res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank,false);
-            //     if (ranking.agetotal) {
-            //         res += " of " + ranking.gendertotal;
-            //     }
-            //     res += ", ";
-            // }
-            // if (ranking.overallrank) {
-            //     res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank,false);
-            //     if (ranking.overalltotal) {
-            //         res += " of " + ranking.overalltotal;
-            //     }
-            //     res += ", ";
-            // }
-
             return res;
             // return res.slice(0, -2);
         }else{

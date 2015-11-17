@@ -1,4 +1,6 @@
-angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $analytics, $filter, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$stateParams', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $analytics, $filter, AuthService, ResultsService) {
+
+
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -10,7 +12,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
     $scope.showhtml = false;
 
 
-    $scope.getReports =function(){
+    $scope.getReports = function() {
         $scope.getResults();
         $scope.getReportAsHTML();
     };
@@ -31,21 +33,21 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                 result.members.forEach(function(m) {
                     members += m.firstname + ' ' + m.lastname + ' & ';
                 });
-                members = members.slice(0,-3);
+                members = members.slice(0, -3);
                 if (result.racename !== lastEvent || result.racedate !== lastDate) {
                     if ($scope.report !== '') {
                         $scope.report += '\n';
                     }
                     $scope.report += result.racename + " -- " + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC') + "\n";
                     $scope.report += members + " " + $filter('secondsToTimeString')(result.time);
-                    if (result.ranking){
-                        $scope.report += " ("+$filter('rankTooltipOneLine')(result.ranking) +")";
+                    if (result.ranking) {
+                        $scope.report += " (" + $filter('rankTooltipOneLine')(result.ranking) + ")";
                     }
                     $scope.report += "\n";
                 } else {
                     $scope.report += members + " " + $filter('secondsToTimeString')(result.time);
-                    if (result.ranking){
-                        $scope.report += " ("+$filter('rankTooltipOneLine')(result.ranking) +")";
+                    if (result.ranking) {
+                        $scope.report += " (" + $filter('rankTooltipOneLine')(result.ranking) + ")";
                     }
                     $scope.report += "\n";
                 }
@@ -65,7 +67,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
             "sort": '-racedate racename time'
         }).then(function(results) {
             $scope.reportHTLM = '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">';
-    
+
             var lastEvent = "";
             var lastDate = "";
             results.forEach(function(result) {
@@ -73,25 +75,25 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                 result.members.forEach(function(m) {
                     members += m.firstname + ' ' + m.lastname + ' & ';
                 });
-                members = members.slice(0,-3);
+                members = members.slice(0, -3);
                 if (result.racename !== lastEvent || result.racedate !== lastDate) {
                     if ($scope.reportHTLM !== '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">') {
                         $scope.reportHTLM += '<tr style="height: 30px;"></tr>';
                     }
                     // $scope.report += result.racename + " -- " + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC') + "\n";
-                    
-                    $scope.reportHTLM += '<thead><tr style="color: #FA4D19; font-size: 18px;border-bottom-width: 1px;border-bottom-style: dashed;"><th style="text-align:center;" colspan="5">'+result.racename+' - ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC')+'</th></tr><tr style="color: #19c6fa; font-weight:bold"><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Racer</th><th style="text-align:center;font-size: 14px;" colspan="3">Finish Place</th><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Time</th></tr><tr style="border-bottom: 1px solid #E6E6E6;" ><th style="text-align:center;font-weight:normal;font-size:12px;">Age</th><th style="text-align:center;font-weight:normal;font-size:12px;">Gender</th><th style="text-align:center;font-weight:normal;font-size:12px;">Overall</th></tr></thead>';
+
+                    $scope.reportHTLM += '<thead><tr style="color: #FA4D19; font-size: 18px;border-bottom-width: 1px;border-bottom-style: dashed;"><th style="text-align:center;" colspan="5">' + result.racename + ' - ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC') + '</th></tr><tr style="color: #19c6fa; font-weight:bold"><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Racer</th><th style="text-align:center;font-size: 14px;" colspan="3">Finish Place</th><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Time</th></tr><tr style="border-bottom: 1px solid #E6E6E6;" ><th style="text-align:center;font-weight:normal;font-size:12px;">Age</th><th style="text-align:center;font-weight:normal;font-size:12px;">Gender</th><th style="text-align:center;font-weight:normal;font-size:12px;">Overall</th></tr></thead>';
 
 
-                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">'+members+'</td>'+$filter('rankTooltipTd')(result.ranking)+'<td style="text-align: center;"><span style="cursor:pointer;" title="pace: '+$filter('resultToPace')(result)+'">'+$filter('secondsToTimeString')(result.time)+'</span></td></tr>';
+                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">' + members + '</td>' + $filter('rankTooltipTd')(result.ranking) + '<td style="text-align: center;"><span style="cursor:pointer;" title="pace: ' + $filter('resultToPace')(result) + '">' + $filter('secondsToTimeString')(result.time) + '</span></td></tr>';
                     // $scope.report += members + " " + $filter('secondsToTimeString')(result.time);
                     // if (result.ranking){
                     //     $scope.report += " ("+$filter('rankTooltipOneLine')(result.ranking) +")";
                     // }
                     // $scope.report += "\n";
                 } else {
-                   
-                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">'+members+'</td>'+$filter('rankTooltipTd')(result.ranking)+'<td style="text-align: center;"><span style="cursor:pointer;" title="pace: '+$filter('resultToPace')(result)+'">'+$filter('secondsToTimeString')(result.time)+'</span></td></tr>';
+
+                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">' + members + '</td>' + $filter('rankTooltipTd')(result.ranking) + '<td style="text-align: center;"><span style="cursor:pointer;" title="pace: ' + $filter('resultToPace')(result) + '">' + $filter('secondsToTimeString')(result.time) + '</span></td></tr>';
                     // $scope.report += members + " " + $filter('secondsToTimeString')(result.time);
                     // if (result.ranking){
                     //     $scope.report += " ("+$filter('rankTooltipOneLine')(result.ranking) +")";
@@ -102,11 +104,11 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
                 lastEvent = result.racename;
                 lastDate = result.racedate;
             });
-        $scope.reportHTLM += '</table><span style="color:#646464;font-size:12px;">See all results from the MCRRC racing team at <a href="http://raceteam.mcrrc.org" target="_blank">raceteam.mcrrc.org</a></span>';
+            $scope.reportHTLM += '</table><span style="color:#646464;font-size:12px;">See all results from the MCRRC racing team at <a href="http://raceteam.mcrrc.org" target="_blank">raceteam.mcrrc.org</a></span>';
         });
     };
 
-    
+
 
     $scope.open = function($event, opened) {
         $event.preventDefault();
@@ -114,5 +116,49 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$a
 
         $scope[opened] = true;
     };
+
+}]);
+
+angular.module('mcrrcApp.results').controller('TableReportController', ['$scope', '$stateParams', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $analytics, $filter, AuthService, ResultsService) {
+
+    if ($stateParams.from && $stateParams.to) {
+        ResultsService.getResults({
+            "filters": {
+                "datefrom": $filter('date')($stateParams.from, "yyyy-MM-dd", 'UTC'),
+                "dateto": $filter('date')($stateParams.to, "yyyy-MM-dd", 'UTC')
+            },
+            "sort": '-racedate racename time'
+        }).then(function(results) {
+            $scope.reportHTLM = '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">';
+
+            var lastEvent = "";
+            var lastDate = "";
+            results.forEach(function(result) {
+                var members = '';
+                result.members.forEach(function(m) {
+                    members += m.firstname + ' ' + m.lastname + ' & ';
+                });
+                members = members.slice(0, -3);
+                if (result.racename !== lastEvent || result.racedate !== lastDate) {
+                    if ($scope.reportHTLM !== '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">') {
+                        $scope.reportHTLM += '<tr style="height: 30px;"></tr>';
+                    }
+                    $scope.reportHTLM += '<thead><tr style="color: #FA4D19; font-size: 18px;border-bottom-width: 1px;border-bottom-style: dashed;"><th style="text-align:center;" colspan="5">' + result.racename + ' - ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC') + '</th></tr><tr style="color: #19c6fa; font-weight:bold"><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Racer</th><th style="text-align:center;font-size: 14px;" colspan="3">Finish Place</th><th style="text-align:center;border-bottom: 1px solid #E6E6E6;font-size: 16px;" rowspan="2">Time</th></tr><tr style="border-bottom: 1px solid #E6E6E6;" ><th style="text-align:center;font-weight:normal;font-size:12px;">Age</th><th style="text-align:center;font-weight:normal;font-size:12px;">Gender</th><th style="text-align:center;font-weight:normal;font-size:12px;">Overall</th></tr></thead>';
+                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">' + members + '</td>' + $filter('rankTooltipTd')(result.ranking) + '<td style="text-align: center;"><span style="cursor:pointer;" title="pace: ' + $filter('resultToPace')(result) + '">' + $filter('secondsToTimeString')(result.time) + '</span></td></tr>';
+
+                } else {
+
+                    $scope.reportHTLM += '<tr><td style="font-weight:bold;">' + members + '</td>' + $filter('rankTooltipTd')(result.ranking) + '<td style="text-align: center;"><span style="cursor:pointer;" title="pace: ' + $filter('resultToPace')(result) + '">' + $filter('secondsToTimeString')(result.time) + '</span></td></tr>';
+
+                }
+
+                lastEvent = result.racename;
+                lastDate = result.racedate;
+            });
+            $scope.reportHTLM += '</table><span style="color:#646464;font-size:12px;">See all results from the MCRRC racing team at <a href="http://raceteam.mcrrc.org" target="_blank">raceteam.mcrrc.org</a></span>';
+        });
+    }
+
+
 
 }]);

@@ -49,6 +49,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/contact",
             templateUrl: "views/contact.html",
             controller: 'ContactController'
+        }).state('/mcrrcreport', {
+            url: "/mcrrcreport?from&to",
+            templateUrl: "views/mcrrcreport.html",
+            controller: 'TableReportController'
         });
 
 });

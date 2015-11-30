@@ -29,13 +29,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 });
             }
         });
-
-
-
-
     };
-
-
 
 
     //retrieve results

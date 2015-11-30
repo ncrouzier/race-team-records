@@ -8,7 +8,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.resultsList = [];
 
 
-    ResultsService.getResults({
+    ResultsService.getResultsWithCacheSupport({
         "sort": '-racedate racename time'
     }).then(function(results) {
         $scope.resultsList = results;

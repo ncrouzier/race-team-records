@@ -19,7 +19,7 @@
                 <label class="btn btn-primary" ng-model="paramModel.sex" ng-change="getResults()" btn-radio="'.*'">Both</label>
             </div>
         </div>
-        <div class="col-sm-6 col-md-4">
+        <div class="col-sm-6 col-md-3">
             <span>Division:</span>
             <br>
             <div class="btn-group">
@@ -35,6 +35,16 @@
                 <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'All'">Yes</label>
                 <label class="btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" btn-radio="'Best'">No</label>
             </div>
+        </div>
+        <div class="col-sm-6 col-md-1">
+            <span>Size:</span>
+            <br>
+            <ui-select ng-model="paramModel.limit" ng-change="getResults()" theme="select2" style="min-width: 60px;">
+                <ui-select-match placeholder="Select a result size type">{{$select.selected}}</ui-select-match>
+                <ui-select-choices repeat="size in resultSize">
+                    <div ng-bind="size"></div>
+                </ui-select-choices>
+            </ui-select>
         </div>
     </div>
     <div class="row">
@@ -63,7 +73,7 @@
                         </div>
                     </div>
                 </li>
-                <li class="list-group-item text-left resultlistrow" ng-class="{ 'gold': $index == 0,  'silver': $index == 1 , 'bronze': $index == 2}" ng-repeat="result in resultsList | orderBy:predicate:reverse">
+                <li class="list-group-item text-left resultlistrow" ng-class="{ 'gold': $index == 0,  'silver': $index == 1 , 'bronze': $index == 2}" ng-repeat="result in resultsList ">
                     <div class="row">
                         <div class="col-sm-1">
                             {{$index + 1}}

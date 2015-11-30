@@ -5,6 +5,8 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         $scope.user = user;
     });
 
+    $scope.resultSize = [3, 5, 10, 20];
+
     // =====================================
     // FILTER PARAMS CONFIG ================
     // =====================================

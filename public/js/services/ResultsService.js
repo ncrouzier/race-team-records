@@ -1,13 +1,42 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$modal', function(Restangular, $modal) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$modal', '$q', function(Restangular, UtilsService, $modal, $q) {
 
     var factory = {};
     var results = Restangular.all('results');
     var racetypes = Restangular.all('racetypes');
-
-
+    var systeminfos = Restangular.all('systeminfos');
+    var cachedResults;
+    var cachedResultsDate;
     // =====================================
     // RESULTS API CALLS ===================
     // =====================================
+
+
+
+
+    //retrieve results
+    factory.getResultsWithCacheSupport = function(params) {
+        return UtilsService.getSystemInfo('mcrrc').then(function(sysinfo) {
+            var date = new Date(sysinfo.resultUpdate);
+            if (cachedResults === undefined || date > cachedResultsDate) {
+                return results.getList(params).then(function(results) {
+                    cachedResultsDate = date;
+                    cachedResults = results;
+                    return results;
+                });
+            } else {
+                return $q(function(resolve, reject) {
+                    resolve(cachedResults);
+                });
+            }
+        });
+
+
+
+
+    };
+
+
+
 
     //retrieve results
     factory.getResults = function(params) {
@@ -191,7 +220,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', '$m
             });
 
     };
-    
+
     return factory;
 
 }]);

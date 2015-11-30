@@ -2,7 +2,9 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
 
-memberSchema = require('./member');
+var SystemInfo = require('./systemInfo');
+
+
 
 // define the schema for our user model
 var resultSchema = mongoose.Schema({
@@ -43,12 +45,14 @@ var resultSchema = mongoose.Schema({
 
 // keep track of when results are updated and created
 resultSchema.pre('save', function(next, done) {
+    var date = Date.now();
     if (this.isNew) {
-        this.createdAt = Date.now();
+        this.createdAt = date;
     }
-    this.updatedAt = Date.now();
+    this.updatedAt = date;
 
     this.updateCategory();
+    this.updateSystemInfo('mcrrc',date);
     next();
 });
 
@@ -67,6 +71,25 @@ resultSchema.methods.updateCategory = function() {
         this.category = "Master";
     }
 };
+
+resultSchema.methods.updateSystemInfo = function(name,date) {
+    SystemInfo.findOne({
+        name: name
+    }, function(err, systemInfo) {
+        if (err)
+            console.log("error fetching systemInfo")
+        if (systemInfo) {           
+            systemInfo.resultUpdate = date;
+            systemInfo.save(function(err) {
+                if (err) {
+                    res.send(err);
+                }
+            });
+        }
+
+    });
+};
+
 
 function getAddDateToDate(date, years, months, days) {
     var resDate = new Date(date);

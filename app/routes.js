@@ -80,10 +80,45 @@ module.exports = function(app, qs, passport, async) {
         res.redirect('/');
     });
 
-
+    var SystemInfo = require('./models/systemInfo');
     var RaceType = require('./models/racetype');
     var Member = require('./models/member');
     var Result = require('./models/result');
+
+
+    // =====================================
+    // SYSTEM INFO =========================
+    // ===================================== 
+
+    //Init SytemInfo, should only happen once.
+    SystemInfo.findOne({
+        name: 'mcrrc'
+    }, function(err, systemInfo) {
+        if (err)
+            console.log("error fetching systemInfo")
+        if (!systemInfo) {
+            SystemInfo.create({
+                name: "mcrrc"
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+        }
+    });
+
+    // get a member
+    app.get('/api/systeminfos/:name', function(req, res) {
+        SystemInfo.findOne({
+            name: req.params.name
+        }, function(err, systeminfo) {
+            if (err)
+                res.send(err);
+            if (systeminfo) {
+                res.json(systeminfo);
+            }
+        });
+    });
 
     // =====================================
     // TEAM MEMBERS ========================
@@ -156,23 +191,22 @@ module.exports = function(app, qs, passport, async) {
         pbraces.forEach(function(pb) {
             calls.push(function(callback) {
                 var query = Result.find({
-                        'members._id': req.params.member_id,
-                        'racetype.name': pb
+                    'members._id': req.params.member_id,
+                    'racetype.name': pb
                 });
                 query = query.sort('time');
-                    query.exec(function(err, results) {
-                        if (err) {
-                            return callback(err);
+                query.exec(function(err, results) {
+                    if (err) {
+                        return callback(err);
+                    } else {
+                        if (results.length > 0) {
+                            pbs.push(results[0]);
+                            callback(null);
                         } else {
-                            if (results.length > 0) {
-                                pbs.push(results[0]);
-                                callback(null);
-                            } else {
-                                callback(null);
-                            }
+                            callback(null);
                         }
                     }
-                );
+                });
             });
         });
 
@@ -435,7 +469,7 @@ module.exports = function(app, qs, passport, async) {
                 surface: req.body.racetype.surface,
                 isVariable: req.body.racetype.isVariable,
                 meters: req.body.racetype.meters,
-                miles: req.body.racetype.miles              
+                miles: req.body.racetype.miles
             };
             result.racedate = req.body.racedate;
             result.members = members;
@@ -621,7 +655,7 @@ module.exports = function(app, qs, passport, async) {
         if (surface) {
             query = query.where('surface').equals(surface);
         }
-        if (isVariable){
+        if (isVariable) {
             query = query.where('isVariable').equals(isVariable);
         }
         if (sort) {
@@ -659,7 +693,7 @@ module.exports = function(app, qs, passport, async) {
             surface: req.body.surface,
             meters: req.body.meters,
             miles: req.body.miles,
-            isVariable :req.body.isVariable
+            isVariable: req.body.isVariable
         }, function(err, racetype) {
             if (err) {
                 res.send(err);
@@ -689,26 +723,26 @@ module.exports = function(app, qs, passport, async) {
                                 res.send(err);
                             } else {
                                 for (i = 0; i < results.length; i++) {
-                                    if (!req.body.isVariable){
+                                    if (!req.body.isVariable) {
                                         results[i].racetype = {
                                             _id: results[i].racetype._id,
                                             name: req.body.name,
                                             surface: req.body.surface,
                                             meters: req.body.meters,
                                             miles: req.body.miles,
-                                            isVariable :req.body.isVariable
+                                            isVariable: req.body.isVariable
                                         };
-                                    }else{
+                                    } else {
                                         results[i].racetype = {
                                             _id: results[i].racetype._id,
                                             name: req.body.name,
                                             surface: req.body.surface,
                                             meters: results[i].racetype.meters,
                                             miles: results[i].racetype.miles,
-                                            isVariable :req.body.isVariable
+                                            isVariable: req.body.isVariable
                                         };
                                     }
-                                    
+
                                     results[i].save(function(err) {
                                         if (err) {
                                             console.log(err);

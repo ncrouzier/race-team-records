@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
 
-var SystemInfo = require('./systemInfo');
+var SystemInfo = require('./systeminfo');
 
 
 

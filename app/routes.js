@@ -80,7 +80,7 @@ module.exports = function(app, qs, passport, async) {
         res.redirect('/');
     });
 
-    var SystemInfo = require('./models/systemInfo');
+    var SystemInfo = require('./models/systeminfo');
     var RaceType = require('./models/racetype');
     var Member = require('./models/member');
     var Result = require('./models/result');

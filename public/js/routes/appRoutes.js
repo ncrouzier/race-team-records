@@ -1,5 +1,10 @@
-angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvider) {
+angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvider, $locationProvider) {
     //
+    $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false,
+        rewriteLinks: false
+    });
     // For any unmatched url, redirect to /state1
     $urlRouterProvider.otherwise("/");
     //
@@ -45,6 +50,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/pdf",
             templateUrl: "views/pdf.html",
             controller: 'PdfGeneratorController'
+        }).state('/gallery', {
+            url: "/gallery",
+            templateUrl: "views/gallery.html",
+            controller: 'GalleryController'
         }).state('/contact', {
             url: "/contact",
             templateUrl: "views/contact.html",

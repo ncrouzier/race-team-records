@@ -14,7 +14,8 @@
     "angular-utils-pagination": "~0.5.0",
     "angulartics": "~0.17.2",
     "angular-local-storage": "~0.1.5",
-    "jspdf": "~1.0.272"
+    "jspdf": "~1.0.272",
+    "nanogallery": "~5.9.1"
   },
   "resolutions": {
     "angular-bootstrap": "~0.12.0",

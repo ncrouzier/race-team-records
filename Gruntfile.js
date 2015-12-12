@@ -19,8 +19,8 @@ module.exports = function(grunt) {
             build: {
                 files: {
                     'public/dist/js/app.min.js': [
-                        'public/libs/angular/angular.js',
                         'public/libs/jquery/dist/jquery.js',
+                        'public/libs/angular/angular.js',
                         'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
                         'public/libs/angular-loading-bar/build/loading-bar.js',
                         'public/libs/angular-sanitize/angular-sanitize.js',
@@ -34,6 +34,7 @@ module.exports = function(grunt) {
                         'public/libs/angulartics/dist/angulartics.min.js',
                         'public/libs/angulartics/dist/angulartics-ga.min.js',
                         'public/libs/jspdf/dist/jspdf.min.js',
+                        'public/libs/nanogallery/dist/jquery.nanogallery.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]
@@ -61,6 +62,8 @@ module.exports = function(grunt) {
                 files: {
                     'public/dist/css/style.min.css': [
                         'public/libs/fontawesome/css/font-awesome.css',
+                        'public/libs/nanogallery/dist/css/nanogallery.min.css',
+                        'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',
                         'public/css/libs/select2.css',
                         'public/css/libs/select2-override.css',
                         'public/css/libs/bootstrap.css',
@@ -82,6 +85,10 @@ module.exports = function(grunt) {
                     'public/dist/fonts/fontawesome-webfont.ttf': 'public/libs/fontawesome/fonts/fontawesome-webfont.ttf',
                     'public/dist/fonts/fontawesome-webfont.woff': 'public/libs/fontawesome/fonts/fontawesome-webfont.woff',
                     'public/dist/fonts/fontawesome-webfont.woff2': 'public/libs/fontawesome/fonts/fontawesome-webfont.woff2',
+                    'public/dist/font/nano_icon_font3.eot': 'public/libs/nanogallery/dist/css/themes/light/font/nano_icon_font3.eot',
+                    'public/dist/font/nano_icon_font3.svg': 'public/libs/nanogallery/dist/css/themes/light/font/nano_icon_font3.svg',
+                    'public/dist/font/nano_icon_font3.ttf': 'public/libs/nanogallery/dist/css/themes/light/font/nano_icon_font3.ttf',
+                    'public/dist/font/nano_icon_font3.woff': 'public/libs/nanogallery/dist/css/themes/light/font/nano_icon_font3.woff',
                     'public/dist/fonts/glyphicons-halflings-regular.eot': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot',
                     'public/dist/fonts/glyphicons-halflings-regular.ttf': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf',
                     'public/dist/fonts/glyphicons-halflings-regular.woff': 'public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff',

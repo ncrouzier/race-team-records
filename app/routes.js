@@ -231,6 +231,7 @@ module.exports = function(app, qs, passport, async) {
             dateofbirth: req.body.dateofbirth,
             sex: req.body.sex,
             bio: req.body.bio,
+            pictureLink: req.body.pictureLink,
             memberStatus: req.body.memberStatus,
             done: false
         }, function(err, member) {
@@ -251,6 +252,7 @@ module.exports = function(app, qs, passport, async) {
             member.dateofbirth = req.body.dateofbirth;
             member.sex = req.body.sex;
             member.bio = req.body.bio;
+            member.pictureLink = req.body.pictureLink;
             member.memberStatus = req.body.memberStatus;
             member.save(function(err) {
                 if (!err) {

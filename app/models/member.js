@@ -9,6 +9,7 @@ var memberSchema = mongoose.Schema({
     dateofbirth: Date,
     bio: String,
     memberStatus: String,
+    pictureLink: String,
     createdAt: Date,
     updatedAt: Date
 });

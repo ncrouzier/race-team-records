@@ -144,6 +144,21 @@ footer {
         border: 0px;
     }
 }
+
+.member-picture {
+    @media (min-width: @screen-sm-min) {
+        max-width:227.5px;
+    }
+    @media (min-width: @screen-md-min) {
+        max-width:310px;
+    }
+    @media (min-width: @screen-lg-min) {
+        max-width:385px;
+    }
+    // max-height:500px;
+}
+
+
 .member-list {
     font-size: 14px;
     >.list-group {
@@ -296,5 +311,14 @@ footer {
             vertical-align: super;
             font-size: 0.6em;
         }
+    }
+}
+
+.row-no {
+    &-right-margin{
+        margin-right:0px;
+    }
+    &-left-margin{
+        margin-left:0px;
     }
 }

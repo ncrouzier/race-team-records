@@ -6976,6 +6976,21 @@ footer {
   padding-bottom: 1px;
   border: 0px;
 }
+@media (min-width: 768px) {
+  .member-picture {
+    max-width: 227.5px;
+  }
+}
+@media (min-width: 992px) {
+  .member-picture {
+    max-width: 310px;
+  }
+}
+@media (min-width: 1200px) {
+  .member-picture {
+    max-width: 385px;
+  }
+}
 .member-list {
   font-size: 14px;
 }
@@ -7126,5 +7141,11 @@ footer {
   font-style: italic;
   vertical-align: super;
   font-size: 0.6em;
+}
+.row-no-right-margin {
+  margin-right: 0px;
+}
+.row-no-left-margin {
+  margin-left: 0px;
 }
 

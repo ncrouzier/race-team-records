@@ -51,8 +51,21 @@
                 </div>
             </div>
             <div class="col-sm-6">
-                <label class="text-left">Member bio:</label>
-                <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <label class="text-left">Member bio:</label>
+                        <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-10">
+                        <label class="text-left">Picture Link:</label>
+                        <input type="text" class="form-control input-md text-left" name="pictureLink" ng-model="formData.pictureLink">
+                    </div>
+                    <div class="col-sm-2">
+                    <img src="{{formData.pictureLink}}" style="max-width:50px;max-height:50px;margin-top:20px;">
+                    </div>
+                </div>
             </div>
         </div>
     </form>

@@ -49,7 +49,7 @@
             <div class="col-sm-9">
                 <div class="detailscontainer" ng-show="currentMember">
                     <div class="row text-center">
-                        <h2>{{currentMember.firstname}} {{currentMember.lastname}} </h2>
+                        <h2>{{currentMember.firstname}} {{currentMember.lastname}} <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(currentMember)" title="remove user" ></i></h2>
                     </div>
                     <div class="row">
                         <div class="col-sm-6">

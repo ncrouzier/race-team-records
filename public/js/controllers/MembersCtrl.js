@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -75,6 +75,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         MembersService.getMemberPbs(member).then(function(results) {
             $scope.currentMemberPbsList = results;
+        });
+
+        $state.current.reloadOnSearch = false;
+        $location.search('member', member.firstname + member.lastname);
+        $timeout(function () {
+          $state.current.reloadOnSearch = undefined;
         });
 
         $analytics.eventTrack('viewMember', {

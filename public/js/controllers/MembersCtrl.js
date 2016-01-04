@@ -1,10 +1,12 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', function($scope, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
     // var members = Restangular.all('members');
+
+    
 
     $scope.membersList = [];
     $scope.query = "";
@@ -118,6 +120,14 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     MembersService.getMembers(defaultParams).then(function(members) {
         $scope.membersList = members;
+
+        if($stateParams.member){
+            for (i = 0; i < $scope.membersList.length; i++) {
+                if (($scope.membersList[i].firstname+$scope.membersList[i].lastname).toUpperCase() === ($stateParams.member).toUpperCase()){
+                    $scope.setMember($scope.membersList[i]);
+                }
+            }
+        }
     });
 
 

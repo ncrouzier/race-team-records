@@ -16,6 +16,9 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             controller: 'HomeController'
         }).state('/members', {
             url: "/members",
+            params: {
+                member: null,
+            },
             templateUrl: "views/members.html",
             controller: 'MembersController'
         }).state('/results', {

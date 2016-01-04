@@ -19,6 +19,7 @@ angular.module('mcrrcApp.members').controller('GalleryController', ['$scope', '$
                 duration: 300
             }],
             theme: 'light',
+            photoSorting: 'standard',
             thumbnailGutterWidth: 0,
             thumbnailGutterHeight: 0,
             i18n: {

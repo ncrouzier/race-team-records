@@ -4,7 +4,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
-
+    // $scope.pageSize = 10;
+    $scope.resultsTableProperties = {};
+    $scope.resultsTableProperties.pageSize = 10;
+    $scope.resultSize = [5, 10, 25, 50, 100];
     $scope.resultsList = [];
 
 

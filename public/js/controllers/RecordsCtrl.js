@@ -1,31 +1,9 @@
-angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', function($scope, $analytics, AuthService, ResultsService, $http, dialogs) {
+angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, $http, dialogs, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
-
-    $scope.resultSize = [3, 5, 10, 20];
-
-    // =====================================
-    // FILTER PARAMS CONFIG ================
-    // =====================================
-    $scope.paramModel = {};
-    $scope.paramModel.sex = '.*';
-    $scope.paramModel.category = '.*';
-    $scope.paramModel.mode = 'All';
-    $scope.paramModel.sort = 'time';
-    $scope.paramModel.racetype = "";
-    $scope.paramModel.limit = 5;
-
-
-    ResultsService.getRaceTypes({
-        sort: 'meters',
-        isVariable: 'false'
-    }).then(function(racetypes) {
-        $scope.racetypesList =racetypes;
-    });
-
 
     $scope.getResults = function() {
         if ($scope.paramModel.racetype !== '') {
@@ -45,6 +23,10 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
                 $scope.resultsList = results;
             });
         }
+
+        //save selection in storage
+        localStorageService.set('recordsParams', $scope.paramModel);
+
         $analytics.eventTrack('viewRecords', {
             category: 'Records',
             label: 'viewing record for ' + $scope.paramModel.racetype.name + ' (' + $scope.paramModel.racetype.surface + ') sex= ' + $scope.paramModel.sex + ' category= ' + $scope.paramModel.category + ' mode= ' + $scope.paramModel.mode
@@ -71,5 +53,36 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
             return s.replace(/ /g, '')+'-col';
         }
     };
+
+    // =====================================
+    // FILTER PARAMS CONFIG ================
+    // =====================================
+    $scope.resultSize = [3, 5, 10, 20];
+    $scope.paramModel = {};
+    //load storage params and records if existing, if not set defaults
+    if (localStorageService.get('recordsParams')){
+        $scope.paramModel = localStorageService.get('recordsParams');
+        $scope.getResults();
+    }else{
+        $scope.paramModel.sex = '.*';
+        $scope.paramModel.category = '.*';
+        $scope.paramModel.mode = 'All';
+        $scope.paramModel.sort = 'time';
+        $scope.paramModel.racetype = "";
+        $scope.paramModel.limit = 5;
+    }
+
+    
+    ResultsService.getRaceTypes({
+        sort: 'meters',
+        isVariable: 'false'
+    }).then(function(racetypes) {
+        $scope.racetypesList =racetypes;
+    });
+
+
+
+
+   
 
 }]);

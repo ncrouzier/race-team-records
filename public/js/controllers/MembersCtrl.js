@@ -117,6 +117,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // when landing on the page, get all members and show them
 
     // get all members
+    if($stateParams.member){
+        $scope.paramModel.memberStatus = 'all';
+    }
+
     var defaultParams = {
         "filters[sex]": $scope.paramModel.sex,
         "filters[category]": $scope.paramModel.category,

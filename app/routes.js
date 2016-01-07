@@ -320,7 +320,7 @@ module.exports = function(app, qs, passport, async) {
 
 
 
-    app.get('/updateAgeGrade', function(req, res) {
+    app.get('/updateAgeGrade', isAdminLoggedIn, function(req, res) {
         var data = req.body;
         query = Result.find();
         query = query.or([{

@@ -37,6 +37,7 @@ var resultSchema = mongoose.Schema({
     category: String,
     comments: String,
     resultlink: String,
+    agegrade: Number,
     is_accepted: Boolean,
     createdAt: Date,
     updatedAt: Date

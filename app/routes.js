@@ -80,10 +80,11 @@ module.exports = function(app, qs, passport, async) {
         res.redirect('/');
     });
 
-    var SystemInfo = require('./models/systeminfo'); 
+    var SystemInfo = require('./models/systeminfo');
     var RaceType = require('./models/racetype');
     var Member = require('./models/member');
     var Result = require('./models/result');
+    var AgeGrading = require('./models/agegrading');
 
 
     // =====================================
@@ -106,6 +107,8 @@ module.exports = function(app, qs, passport, async) {
             });
         }
     });
+
+
 
     // get a member
     app.get('/api/systeminfos/:name', function(req, res) {
@@ -315,6 +318,77 @@ module.exports = function(app, qs, passport, async) {
     // RESULTS =============================
     // =====================================
 
+
+
+    app.get('/updateAgeGrade', function(req, res) {
+        var data = req.body;
+        query = Result.find();
+        query = query.or([{
+            'racetype.surface': 'track'
+        }, {
+            'racetype.surface': 'road'
+        }]);
+
+        query.exec(function(err, results) {
+
+            if (err) {
+                res.send(err)
+            } else {
+                if (results) {
+                    var numberOfUpdates = 0;
+                    async.forEachOf(results, function(res, key, callback) {
+
+                        //SYNC ISSUE
+                        AgeGrading.findOne({
+                            sex: res.members[0].sex.toLowerCase(),
+                            type: res.racetype.surface,
+                            age: calculateAge(res.racedate, res.members[0].dateofbirth),
+                        }, function(err, ag) {
+                            if (err)
+                                console.log("error fetching agegrading")
+                            if (ag && res.members.length === 1) { //do not deal with multiple racers
+                                if (ag[res.racetype.name.toLowerCase()] !== undefined) {
+                                    agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100)*100).toFixed(2);
+                                    res.agegrade = agegrade;
+                                    res.save(function(err) {
+                                        if (err) {
+                                            console.error(err.message);
+                                        } else {
+                                            numberOfUpdates++;
+                                            // console.log(numberOfUpdates + ' saved ' + res.racename + ' ' + res.members[0].lastname + ' ' + res.agegrade);
+                                            callback();
+                                        }
+                                    });
+
+                                }else{
+                                    callback();
+                                }
+
+                            }else{
+                                callback();
+                            }
+                            
+
+                        });
+                    }, function(err) {
+                        if (err) {
+                            console.error(err.message);
+                        }
+                        res.json({'numberOfUpdates':numberOfUpdates});
+
+                    });
+
+                }
+
+            }
+
+
+        });
+
+    });
+
+
+
     // get all results
     app.get('/api/results', function(req, res) {
         var sort = req.query.sort;
@@ -421,34 +495,60 @@ module.exports = function(app, qs, passport, async) {
                 dateofbirth: req.body.members[i].dateofbirth
             });
         }
-        Result.create({
-            racename: req.body.racename,
-            racetype: {
-                _id: req.body.racetype._id,
-                name: req.body.racetype.name,
-                surface: req.body.racetype.surface,
-                isVariable: req.body.racetype.isVariable,
-                meters: req.body.racetype.meters,
-                miles: req.body.racetype.miles
-            },
-            racedate: req.body.racedate,
-            members: members,
-            time: req.body.time,
-            ranking: req.body.ranking,
-            comments: req.body.comments,
-            resultlink: req.body.resultlink,
-            is_accepted: false,
-            done: false
-        }, function(err, result) {
-            if (err) {
-                res.send(err);
-            } else {
-                res.end('{"success" : "Result created successfully", "status" : 200}');
+
+        if (members.length === 1) {
+
+        }
+
+        AgeGrading.findOne({
+            sex: members[0].sex.toLowerCase(),
+            type: req.body.racetype.surface,
+            age: calculateAge(req.body.racedate, members[0].dateofbirth),
+        }, function(err, ag) {
+            if (err)
+                console.log("error fetching agegrading")
+            if (ag && members.length === 1) { //do not deal with multiple racers
+                if (ag[req.body.racetype.name.toLowerCase()] !== undefined) {
+                    agegrade = (ag[req.body.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
+                }
             }
+
+            Result.create({
+                racename: req.body.racename,
+                racetype: {
+                    _id: req.body.racetype._id,
+                    name: req.body.racetype.name,
+                    surface: req.body.racetype.surface,
+                    isVariable: req.body.racetype.isVariable,
+                    meters: req.body.racetype.meters,
+                    miles: req.body.racetype.miles
+                },
+                racedate: req.body.racedate,
+                members: members,
+                time: req.body.time,
+                ranking: req.body.ranking,
+                comments: req.body.comments,
+                resultlink: req.body.resultlink,
+                agegrade: agegrade,
+                is_accepted: false,
+                done: false
+            }, function(err, result) {
+                if (err) {
+                    res.send(err);
+                } else {
+                    res.end('{"success" : "Result created successfully", "status" : 200}');
+                }
+
+
+            });
 
 
         });
+
+
     });
+
+
 
     //update a result
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
@@ -463,31 +563,52 @@ module.exports = function(app, qs, passport, async) {
             });
         }
 
-        Result.findById(req.params.result_id, function(err, result) {
-            result.racename = req.body.racename;
-            result.racetype = {
-                _id: req.body.racetype._id,
-                name: req.body.racetype.name,
-                surface: req.body.racetype.surface,
-                isVariable: req.body.racetype.isVariable,
-                meters: req.body.racetype.meters,
-                miles: req.body.racetype.miles
-            };
-            result.racedate = req.body.racedate;
-            result.members = members;
-            result.time = req.body.time;
-            result.ranking = req.body.ranking;
-            result.comments = req.body.comments;
-            result.resultlink = req.body.resultlink;
-            result.is_accepted = req.body.is_accepted;
-            result.save(function(err) {
-                if (err) {
-                    res.send(err);
-                } else {
-                    res.end('{"success" : "Result updated successfully", "status" : 200}');
+
+
+        AgeGrading.findOne({
+            sex: members[0].sex.toLowerCase(),
+            type: req.body.racetype.surface,
+            age: calculateAge(req.body.racedate, members[0].dateofbirth),
+        }, function(err, ag) {
+            if (err)
+                console.log("error fetching agegrading")
+            if (ag && members.length === 1) { //do not deal with multiple racers
+                if (ag[req.body.racetype.name.toLowerCase()] !== undefined) {
+                    agegrade = (ag[req.body.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
+            }
+
+            Result.findById(req.params.result_id, function(err, result) {
+                result.racename = req.body.racename;
+                result.racetype = {
+                    _id: req.body.racetype._id,
+                    name: req.body.racetype.name,
+                    surface: req.body.racetype.surface,
+                    isVariable: req.body.racetype.isVariable,
+                    meters: req.body.racetype.meters,
+                    miles: req.body.racetype.miles
+                };
+                result.racedate = req.body.racedate;
+                result.members = members;
+                result.time = req.body.time;
+                result.ranking = req.body.ranking;
+                result.comments = req.body.comments;
+                result.resultlink = req.body.resultlink;
+                result.agegrade = agegrade,
+                    result.is_accepted = req.body.is_accepted;
+                result.save(function(err) {
+                    if (err) {
+                        res.send(err);
+                    } else {
+                        res.end('{"success" : "Result updated successfully", "status" : 200}');
+                    }
+                });
             });
+
         });
+
+
+
     });
 
 
@@ -837,6 +958,15 @@ function getAddDateToDate(date, years, months, days) {
     resDate.setFullYear(resDate.getFullYear() + years, resDate.getMonth() + months, resDate.getDay() + days);
     return resDate;
 }
+
+//get age at race date
+function calculateAge(dateofrace, birthday) {
+    var rd = new Date(dateofrace);
+    var bd = new Date(birthday);
+    var ageDifMs = rd.getTime() - bd.getTime();
+    var ageDate = new Date(ageDifMs);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+};
 
 // check if member is in list
 function containsMember(list, member) {

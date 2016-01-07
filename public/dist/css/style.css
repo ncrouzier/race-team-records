@@ -7090,6 +7090,12 @@ footer {
   background: -ms-linear-gradient(left, #e1bb71 0%, #ffffff 55);
   background: linear-gradient(to right, #e1bb71 0%, #ffffff 55);
 }
+.ageworld {
+  color: #f3da1d;
+}
+.agenational {
+  color: #a4a4a4;
+}
 .black {
   color: #4D5153;
 }

@@ -1,12 +1,21 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', function($scope, $analytics, AuthService, ResultsService, dialogs) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
-    // $scope.pageSize = 10;
-    $scope.resultsTableProperties = {};
-    $scope.resultsTableProperties.pageSize = 10;
+
+    $scope.$watch('resultsTableProperties.pageSize', function(newVal, oldVal) {
+        localStorageService.set('resultsPageSize', $scope.resultsTableProperties);
+    });
+
+    if (localStorageService.get('resultsPageSize')) {
+        $scope.resultsTableProperties = localStorageService.get('resultsPageSize');
+    } else {
+        $scope.resultsTableProperties = {};
+        $scope.resultsTableProperties.pageSize = 10;
+    }
+
     $scope.resultSize = [5, 10, 25, 50, 100];
     $scope.resultsList = [];
 
@@ -40,6 +49,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             });
         }, function(btn) {});
     };
+
+
 
 }]);
 
@@ -79,7 +90,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.time.seconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) / 100);
         $scope.time.centiseconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) % 100);
 
-        
+
     } else {
         $scope.formData = {};
         $scope.formData.racename = localStorageService.get('raceName');

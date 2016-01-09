@@ -50,8 +50,6 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function(btn) {});
     };
 
-
-
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {

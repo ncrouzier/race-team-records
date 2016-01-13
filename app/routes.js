@@ -499,12 +499,12 @@ module.exports = function(app, qs, passport, async) {
         if (members.length === 1) {
 
         }
-
         AgeGrading.findOne({
             sex: members[0].sex.toLowerCase(),
             type: req.body.racetype.surface,
             age: calculateAge(req.body.racedate, members[0].dateofbirth),
         }, function(err, ag) {
+            var agegrade;
             if (err)
                 console.log("error fetching agegrading")
             if (ag && members.length === 1) { //do not deal with multiple racers
@@ -570,6 +570,7 @@ module.exports = function(app, qs, passport, async) {
             type: req.body.racetype.surface,
             age: calculateAge(req.body.racedate, members[0].dateofbirth),
         }, function(err, ag) {
+            var agegrade;
             if (err)
                 console.log("error fetching agegrading")
             if (ag && members.length === 1) { //do not deal with multiple racers

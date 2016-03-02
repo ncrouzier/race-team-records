@@ -152,6 +152,29 @@ app.filter('membersNamesFilter', function() {
 });
 
 
+app.filter('membersNamesWithAgeFilter', function() {
+    function calculateAgeAtDate(birthday,date) {
+        var bd = new Date(birthday);
+        var ageDifMs = Date.now(date) - bd.getTime();
+        var ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
+    return function(result) {
+        var res = "";
+        var members = result.members;
+        members.forEach(function(member) {
+            res += member.firstname + ' ' + member.lastname +' ('+calculateAgeAtDate(member.dateofbirth,result.racedate)+') , ';
+
+        });
+        res = res.slice(0, -2);
+
+        return res;
+    };
+});
+
+
+
+
 
 // Options:
 // wordwise (boolean) - if true, cut only by words bounds,
@@ -219,6 +242,19 @@ app.filter('ageFilter', function() {
 
     return function(birthdate) {
         return calculateAge(birthdate);
+    };
+});
+
+app.filter('ageAtDateFilter', function() {
+    function calculateAgeAtDate(birthday,date) {
+        var bd = new Date(birthday);
+        var ageDifMs = Date.now(date) - bd.getTime();
+        var ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
+
+    return function(birthdate,date) {
+        return calculateAgeAtDate(birthdate,date);
     };
 });
 

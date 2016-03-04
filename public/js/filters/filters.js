@@ -155,7 +155,8 @@ app.filter('membersNamesFilter', function() {
 app.filter('membersNamesWithAgeFilter', function() {
     function calculateAgeAtDate(birthday,date) {
         var bd = new Date(birthday);
-        var ageDifMs = Date.now(date) - bd.getTime();
+        var customDate = new Date(date);
+        var ageDifMs = customDate.getTime() - bd.getTime();
         var ageDate = new Date(ageDifMs);
         return Math.abs(ageDate.getUTCFullYear() - 1970);
     }
@@ -248,7 +249,8 @@ app.filter('ageFilter', function() {
 app.filter('ageAtDateFilter', function() {
     function calculateAgeAtDate(birthday,date) {
         var bd = new Date(birthday);
-        var ageDifMs = Date.now(date) - bd.getTime();
+        var customDate = new Date(date);
+        var ageDifMs = customDate.getTime() - bd.getTime();
         var ageDate = new Date(ageDifMs);
         return Math.abs(ageDate.getUTCFullYear() - 1970);
     }

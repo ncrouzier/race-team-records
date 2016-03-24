@@ -1,10 +1,16 @@
 <div class="jumbotron">
     <div class="row">
-        <div class="col-sm-3" style="padding-left:0px">
+        <div class="col-sm-3">
             <span>Search members:</span>
             <br>
-            <div class="btn-group">
-                <input ng-model="query" class="form-control" type="text" placeholder="Search by name" auto-focus><span class="searchclear fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+            <div class="form-group">
+                <ui-select name="memberselect" ng-model="membersList[$index]" on-select="onSelectMember($item, $model)" theme="select2" style="min-width: 200px;" required>
+                    <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
+                    <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                        <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                        <small>{{member.dateofbirth | categoryFilter}}  {{currentMember.sex}} </small>
+                    </ui-select-choices>
+                </ui-select>
             </div>
         </div>
         <div class="col-sm-3">
@@ -36,33 +42,24 @@
         </div>
     </div>
     <div class="row">
-        <!-- Member LIST -->
-        <h2>Team members ({{membersList.length}}) <i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" title="Add member"></i></h2>
-        <div id="member-list" class="row">
-            <div class="col-sm-3">
-                <ul class="list-group member-list">
-                    <li ng-click="setMember(member);" ng-style="memberList" class="list-group-item hoverhand" ng-repeat="member in membersList | memberFilter:query | orderBy: 'firstname'" ng-class="{ 'list-group-item-male': member.sex == 'Male', 'list-group-item-female': member.sex == 'Female','selected-class-name': member._id == currentMember._id }">
-                        <span>{{ member.firstname }} {{ member.lastname }} </span><span class="pull-right"> <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(member)" title="remove user" ></i></span>
-                    </li>
-                </ul>
-            </div>
-            <div class="col-sm-9">
+            <div class="col-sm-12">
                 <div class="detailscontainer" ng-show="currentMember">
                     <div class="row text-center">
-                        <h2>{{currentMember.firstname}} {{currentMember.lastname}} <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(currentMember)" title="remove user" ></i></h2>
+                        <h2>{{currentMember.firstname}} {{currentMember.lastname}}</h2><h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(currentMember)" title="remove user" ></i></h4>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6">
-                            <h4 style="margin-bottom:1px">Member Info:</h4>
-                            <span class="black"><b>Category:</b> {{currentMember.dateofbirth | categoryFilter}}</span>
-                            <br>
-                            <b class="black">Member Bio:</b> <span class="black" ng-bind-html="currentMember.bio"></span>
+                        <div class="col-sm-7">
+                            
+                            <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="row">
-                            <img class="member-picture" ng-show="currentMember.pictureLink" ng-src="{{currentMember.pictureLink}}"/ alt="Member's Picture">
+                        <div class="col-sm-5">
+                            <div class="row ">
+                            <div class="col-sm-12">
+                                <img class="member-picture" ng-show="currentMember.pictureLink" ng-src="{{currentMember.pictureLink}}" / alt="Member's Picture">
+                                </div>
                             </div>
                             <div class="row row-no-right-margin">
+                             <div class="col-sm-12">
                                 <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
                                 <ul class="pb-list list-group">
                                     <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
@@ -86,6 +83,7 @@
                                         </div>
                                     </li>
                                 </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -128,7 +126,6 @@
                         </ul>
                 </div>
             </div>
-        </div>
     </div>
 </div>
 

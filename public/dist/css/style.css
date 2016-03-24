@@ -6976,6 +6976,11 @@ footer {
   padding-bottom: 1px;
   border: 0px;
 }
+@media (max-width: 768px) {
+  .member-picture {
+    max-width: 227.5px;
+  }
+}
 @media (min-width: 768px) {
   .member-picture {
     max-width: 227.5px;
@@ -7098,6 +7103,9 @@ footer {
 }
 .ageregional {
   color: #e1bb71;
+}
+.bold {
+  font-weight: bold;
 }
 .black {
   color: #4D5153;

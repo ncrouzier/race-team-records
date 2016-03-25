@@ -6913,8 +6913,32 @@ footer {
   text-decoration: none;
   color: #FFFFFF;
 }
+@media (min-width: 768px) {
+  .navbar-collapse.collapse {
+    display: block!important;
+    visibility: visible!important;
+    height: auto!important;
+    padding-bottom: 0;
+    overflow: visible!important;
+    padding-right: 0px;
+    padding-left: 0px;
+  }
+}
+.navbar-toggle {
+  float: left;
+}
 .navbar {
   margin-bottom: 10px;
+}
+@media (min-width: 768px) {
+  .nav-submit-admin {
+    float: right;
+  }
+}
+@media (max-width: 768px) {
+  .nav-submit-admin {
+    float: left;
+  }
 }
 .navbar-inverse .navbar-nav > li > a.submitmenu {
   font-size: 13px;
@@ -6994,6 +7018,46 @@ footer {
 @media (min-width: 1200px) {
   .member-picture {
     max-width: 385px;
+  }
+}
+@media (max-width: 992px) {
+  .member-ui-select {
+    min-width: 150px;
+  }
+}
+@media (min-width: 992px) {
+  .member-ui-select {
+    min-width: 200px;
+  }
+}
+@media (max-width: 1200px) {
+  .btn-member {
+    padding: 6px 10px;
+  }
+}
+@media (max-width: 992px) {
+  .btn-member {
+    padding: 6px 4px;
+  }
+}
+@media (max-width: 1200px) {
+  .btn-record {
+    padding: 6px 10px;
+  }
+}
+.btn-row {
+  margin-bottom: 15px;
+}
+@media (max-width: 992px) {
+  .btn-col-member {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+@media (max-width: 1200px) {
+  .select2-container .select2-choice {
+    height: 35px;
+    line-height: 35px;
   }
 }
 .member-list {

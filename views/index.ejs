@@ -40,6 +40,15 @@
 		
 		<!-- HEADER -->
 		<nav class="navbar navbar-inverse" >
+			<div class="navbar-header">
+
+	        <button type="button" title="Navigation button" class="navbar-toggle" ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed">
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	          <span class="icon-bar"></span>
+	        </button>
+	      </div>
+	      <div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'">
 			<% if (user && user.role === 'admin') { %>
 				<ul class="nav navbar-nav">
 					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
@@ -59,7 +68,7 @@
 				    </li>
 					
 				</ul>
-				<ul class="nav navbar-nav" style="float: right">
+				<ul class="nav navbar-nav nav-submit-admin">
 					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
 					<li ng-class="{active: ($state.includes('/profile'))}" class="dropdown" dropdown on-toggle="toggled(open)">
 				  	    <a href class="dropdown-toggle" dropdown-toggle>
@@ -79,10 +88,11 @@
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>
 				</ul>
-				<ul class="nav navbar-nav" style="float: right" >
+				<ul class="nav navbar-nav nav-submit-admin">
 					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
 				</ul>
 			<%}%>	
+			</div><!-- /.navbar-collapse -->
 		</nav>
 
 		<div ui-view></div>

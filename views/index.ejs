@@ -56,11 +56,12 @@
 					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>
-					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}" class="dropdown" dropdown on-toggle="toggled(open)">
-				  	    <a href class="dropdown-toggle" dropdown-toggle>
+					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        Admin tools <span class="caret"></span>
 				      </a>
-				      <ul class="dropdown-menu">
+				      <ul class="uib-dropdown-menu">
+				        <li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats</a></li>
 				        <li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
 				       	<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
 				       	<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a></li>
@@ -70,11 +71,11 @@
 				</ul>
 				<ul class="nav navbar-nav nav-submit-admin">
 					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
-					<li ng-class="{active: ($state.includes('/profile'))}" class="dropdown" dropdown on-toggle="toggled(open)">
-				  	    <a href class="dropdown-toggle" dropdown-toggle>
+					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
 				      </a>
-				      <ul class="dropdown-menu">
+				      <ul class="uib-dropdown-menu">
 				        <li><a ui-sref="/profile">Profile</a></li>
 				        <li><a href="/logout">Logout</a></li>
 				      </ul>

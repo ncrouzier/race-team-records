@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$modal', function(Restangular, $modal) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', function(Restangular, $uibModal) {
 
     var factory = {};
     var members = Restangular.all('members');
@@ -65,7 +65,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$m
     // =====================================
 
     factory.showAddMemberModal = function() {
-        var modalInstance = $modal.open({
+        var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/memberModal.html',
             controller: 'MemberModalInstanceController',
             size: 'lg',
@@ -84,7 +84,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$m
 
     factory.retrieveMemberForEdit = function(member) {
         if (member) {
-            var modalInstance = $modal.open({
+            var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/memberModal.html',
                 controller: 'MemberModalInstanceController',
                 size: 'lg',

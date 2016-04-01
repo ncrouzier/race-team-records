@@ -6,6 +6,7 @@ var bcrypt   = require('bcrypt-nodejs');
 var systeminfoSchema = mongoose.Schema({
     name: String,
     resultUpdate        : Date,
+    raceUpdate        : Date,
     racetypeUpdate        : Date,
     memberUpdate        : Date,
     createdAt: Date,
@@ -19,6 +20,7 @@ systeminfoSchema.pre('save', function(next, done) {
     if (this.isNew) {
         this.createdAt = Date.now();
         this.resultUpdate = Date.now();
+        this.race = Date.now();
         this.racetypeUpdate = Date.now();
         this.memberUpdate = Date.now();
     }

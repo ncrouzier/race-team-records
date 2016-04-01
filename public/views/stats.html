@@ -1,0 +1,37 @@
+<div class="jumbotron">
+
+	<div class="row">
+        <div class="col-md-12">
+            <ul class="results-list list-group">
+                <li class="list-group-item text-left resultlistheader" ng-show="bestRaceShowingList.length >0">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <span class="listheader" title="Event and date">Event</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="listheader" title="Pace">Members</span>
+                        </div>
+                        
+                    </div>
+                </li>
+                <li class="list-group-item text-left resultlistrow" ng-repeat="race in bestRaceShowingList" >
+                    <div class="row">
+                        <div class="col-sm-4">
+                            {{ race.racename }}
+                            <br>
+                            <small>{{ race.racedate | date:'yyyy-MM-dd':'UTC' }}</small> 
+                        </div>
+                        <div class="col-sm-6">
+                            {{ race.count }}
+                        </div> 
+                    </div>
+                 
+                </li>
+            </ul>
+
+        </div>
+    </div>
+
+
+
+</div>

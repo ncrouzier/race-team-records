@@ -21,7 +21,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-racedate racename time'
+        "sort": '-race.racedate race.racename time'
     }).then(function(results) {
         $scope.resultsList = results;
     });
@@ -52,7 +52,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$modalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $modalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
+
+    $scope.timezone = ((new Date().getTimezoneOffset() / 60) * -100);
 
     $scope.autoconvert = true;
     MembersService.getMembers({
@@ -70,8 +72,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
     // make sure dates are always UTC
-    $scope.$watch('formData.racedate ', function(date) {
-        $scope.formData.racedate = $filter('date')($scope.formData.racedate, 'yyyy-MM-dd', 'UTC');
+    $scope.$watch('formData.race.racedate ', function(date) {
+        $scope.formData.race.racedate = $filter('date')($scope.formData.race.racedate, 'yyyy-MM-dd', 'UTC');
     });
 
 
@@ -91,9 +93,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     } else {
         $scope.formData = {};
-        $scope.formData.racename = localStorageService.get('raceName');
-        $scope.formData.racedate = localStorageService.get('raceDate');
-        $scope.formData.racetype = localStorageService.get('raceType');
+        $scope.formData.race = localStorageService.get('race');
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
         $scope.formData.ranking.agetotal = localStorageService.get('agetotal');
@@ -130,24 +130,22 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.members = members;
 
         //save race related info for futur addition
-        localStorageService.set('raceName', $scope.formData.racename);
-        localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
-        localStorageService.set('raceType', $scope.formData.racetype);
+        localStorageService.set('race', $scope.formData.race);
+        // localStorageService.set('raceDate', $filter('date')($scope.formData.racedate, "yyyy-MM-dd"));
+        // localStorageService.set('raceType', $scope.formData.racetype);
         localStorageService.set('resultLink', $scope.formData.resultlink);
         localStorageService.set('agetotal', $scope.formData.ranking.agetotal);
         localStorageService.set('gendertotal', $scope.formData.ranking.gendertotal);
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
 
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.clearForm = function() {
         $scope.formData = {};
         $scope.formData.members = [{}];
         $scope.nbOfMembers = 1;
-        localStorageService.remove('raceName');
-        localStorageService.remove('raceDate');
-        localStorageService.remove('raceType');
+        localStorageService.remove('race');
         localStorageService.remove('resultLink');
         localStorageService.remove('agetotal');
         localStorageService.remove('gendertotal');
@@ -167,11 +165,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.ranking = undefined;
         }
 
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.cancel = function() {
-        $modalInstance.dismiss('cancel');
+        $uibModalInstance.dismiss('cancel');
     };
 
     $scope.addNbMembers = function() {

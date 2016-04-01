@@ -47,7 +47,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC'));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.race.racename + ' ' + $filter('date')(result.race.racedate, "yyyy-MM-dd", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -80,7 +80,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC'));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.race.racename + ' ' + $filter('date')(result.race.racedate, "yyyy-MM-dd", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -112,7 +112,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC'));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.race.racename + ' ' + $filter('date')(result.race.racedate, "yyyy-MM-dd", 'UTC'));
                     place++;
                     h = h + 2;
                 });
@@ -144,7 +144,7 @@ angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope
                         members += m.firstname + ' ' + m.lastname + ' & ';
                     });
                     members = members.slice(0, -3);
-                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.racename + ' ' + $filter('date')(result.racedate, "yyyy-MM-dd", 'UTC'));
+                    doc.text(10, h, place + '. ' + $filter('secondsToTimeString')(result.time) + ' - ' + members + '; ' + result.race.racename + ' ' + $filter('date')(result.race.racedate, "yyyy-MM-dd", 'UTC'));
                     place++;
                     h = h + 2;
                 });

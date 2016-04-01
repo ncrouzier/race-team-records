@@ -69,7 +69,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     // set the current member to the display panel
     $scope.setMember = function(member) {
-        console.log("set "+member);
         ResultsService.getResults({
             limit: 20,
             sort: '-racedate',

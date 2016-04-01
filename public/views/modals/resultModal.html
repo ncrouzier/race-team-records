@@ -7,14 +7,15 @@
             <div class="col-md-4">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.raceename.$invalid && !formresult.raceename.$pristine}">
                     <label class="text-left">Race name:</label>
-                    <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.racename" ng-required="true" required auto-focus>
+                    <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.race.racename" ng-required="true" required auto-focus>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.racedate.$invalid && !formresult.racedate.$pristine}">
-                    <label class="text-left">Race date:</label>
+
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
+                    <label class="text-left">Race date:  {{formData.race.racedate }}</label>
                     <p class="input-group">
-                        <input type="text" name="racedate" class="form-control input-md" datepicker-popup="yyyy-MM-dd" ng-model="formData.racedate" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
+                        <input type="text" name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.race.racedate" ng-model-options="{}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
                         <span class="input-group-btn">
                                     <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
@@ -22,10 +23,10 @@
                 </div>
             </div>
             <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.$invalid }">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
                     <label class="text-left">Race Type:</label>
                     <br>
-                    <ui-select name="racetype" ng-model="formData.racetype" theme="select2" style="min-width: 300px;" required>
+                    <ui-select name="racetype" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;" required>
                         <ui-select-match placeholder="Select a race type">
                             <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
                         </ui-select-match>
@@ -48,11 +49,11 @@
                 </div>
             </div>
         </div>
-        <div class="row" ng-show="formData.racetype.isVariable">
+        <div class="row" ng-show="formData.race.racetype.isVariable">
             <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.meters.$invalid && !formresult.racetype.meters.$pristine}">
                     <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.racetype.meters" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" required>
                 </div>
             </div>
             <div class="col-md-1 text-center">
@@ -62,7 +63,7 @@
             <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.miles.$invalid && !formresult.racetype.miles.$pristine}">
                     <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.racetype.miles" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" required>
                 </div>
             </div>
         </div>

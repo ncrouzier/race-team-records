@@ -109,7 +109,7 @@ app.filter('secondsToTimeDiff', function() {
 function resultToPace(result) {
     //round up!
     var seconds = Math.ceil(result.time / 100);
-    var distance = result.racetype.miles;
+    var distance = result.race.racetype.miles;
 
     var m = Math.floor((seconds / 60) / distance);
 
@@ -124,7 +124,7 @@ app.filter('resultToPace', function() {
     return function(result) {
         //round up!
         var seconds = Math.ceil(result.time / 100);
-        var distance = result.racetype.miles;
+        var distance = result.race.racetype.miles;
 
         var m = Math.floor((seconds / 60) / distance);
 
@@ -164,7 +164,7 @@ app.filter('membersNamesWithAgeFilter', function() {
         var res = "";
         var members = result.members;
         members.forEach(function(member) {
-            res += member.firstname + ' ' + member.lastname +' ('+calculateAgeAtDate(member.dateofbirth,result.racedate)+') , ';
+            res += member.firstname + ' ' + member.lastname +' ('+calculateAgeAtDate(member.dateofbirth,result.race.racedate)+') , ';
 
         });
         res = res.slice(0, -2);
@@ -292,17 +292,17 @@ app.filter('resultSuperFilter', function(query) {
             var filtered = [];
             angular.forEach(results, function(result) {
                 //race name
-                if (result.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                     filtered.push(result);
                     return;
                 }
                 //racetype
-                if (result.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                if (result.race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                     filtered.push(result);
                     return;
                 }
                 //racetype surface
-                if (result.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                if (result.race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                     filtered.push(result);
                     return;
                 }
@@ -510,4 +510,7 @@ app.filter("sanitize", ['$sce', function($sce) {
         return $sce.trustAsHtml(htmlCode);
     };
 }]);
+
+app.filter('unsafe', function($sce) { return $sce.trustAsHtml; });
+
 

@@ -34,6 +34,19 @@ var resultSchema = mongoose.Schema({
         sex: String,
         dateofbirth: Date
     }],
+    race:{
+        _id: mongoose.Schema.ObjectId,
+        racename: String,
+        racetype: {
+            _id: mongoose.Schema.ObjectId,
+            name: String,
+            surface: String,
+            meters: Number,
+            miles: Number,
+            isVariable: Boolean
+        },
+        racedate: Date
+    },
     category: String,
     comments: String,
     resultlink: String,
@@ -43,6 +56,46 @@ var resultSchema = mongoose.Schema({
     updatedAt: Date
 
 });
+
+// var resultSchema = mongoose.Schema({
+//     race:{
+//         _id: mongoose.Schema.ObjectId,
+//         racename: String,
+//         racetype: {
+//             _id: mongoose.Schema.ObjectId,
+//             name: String,
+//             surface: String,
+//             meters: Number,
+//             miles: Number,
+//             isVariable: Boolean
+//         },
+//         racedate: Date
+//     },
+//     time: Number,
+//     ranking: {
+//         agerank: Number,
+//         agetotal: Number,
+//         genderrank: Number,
+//         gendertotal: Number,
+//         overallrank: Number,
+//         overalltotal: Number
+//     },
+//     members: [{
+//         _id: mongoose.Schema.ObjectId,
+//         firstname: String,
+//         lastname: String,
+//         sex: String,
+//         dateofbirth: Date
+//     }],
+//     category: String,
+//     comments: String,
+//     resultlink: String,
+//     agegrade: Number,
+//     is_accepted: Boolean,
+//     createdAt: Date,
+//     updatedAt: Date
+
+// });
 
 // keep track of when results are updated and created
 resultSchema.pre('save', function(next, done) {
@@ -61,7 +114,7 @@ resultSchema.methods.updateCategory = function() {
     var membersLength = this.members.length;
     var isOpen = false;
     for (var i = 0; i < membersLength; i++) {
-        if (getAddDateToDate(this.racedate, -40, 0, 0) < this.members[i].dateofbirth) {
+        if (getAddDateToDate(this.race.racedate, -40, 0, 0) < this.members[i].dateofbirth) {
             isOpen = true;
             break;
         }

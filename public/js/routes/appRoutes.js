@@ -45,6 +45,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/records",
             templateUrl: "views/records.html",
             controller: 'RecordsController'
+        }).state('/stats', {
+            url: "/stats",
+            templateUrl: "views/stats.html",
+            controller: 'StatsController'
         }).state('/report', {
             url: "/report",
             templateUrl: "views/report.html",

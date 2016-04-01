@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$modal', '$q', function(Restangular, UtilsService, $modal, $q) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q', function(Restangular, UtilsService, $uibModal, $q) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -67,7 +67,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // =====================================
 
     factory.showAddResultModal = function() {
-        var modalInstance = $modal.open({
+        var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/resultModal.html',
             controller: 'ResultModalInstanceController',
             size: 'lg',
@@ -86,7 +86,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     factory.retrieveResultForEdit = function(result) {
         if (result) {
-            var modalInstance = $modal.open({
+            var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
                 size: 'lg',
@@ -105,6 +105,21 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         }
     };
 
+
+
+    // =====================================
+    // RACE MODALS =========================
+    // =====================================    
+
+    factory.getRace = function(params) {
+        return Restangular.one('races').get(params).then(
+            function(races) {
+                return races;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
 
     // =====================================
     // RACETYPE API CALLS ==================
@@ -145,7 +160,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // =====================================
 
     factory.showAddRaceTypeModal = function() {
-        var modalInstance = $modal.open({
+        var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/raceTypeModal.html',
             controller: 'RaceTypeModalInstanceController',
             size: 'lg',
@@ -164,7 +179,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     factory.retrieveRaceTypeForEdit = function(racetype) {
         if (racetype) {
-            var modalInstance = $modal.open({
+            var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/raceTypeModal.html',
                 controller: 'RaceTypeModalInstanceController',
                 size: 'lg',
@@ -181,7 +196,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 return null;
             });
         }
-    };
+    }; 
 
 
 
@@ -214,6 +229,19 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
 
     };
+
+    factory.getBestRaceShowing = function(params) {
+        return Restangular.one('api/raceinfos').get(params).then(
+            function(races) {
+                return races;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+    
+
+
 
     return factory;
 

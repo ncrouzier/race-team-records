@@ -15,27 +15,27 @@
             <span>Gender:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'Male'">Male</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'Female'">Female</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" btn-radio="'.*'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'Male'">Male</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'Female'">Female</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
         <div class="col-md-3 col-sm-3 btn-col-member">
             <span>Category:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'Open'">Open</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'Master'">Master</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" btn-radio="'.*'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'Open'">Open</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'Master'">Master</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
         <div class="col-md-3 col-sm-3 btn-col-member">
             <span>Member Status:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" btn-radio="'current'">Current</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" btn-radio="'past'">Past</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" btn-radio="'all'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'current'">Current</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'past'">Past</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'all'">Both</label>
             </div>
         </div>
     </div>
@@ -73,7 +73,7 @@
                                     <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
                                         <div class="row">
                                             <div class="col-sm-6">
-                                                <span> {{result.racetype.name}}</span>
+                                                <span> {{result.race.racetype.name}}</span>
                                             </div>
                                             <div class="col-sm-6">
                                                 <span> {{result.time | secondsToTimeString}}</span>
@@ -106,9 +106,9 @@
                         <li class="list-group-item text-left resultlistrow" ng-repeat="result in currentMemberResultList">
                             <div class="row">
                                 <div class="col-sm-5">
-                                    {{ result.racename}}<span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                                    {{ result.race.racename}}<span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
                                     <br>
-                                    <small>{{ result.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                                    <small>{{ result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                                 </div>
                                 <div ng-class="user.role == 'admin' ?'col-sm-3' :'col-sm-4'">
                                     <span> {{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="result.ranking !== undefined && result.ranking !== ''" tooltip-html-unsafe="{{result.ranking | rankTooltip}}"></i>

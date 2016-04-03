@@ -947,7 +947,7 @@ module.exports = function(app, qs, passport, async, _) {
 		]);
 
         if (resultId) {
-            query = query.match({ 'results.result_id': { $eq: new mongoose.Types.ObjectId(resultId) } });
+            query = query.match({ 'results.result_id':  new mongoose.Types.ObjectId(resultId)  });
         }
 
         if (filters) {   

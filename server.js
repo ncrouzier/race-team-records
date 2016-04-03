@@ -23,6 +23,8 @@ var async = require('async');
 var nodemailer = require("nodemailer");
 var favicon = require('serve-favicon');
 
+var _ = require('underscore');
+
 var qs = require('querystring');
 
 process.env.TZ = 'UTC';
@@ -61,7 +63,7 @@ app.use(passport.session()); // persistent login sessions
 app.use(flash()); // use connect-flash for flash messages stored in session
 
 // routes ======================================================================
-require('./app/routes.js')(app, qs, passport, async); // load our routes and pass in our app and fully configured passport
+require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 
 // launch ======================================================================
 // app.listen(port);

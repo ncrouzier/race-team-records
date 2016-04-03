@@ -45,12 +45,12 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            {{ result.race.racename}}<span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" tooltip-html-unsafe="{{result.comments}}"></i>
+                            <span class="hoverhandandunderline" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span><span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i>
                             <br>
                             <small>{{ result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                         </div>
                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="result.ranking !== undefined && result.ranking !== ''" tooltip-html-unsafe="{{result.ranking | rankTooltip}}"></i>
+                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="result.ranking !== undefined && result.ranking !== ''" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
                         </div>
                         <div class="col-sm-2">
                             <result-pace></result-pace>

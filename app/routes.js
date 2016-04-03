@@ -1,4 +1,6 @@
-module.exports = function(app, qs, passport, async) {
+var mongoose = require('mongoose');
+
+module.exports = function(app, qs, passport, async, _) {
 
     // =====================================
     // LOGIN ===============================
@@ -906,7 +908,6 @@ module.exports = function(app, qs, passport, async) {
 
  	// get raceinfo list
     app.get('/api/raceinfos', function(req, res) {
-    	console.log("lksjf");
         var filters = req.query.filters;
         var sort = req.query.sort;
         var limit = req.query.limit;
@@ -922,6 +923,8 @@ module.exports = function(app, qs, passport, async) {
                 		time: '$time',
                 		agegrade: '$agegrade',
                 		category: '$category',
+                        resultlink: '$resultlink',
+                        ranking: '$ranking',
                 		result_id: '$_id'
                 	}
                 	
@@ -943,8 +946,8 @@ module.exports = function(app, qs, passport, async) {
 	        }
 		]);
 
-        if (hasresult) {
-            query = query.where('results.result_id').equals(resultId);
+        if (resultId) {
+            query = query.match({ 'results.result_id': { $eq: new mongoose.Types.ObjectId(resultId) } });
         }
 
         if (filters) {   
@@ -962,6 +965,11 @@ module.exports = function(app, qs, passport, async) {
 		        if (err) {
 		            res.send(err);
 		        } else {
+
+                    results.forEach(function(resu) {                        
+                        resu.results = _.sortBy( resu.results, 'time' );                        
+                    });
+
 		            res.json(results); // return all members in JSON format
 		        }
 	    	});

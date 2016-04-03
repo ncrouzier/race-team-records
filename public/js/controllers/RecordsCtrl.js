@@ -54,6 +54,11 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         }
     };
 
+    $scope.showRaceModal = function(result) {
+        ResultsService.showRaceModal(result).then(function(result) {        
+        });
+    };
+
     // =====================================
     // FILTER PARAMS CONFIG ================
     // =====================================
@@ -79,6 +84,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     }).then(function(racetypes) {
         $scope.racetypesList =racetypes;
     });
+
 
 
 

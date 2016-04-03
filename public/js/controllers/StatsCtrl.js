@@ -13,4 +13,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.bestRaceShowingList = races;
     });
 
+    
+
+
 }]);

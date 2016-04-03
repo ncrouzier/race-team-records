@@ -121,6 +121,39 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
+
+    factory.showRaceModal = function(result) {
+        return Restangular.one('raceinfos').get({
+            limit: 1,
+            resultId: result._id
+        }).then(
+            function(races) {
+                if (races.length ===1){
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/modals/raceModal.html',
+                    controller: 'RaceModalInstanceController',
+                    size: 'lg',
+                    resolve: {
+                        race: races[0]
+                    }
+            });
+                modalInstance.result.then(function () {
+                  
+                }, function () {
+                });
+              
+            }
+        },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+            
+
+        
+
+        
+    };
+
     // =====================================
     // RACETYPE API CALLS ==================
     // =====================================
@@ -231,7 +264,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
     factory.getBestRaceShowing = function(params) {
-        return Restangular.one('api/raceinfos').get(params).then(
+        return Restangular.one('raceinfos').get(params).then(
             function(races) {
                 return races;
             },

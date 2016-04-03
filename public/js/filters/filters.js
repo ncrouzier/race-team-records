@@ -23,24 +23,24 @@ function secondsToTimeString(centisec) {
     var timeString = '';
 
     if (hours === 0) {
-            if (seconds < 10) seconds = "0" + seconds;
-            if (centiseconds !== 0){
-                if (centiseconds < 10) centiseconds = "0" + centiseconds;
-                return minutes + ":" + seconds + "." + centiseconds;
-            }else{
-                return minutes + ":" + seconds;
-            }
-            
+        if (seconds < 10) seconds = "0" + seconds;
+        if (centiseconds !== 0) {
+            if (centiseconds < 10) centiseconds = "0" + centiseconds;
+            return minutes + ":" + seconds + "." + centiseconds;
         } else {
-            if (minutes < 10) minutes = "0" + minutes;
-            if (seconds < 10) seconds = "0" + seconds;
-            if (centiseconds !== 0){
-                if (centiseconds < 10) centiseconds = "0" + centiseconds;
-                return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
-            }else{
-                return hours + ":" + minutes + ":" + seconds;
-            }
+            return minutes + ":" + seconds;
         }
+
+    } else {
+        if (minutes < 10) minutes = "0" + minutes;
+        if (seconds < 10) seconds = "0" + seconds;
+        if (centiseconds !== 0) {
+            if (centiseconds < 10) centiseconds = "0" + centiseconds;
+            return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
+        } else {
+            return hours + ":" + minutes + ":" + seconds;
+        }
+    }
 }
 
 app.filter('secondsToTimeString', function() {
@@ -52,21 +52,21 @@ app.filter('secondsToTimeString', function() {
         var timeString = '';
 
         if (hours === 0) {
-            if (seconds < 10) seconds = "0" + seconds;    
-            if (centiseconds !== 0){
+            if (seconds < 10) seconds = "0" + seconds;
+            if (centiseconds !== 0) {
                 if (centiseconds < 10) centiseconds = "0" + centiseconds;
                 return minutes + ":" + seconds + "." + centiseconds;
-            }else{
+            } else {
                 return minutes + ":" + seconds;
             }
-            
+
         } else {
             if (minutes < 10) minutes = "0" + minutes;
             if (seconds < 10) seconds = "0" + seconds;
-            if (centiseconds !== 0){
+            if (centiseconds !== 0) {
                 if (centiseconds < 10) centiseconds = "0" + centiseconds;
                 return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
-            }else{
+            } else {
                 return hours + ":" + minutes + ":" + seconds;
             }
         }
@@ -86,19 +86,19 @@ app.filter('secondsToTimeDiff', function() {
         var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
         var timeString = '';
         if (seconds < 10) seconds = "0" + seconds;
-        
+
         if (hours === 0) {
-            if (centiseconds !== 0){
+            if (centiseconds !== 0) {
                 if (centiseconds < 10) centiseconds = "0" + centiseconds;
                 return minutes + ":" + seconds + "." + centiseconds;
-            }else{
+            } else {
                 return minutes + ":" + seconds;
             }
         } else {
-            if (centiseconds !== 0){
+            if (centiseconds !== 0) {
                 if (centiseconds < 10) centiseconds = "0" + centiseconds;
                 return hours + ":" + minutes + ":" + seconds + "." + centiseconds;
-            }else{
+            } else {
                 return hours + ":" + minutes + ":" + seconds;
             }
         }
@@ -114,22 +114,29 @@ function resultToPace(result) {
     var m = Math.floor((seconds / 60) / distance);
 
     var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
-    if (s === 60){m=m+1; s=0;}
+    if (s === 60) { m = m + 1;
+        s = 0; }
 
     if (s < 10) s = "0" + s;
     return m + ":" + s;
 }
 
 app.filter('resultToPace', function() {
-    return function(result) {
+    return function(result, race) {
         //round up!
         var seconds = Math.ceil(result.time / 100);
-        var distance = result.race.racetype.miles;
+        if (!race) {
+            distance = result.race.racetype.miles;
+        } else {
+            distance = race.racetype.miles;
+        }
+
 
         var m = Math.floor((seconds / 60) / distance);
 
         var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
-        if (s === 60){m=m+1; s=0;}
+        if (s === 60) { m = m + 1;
+            s = 0; }
 
         if (s < 10) s = "0" + s;
         return m + ":" + s;
@@ -153,18 +160,23 @@ app.filter('membersNamesFilter', function() {
 
 
 app.filter('membersNamesWithAgeFilter', function() {
-    function calculateAgeAtDate(birthday,date) {
+    function calculateAgeAtDate(birthday, date) {
         var bd = new Date(birthday);
         var customDate = new Date(date);
         var ageDifMs = customDate.getTime() - bd.getTime();
         var ageDate = new Date(ageDifMs);
         return Math.abs(ageDate.getUTCFullYear() - 1970);
     }
-    return function(result) {
+    return function(result, race) {
         var res = "";
         var members = result.members;
+        if (race) {
+            date = race.racedate;
+        } else {
+            date = result.race.racedate;
+        }
         members.forEach(function(member) {
-            res += member.firstname + ' ' + member.lastname +' ('+calculateAgeAtDate(member.dateofbirth,result.race.racedate)+') , ';
+            res += member.firstname + ' ' + member.lastname + ' (' + calculateAgeAtDate(member.dateofbirth, date) + ') , ';
 
         });
         res = res.slice(0, -2);
@@ -247,7 +259,7 @@ app.filter('ageFilter', function() {
 });
 
 app.filter('ageAtDateFilter', function() {
-    function calculateAgeAtDate(birthday,date) {
+    function calculateAgeAtDate(birthday, date) {
         var bd = new Date(birthday);
         var customDate = new Date(date);
         var ageDifMs = customDate.getTime() - bd.getTime();
@@ -255,8 +267,8 @@ app.filter('ageAtDateFilter', function() {
         return Math.abs(ageDate.getUTCFullYear() - 1970);
     }
 
-    return function(birthdate,date) {
-        return calculateAgeAtDate(birthdate,date);
+    return function(birthdate, date) {
+        return calculateAgeAtDate(birthdate, date);
     };
 });
 
@@ -361,21 +373,21 @@ app.filter('rankTooltip', function() {
         if (ranking) {
             var res = "";
             if (ranking.agerank) {
-                res += '<span class="ranking-tooltip-cat">Age group rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.agerank,true);
+                res += '<span class="ranking-tooltip-cat">Age group rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.agerank, true);
                 if (ranking.agetotal) {
                     res += ' of ' + ranking.agetotal;
                 }
                 res += '</span><br>';
             }
             if (ranking.genderrank) {
-                res += '<span class="ranking-tooltip-cat">Gender rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.genderrank,true);
+                res += '<span class="ranking-tooltip-cat">Gender rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.genderrank, true);
                 if (ranking.gendertotal) {
                     res += ' of ' + ranking.gendertotal;
                 }
                 res += '</span><br>';
             }
             if (ranking.overallrank) {
-                res += '<span class="ranking-tooltip-cat">Overall rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.overallrank,true);
+                res += '<span class="ranking-tooltip-cat">Overall rank: </span><span class="ranking-tooltip-rank">' + ordinal_suffix_of(ranking.overallrank, true);
                 if (ranking.overalltotal) {
                     res += ' of ' + ranking.overalltotal;
                 }
@@ -391,21 +403,21 @@ app.filter('rankTooltipOneLine', function() {
         if (ranking) {
             var res = "";
             if (ranking.agerank) {
-                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank,false);
+                res += "Age group rank: " + ordinal_suffix_of(ranking.agerank, false);
                 if (ranking.agetotal) {
                     res += " of " + ranking.agetotal;
                 }
                 res += ", ";
             }
             if (ranking.genderrank) {
-                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank,false);
+                res += "Gender rank: " + ordinal_suffix_of(ranking.genderrank, false);
                 if (ranking.gendertotal) {
                     res += " of " + ranking.gendertotal;
                 }
                 res += ", ";
             }
             if (ranking.overallrank) {
-                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank,false);
+                res += "Overall rank: " + ordinal_suffix_of(ranking.overallrank, false);
                 if (ranking.overalltotal) {
                     res += " of " + ranking.overalltotal;
                 }
@@ -421,27 +433,28 @@ app.filter('rankTooltipTd', function() {
         if (ranking) {
             var res = '';
             if (ranking.agerank) {
-                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.agetotal+'">'+inline_ordinal_suffix_of(ranking.agerank,true)+'</span></td>';
-            }else{
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of ' + ranking.agetotal + '">' + inline_ordinal_suffix_of(ranking.agerank, true) + '</span></td>';
+            } else {
                 res += '<td></td>';
             }
             if (ranking.genderrank) {
-                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.gendertotal+'">'+inline_ordinal_suffix_of(ranking.genderrank,true)+'</span></td>';
-            }else{
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of ' + ranking.gendertotal + '">' + inline_ordinal_suffix_of(ranking.genderrank, true) + '</span></td>';
+            } else {
                 res += '<td></td>';
             }
             if (ranking.overallrank) {
-                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of '+ ranking.overalltotal+'">'+inline_ordinal_suffix_of(ranking.overallrank,true)+'</span></td>';
-            }else{
+                res += '<td style="text-align: center;"><span style="cursor:pointer;" title="out of ' + ranking.overalltotal + '">' + inline_ordinal_suffix_of(ranking.overallrank, true) + '</span></td>';
+            } else {
                 res += '<td></td>';
             }
             return res;
             // return res.slice(0, -2);
-        }else{
+        } else {
             return '<td></td><td></td><td></td>';
         }
     };
 });
+
 
 function ordinal_suffix_of(i, withStyle) {
     var j = i % 10,
@@ -473,6 +486,47 @@ function ordinal_suffix_of(i, withStyle) {
         return i + "th";
     }
 }
+
+app.filter('inline_ordinal_suffix_of', ['$sce',function($sce) {
+    return function(i, withStyle, toptreeclass_) {
+        if (i === undefined){
+            return "";
+        }
+        if (i >3){
+            toptreeclass_= '';
+        }
+
+        var j = i % 10,
+            k = i % 100;
+        if (j == 1 && k != 11) {
+            if (withStyle) {
+                return '<span class="'+toptreeclass_+'">' + i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">st</span></span>';
+            } else {
+                return i + "st";
+            }
+        }
+        if (j == 2 && k != 12) {
+            if (withStyle) {
+                return '<span class="'+toptreeclass_+'">' + i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">nd</span></span>';
+            } else {
+                return i + "nd";
+            }
+        }
+        if (j == 3 && k != 13) {
+            if (withStyle) {
+                return '<span class="'+toptreeclass_+'">' + i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">rd</span></span>';
+            } else {
+                return i + "rd";
+            }
+        }
+        if (withStyle) {
+            return '<span class="'+toptreeclass_+'">' + i + '<span style="font-style: italic;vertical-align: super;font-size: 0.6em;">th</span></span>';
+        } else {
+            return i + "th";
+        }
+    };
+}]);
+
 
 function inline_ordinal_suffix_of(i, withStyle) {
     var j = i % 10,
@@ -511,6 +565,5 @@ app.filter("sanitize", ['$sce', function($sce) {
     };
 }]);
 
-app.filter('unsafe', function($sce) { return $sce.trustAsHtml; });
-
-
+app.filter('unsafe', function($sce) {
+    return $sce.trustAsHtml; });

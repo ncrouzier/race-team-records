@@ -113,7 +113,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     };
 
 
-
+    $scope.removeResult = function(result) {
+        var dlg = dialogs.confirm("Remove Result?","Are you sure you want to remove this result?");
+        dlg.result.then(function(btn) {
+            ResultsService.deleteResult(result).then(function() {
+                var index = $scope.currentMemberResultList.indexOf(result);
+                if (index > -1) $scope.currentMemberResultList.splice(index, 1);
+            });
+        }, function(btn) {});
+    };
 
     // =====================================
     // MEMBER API CALLS ====================
@@ -147,12 +155,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     });
 
+    $scope.showRaceModal = function(result) {
+        ResultsService.showRaceModal(result).then(function(result) {        
+        });
+    };
 
 
 }]);
 
 
-angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$modalInstance', '$filter', 'member', function($scope, $modalInstance, $filter, member) {
+angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'member', function($scope, $uibModalInstance, $filter, member) {
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;
@@ -171,15 +183,15 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
     });
 
     $scope.addMember = function() {
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.editMember = function() {
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.cancel = function() {
-        $modalInstance.dismiss('cancel');
+        $uibModalInstance.dismiss('cancel');
     };
 
     // =====================================

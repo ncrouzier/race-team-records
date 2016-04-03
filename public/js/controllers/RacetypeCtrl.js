@@ -39,7 +39,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', '
 
 }]);
 
-angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$modalInstance', 'racetype', function($scope, $modalInstance, racetype) {
+angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController', ['$scope', '$uibModalInstance', 'racetype', function($scope, $uibModalInstance, racetype) {
     $scope.autoconvert = true;
     $scope.editmode = false;
     if (racetype) {
@@ -70,7 +70,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
             $scope.formData.meters = null;
             $scope.formData.miles = null;
         }
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.editRaceType = function() {
@@ -78,11 +78,11 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
             $scope.formData.meters = null;
             $scope.formData.miles = null;
         }
-        $modalInstance.close($scope.formData);
+        $uibModalInstance.close($scope.formData);
     };
 
     $scope.cancel = function() {
-        $modalInstance.dismiss('cancel');
+        $uibModalInstance.dismiss('cancel');
     };
 
 

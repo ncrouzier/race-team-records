@@ -41,6 +41,11 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
             });
         }, function(btn) {});
     };
+    
+    $scope.showRaceModal = function(result) {
+        ResultsService.showRaceModal(result).then(function(result) {        
+        });
+    };
 
 }]);
 

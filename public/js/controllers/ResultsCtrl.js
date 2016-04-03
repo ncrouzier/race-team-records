@@ -50,11 +50,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function(btn) {});
     };
 
+    $scope.showRaceModal = function(result) {
+        ResultsService.showRaceModal(result).then(function(result) {        
+        });
+    };
+
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
 
-    $scope.timezone = ((new Date().getTimezoneOffset() / 60) * -100);
 
     $scope.autoconvert = true;
     MembersService.getMembers({
@@ -236,5 +240,16 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.opened = true;
     };
 
+
+}]);
+
+
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'race', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, race, MembersService, ResultsService, localStorageService) {
+
+    $scope.race = race;
+
+     $scope.cancel = function() {
+         $uibModalInstance.dismiss('cancel');
+    };
 
 }]);

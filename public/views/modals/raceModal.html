@@ -1,59 +1,59 @@
 <div class="modal-header">
-    <h3 class="modal-title">{{racename}}</h3>
+    <span class="modal-title h3 bold"> {{race.racename}}</span>  <span class="h4">{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</span>
 </div>
-<div class="modal-body">
-    <form name="formracetype">
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group" ng-class="{ 'has-error' : formracetype.racetypename.$invalid && !formracetype.racetypename.$pristine}">
-                    <label class="text-left">Race type name:</label>
-                    <input type="text" name="racetypename" class="form-control input-md text-left" ng-model="formData.name" required>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group" ng-class="{ 'has-error' : formracetype.surface.$invalid && !formracetype.surface.$pristine}">
-                    <label class="text-left">Surface: {{formData.surface}}</label>
-                    <br>
-                    <ui-select name="surface" ng-model="formData.surface" theme="select2" style="min-width: 300px;" required>
-                        <ui-select-match placeholder="Select a surface">{{$select.selected}}</ui-select-match>
-                        <ui-select-choices repeat="surface in surfaces">
-                            <div ng-bind-html="surface | highlight: $select.search"></div>
-                        </ui-select-choices>
-                    </ui-select>
-                </div>
-            </div>
+<div class="modal-body" style ="padding: 0px;">
+    <div id="member-list" class="row">
+        <div class="col-md-12">
+            <ul class="results-list list-group" style="margin-bottom: 0px;">
+                <li class="list-group-item text-left resultlistheader" ng-show="race.results.length >0">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <span class="listheader" title="Race's name">Racer</span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="listheader" title="Net Time">Net Time</span>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="listheader" title="Pace">Pace</span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="listheader" title="Pace">Overall</span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="listheader" title="Pace">Gender</span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="listheader" title="Pace">Age</span>
+                        </div>
+                    </div>
+                </li>
+                <li class="list-group-item text-left resultlistrow" ng-repeat="result in race.results">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter:race | cut:false:25:"..."}}</span></a>
+                        </div>
+                        <div class="col-sm-3">
+                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
+                        </div>
+                        <div class="col-sm-3">
+                            <span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=90" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>World Class</span>'" | unsafe>{{result | resultToPace:race}} <i  class="ageworld fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=80 && result.agegrade<90" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>National Class</span>'" | unsafe>{{result | resultToPace:race}} <i class="agenational fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=70 && result.agegrade<80" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>Regional Class</span>'" | unsafe>{{result | resultToPace:race}} <i class="ageregional fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade<70" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span>'" | unsafe>{{result | resultToPace:race}}</span><span ng-show="result.agegrade === undefined">{{result | resultToPace:race}} </span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="center" title="Gender ranking" ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                        </div>
+                        <div class="col-sm-1">
+                            <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                        </div>
+                    </div>                 
+                </li>
+                <!-- <li dir-paginate="result in resultsList | itemsPerPage: 10">{{ result.racename }}</li> -->
+            </ul>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <label class="text-left">Variable Distance?</label><br>
-                <button type="button" class="btn btn-primary" ng-model="formData.isVariable" btn-checkbox>
-                    {{formData.isVariable}}
-                </button>
-            </div>
-        </div>
-        <div class="row" ng-show="!formData.isVariable">
-            <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formracetype.meters.$invalid && !formracetype.meters.$pristine}">
-                    <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters" ng-model="formData.meters" class="form-control input-md text-left" ng-required="!formData.isVariable">
-                </div>
-            </div>
-            <div class="col-md-1 text-center">
-                <label><small>Auto convert</small></label>
-                <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
-            </div>
-            <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formracetype.miles.$invalid && !formracetype.miles.$pristine}">
-                    <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles" ng-model="formData.miles" class="form-control input-md text-left" ng-required="!formData.isVariable">
-                </div>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
 <div class="modal-footer">
-    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editRaceType()" ng-disabled="formracetype.$invalid">Edit Race Type</button>
-    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addRaceType()" ng-disabled="formracetype.$invalid">Add Race Type</button>
-    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-danger" ng-click="cancel()">Close</button>
 </div>

@@ -6,7 +6,7 @@
     <form name="formresult">
         <div class="row">
             <div class="col-md-4">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.raceename.$invalid && !formresult.raceename.$pristine}">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.raceename.$invalid && !formresult.race.raceename.$pristine}">
                     <label class="text-left">Race name:</label>
                     <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.race.racename" ng-required="true" required auto-focus>
                 </div>

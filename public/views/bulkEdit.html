@@ -1,0 +1,140 @@
+<div class="jumbotron" style="    padding-left: 0px;    padding-right: 0px;">
+    <form name="formresult">
+        <table class="bulkedit" style="width: 100%; font-size: 10px;">
+          <thead>
+            <tr>
+                <th>Race Name</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Racer</th>
+                <th>h</th>
+                <th>m</th>
+                <th>s</th>
+                <th>cs</th>
+                <th>agroup</th>
+                <th>Gender</th>
+                <th>overall</th>
+                <th>comments</th>
+                <th>link</th>
+                <th>actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="result in results track by $index">
+                <td>
+                    <div class="form-group" ng-class="{ 'has-error' : formresult.race.racename.$invalid && !formresult.race.racename.$pristine}">
+                        <input type="text" name="racename" class="form-control bulkinput text-left" ng-model="result.race.racename" ng-required="true" required auto-focus  style="width: 100px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
+                        <p class="input-group" style="width: 100px;">
+                            <input  type="text" datetimepicker-neutral-timezone name="racedate" class="form-control bulkinput" uib-datepicker-popup="yyyy-MM-dd" ng-model="result.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened[$index]" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default bulkinput" ng-click="openDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                        </p>
+                    </div>
+                </td>        
+                <td>
+                    <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
+                        <ui-select name="racetype" ng-model="result.race.racetype" theme="select2" style="width: 100px;width: 100px;" required>
+                            <ui-select-match class="bulkinput" placeholder="Select a race type">
+                                <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
+                            </ui-select-match>
+                            <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+                                <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                    <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
+                                    <span ng-show="!racetype.isVariable">
+                                        <small>length in meters: {{racetype.meters | number}} m</small>
+                                        <br>
+                                        <small>length in miles: {{racetype.miles | number}} miles</small>
+                                    </span>
+                                        <span ng-show="racetype.isVariable">
+                                        <small>Specify distance for each race result</small>
+                                    </span>
+                                </div>
+                            </ui-select-choices>
+                        </ui-select>
+                        <div ng-show="result.race.racetype.isVariable">
+                            <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.meters.$invalid && !formresult.racetype.meters.$pristine}">
+                            <input type="text"  placeholder="meters" name="meters"  ng-model="result.race.racetype.meters" class="form-inline form-control bulkinput text-left" required style="width: 100px;">
+                            </div>
+                            <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.miles.$invalid && !formresult.racetype.miles.$pristine}">
+                            <input type="text"  placeholder="miles" name="miles"  ng-model="result.race.racetype.miles" class="form-inline form-control bulkinput text-left" required style="width: 100px;">
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <span class="" ng-repeat="member in result.members track by $index">
+                            <ui-select class=""  name="member_{{$index}}"  ng-model="result.members[$index]" theme="select2" style="max-width: 100px;min-width: 100px;" required>
+                                <ui-select-match  class="bulkinput"  placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}  <i ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="male" ></i><i ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="female" ></i></ui-select-match>
+                                <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                                    <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                                    <small>age: {{member.dateofbirth | ageFilter}}  gender: <i ng-show="member.sex == 'Male'" class="fa fa-mars" title="male" ></i><i ng-show="member.sex == 'Female'" class="fa fa-venus" title="female" ></i> </small>
+                                </ui-select-choices>
+                            </ui-select>
+                            <i ng-show="$index !=0" class="hoverhand fa fa-times" ng-click="result.members.splice($index, 1);" title="Delete member"></i>
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="timeDetails[$index].hours" only-digits class="form-control bulkinput text-left" placeholder="0" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="timeDetails[$index].minutes" only-digits-for-min-sec class="form-control bulkinput text-left" placeholder="0" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="timeDetails[$index].seconds" only-digits-for-min-sec class="form-control bulkinput text-left" placeholder="0" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="timeDetails[$index].centiseconds" only-digits-for-centisec class="form-control bulkinput text-left" placeholder="0" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="result.ranking.agerank" name="agerank" only-digits class="form-inline bulkinput text-left" style="width: 50px;">
+                        <input type="text" ng-model="result.ranking.agetotal" only-digits class="form-inline  bulkinput text-left" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="result.ranking.genderrank" only-digits class="form-inline bulkinput text-left" style="width: 50px;">
+                        <input type="text" ng-model="result.ranking.gendertotal" only-digits class="form-inline bulkinput text-left" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="result.ranking.overallrank" only-digits class="form-inline bulkinput text-left" style="width: 50px;">
+                        <input type="text" ng-model="result.ranking.overalltotal" only-digits class="form-inline bulkinput text-left" style="width: 50px;">
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <textarea class="form-control bulkinput" rows="1" name="message" ng-model="result.comments"  style="width: 50px;"></textarea>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <input type="text" ng-model="result.resultlink" class="form-control bulkinput text-left"  style="width: 50px;">
+                    </div>
+                </td>
+                <td style="font-size:15px; padding-top: 3px;">
+                    <i class="fa fa-plus hoverhand"  ng-click="addResultEntry($index)"></i>
+                    <i class="fa fa-minus-circle hoverhand"  ng-show="results.length >1" ng-click="removeResultEntry($index)"></i>
+                </td>
+            </tr>
+          </tbody>
+        </table>
+    </form>
+    <button type="submit" class="btn btn-primary" ng-click="saveResults()" ng-disabled="formresult.$invalid">Add Results</button>
+</div>

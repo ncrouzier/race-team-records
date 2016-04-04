@@ -65,6 +65,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/contact",
             templateUrl: "views/contact.html",
             controller: 'ContactController'
+        }).state('/bulkedit', {
+            url: "/bulkedit",
+            templateUrl: "views/bulkedit.html",
+            controller: 'BulkEditController'
         }).state('/mcrrcreport', {
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",

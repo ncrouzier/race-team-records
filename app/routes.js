@@ -623,7 +623,6 @@ module.exports = function(app, qs, passport, async, _) {
                         res.send(err);
                     }else{
 						if (!race){//if race does not exists
-							console.log(" race does not exists");
 							Race.create({
 					            racename: req.body.race.racename,
 					            racedate: req.body.race.racedate,
@@ -647,13 +646,12 @@ module.exports = function(app, qs, passport, async, _) {
 									    if (err) {
 									        res.send(err);
 									    } else {
-									        res.end('{"success" : "Result created successfully", "status" : 200}');
+									        res.json(result);
 									    }
 									});
 					           }
 				        	});
 						}else{ // race exists
-							console.log(" race does exists");
 							Result.create({
 							    race: race,
 							    members: members,
@@ -668,7 +666,7 @@ module.exports = function(app, qs, passport, async, _) {
 							    if (err) {
 							        res.send(err);
 							    } else {
-							        res.end('{"success" : "Result created successfully", "status" : 200}');
+							        res.json(result);
 							    }
 							});
 						}

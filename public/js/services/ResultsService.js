@@ -42,7 +42,11 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     //retrieve a result by id
     factory.createResult = function(result) {
         return results.post(result).then(
-            function(results) {},
+            function(r) {
+                console.log("coucou0");
+                console.log(r);
+                return r;
+            },
             function(res) {
                 console.log('Error: ' + res.status);
             });
@@ -77,8 +81,14 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         });
 
         return modalInstance.result.then(function(result) {
-            factory.createResult(result);
-            return result;
+            return factory.createResult(result).then(
+                function(r) {
+                    console.log("cocuo");
+                    console.log(r);
+                    return r;
+                }, function() {
+                    return null;
+                });
         }, function() {
             return null;
         });
@@ -128,30 +138,29 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             resultId: result._id
         }).then(
             function(races) {
-                if (races.length ===1){
-                var modalInstance = $uibModal.open({
-                    templateUrl: 'views/modals/raceModal.html',
-                    controller: 'RaceModalInstanceController',
-                    size: 'lg',
-                    resolve: {
-                        race: races[0]
-                    }
-            });
-                modalInstance.result.then(function () {
-                  
-                }, function () {
-                });
-              
-            }
-        },
+                if (races.length === 1) {
+                    var modalInstance = $uibModal.open({
+                        templateUrl: 'views/modals/raceModal.html',
+                        controller: 'RaceModalInstanceController',
+                        size: 'lg',
+                        resolve: {
+                            race: races[0]
+                        }
+                    });
+                    modalInstance.result.then(function() {
+
+                    }, function() {});
+
+                }
+            },
             function(res) {
                 console.log('Error: ' + res.status);
             });
-            
 
-        
 
-        
+
+
+
     };
 
     // =====================================
@@ -229,7 +238,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 return null;
             });
         }
-    }; 
+    };
 
 
 
@@ -272,7 +281,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 console.log('Error: ' + res.status);
             });
     };
-    
+
 
 
 

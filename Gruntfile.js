@@ -35,6 +35,7 @@ module.exports = function(grunt) {
                         'public/libs/angulartics/dist/angulartics-ga.min.js',
                         'public/libs/jspdf/dist/jspdf.min.js',
                         'public/libs/nanogallery/dist/jquery.nanogallery.min.js',
+                        'public/libs/async/dist/async.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]

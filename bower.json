@@ -15,7 +15,8 @@
     "angulartics": "~0.17.2",
     "angular-local-storage": "~0.1.5",
     "jspdf": "~1.0.272",
-    "nanogallery": "~5.9.1"
+    "nanogallery": "~5.9.1",
+    "async": "~2.0.0-rc.2"
   },
   "resolutions": {
     "angular-bootstrap": "~0.12.0",

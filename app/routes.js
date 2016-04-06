@@ -1102,7 +1102,7 @@ module.exports = function(app, qs, passport, async, _) {
     app.get('/api/milesraced', function(req, res) {
         var date = req.query.date;
         var query = Result.find();
-        query = query.gte('racedate', new Date(date));
+        query = query.gte('race.racedate', new Date(date));
         query.exec(function(err, results) {
             if (err) {
                 res.send(err)

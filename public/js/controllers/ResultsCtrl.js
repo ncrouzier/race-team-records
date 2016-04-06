@@ -25,6 +25,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     }).then(function(results) {
         $scope.resultsList = results;
     });
+    
 
 
 

@@ -221,14 +221,22 @@ footer {
 }
 
 .select2-container .select2-choice{
-    @media (max-width: @screen-lg-min) {
-        height: 35px;
-        line-height: 35px;
-    }
+        @media (max-width: @screen-lg-min) {
+            height: 35px;
+            line-height: 35px;
+        }
 }
 
+.ui-select-container[theme=select2].direction-up .ui-select-dropdown .select2-search {
+    margin-top: 0px;
+}
+.ui-select-container[theme=select2].direction-up .ui-select-dropdown{
+    margin-top: 0px;
+}
+
+
 .ui-select-choices-row:hover {
-  background-color: #428bca;
+  background-color: #006687;
 }
 
 
@@ -419,6 +427,7 @@ footer {
     }
 }
 
+// Bulk Operations
 
 .bulkinput {
     height: 25px !important;
@@ -451,6 +460,13 @@ footer {
 
 .bulkedit tbody tr{
 
+}
+
+.bulkforms{
+    padding-top: 20px;
+    .bulktable{
+        width: 100%; font-size: 10px;
+    }
 }
 
 .redbg{

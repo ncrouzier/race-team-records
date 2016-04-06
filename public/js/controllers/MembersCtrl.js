@@ -71,7 +71,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.setMember = function(member) {
         ResultsService.getResults({
             limit: 20,
-            sort: '-racedate',
+            sort: '-race.racedate',
             member: member
         }).then(function(results) {
             $scope.currentMemberResultList = results;

@@ -23,10 +23,12 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
     $scope.showAddResultModal = function() {
         ResultsService.showAddResultModal().then(function(result) {
             if (result !== null) {
-                $scope.resultsList.push(result);
+                $scope.resultsList.unshift(result);
             }
+        }, function() {
         });
     };
+    
 
     $scope.retrieveResultForEdit = function(result) {
         ResultsService.retrieveResultForEdit(result).then(function() {});

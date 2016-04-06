@@ -3,7 +3,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     var factory = {};
     var results = Restangular.all('results');
     var racetypes = Restangular.all('racetypes');
+    var races = Restangular.all('races');
     var systeminfos = Restangular.all('systeminfos');
+
     var cachedResults;
     var cachedResultsDate;
     // =====================================
@@ -43,18 +45,24 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     factory.createResult = function(result) {
         return results.post(result).then(
             function(r) {
-                console.log("coucou0");
-                console.log(r);
                 return r;
             },
             function(res) {
                 console.log('Error: ' + res.status);
-            });
+            }
+        );
     };
 
     //edit a member
     factory.editResult = function(result) {
-        result.save();
+        return result.save().then(
+            function(r) {
+                return r;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            }
+        );
     };
 
     ///delete a member
@@ -83,12 +91,11 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         return modalInstance.result.then(function(result) {
             return factory.createResult(result).then(
                 function(r) {
-                    console.log("cocuo");
-                    console.log(r);
                     return r;
                 }, function() {
                     return null;
-                });
+                }
+            );
         }, function() {
             return null;
         });
@@ -108,7 +115,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
 
             return modalInstance.result.then(function(result) {
-                factory.editResult(result);
+                return factory.editResult(result).then(
+                    function(r) {
+                        return r;
+                    }, function() {
+                        return null;
+                    }
+                );
             }, function() {
                 return null;
             });
@@ -121,14 +134,11 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RACE MODALS =========================
     // =====================================    
 
-    factory.getRace = function(params) {
-        return Restangular.one('races').get(params).then(
-            function(races) {
-                return races;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
+
+    factory.getRaces = function(params) {
+        return races.getList(params).then(function(races) {
+            return races;
+        });
     };
 
 

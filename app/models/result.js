@@ -8,16 +8,16 @@ var SystemInfo = require('./systeminfo');
 
 // define the schema for our user model
 var resultSchema = mongoose.Schema({
-    racename: String,
-    racetype: {
-        _id: mongoose.Schema.ObjectId,
-        name: String,
-        surface: String,
-        meters: Number,
-        miles: Number,
-        isVariable: Boolean
-    },
-    racedate: Date,
+    // racename: String,
+    // racetype: {
+    //     _id: mongoose.Schema.ObjectId,
+    //     name: String,
+    //     surface: String,
+    //     meters: Number,
+    //     miles: Number,
+    //     isVariable: Boolean
+    // },
+    // racedate: Date,
     time: Number,
     ranking: {
         agerank: Number,

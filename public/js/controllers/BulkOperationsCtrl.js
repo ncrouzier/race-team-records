@@ -1,8 +1,40 @@
-angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
+    });
+
+    $scope.racetoedit = {};
+
+    $scope.$watch('racetoedit.value', function() {
+        if ($scope.racetoedit.value){
+            ResultsService.getResults({
+                "sort": '-race.racedate time',
+                "filters": {
+                    "raceid": $scope.racetoedit.value._id
+                }
+            }).then(function(results) {
+                $scope.results = results;
+
+                for (i =0;i<$scope.results.length;i++){
+                    $scope.timeDetails[i] ={
+                        hours:parseInt((($scope.results[i].time / (100*60*60)) % 24)),
+                        minutes:parseInt((($scope.results[i].time / (100*60)) % 60)),
+                        seconds:parseInt(($scope.results[i].time / 100) % 60),
+                        centiseconds:parseInt(($scope.results[i].time % 100))
+                    };
+                }
+
+            });
+        }
+    });
+    
+
+    ResultsService.getRaces({
+        sort: '-racedate'
+    }).then(function(races) {
+        $scope.racesList = races;
     });
 
 
@@ -10,7 +42,7 @@ angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', '
         time: {
             hours:undefined,
             minutes:undefined,
-            secondss:undefined,
+            seconds:undefined,
             centiseconds:undefined
         },
         ranking: {
@@ -32,12 +64,22 @@ angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', '
     $scope.timeDetails = [{
             hours:undefined,
             minutes:undefined,
-            secondss:undefined,
+            seconds:undefined,
             centiseconds:undefined
         }];
 
-    $scope.results = []; 
-    $scope.results.push(angular.copy(defaultResult));
+
+    $scope.initAdd = function(){
+        $scope.results = []; 
+        $scope.timeDetails = [];
+        $scope.results.push(angular.copy(defaultResult));
+    };
+
+    $scope.initEdit = function(){
+        $scope.results = []; 
+        $scope.timeDetails = [];
+    };
+    
 
     MembersService.getMembers({
         sort: 'firstname'
@@ -56,30 +98,37 @@ angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', '
     $scope.addResultEntry = function(index){
         if (index >= 0 && index< $scope.results.length){
             var lastRes = $scope.results[index];
-        $scope.results.push({
-            time: {
+            $scope.results.push({
+                time: {
+                    hours:undefined,
+                    minutes:undefined,
+                    secondss:undefined,
+                    centiseconds:undefined
+                },
+                ranking: {
+                    agerank: undefined,
+                    agetotal: lastRes.ranking.agetotal,
+                    genderrank: undefined,
+                    gendertotal: lastRes.ranking.gendertotal,
+                    overallrank: undefined,
+                    overalltotal: lastRes.ranking.overalltotal
+                },
+                members: [{ }],
+                race:{
+                    racename:lastRes.race.racename,
+                    racedate:lastRes.race.racedate,
+                    racetype:lastRes.race.racetype,
+                },
+                comments: undefined,
+                resultlink: undefined  
+            });
+
+            $scope.timeDetails.push({
                 hours:undefined,
                 minutes:undefined,
                 secondss:undefined,
                 centiseconds:undefined
-            },
-            ranking: {
-                agerank: undefined,
-                agetotal: lastRes.ranking.agetotal,
-                genderrank: undefined,
-                gendertotal: lastRes.ranking.gendertotal,
-                overallrank: undefined,
-                overalltotal: lastRes.ranking.overalltotal
-            },
-            members: [{ }],
-            race:{
-                racename:lastRes.race.racename,
-                racedate:lastRes.race.racedate,
-                racetype:lastRes.race.racetype,
-            },
-            comments: undefined,
-            resultlink: undefined  
-        });
+            });
         }
         
     };
@@ -92,7 +141,9 @@ angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', '
     };
 
 
-    $scope.saveResults = function(){
+
+
+    $scope.saveResults = function(mode){
         var fct = function(value, index) {
                 return [value];
         };
@@ -113,11 +164,46 @@ angular.module('mcrrcApp.results').controller('BulkEditController', ['$scope', '
             var members = $.map($scope.results[index].members, fct);
             $scope.results[index].members = members;
 
-
-            console.log($scope.results[index]);
         }
 
+        async.forEachOfSeries($scope.results, function(result, key, callback) {
+            if (result.success === undefined){
+
+                if (mode === 'add'){
+                    ResultsService.createResult(result).then(
+                        function(r) {
+                            if (r){
+                                result.success = true;
+                            }else{
+                                result.success = false;
+                            }                  
+                            callback();
+                        }, function() {
+                            callback();
+                        }
+                    );
+                }else if (mode === 'edit'){
+                    ResultsService.editResult(result).then(
+                        function(r) {
+                            if (r){
+                                result.success = true;
+                            }else{
+                                result.success = false;
+                            }                  
+                            callback();
+                        }, function() {
+                            callback();
+                        }
+                    );
+                }
+
+            }
             
+        }, function(err) {
+            if (err) {
+                console.error(err.message);
+            }
+        });      
     };
 
     // =====================================

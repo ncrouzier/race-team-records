@@ -30,12 +30,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.showAddResultModal = function() {
         ResultsService.showAddResultModal().then(function(result) {
-            console.log("coucou2");
             if (result !== null) {
                 $scope.resultsList.unshift(result);
             }
         }, function() {
-            console.log("sdfkljsdf");
         });
     };
 

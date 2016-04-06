@@ -513,6 +513,10 @@ module.exports = function(app, qs, passport, async, _) {
                 query = query.lte('race.racedate', filters.dateto);
 
             }
+            if (filters.raceid) {
+                query = query.where('race._id').equals(new mongoose.Types.ObjectId(filters.raceid));
+
+            }
             if (filters.racetype) {
                 var racetype = filters.racetype;
                 query = query.where('race.racetype._id').equals(racetype._id);
@@ -770,8 +774,8 @@ module.exports = function(app, qs, passport, async, _) {
 									            	}
 									            }
 									        });
-
-					                        res.end('{"success" : "Result updated successfully", "status" : 200}');
+									       	res.json(result);
+					                        // res.end('{"success" : "Result updated successfully", "status" : 200}');
 					                    }
 					                });
 					           }
@@ -821,7 +825,8 @@ module.exports = function(app, qs, passport, async, _) {
 							            	}
 							            }
 							        });
-			                        res.end('{"success" : "Result updated successfully", "status" : 200}');
+							        res.json(result);
+			                        // res.end('{"success" : "Result updated successfully", "status" : 200}');
 			                    }
 			                });
 						}
@@ -1334,9 +1339,9 @@ function containsMember(list, member) {
 }
 
 function sortResultsByDistance(a, b) {
-    if (a.racetype.meters < b.racetype.meters)
+    if (a.race.racetype.meters < b.race.racetype.meters)
         return -1;
-    if (a.racetype.meters > b.racetype.meters)
+    if (a.race.racetype.meters > b.race.racetype.meters)
         return 1;
     return 0;
 }

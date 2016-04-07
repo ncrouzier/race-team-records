@@ -1,5 +1,7 @@
 <div class="modal-header">
     <span class="modal-title h3 bold"> {{race.racename}}</span>  <span class="h4">{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</span>
+    <br>{{race.results.length}} racer<span ng-show="race.results.length > 1">s</span>
+    <br>Average time: {{avg | secondsToTimeString}}
 </div>
 <div class="modal-body" style ="padding: 0px;">
     <div id="member-list" class="row">

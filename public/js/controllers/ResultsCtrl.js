@@ -25,7 +25,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     }).then(function(results) {
         $scope.resultsList = results;
     });
-    
+
 
 
 
@@ -34,8 +34,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             if (result !== null) {
                 $scope.resultsList.unshift(result);
             }
-        }, function() {
-        });
+        }, function() {});
     };
 
     $scope.retrieveResultForEdit = function(result) {
@@ -53,8 +52,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     };
 
     $scope.showRaceModal = function(result) {
-        ResultsService.showRaceModal(result).then(function(result) {        
-        });
+        ResultsService.showRaceModal(result).then(function(result) {});
     };
 
 }]);
@@ -249,9 +247,20 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'race', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, race, MembersService, ResultsService, localStorageService) {
 
     $scope.race = race;
+    var sum = 0;
+    var count = 0;
+    for (i = 0; i <$scope.race.results.length; i++) {
+        if ($scope.race.results[i].time !== 'undefined') {
+            sum += $scope.race.results[i].time;
+            count++;
+        }
+    }
+    if(count !== 0){
+        $scope.avg = Math.ceil(sum / count);
+    }
 
-     $scope.cancel = function() {
-         $uibModalInstance.dismiss('cancel');
+    $scope.cancel = function() {
+        $uibModalInstance.dismiss('cancel');
     };
 
 }]);

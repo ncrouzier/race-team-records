@@ -36,6 +36,7 @@ if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records');
 } else {
     mongoose.connect('mongodb://127.0.0.1:27017/records'); // connect to our database
+     // mongoose.connect('mongodb://admin:coucou@ds019970.mlab.com:19970/mcrrcrecords
 }
 
 

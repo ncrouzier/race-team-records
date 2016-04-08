@@ -491,84 +491,147 @@ module.exports = function(app, qs, passport, async, _) {
     app.get('/api/results', function(req, res) {
         var sort = req.query.sort;
         var limit = req.query.limit;
+        var skip = req.query.skip;
+        var search = req.query.search;
 
         query = Result.find();
-
+        queryCount = Result.count();
         if (req.query.filters) {
             var filters = JSON.parse(req.query.filters);
 
             if (filters.category) {
                 query = query.regex('category', filters.category);
+                queryCount = queryCount.regex('category', filters.category);
             }
 
             if (filters.sex) {
                 query = query.where('members.sex').regex(filters.sex);
+                queryCount = queryCount.where('members.sex').regex(filters.sex);
 
             }
             if (filters.datefrom) {
                 query = query.gte('race.racedate', filters.datefrom);
+                queryCount = queryCount.gte('race.racedate', filters.datefrom);
 
             }
             if (filters.dateto) {
                 query = query.lte('race.racedate', filters.dateto);
+                queryCount = queryCount.lte('race.racedate', filters.dateto);
 
             }
             if (filters.raceid) {
                 query = query.where('race._id').equals(new mongoose.Types.ObjectId(filters.raceid));
+                queryCount = queryCount.where('race._id').equals(new mongoose.Types.ObjectId(filters.raceid));
 
             }
             if (filters.racetype) {
                 var racetype = filters.racetype;
                 query = query.where('race.racetype._id').equals(racetype._id);
+                queryCount = queryCount.where('race.racetype._id').equals(racetype._id);
+
             }
             if (filters.mode && limit) {
                 if (filters.mode === 'All') {
                     query = query.limit(limit);
+                    queryCount = queryCount.limit(limit);
                 }
             }
         }
-        if (sort) {
-            query = query.sort(sort);
+
+        if (search && search !== ""){
+
+        	query.or([{
+                        "race.racename": new RegExp(search, 'i')
+                    }, {
+                        "race.racetype.surface": new RegExp(search, 'i')
+                    }, {
+                        "members.firstname": new RegExp(search, 'i')
+                    }]);
+
+        	queryCount.or([{
+                        "race.racename": new RegExp(search, 'i')
+                    }, {
+                        "race.racetype.surface": new RegExp(search, 'i')
+                    }, {
+                        "members.firstname": new RegExp(search, 'i')
+                    }]);
         }
+
+        if (skip) {
+        	query = query.skip(skip);
+        }
+
         if (limit && ((filters && !filters.mode) || !filters)) {
             query = query.limit(limit);
         }
-
+        if (sort) {
+        	query = query.sort(sort);
+    	}
+        
         if (req.query.member) {
             var member = JSON.parse(req.query.member);
             query = query.where('members._id').equals(member._id);
+            queryCount =queryCount.where('members._id').equals(member._id);
         }
 
-        query.exec(function(err, results) {
+        var countQuery = function(callback){
+        	queryCount.exec(function(err, count) {
+               	if(err){
+               		callback(err, null);
+           		}
+               	else{
+             		callback(null, count);
+            	}
+         	});
+    	};
 
-            if (err) {
-                res.send(err)
-            } else {
-                var filteredResult = results;
-                if (req.query.filters) {
-                    var filters = JSON.parse(req.query.filters);
-                    if (filters.mode && limit) {
-                        if (filters.mode === 'Best') {
-                            filteredResult = [];
-                            var resultLength = results.length;
-                            var resCount = 0;
-                            for (var i = 0; i < resultLength && resCount < limit; i++) {
-                                if (!containsMember(filteredResult, results[i].members[0])) {
-                                    filteredResult.push(results[i]);
-                                    resCount++;
-                                }
-                            }
-                        }
-                    }
-                }
-                res.json(filteredResult);
+	    var retrieveQuery = function(callback){
+	    	console.log("retrieveQuery");
+	    	
+			query.exec(function(err, results) {
+	            if (err) {
+	                callback(err, null)
+	            } else {
+	                var filteredResult = results;
+	                if (req.query.filters) {
+	                    var filters = JSON.parse(req.query.filters);
+	                    if (filters.mode && limit) {
+	                        if (filters.mode === 'Best') {
+	                            filteredResult = [];
+	                            var resultLength = results.length;
+	                            var resCount = 0;
+	                            for (var i = 0; i < resultLength && resCount < limit; i++) {
+	                                if (!containsMember(filteredResult, results[i].members[0])) {
+	                                    filteredResult.push(results[i]);
+	                                    resCount++;
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	                callback(null, filteredResult);
+	            }
+        	});
 
-            }
+
+	    };
+
+    
+
+        
 
 
+        async.parallel([countQuery, retrieveQuery], function(err, results){
+         //err contains the array of error of all the functions
+         //results contains an array of all the results
+         //results[0] will contain value of doc.length from countQuery function
+         //results[1] will contain doc of retrieveQuery function
+         //You can send the results as
 
+         res.json({status:"success",data:{data: results[1], meta:{totalresults: results[0]}}});
 
-        });
+    	});
+
     });
 
     // get a result

@@ -41,6 +41,19 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         });
     };
 
+    //retrieve results with pagination
+    factory.getResultsPagination = function(params) {
+        console.log("prout");
+        return results.get(params).then(
+            function(results) {
+                return results;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+    
+
     //retrieve a result by id
     factory.createResult = function(result) {
         return results.post(result).then(

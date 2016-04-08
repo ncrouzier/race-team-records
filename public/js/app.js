@@ -14,6 +14,24 @@ app.config(function(localStorageServiceProvider) {
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
+app.config(function(RestangularProvider) {
+
+    // add a response interceptor
+    RestangularProvider.addResponseInterceptor(function(data, operation, what, url, response, deferred) {
+      var extractedData;
+      // .. to look for getList operations
+      if (operation === "getList") {
+        // .. and handle the data and meta data
+        extractedData = data.data.data;
+        extractedData.meta = data.data.meta;
+      } else {
+        extractedData = data.data;
+      }
+      return extractedData;
+    });
+
+});
+
 app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Restangular) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({

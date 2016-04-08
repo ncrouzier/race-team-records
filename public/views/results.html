@@ -2,7 +2,7 @@
     <div class="row text-left" style="padding-left:15px; margin-bottom:10px;">
         <div class="btn-group" style="width:100%; padding-right:15px;">
             <div class="btn-group">
-                <span> Search for a result: <input ng-model="query" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus><span class="searchclear fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
+                <span> Search for a result: <input ng-model="search" ng-model-options="{debounce: 500}" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{query}}" autofocus><span class="searchclear fa fa-times-circle" ng-show="query" ng-click="query=''"></span>
                 </span>
                 <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i>
             </div>
@@ -39,7 +39,8 @@
                         </div>
                     </div>
                 </li>
-                <li dir-paginate="result in resultsList | resultSuperFilter :query | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow">
+                <!-- | resultSuperFilter :query  -->
+                <li dir-paginate="result in resultsList  | itemsPerPage: resultsTableProperties.pageSize"  total-items="totalCount"  current-page="pagination.current"  class="list-group-item text-left resultlistrow">
                     <div class="row">
                         <div class="col-sm-3">
                             <result-members-names></result-members-names>
@@ -66,7 +67,7 @@
     </div>
     <div class="row text-center">
         <div class="col-md-12">
-            <dir-pagination-controls></dir-pagination-controls>
+            <dir-pagination-controls on-page-change="pageChanged(newPageNumber)"></dir-pagination-controls>
         </div>
     </div>
 

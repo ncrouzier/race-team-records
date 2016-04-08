@@ -7,6 +7,11 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.$watch('resultsTableProperties.pageSize', function(newVal, oldVal) {
         localStorageService.set('resultsPageSize', $scope.resultsTableProperties);
+        getResultsPage(1);
+    });
+
+    $scope.$watch('search', function(newVal, oldVal) {
+        getResultsPage(1);
     });
 
     if (localStorageService.get('resultsPageSize')) {
@@ -19,14 +24,55 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.resultSize = [5, 10, 25, 50, 100];
     $scope.resultsList = [];
 
+    // ResultsService.getResultsWithCacheSupport({
+    //     "sort": '-race.racedate race.racename time'
+    // }).then(function(results) {
+    //     $scope.resultsList = results;
+    // });
 
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time'
-    }).then(function(results) {
-        $scope.resultsList = results;
-    });
+   
+    $scope.pagination = {
+        current: 1
+    };
 
 
+    // ResultsService.getResults({
+    //     "sort": '-race.racedate race.racename time',
+    //     "limit": $scope.resultsTableProperties.pageSize,
+    //     "skip": $scope.resultsTableProperties.page
+    // }).then(function(results) {
+    //     console.log(results);
+    //     $scope.resultsList = results;
+    //     $scope.totalCount =extractedData.meta.totalCount;
+    // });
+
+
+    $scope.pageChanged = function(newPage) {
+        console.log(newPage);
+        getResultsPage(newPage);
+    };
+
+    function getResultsPage(pageNumber) {
+
+        ResultsService.getResults({
+            "search": $scope.search,
+            "sort": '-race.racedate race.racename time',
+            "limit": $scope.resultsTableProperties.pageSize,
+            "skip": $scope.resultsTableProperties.pageSize*(pageNumber-1)
+        }).then(function(results) {
+            $scope.resultsList = results;
+            $scope.totalCount =results.meta.totalresults;
+        });
+
+        // this is just an example, in reality this stuff should be in a service
+        // $http.get('path/to/api/users?page=' + pageNumber)
+        //     .then(function(result) {
+        //         $scope.users = result.data.Items;
+        //         $scope.totalUsers = result.data.Count
+        //     });
+    }
+
+    getResultsPage(1);
 
     $scope.showAddResultModal = function() {
         ResultsService.showAddResultModal().then(function(result) {

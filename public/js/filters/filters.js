@@ -489,11 +489,11 @@ function ordinal_suffix_of(i, withStyle) {
 
 app.filter('inline_ordinal_suffix_of', ['$sce',function($sce) {
     return function(i, withStyle, toptreeclass_) {
-        if (i === undefined){
+        if (i === undefined || i === null || i===""){
             return "";
         }
         if (i >3){
-            toptreeclass_= '';
+            toptreeclass_= '    ';
         }
 
         var j = i % 10,

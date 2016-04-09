@@ -39,7 +39,11 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
        $scope.milesRaced = parseFloat(sum).toFixed(2);
     });
 
-
+    //load result in cache
+    ResultsService.getResultsWithCacheSupport({
+        "sort": '-race.racedate race.racename time'
+    }).then(function(results) {
+    });
     
     
 }]);

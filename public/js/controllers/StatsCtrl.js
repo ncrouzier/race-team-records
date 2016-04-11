@@ -5,15 +5,49 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.user = user;
     });
 
-    ResultsService.getBestRaceShowing({
-        limit: 10,
-        sort: '-count',
-        resultId: '5640bee05ebb2faf19fa9c1b'
-    }).then(function(races) {
-        $scope.bestRaceShowingList = races;
-    });
+    $scope.raceStats = {};
+    $scope.raceStats.year = "All Time";
 
-    
+    var currentYear = new Date().getFullYear();
+    $scope.yearsList = ['All Time'];
+    for (i = currentYear; i >= 2013; i--) {
+        $scope.yearsList.push(i);
+    }
+
+
+    $scope.getRacesStats = function() {
+        var fromDate = new Date(2013, 0, 0).getTime();
+        var toDate = new Date().getTime();
+        if ($scope.raceStats.year !== "All Time") {
+            fromDate = new Date($scope.raceStats.year, 0, 0).getTime();
+            toDate = new Date($scope.raceStats.year + 1, 0, 0).getTime();
+        }
+
+
+        ResultsService.getRacesInfos({
+            "limit": 10,
+            "sort": '-count',
+            "filters": {
+                "dateFrom": fromDate,
+                "dateTo": toDate
+            }
+        }).then(function(races) {
+            $scope.racesList = races;
+        });
+    };
+
+    $scope.showRaceModal = function(raceinfo) {
+        if (raceinfo) {
+            ResultsService.showRaceModal(raceinfo).then(function() {});
+        }
+    };
+
+
+    $scope.getRacesStats();
+
+
+
+
 
 
 }]);

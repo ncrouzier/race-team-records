@@ -52,8 +52,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     };
 
     $scope.showRaceModal = function(result) {
-        ResultsService.showRaceModal(result).then(function(result) {});
+        ResultsService.showRaceFromResultModal(result).then(function(result) {});
     };
+    
 
 }]);
 

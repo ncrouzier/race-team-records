@@ -911,7 +911,6 @@ module.exports = function(app, qs, passport, async, _) {
 
  	// get raceinfo list
     app.get('/api/raceinfos', function(req, res) {
-        var filters = req.query.filters;
         var sort = req.query.sort;
         var limit = req.query.limit;
 		var resultId = req.query.resultId;
@@ -929,8 +928,7 @@ module.exports = function(app, qs, passport, async, _) {
                         resultlink: '$resultlink',
                         ranking: '$ranking',
                 		result_id: '$_id'
-                	}
-                	
+                	} 	
                 }
             },
             {
@@ -953,9 +951,16 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.match({ 'results.result_id':  new mongoose.Types.ObjectId(resultId)  });
         }
 
-        if (filters) {   
-          
+        if (req.query.filters) { 
+            var filters = JSON.parse(req.query.filters);
+            if (filters.dateFrom) {
+                query = query.match({racedate:{$gte: new Date(filters.dateFrom)}});
+            }
+            if (filters.dateTo) {
+                query = query.match({racedate:{$lte: new Date(filters.dateTo)}});
+            }
         }
+
         if (sort) {
             query = query.sort(sort);
         }

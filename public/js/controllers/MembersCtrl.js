@@ -156,7 +156,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     });
 
     $scope.showRaceModal = function(result) {
-        ResultsService.showRaceModal(result).then(function(result) {        
+        ResultsService.showRaceFromResultModal(result).then(function(result) {        
         });
     };
 

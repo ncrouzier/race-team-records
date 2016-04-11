@@ -1,37 +1,84 @@
 <div class="jumbotron">
-
-	<div class="row">
-        <div class="col-md-12">
-            <ul class="results-list list-group">
-                <li class="list-group-item text-left resultlistheader" ng-show="bestRaceShowingList.length >0">
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <span class="listheader" title="Event and date">Event</span>
-                        </div>
-                        <div class="col-sm-6">
-                            <span class="listheader" title="Pace">Members</span>
-                        </div>
-                        
+    <uib-tabset>
+        <uib-tab index="0" heading="Best Turnouts" >
+            <div class="row text-left">
+                <div class="col-md-9" >
+                
+                </div>
+                <div class="col-md-3" >
+                    <div style="float:right;"><ui-select ng-model="raceStats.year" ng-change="getRacesStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
+                        <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                        <ui-select-choices repeat="year in yearsList">
+                            <div ng-bind="year"></div>
+                        </ui-select-choices>
+                    </ui-select>
                     </div>
-                </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="race in bestRaceShowingList" >
-                    <div class="row">
-                        <div class="col-sm-4">
-                            {{ race.racename }}
-                            <br>
-                            <small>{{ race.racedate | date:'yyyy-MM-dd':'UTC' }}</small> 
-                        </div>
-                        <div class="col-sm-6">
-                            {{ race.count }}
-                        </div> 
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="results-list list-group">
+                        <li class="list-group-item text-left resultlistheader" ng-show="racesList.length >0">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <span class="listheader" title="Event and date">Event Name</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span class="listheader" title="Event and date">Event Type</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span class="listheader" title="Pace">Team Members Racing</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span class="listheader" title="Pace">Best Time</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item text-left resultlistrow" ng-repeat="race in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <span class="hoverhandandunderline bold" ng-click="showRaceModal(race)">{{race.racename }}</span>
+                                    <br>
+                                    <small>{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                                </div>
+                                <div class="col-sm-3">
+                                    <span>{{ race.racetype.name}}</span>
+                                </div>
+                                <div class="col-sm-3">
+                                    {{ race.count }}
+                                </div>
+                                <div class="col-sm-3">
+                                    <span>{{race.results[0].time | secondsToTimeString}}</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row text-center">
+                <div class="col-md-12">
+                    <dir-pagination-controls></dir-pagination-controls>
+                </div>
+            </div>
+        </uib-tab>
+        <uib-tab index="1" heading="Misc." select="">
+        <div class="row text-left">
+                <div class="col-md-9" >
+                
+                </div>
+                <div class="col-md-3" >
+                    <div style="float:right;"><ui-select ng-model="miscStats.year" ng-change="" theme="select2" style="min-width: 60px;">{{yearsList}}
+                        <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                        <ui-select-choices repeat="year in yearsList">
+                            <div ng-bind="year"></div>
+                        </ui-select-choices>
+                    </ui-select>
                     </div>
-                 
-                </li>
-            </ul>
+                </div>
+            </div>
+        Number of results:
 
-        </div>
-    </div>
-
-
-
+        Number of miles raced:
+        </uib-tab>
+    </uib-tabset>
 </div>

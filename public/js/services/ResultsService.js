@@ -141,8 +141,17 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         });
     };
 
+    factory.getRacesInfos = function(params) {
+        return Restangular.one('raceinfos').get(params).then(
+            function(races) {
+                return races;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
 
-    factory.showRaceModal = function(result) {
+    factory.showRaceFromResultModal = function(result) {
         return Restangular.one('raceinfos').get({
             limit: 1,
             resultId: result._id
@@ -157,20 +166,30 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                             race: races[0]
                         }
                     });
-                    modalInstance.result.then(function() {
-
+                    modalInstance.result.then(function() {  
                     }, function() {});
-
                 }
             },
             function(res) {
                 console.log('Error: ' + res.status);
             });
+    };
 
-
-
-
-
+    factory.showRaceModal = function(raceinfo) {
+            var modalInstance = $uibModal.open({
+                templateUrl: 'views/modals/raceModal.html',
+                controller: 'RaceModalInstanceController',
+                size: 'lg',
+                resolve: {
+                    race: raceinfo
+                }
+            });
+            return modalInstance.result.then(function() {  
+                return null;
+            }, function() {
+                return null;
+            });      
+           
     };
 
     // =====================================
@@ -282,15 +301,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     };
 
-    factory.getBestRaceShowing = function(params) {
-        return Restangular.one('raceinfos').get(params).then(
-            function(races) {
-                return races;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
+
 
 
 

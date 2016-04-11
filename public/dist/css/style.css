@@ -7196,6 +7196,11 @@ footer {
     float: left;
   }
 }
+@media (max-width: 992px) {
+  .navbar-inverse .navbar-nav > li > a {
+    padding: 12.5px 10px;
+  }
+}
 .navbar-inverse .navbar-nav > li > a.submitmenu {
   font-size: 13px;
   font-weight: 700;
@@ -7424,6 +7429,33 @@ footer {
   background: -ms-linear-gradient(left, #e1bb71 0%, #ffffff 55);
   background: linear-gradient(to right, #e1bb71 0%, #ffffff 55);
 }
+.goldhover {
+  background: #f3da1d;
+  background: -moz-linear-gradient(left, #f3da1d 0%, #f7fbfc 95%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #f3da1d), color-stop(95%, #f7fbfc));
+  background: -webkit-linear-gradient(left, #f3da1d 0%, #f7fbfc 95);
+  background: -o-linear-gradient(left, #f3da1d 0%, #f7fbfc 95);
+  background: -ms-linear-gradient(left, #f3da1d 0%, #f7fbfc 95);
+  background: linear-gradient(to right, #f3da1d 0%, #f7fbfc 95);
+}
+.silverhover {
+  background: #a4a4a4;
+  background: -moz-linear-gradient(left, #a4a4a4 0%, #f7fbfc 75%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #a4a4a4), color-stop(75%, #f7fbfc));
+  background: -webkit-linear-gradient(left, #a4a4a4 0%, #f7fbfc 75);
+  background: -o-linear-gradient(left, #a4a4a4 0%, #f7fbfc 75);
+  background: -ms-linear-gradient(left, #a4a4a4 0%, #f7fbfc 75);
+  background: linear-gradient(to right, #a4a4a4 0%, #f7fbfc 75);
+}
+.bronzehover {
+  background: #e1bb71;
+  background: -moz-linear-gradient(left, #e1bb71 0%, #f7fbfc 55%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #e1bb71), color-stop(55%, #f7fbfc));
+  background: -webkit-linear-gradient(left, #e1bb71 0%, #f7fbfc 55);
+  background: -o-linear-gradient(left, #e1bb71 0%, #f7fbfc 55);
+  background: -ms-linear-gradient(left, #e1bb71 0%, #f7fbfc 55);
+  background: linear-gradient(to right, #e1bb71 0%, #f7fbfc 55);
+}
 .ageworld {
   color: #f3da1d;
 }
@@ -7548,5 +7580,8 @@ footer {
 }
 .lightpurplebg {
   background-color: #bcabb8;
+}
+.hoverlistbg {
+  background-color: #f7fbfc;
 }
 

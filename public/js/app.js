@@ -31,19 +31,25 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
 
 
 angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService', function($scope, AuthService, $state, ResultsService) {
-    $scope.$state =$state;
+    $scope.$state = $state;
 
-    $scope.currentYear = new Date().getFullYear();
+    var currentYear = new Date().getFullYear();
+    var fromDate = new Date(Date.UTC(currentYear, 0, 1)).getTime();
+    var toDate = new Date().getTime();
 
-    ResultsService.getMilesRaced({'date':$scope.currentYear}).then(function(sum) {
-       $scope.milesRaced = parseFloat(sum).toFixed(2);
+    ResultsService.getMilesRaced({
+        "filters": {
+            "dateFrom": fromDate,
+            "dateTo": toDate
+        }
+    }).then(function(result) {
+        $scope.milesRaced = parseFloat(result.milesRaced).toFixed(2);
     });
 
     //load result in cache
     ResultsService.getResultsWithCacheSupport({
         "sort": '-race.racedate race.racename time'
-    }).then(function(results) {
-    });
-    
-    
+    }).then(function(results) {});
+
+
 }]);

@@ -67,7 +67,7 @@
                 
                 </div>
                 <div class="col-md-3" >
-                    <div style="float:right;"><ui-select ng-model="miscStats.year" ng-change="" theme="select2" style="min-width: 60px;">{{yearsList}}
+                    <div style="float:right;"><ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
                         <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
                         <ui-select-choices repeat="year in yearsList">
                             <div ng-bind="year"></div>
@@ -76,9 +76,9 @@
                     </div>
                 </div>
             </div>
-        Number of results:
+        Number of results: {{miscStats.resultsCount}}<br>
 
-        Number of miles raced:
+        Miles raced: {{miscStats.milesRaced | number}}<br>
         </uib-tab>
     </uib-tabset>
 </div>

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'dialogs','$filter', function($scope, AuthService, ResultsService, MembersService, dialogs, $filter) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -155,6 +155,8 @@ angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$sco
             if ($scope.timeDetails[index].centiseconds === null || $scope.timeDetails[index].centiseconds === undefined || $scope.timeDetails[index].centiseconds === "") $scope.timeDetails[index].centiseconds = 0;
 
             $scope.results[index].time = $scope.timeDetails[index].hours * 360000 + $scope.timeDetails[index].minutes * 6000 + $scope.timeDetails[index].seconds * 100 + $scope.timeDetails[index].centiseconds;
+
+            $scope.results[index].race.racedate = $filter('date')($scope.results[index].race.racedate, 'yyyy-MM-dd', 'UTC');
 
             var r = $scope.results[index].ranking;
             if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined || r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "")) {

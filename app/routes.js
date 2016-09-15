@@ -511,7 +511,6 @@ module.exports = function(app, qs, passport, async, _) {
             }
             if (filters.dateto) {
                 query = query.lte('race.racedate', filters.dateto);
-
             }
             if (filters.raceid) {
                 query = query.where('race._id').equals(new mongoose.Types.ObjectId(filters.raceid));
@@ -587,6 +586,9 @@ module.exports = function(app, qs, passport, async, _) {
 
     // create result 
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
+
+
+
         var members = [];
         for (i = 0; i < req.body.members.length; i++) {
             members.push({
@@ -601,6 +603,8 @@ module.exports = function(app, qs, passport, async, _) {
         if (members.length === 1) {
 
         }
+
+
         AgeGrading.findOne({
             sex: members[0].sex.toLowerCase(),
             type: req.body.race.racetype.surface,
@@ -620,6 +624,7 @@ module.exports = function(app, qs, passport, async, _) {
             //does the race exists?
             Race.findOne({
                 'racename': req.body.race.racename,
+                'distanceName': req.body.race.distanceName,
                 'racedate': req.body.race.racedate,
                 'racetype._id': req.body.race.racetype._id
             }, function(err, race) {
@@ -629,6 +634,7 @@ module.exports = function(app, qs, passport, async, _) {
                     if (!race) { //if race does not exists
                         Race.create({
                             racename: req.body.race.racename,
+                            distanceName: req.body.race.distanceName,
                             racedate: req.body.race.racedate,
                             racetype: req.body.race.racetype
                         }, function(err, r) {
@@ -684,6 +690,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     //update a result
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
+        
         var members = [];
         for (i = 0; i < req.body.members.length; i++) {
             members.push({
@@ -694,8 +701,6 @@ module.exports = function(app, qs, passport, async, _) {
                 dateofbirth: req.body.members[i].dateofbirth
             });
         }
-
-
 
         AgeGrading.findOne({
             sex: members[0].sex.toLowerCase(),
@@ -716,6 +721,7 @@ module.exports = function(app, qs, passport, async, _) {
                 //does the race exists?
                 Race.findOne({
                     'racename': req.body.race.racename,
+                    'distanceName': req.body.race.distanceName,
                     'racedate': req.body.race.racedate,
                     'racetype._id': req.body.race.racetype._id
                 }, function(err, race) {
@@ -725,6 +731,7 @@ module.exports = function(app, qs, passport, async, _) {
                         if (!race) { //if race does not exists
                             Race.create({
                                 racename: req.body.race.racename,
+                                distanceName: req.body.race.distanceName,
                                 racedate: req.body.race.racedate,
                                 racetype: req.body.race.racetype
                             }, function(err, r) {
@@ -733,6 +740,7 @@ module.exports = function(app, qs, passport, async, _) {
                                 } else {
                                     result.race._id = r._id;
                                     result.race.racename = r.racename;
+                                    result.race.distanceName = r.distanceName;
                                     result.race.racedate = r.racedate;
                                     result.race.racetype = {
                                         _id: r.racetype._id,
@@ -784,6 +792,7 @@ module.exports = function(app, qs, passport, async, _) {
                             //the race is updated here but this should not be necessary (no changes)
                             result.race._id = race._id;
                             result.race.racename = race.racename;
+                            result.race.distanceName = race.distanceName;
                             result.race.racedate = race.racedate;
                             result.race.racetype = {
                                 _id: race.racetype._id,
@@ -937,6 +946,7 @@ module.exports = function(app, qs, passport, async, _) {
                 $group: {
                     _id: '$race._id',
                     racename: { $first: '$race.racename' },
+                    distanceName: {$first: '$race.distanceName' },
                     racedate: { $first: '$race.racedate' },
                     racetype: { $first: '$race.racetype' },
                     results: { $addToSet: '$members' },

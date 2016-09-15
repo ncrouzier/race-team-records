@@ -53,8 +53,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         );
     };
 
-    //edit a member
+    //edit a result
     factory.editResult = function(result) {
+        console.log(result);
         return result.save().then(
             function(r) {
                 return r;

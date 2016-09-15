@@ -54,7 +54,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.showRaceModal = function(result) {
         ResultsService.showRaceFromResultModal(result).then(function(result) {});
     };
-    
+
 
 }]);
 
@@ -98,6 +98,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     } else {
         $scope.formData = {};
+        $scope.formData.race.nameDistance = null;
         $scope.formData.race = localStorageService.get('race');
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
@@ -212,13 +213,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.onMetersChange = function() {
         if ($scope.autoconvert) {
-            $scope.formData.racetype.miles = parseFloat($scope.formData.racetype.meters) * 0.000621371;
+            $scope.formData.race.racetype.miles = parseFloat($scope.formData.race.racetype.meters) * 0.000621371;
         }
     };
 
     $scope.onMilesChange = function() {
         if ($scope.autoconvert) {
-            $scope.formData.racetype.meters = parseFloat($scope.formData.racetype.miles) * 1609.3440;
+            $scope.formData.race.racetype.meters = parseFloat($scope.formData.race.racetype.miles) * 1609.3440;
         }
     };
 
@@ -250,13 +251,13 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
     $scope.race = race;
     var sum = 0;
     var count = 0;
-    for (i = 0; i <$scope.race.results.length; i++) {
+    for (i = 0; i < $scope.race.results.length; i++) {
         if ($scope.race.results[i].time !== 'undefined') {
             sum += $scope.race.results[i].time;
             count++;
         }
     }
-    if(count !== 0){
+    if (count !== 0) {
         $scope.avg = Math.ceil(sum / count);
     }
 
@@ -264,4 +265,9 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         $uibModalInstance.dismiss('cancel');
     };
 
+    $scope.getRaceTypeClass = function(s) {
+        if (s !== undefined) {
+            return s.replace(/ /g, '') + '-col';
+        }
+    };
 }]);

@@ -9,6 +9,7 @@ var SystemInfo = require('./systeminfo');
 // define the schema for our user model
 var raceSchema = mongoose.Schema({
     racename: String,
+    distanceName: String,
     racetype: {
         _id: mongoose.Schema.ObjectId,
         name: String,

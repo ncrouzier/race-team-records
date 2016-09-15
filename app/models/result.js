@@ -37,6 +37,7 @@ var resultSchema = mongoose.Schema({
     race:{
         _id: mongoose.Schema.ObjectId,
         racename: String,
+        distanceName: String,
         racetype: {
             _id: mongoose.Schema.ObjectId,
             name: String,

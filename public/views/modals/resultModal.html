@@ -51,20 +51,26 @@
             </div>
         </div>
         <div class="row" ng-show="formData.race.racetype.isVariable">
-            <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.meters.$invalid && !formresult.racetype.meters.$pristine}">
+            <div class="col-md-3">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.distanceName.$invalid && !formresult.race.distanceName.$pristine}">
+                    <label class="text-left">Distance Display Name:</label>
+                    <input type="text" name="displayName"  ng-model="formData.race.distanceName" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.meters.$invalid && !formresult.race.racetype.meters.$pristine}">
                     <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
                 </div>
             </div>
             <div class="col-md-1 text-center">
                 <label><small>Auto convert</small></label>
                 <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
             </div>
-            <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.racetype.miles.$invalid && !formresult.racetype.miles.$pristine}">
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.miles.$invalid && !formresult.race.racetype.miles.$pristine}">
                     <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" required>
+                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
                 </div>
             </div>
         </div>

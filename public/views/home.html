@@ -34,7 +34,12 @@
                             <small>{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                         </div>
                         <div class="col-sm-3">
-                             <span>{{ race.racetype.name}}</span> 
+                            <div ng-if="race.racetype.isVariable">
+                                {{race.distanceName}}
+                            </div>
+                            <div ng-if="!race.racetype.isVariable">
+                                {{race.racetype.name}}
+                            </div>
                         </div> 
                         <div class="col-sm-3">
                             {{ race.count }}

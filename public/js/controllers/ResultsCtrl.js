@@ -144,6 +144,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('gendertotal', $scope.formData.ranking.gendertotal);
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
 
+        if ($scope.formData.race.racetype.isVariable === false){
+            $scope.formData.race.distanceName = undefined;
+        }
+
         $uibModalInstance.close($scope.formData);
     };
 
@@ -169,6 +173,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         var r = $scope.formData.ranking;
         if ((r === null || r === undefined || r === "") || (r.agerank === null || r.agerank === undefined || r.agerank === "") && (r.agetotal === null || r.agetotal === undefined || r.agetotal === "") && (r.genderrank === null || r.genderrank === undefined || r.genderrank === "") && (r.gendertotal === null || r.gendertotal === undefined || r.gendertotal === "") && (r.overallrank === null || r.overallrank === undefined || r.overallrank === "") && (r.overalltotal === null || r.overalltotal === undefined || r.overalltotal === "")) {
             $scope.formData.ranking = undefined;
+        }
+
+        if ($scope.formData.race.racetype.isVariable === false){
+            console.log("in");
+            $scope.formData.race.distanceName = undefined;
         }
 
         $uibModalInstance.close($scope.formData);

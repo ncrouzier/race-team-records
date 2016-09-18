@@ -98,8 +98,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     } else {
         $scope.formData = {};
-        $scope.formData.race.nameDistance = null;
         $scope.formData.race = localStorageService.get('race');
+        $scope.formData.race.nameDistance = null;
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
         $scope.formData.ranking.agetotal = localStorageService.get('agetotal');
@@ -176,7 +176,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
 
         if ($scope.formData.race.racetype.isVariable === false){
-            console.log("in");
             $scope.formData.race.distanceName = undefined;
         }
 

@@ -144,7 +144,7 @@
         <uib-tab index="1" heading="Edit Race Results" select="initEdit()">
             <form name="formeditresult" class="bulkforms">
                 <div class="form-group">
-                    <ui-select ng-model="racetoedit.value" theme="select2"  style="min-width: 300px;" title="Choose a person">
+                    <ui-select ng-model="racetoedit.value" theme="select2"  style="min-width: 300px;" title="Choose a race">
                         <ui-select-match placeholder="Select a race">{{$select.selected.racename}}</ui-select-match>
                         <ui-select-choices repeat="race in racesList | propsFilter: {racename: $select.search, racedate: $select.search}">
                             <div ng-bind-html="race.racename | highlight: $select.search"></div>

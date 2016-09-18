@@ -7477,6 +7477,9 @@ footer {
 .orange {
   color: #FF8300;
 }
+.green {
+  color: #8cd98c;
+}
 .center {
   text-align: center;
 }
@@ -7506,7 +7509,7 @@ footer {
 }
 .searchclear {
   position: absolute;
-  right: 22px;
+  right: 22       px;
   top: 0;
   bottom: 0;
   height: 14px;

@@ -893,13 +893,18 @@ module.exports = function(app, qs, passport, async, _) {
 
     // get a racelist
     app.get('/api/races', function(req, res) {
-        var filters = req.query.filters;
         var sort = req.query.sort;
         var limit = req.query.limit;
-
         query = Race.find();
-        if (filters) {
 
+        if (req.query.filters) {
+            var filters = JSON.parse(req.query.filters);
+            if (filters.dateFrom) {
+                query.gte('racedate', new Date(filters.dateFrom));
+            }
+            if (filters.dateTo) {
+                query.lte('racedate', new Date(filters.dateTo));
+            }
         }
         if (sort) {
             query = query.sort(sort);

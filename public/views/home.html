@@ -35,7 +35,7 @@
                         </div>
                         <div class="col-sm-3">
                             <div ng-if="race.racetype.isVariable">
-                                {{race.distanceName}}
+                                {{race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{race.racetype.surface}})</span>
                             </div>
                             <div ng-if="!race.racetype.isVariable">
                                 {{race.racetype.name}}

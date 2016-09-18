@@ -44,6 +44,7 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
         }
     }).then(function(result) {
         $scope.milesRaced = parseFloat(result.milesRaced).toFixed(2);
+        $scope.currentYear = new Date().getFullYear();
     });
 
     //load result in cache

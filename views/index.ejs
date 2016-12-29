@@ -56,12 +56,12 @@
 					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>
-					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+					<li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>{{open}}
+					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)"> 
 				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        Admin tools <span class="caret"></span>
 				      </a>
-				      <ul class="uib-dropdown-menu">
+				      <ul class="dropdown-menu" uib-dropdown-menu>
 				        <li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
 				        <li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
 				       	<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
@@ -76,7 +76,7 @@
 				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
 				      </a>
-				      <ul class="uib-dropdown-menu">
+				      <ul class="dropdown-menu" uib-dropdown-menu>
 				        <li><a ui-sref="/profile">Profile</a></li>
 				        <li><a href="/logout">Logout</a></li>
 				      </ul>

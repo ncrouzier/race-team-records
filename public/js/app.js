@@ -48,9 +48,9 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
     });
 
     //load result in cache
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time'
-    }).then(function(results) {});
+    // ResultsService.getResultsWithCacheSupport({
+    //     "sort": '-race.racedate race.racename time'
+    // }).then(function(results) {});
 
 
 }]);

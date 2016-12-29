@@ -10,7 +10,7 @@ angular.module('mcrrcApp').factory('AuthService', function() {
 
         factory.isLoggedIn =function() {
             return (user) ? user : false;
-        };
+        }; 
     
     return factory;
 

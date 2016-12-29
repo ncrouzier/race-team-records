@@ -4,7 +4,7 @@
   "dependencies": {
     "angular": "~1.5.3",
     "angular-ui-router": "~0.2.18",
-    "angular-bootstrap": "~0.14.3",
+    "angular-bootstrap": "~2.3.2",
     "restangular": "~1.5.2",
     "angular-ui-select": "~0.16.0",
     "angular-sanitize": "~1.5.3",

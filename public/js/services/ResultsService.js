@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q', function(Restangular, UtilsService, $uibModal, $q) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService', function(Restangular, UtilsService, $uibModal, $q, localStorageService) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -19,15 +19,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     factory.getResultsWithCacheSupport = function(params) {
         return UtilsService.getSystemInfo('mcrrc').then(function(sysinfo) {
             var date = new Date(sysinfo.resultUpdate);
-            if (cachedResults === undefined || date > cachedResultsDate) {
+            if (localStorageService.get('cachedResults') === undefined || date > localStorageService.get('cachedResultsDate')) {
                 return results.getList(params).then(function(results) {
-                    cachedResultsDate = date;
-                    cachedResults = results;
+                    localStorageService.set('cachedResultsDate', date);
+                    localStorageService.set('cachedResults', results);
                     return results;
                 });
             } else {
                 return $q(function(resolve, reject) {
-                    resolve(cachedResults);
+                    resolve(localStorageService.get('cachedResults'));
                 });
             }
         });

@@ -18,16 +18,16 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     //retrieve results
     factory.getResultsWithCacheSupport = function(params) {
         return UtilsService.getSystemInfo('mcrrc').then(function(sysinfo) {
-            var date = new Date(sysinfo.resultUpdate);
-            if (localStorageService.get('cachedResults') === undefined || date > localStorageService.get('cachedResultsDate')) {
+            var date = new Date(sysinfo.resultUpdate);            
+            if (localStorageService.get('cachedResults') === undefined || date > new Date(localStorageService.get('cachedResultsDate'))) {
                 return results.getList(params).then(function(results) {
                     localStorageService.set('cachedResultsDate', date);
                     localStorageService.set('cachedResults', results);
                     return results;
-                });
+                }); 
             } else {
                 return $q(function(resolve, reject) {
-                    resolve(localStorageService.get('cachedResults'));
+                    resolve(Restangular.restangularizeCollection(null, localStorageService.get('cachedResults'), 'results',true));
                 });
             }
         });

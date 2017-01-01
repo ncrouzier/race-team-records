@@ -86,7 +86,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     if (result) {
         $scope.formData = result;
         $scope.editmode = true;
-        $scope.formData.dateofbirth = new Date();
         $scope.nbOfMembers = result.members.length;
         $scope.time = {};
 

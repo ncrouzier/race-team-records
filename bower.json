@@ -5,7 +5,7 @@
     "angular": "~1.5.3",
     "angular-ui-router": "~0.2.18",
     "angular-bootstrap": "~2.3.2",
-    "restangular": "~1.5.2",
+    "restangular": "~1.6.0",
     "angular-ui-select": "~0.16.0",
     "angular-sanitize": "~1.5.3",
     "angular-dialog-service": "~5.3.0",

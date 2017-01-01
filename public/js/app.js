@@ -20,6 +20,8 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
         id: "_id"
     });
 
+
+
     $http.get("/api/login").success(function(data, status) {
         AuthService.setUser(data.user);
     }).error(function(data) {
@@ -28,6 +30,11 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
     });
 }]);
 
+app.factory('MyCachingRestService', function(Restangular) {
+    return Restangular.withConfig(function(RestangularConfigurer) {
+        RestangularConfigurer.setDefaultHttpFields({cache: true});
+    });
+});
 
 
 angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService', function($scope, AuthService, $state, ResultsService) {
@@ -48,9 +55,9 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
     });
 
     //load result in cache
-    // ResultsService.getResultsWithCacheSupport({
-    //     "sort": '-race.racedate race.racename time'
-    // }).then(function(results) {});
+    ResultsService.getResultsWithCacheSupport({
+        "sort": '-race.racedate race.racename time'
+    }).then(function(results) {});
 
 
 }]);

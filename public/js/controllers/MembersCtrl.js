@@ -165,22 +165,25 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
 angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'member', function($scope, $uibModalInstance, $filter, member) {
+    
+    // make sure dates are always UTC
+    $scope.$watch('formData.dateofbirth ', function(date) {
+        $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
+    });
+
     $scope.editmode = false;
     if (member) {
         $scope.formData = member;
         $scope.editmode = true;
     } else {
-        $scope.formData = {
-            memberStatus: true
-        };
+        $scope.formData = {};
+        $scope.formData.memberStatus = 'current';
         $scope.editmode = false;
-        $scope.formData.dateofbirth = new Date();
     }
 
-    // make sure dates are always UTC
-    $scope.$watch('formData.dateofbirth ', function(date) {
-        $scope.formData.dateofbirth = $filter('date')(member.dateofbirth, 'yyyy-MM-dd', 'UTC');
-    });
+    
+
+
 
     $scope.addMember = function() {
         $uibModalInstance.close($scope.formData);

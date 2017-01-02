@@ -97,8 +97,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     } else {
         $scope.formData = {};
-        $scope.formData.race = localStorageService.get('race');
-        $scope.formData.race.nameDistance = null;
+        if(localStorageService.get('race') !== null){
+            $scope.formData.race = localStorageService.get('race');
+        }else{
+            $scope.formData.race = {};
+        }
+        
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
         $scope.formData.ranking.agetotal = localStorageService.get('agetotal');

@@ -135,7 +135,7 @@ module.exports = function(app, qs, passport, async, _) {
     app.get('/api/members', function(req, res) {
         var filters = req.query.filters;
         var sort = req.query.sort;
-        var limit = req.query.limit;
+        var limit = parseInt(req.query.limit);
 
         query = Member.find();
         if (filters) {
@@ -161,7 +161,7 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.sort(sort);
         }
         if (limit) {
-            query = query.limit(req.query.limit);
+            query = query.limit(limit);
         }
 
 
@@ -490,7 +490,7 @@ module.exports = function(app, qs, passport, async, _) {
     // get all results
     app.get('/api/results', function(req, res) {
         var sort = req.query.sort;
-        var limit = req.query.limit;
+        var limit = parseInt(req.query.limit);
 
         query = Result.find();
 
@@ -894,7 +894,7 @@ module.exports = function(app, qs, passport, async, _) {
     // get a racelist
     app.get('/api/races', function(req, res) {
         var sort = req.query.sort;
-        var limit = req.query.limit;
+        var limit = parseInt(req.query.limit);
         query = Race.find();
 
         if (req.query.filters) {
@@ -910,7 +910,7 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.sort(sort);
         }
         if (limit) {
-            query = query.limit(req.query.limit);
+            query = query.limit(limit);
         }
 
 
@@ -926,7 +926,7 @@ module.exports = function(app, qs, passport, async, _) {
     // get raceinfo list
     app.get('/api/raceinfos', function(req, res) {
         var sort = req.query.sort;
-        var limit = req.query.limit;
+        var limit = parseInt(req.query.limit);
         var resultId = req.query.resultId;
 
         query = Result.aggregate([
@@ -979,7 +979,7 @@ module.exports = function(app, qs, passport, async, _) {
         }
 
         if (limit) {
-            query = query.limit(parseInt(req.query.limit)); //no idea why I need to parse
+            query = query.limit(limit); //no idea why I need to parse
         }
 
         query.exec(function(err, results) {
@@ -1152,7 +1152,7 @@ module.exports = function(app, qs, passport, async, _) {
     app.get('/api/racetypes', function(req, res) {
 
         var sort = req.query.sort;
-        var limit = req.query.limit;
+        var limit = parseInt(req.query.limit)
         var surface = req.query.surface;
         var isVariable = req.query.isVariable;
 
@@ -1167,7 +1167,7 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.sort(sort);
         }
         if (limit) {
-            query = query.limit(req.query.limit);
+            query = query.limit(limit);
         }
 
         query.exec(function(err, racetypes) {

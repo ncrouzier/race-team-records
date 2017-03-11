@@ -27,7 +27,7 @@
         <div class="row">
             <div class="col-md-12">
                 <label class="text-left">Variable Distance?</label><br>
-                <button type="button" class="btn btn-primary" ng-model="formData.isVariable" btn-checkbox>
+                <button type="button" class="btn btn-primary" ng-model="formData.isVariable" ng-click="formData.isVariable = !formData.isVariable" btn-checkbox>
                     {{formData.isVariable}}
                 </button>
             </div>

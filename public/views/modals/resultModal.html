@@ -26,7 +26,7 @@
                 <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
                     <label class="text-left">Race Type:</label>
                     <br>
-                    <ui-select name="racetype" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;" required>
+                    <ui-select name="racetype" ng-disabled="formData.race.isMultisport" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;" >
                         <ui-select-match placeholder="Select a race type">
                             <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
                         </ui-select-match>
@@ -49,17 +49,17 @@
                 </div>
             </div>
         </div>
-        <div class="row" ng-show="formData.race.racetype.isVariable">
+        <div class="row" ng-show="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
             <div class="col-md-3">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.race.distanceName.$invalid && !formresult.race.distanceName.$pristine}">
                     <label class="text-left">Distance Display Name:</label>
-                    <input type="text" name="distanceName"  ng-model="formData.race.distanceName" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
+                    <input type="text" name="distanceName"  ng-model="formData.race.distanceName" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.meters.$invalid && !formresult.race.racetype.meters.$pristine}">
                     <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
+                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
                 </div>
             </div>
             <div class="col-md-1 text-center">
@@ -69,7 +69,7 @@
             <div class="col-md-4">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.miles.$invalid && !formresult.race.racetype.miles.$pristine}">
                     <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable">
+                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
                 </div>
             </div>
         </div>
@@ -151,7 +151,7 @@
                        <div class="form-group" >
                             <label class="text-left">Sport type:</label>
                             <div>
-                                <ui-select ng-required="!leg.isTransition"  ng-model="leg.legType" theme="select2" style="min-width: 60px;width: 100%;">{{sportList}}
+                                <ui-select ng-required="!leg.isTransition" ng-disabled="leg.isTransition"  ng-model="leg.legType" theme="select2" style="min-width: 60px;width: 100%;">{{sportList}}
                                     <ui-select-match placeholder="Sport?">{{$select.selected}}</ui-select-match>
                                     <ui-select-choices repeat="sport in sportList">
                                         <div ng-bind="sport"></div>

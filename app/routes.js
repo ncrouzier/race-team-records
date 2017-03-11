@@ -13,65 +13,65 @@ module.exports = function(app, qs, passport, async, _) {
         });
     });
 
-    // app.post('/api/login', function(req, res, next) {
-    //     passport.authenticate('local-login', function(err, user, info) {
-    //         if (err) {
-    //             return next(err);
-    //         }
-    //         if (!user) {
-    //             res.status(401).send(req.flash('loginMessage'));
-    //         } else {
-    //             req.logIn(user, function(err) {
-    //                 if (err) {
-    //                     return next(err);
-    //                 }
-    //                 res.status(200).send({
-    //                     message: req.flash('loginMessage'),
-    //                     user: req.user
-    //                 });
-    //             });
-    //         }
-    //     })(req, res, next);
-    // });
+    app.post('/api/login', function(req, res, next) {
+        passport.authenticate('local-login', function(err, user, info) {
+            if (err) {
+                return next(err);
+            }
+            if (!user) {
+                res.status(401).send(req.flash('loginMessage'));
+            } else {
+                req.logIn(user, function(err) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(200).send({
+                        message: req.flash('loginMessage'),
+                        user: req.user
+                    });
+                });
+            }
+        })(req, res, next);
+    });
 
     // process the login form
-    app.post('/api/login', passport.authenticate('local-login', {
-        successRedirect : '/profile', // redirect to the secure profile section
-        failureRedirect : '/login', // redirect back to the signup page if there is an error
-        failureFlash : true // allow flash messages
-    }));
+    // app.post('/api/login', passport.authenticate('local-login', {
+    //     successRedirect : '/profile', // redirect to the secure profile section
+    //     failureRedirect : '/login', // redirect back to the signup page if there is an error
+    //     failureFlash : true // allow flash messages
+    // }));
 
     // =====================================
     // SIGNUP ==============================
     // =====================================
     // show the signup form
-    app.get('/api/signup', function(req, res) {
-        console.log("caca");
-        // render the page and pass in any flash data if it exists
-        res.send({
-            message: req.flash('signupMessage')
-        });
-    });
-
-    // app.post('/api/signup', function(req, res, next) {
-    //     console.log(req);
-    //     passport.authenticate('local-signup', function(err, user, info) {
-    //         console.log(err);
-    //         if (err) {
-    //             return next(err);
-    //         }
-    //         if (!user) {
-    //             res.status(401).send(req.flash('signupMessage'));
-    //         } else {
-    //             req.logIn(user, function(err) {
-    //                 if (err) {
-    //                     return next(err);
-    //                 }
-    //                 res.status(200).send(req.flash('signupMessage'));
-    //             });
-    //         }
-    //     })(req, res, next);
+    // app.get('/api/signup', function(req, res) {
+    //     console.log("caca");
+    //     // render the page and pass in any flash data if it exists
+    //     res.send({
+    //         message: req.flash('signupMessage')
+    //     });
     // });
+
+    app.post('/api/signup', function(req, res, next) {
+        console.log(req);
+        passport.authenticate('local-signup', function(err, user, info) {
+            console.log(err);
+            if (err) {
+                return next(err);
+            }
+            if (!user) {
+                res.status(401).send(req.flash('signupMessage'));
+            } else {
+                req.logIn(user, function(err) {
+                    if (err) {
+                        return next(err);
+                    }
+                    res.status(200).send(req.flash('signupMessage'));
+                });
+            }
+        })(req, res, next);
+    });
 
     app.post('/api/signup', passport.authenticate('local-signup', {
         successRedirect : '/profile', // redirect to the secure profile section
@@ -461,7 +461,7 @@ module.exports = function(app, qs, passport, async, _) {
                             if (err) {
                                 res.send(err);
                             }
-                            if (ag && res.members.length === 1) { //do not deal with multiple racers
+                            if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
                                 if (ag[res.racetype.name.toLowerCase()] !== undefined) {
                                     agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
                                     res.agegrade = agegrade;
@@ -617,9 +617,6 @@ module.exports = function(app, qs, passport, async, _) {
         }
 
 
-        if (members.length === 1) {
-
-        }
 
 
         AgeGrading.findOne({
@@ -630,7 +627,7 @@ module.exports = function(app, qs, passport, async, _) {
             var agegrade;
             if (err)
                 console.log("error fetching agegrading")
-            if (ag && members.length === 1) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
@@ -731,7 +728,7 @@ module.exports = function(app, qs, passport, async, _) {
             var agegrade;
             if (err)
                 console.log("error fetching agegrading")
-            if (ag && members.length === 1) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }

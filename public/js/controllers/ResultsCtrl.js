@@ -77,6 +77,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         sort: 'meters'
     }).then(function(racetypes) {
         $scope.racetypesList = racetypes;
+
+        racetypes.forEach(function(r) {
+            if (r.name === 'Multisport'){//this needs to be added to racetypes
+                $scope.multisportRacetype = r;
+            }
+        });
     });
 
     $scope.sportList = ['swim','bike','run'];
@@ -100,14 +106,15 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.time.seconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) / 100);
         $scope.time.centiseconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) % 100);
 
-
-        $scope.formData.legs.forEach(function(l) {
-            l.timeExp = {};
-            l.timeExp.hours = Math.floor(l.time / 360000);
-            l.timeExp.minutes = Math.floor(((l.time % 8640000) % 360000) / 6000);
-            l.timeExp.seconds = Math.floor((((l.time % 8640000) % 360000) % 6000) / 100);
-            l.timeExp.centiseconds = Math.floor((((l.time % 8640000) % 360000) % 6000) % 100);
-        });
+        if( $scope.formData.legs !== null){
+            $scope.formData.legs.forEach(function(l) {
+                l.timeExp = {};
+                l.timeExp.hours = Math.floor(l.time / 360000);
+                l.timeExp.minutes = Math.floor(((l.time % 8640000) % 360000) / 6000);
+                l.timeExp.seconds = Math.floor((((l.time % 8640000) % 360000) % 6000) / 100);
+                l.timeExp.centiseconds = Math.floor((((l.time % 8640000) % 360000) % 6000) % 100);
+            });
+        }
 
     } else {
         $scope.editmode = false;
@@ -181,8 +188,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('gendertotal', $scope.formData.ranking.gendertotal);
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
 
-        if ($scope.formData.race.racetype.isVariable === false){
+        if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
+        }
+
+        if ($scope.formData.race.racetype.surface === 'multiple'){
+            $scope.formData.race.racetype.meters = 0;
+            $scope.formData.race.racetype.miles = 0;
         }
 
         $uibModalInstance.close($scope.formData);
@@ -224,9 +236,15 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             });
         }
 
-        if ($scope.formData.race.racetype.isVariable === false){
+        if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
         }
+
+        if ($scope.formData.race.racetype.surface === 'multiple'){
+            $scope.formData.race.racetype.meters = 0;
+            $scope.formData.race.racetype.miles = 0;
+        }
+
 
         $uibModalInstance.close($scope.formData);
     };
@@ -292,6 +310,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.formData.race.isMultisport) {
             $scope.formData.legs = []; 
             $scope.formData.legs[0] = {};
+            $scope.formData.race.racetype = $scope.multisportRacetype;
         }else{
             $scope.formData.legs = null;
         }

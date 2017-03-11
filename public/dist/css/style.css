@@ -7326,6 +7326,9 @@ footer {
 .other-col {
   color: #f3f78c;
 }
+.multiple-col {
+  color: #ffa500;
+}
 .tracksurface-bg {
   background: #ad757f;
 }
@@ -7340,6 +7343,9 @@ footer {
 }
 .othersurface-bg {
   background: #f3f78c;
+}
+.multiplesurface-bg {
+  background: #ffa500;
 }
 .gold {
   background: #f3da1d;

@@ -44,22 +44,24 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            <span class="hoverhandandunderline" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span><span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i>
+                            <span class="hoverhandandunderline" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span> <span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span>
                             <br>
-                            <small>{{ result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                            <small>{{result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                         </div>
                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
+                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
                         </div>
-                        <div class="col-sm-2">
+                        <div class="col-sm-2" ng-show="!result.race.isMultisport">
                             <result-pace></result-pace>
+                        </div>
+                        <div class="col-sm-2" ng-show="result.race.isMultisport">
+                            <span  class="hoverhandandunderline" title="View details" ng-click="showResultDetailsModal(result)" >View details</span>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
                             <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result" ></i> </span >
                         </div>
                     </div>                 
                 </li>
-                <!-- <li dir-paginate="result in resultsList | itemsPerPage: 10">{{ result.racename }}</li> -->
             </ul>
         </div>
     </div>

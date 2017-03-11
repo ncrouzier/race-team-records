@@ -26,26 +26,26 @@
                         </div>
                     </div>
                 </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="race in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false" >
+                <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false" >
                     <div class="row" >
                         <div class="col-sm-3">
-                            <span class="hoverhandandunderline bold" ng-click="showRaceModal(race)" >{{race.racename }}</span>
+                            <span class="hoverhandandunderline bold" ng-click="showRaceModal(raceinfo)" >{{raceinfo.race.racename }}</span>
                             <br>
-                            <small>{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                            <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                         </div>
                         <div class="col-sm-3">
-                            <div ng-if="race.racetype.isVariable">
-                                {{race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{race.racetype.surface}})</span>
+                            <div ng-if="raceinfo.race.racetype.isVariable">
+                                {{raceinfo.race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.race.racetype.surface}})</span>
                             </div>
-                            <div ng-if="!race.racetype.isVariable">
-                                {{race.racetype.name}}
+                            <div ng-if="!raceinfo.race.racetype.isVariable">
+                                {{raceinfo.race.racetype.name}}
                             </div>
                         </div> 
                         <div class="col-sm-3">
-                            {{ race.count }}
+                            {{ raceinfo.count }}
                         </div> 
                         <div class="col-sm-3">
-                            <span>{{race.results[0].time | secondsToTimeString}}</span>
+                            <span>{{raceinfo.results[0].time | secondsToTimeString}}</span>
                         </div> 
                     </div>
                  

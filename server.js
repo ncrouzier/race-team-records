@@ -32,12 +32,12 @@ app.use(favicon(__dirname + '/public/images/favicon.ico'));
 
 // configuration ===============================================================
 // mongoose.connect(configDB.url); // connect to our database
-
-if (process.env.MLAB_MONGODB_DB_URL) { // MLAB
+if (process.env.MLAB_MONGODB_DB_URL) {
 	mongoose.connect(process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords');
 } else if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records');
 } else {
+	// mongoose.connect(process.env.MLAB_MONGODB_URL);
     mongoose.connect('mongodb://127.0.0.1:27017/records'); // connect to our database
 }
 

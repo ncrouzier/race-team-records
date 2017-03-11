@@ -55,7 +55,8 @@ angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$sco
         },
         members: [{ }],
         race:{
-            racedate:new Date() },
+            racedate:new Date($filter('date')(new Date().setHours(0,0,0,0), "yyyy-MM-dd", 'UTC'))
+        },
         comments: undefined,
         resultlink: undefined
     };

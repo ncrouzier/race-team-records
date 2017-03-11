@@ -13,55 +13,71 @@ module.exports = function(app, qs, passport, async, _) {
         });
     });
 
-    app.post('/api/login', function(req, res, next) {
-        passport.authenticate('local-login', function(err, user, info) {
-            if (err) {
-                return next(err);
-            }
-            if (!user) {
-                res.status(401).send(req.flash('loginMessage'));
-            } else {
-                req.logIn(user, function(err) {
-                    if (err) {
-                        return next(err);
-                    }
-                    res.status(200).send({
-                        message: req.flash('loginMessage'),
-                        user: req.user
-                    });
-                });
-            }
-        })(req, res, next);
-    });
+    // app.post('/api/login', function(req, res, next) {
+    //     passport.authenticate('local-login', function(err, user, info) {
+    //         if (err) {
+    //             return next(err);
+    //         }
+    //         if (!user) {
+    //             res.status(401).send(req.flash('loginMessage'));
+    //         } else {
+    //             req.logIn(user, function(err) {
+    //                 if (err) {
+    //                     return next(err);
+    //                 }
+    //                 res.status(200).send({
+    //                     message: req.flash('loginMessage'),
+    //                     user: req.user
+    //                 });
+    //             });
+    //         }
+    //     })(req, res, next);
+    // });
+
+    // process the login form
+    app.post('/api/login', passport.authenticate('local-login', {
+        successRedirect : '/profile', // redirect to the secure profile section
+        failureRedirect : '/login', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+    }));
 
     // =====================================
     // SIGNUP ==============================
     // =====================================
     // show the signup form
     app.get('/api/signup', function(req, res) {
+        console.log("caca");
         // render the page and pass in any flash data if it exists
         res.send({
             message: req.flash('signupMessage')
         });
     });
 
-    app.post('/api/signup', function(req, res, next) {
-        passport.authenticate('local-signup', function(err, user, info) {
-            if (err) {
-                return next(err);
-            }
-            if (!user) {
-                res.status(401).send(req.flash('signupMessage'));
-            } else {
-                req.logIn(user, function(err) {
-                    if (err) {
-                        return next(err);
-                    }
-                    res.status(200).send(req.flash('signupMessage'));
-                });
-            }
-        })(req, res, next);
-    });
+    // app.post('/api/signup', function(req, res, next) {
+    //     console.log(req);
+    //     passport.authenticate('local-signup', function(err, user, info) {
+    //         console.log(err);
+    //         if (err) {
+    //             return next(err);
+    //         }
+    //         if (!user) {
+    //             res.status(401).send(req.flash('signupMessage'));
+    //         } else {
+    //             req.logIn(user, function(err) {
+    //                 if (err) {
+    //                     return next(err);
+    //                 }
+    //                 res.status(200).send(req.flash('signupMessage'));
+    //             });
+    //         }
+    //     })(req, res, next);
+    // });
+
+    app.post('/api/signup', passport.authenticate('local-signup', {
+        successRedirect : '/profile', // redirect to the secure profile section
+        failureRedirect : '/api/signup', // redirect back to the signup page if there is an error
+        failureFlash : true // allow flash messages
+    }));
 
     // =====================================
     // PROFILE SECTION =====================
@@ -191,7 +207,7 @@ module.exports = function(app, qs, passport, async, _) {
 
 
     app.get('/api/members/:member_id/pbs', function(req, res) {
-        var pbraces = ['1 mile', '5k', '8k', '10k', '10 miles', 'Half Marathon', 'Marathon'];
+        var pbraces = ['1 mile', '5k', '5 miles', '10k', '10 miles', 'Half Marathon', 'Marathon'];
         var pbs = [];
         var calls = [];
 
@@ -542,7 +558,7 @@ module.exports = function(app, qs, passport, async, _) {
 
             if (err) {
                 res.send(err)
-            } else {
+            } else { 
                 var filteredResult = results;
                 if (req.query.filters) {
                     var filters = JSON.parse(req.query.filters);
@@ -600,6 +616,7 @@ module.exports = function(app, qs, passport, async, _) {
             });
         }
 
+
         if (members.length === 1) {
 
         }
@@ -624,6 +641,7 @@ module.exports = function(app, qs, passport, async, _) {
             //does the race exists?
             Race.findOne({
                 'racename': req.body.race.racename,
+                'isMultisport': req.body.race.isMultisport,
                 'distanceName': req.body.race.distanceName,
                 'racedate': req.body.race.racedate,
                 'racetype._id': req.body.race.racetype._id
@@ -634,9 +652,10 @@ module.exports = function(app, qs, passport, async, _) {
                     if (!race) { //if race does not exists
                         Race.create({
                             racename: req.body.race.racename,
+                            isMultisport: req.body.race.isMultisport,
                             distanceName: req.body.race.distanceName,
                             racedate: req.body.race.racedate,
-                            racetype: req.body.race.racetype
+                            racetype: req.body.race.racetype                            
                         }, function(err, r) {
                             if (err) {
                                 res.send(err);
@@ -646,6 +665,7 @@ module.exports = function(app, qs, passport, async, _) {
                                     race: r,
                                     members: members,
                                     time: req.body.time,
+                                    legs: req.body.legs,
                                     ranking: req.body.ranking,
                                     comments: req.body.comments,
                                     resultlink: req.body.resultlink,
@@ -666,6 +686,7 @@ module.exports = function(app, qs, passport, async, _) {
                             race: race,
                             members: members,
                             time: req.body.time,
+                            legs: req.body.legs,
                             ranking: req.body.ranking,
                             comments: req.body.comments,
                             resultlink: req.body.resultlink,
@@ -721,6 +742,7 @@ module.exports = function(app, qs, passport, async, _) {
                 //does the race exists?
                 Race.findOne({
                     'racename': req.body.race.racename,
+                    'isMultisport':req.body.race.isMultisport,
                     'distanceName': req.body.race.distanceName,
                     'racedate': req.body.race.racedate,
                     'racetype._id': req.body.race.racetype._id
@@ -731,6 +753,7 @@ module.exports = function(app, qs, passport, async, _) {
                         if (!race) { //if race does not exists
                             Race.create({
                                 racename: req.body.race.racename,
+                                isMultisport: req.body.race.isMultisport,
                                 distanceName: req.body.race.distanceName,
                                 racedate: req.body.race.racedate,
                                 racetype: req.body.race.racetype
@@ -740,6 +763,7 @@ module.exports = function(app, qs, passport, async, _) {
                                 } else {
                                     result.race._id = r._id;
                                     result.race.racename = r.racename;
+                                    result.race.isMultisport = r.isMultisport;
                                     result.race.distanceName = r.distanceName;
                                     result.race.racedate = r.racedate;
                                     result.race.racetype = {
@@ -752,11 +776,12 @@ module.exports = function(app, qs, passport, async, _) {
                                     };
                                     result.members = members;
                                     result.time = req.body.time;
+                                    result.legs = req.body.legs;
                                     result.ranking = req.body.ranking;
                                     result.comments = req.body.comments;
                                     result.resultlink = req.body.resultlink;
                                     result.agegrade = agegrade,
-                                        result.is_accepted = req.body.is_accepted;
+                                    result.is_accepted = req.body.is_accepted;
                                     result.save(function(err) {
                                         if (err) {
                                             res.send(err);
@@ -792,6 +817,7 @@ module.exports = function(app, qs, passport, async, _) {
                             //the race is updated here but this should not be necessary (no changes)
                             result.race._id = race._id;
                             result.race.racename = race.racename;
+                            result.race.isMultisport = race.isMultisport;
                             result.race.distanceName = race.distanceName;
                             result.race.racedate = race.racedate;
                             result.race.racetype = {
@@ -805,6 +831,7 @@ module.exports = function(app, qs, passport, async, _) {
 
                             result.members = members;
                             result.time = req.body.time;
+                            result.legs = req.body.legs;
                             result.ranking = req.body.ranking;
                             result.comments = req.body.comments;
                             result.resultlink = req.body.resultlink;
@@ -934,6 +961,7 @@ module.exports = function(app, qs, passport, async, _) {
             {
                 $project: {
                     race: '$race', // we need this field
+                    legs: '$legs',
                     members: {
                         members: '$members',
                         time: '$time',
@@ -941,7 +969,8 @@ module.exports = function(app, qs, passport, async, _) {
                         category: '$category',
                         resultlink: '$resultlink',
                         ranking: '$ranking',
-                        result_id: '$_id'
+                        result_id: '$_id',
+                        legs: '$legs'
                     }
                 }
             }, {
@@ -950,10 +979,11 @@ module.exports = function(app, qs, passport, async, _) {
             }, {
                 $group: {
                     _id: '$race._id',
-                    racename: { $first: '$race.racename' },
-                    distanceName: {$first: '$race.distanceName' },
-                    racedate: { $first: '$race.racedate' },
-                    racetype: { $first: '$race.racetype' },
+                    // racename: { $first: '$race.racename' },
+                    // distanceName: {$first: '$race.distanceName' },
+                    // racedate: { $first: '$race.racedate' },
+                    // racetype: { $first: '$race.racetype' },
+                    race: { $first: '$race' },
                     results: { $addToSet: '$members' },
                     count: { $sum: 1 }
                 }
@@ -967,10 +997,10 @@ module.exports = function(app, qs, passport, async, _) {
         if (req.query.filters) {
             var filters = JSON.parse(req.query.filters);
             if (filters.dateFrom) {
-                query = query.match({ racedate: { $gte: new Date(filters.dateFrom) } });
+                query = query.match({ 'race.racedate': { $gte: new Date(filters.dateFrom) } });
             }
             if (filters.dateTo) {
-                query = query.match({ racedate: { $lte: new Date(filters.dateTo) } });
+                query = query.match({ 'race.racedate': { $lte: new Date(filters.dateTo) } });
             }
         }
 

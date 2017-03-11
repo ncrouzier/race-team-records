@@ -34,6 +34,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
 
+
     //retrieve results
     factory.getResults = function(params) {
         return results.getList(params).then(function(results) {
@@ -128,7 +129,22 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         }
     };
 
-
+    factory.showResultDetailsModal = function(result,race) {
+            var modalInstance = $uibModal.open({
+                templateUrl: 'views/modals/resultDetailsModal.html',
+                controller: 'ResultDetailslInstanceController',
+                size: 'lg',
+                resolve: {
+                    result: result,
+                    race: race
+                }
+            });
+            return modalInstance.result.then(function() {  
+                return null;
+            }, function() {
+                return null;
+            });        
+    };
 
     // =====================================
     // RACE MODALS =========================
@@ -163,7 +179,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                         controller: 'RaceModalInstanceController',
                         size: 'lg',
                         resolve: {
-                            race: races[0]
+                            raceinfo: races[0]
                         }
                     });
                     modalInstance.result.then(function() {  
@@ -181,16 +197,17 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 controller: 'RaceModalInstanceController',
                 size: 'lg',
                 resolve: {
-                    race: raceinfo
+                    raceinfo: raceinfo
                 }
             });
             return modalInstance.result.then(function() {  
                 return null;
             }, function() {
                 return null;
-            });      
-           
+            });        
     };
+
+    
 
     // =====================================
     // RACETYPE API CALLS ==================

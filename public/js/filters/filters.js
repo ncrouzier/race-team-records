@@ -2,9 +2,9 @@ var app = angular.module('mcrrcApp');
 
 app.filter('secondsToTimeStringLong', function() {
     return function(centisec) {
-        var hours = Math.floor((centisec % 8640000) / 360000);
+        var hours = Math.floor(centisec / 360000);
         var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
-        var seconds = Math.floor((((sec % 8640000) % 360000) % 6000) / 100);
+        var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
         var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
         var timeString = '';
         if (hours > 0) timeString += (hours > 1) ? (hours + " hours ") : (hours + " hour ");
@@ -16,7 +16,7 @@ app.filter('secondsToTimeStringLong', function() {
 
 
 function secondsToTimeString(centisec) {
-    var hours = Math.floor((centisec % 8640000) / 360000);
+    var hours = Math.floor(centisec / 360000);
     var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
     var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
     var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
@@ -45,7 +45,7 @@ function secondsToTimeString(centisec) {
 
 app.filter('secondsToTimeString', function() {
     return function(centisec) {
-        var hours = Math.floor((centisec % 8640000) / 360000);
+        var hours = Math.floor(centisec / 360000);
         var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
         var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
         var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
@@ -80,7 +80,7 @@ app.filter('secondsToTimeString', function() {
 
 app.filter('secondsToTimeDiff', function() {
     return function(centisec) {
-        var hours = Math.floor((centisec % 8640000) / 360000);
+        var hours = Math.floor(centisec/ 360000);
         var minutes = Math.floor(((centisec % 8640000) % 360000) / 6000);
         var seconds = Math.floor((((centisec % 8640000) % 360000) % 6000) / 100);
         var centiseconds = Math.floor((((centisec % 8640000) % 360000) % 6000) % 100);
@@ -142,6 +142,66 @@ app.filter('resultToPace', function() {
         return m + ":" + s;
     };
 });
+
+app.filter('legToSwimPace', function() {
+    return function(leg) {
+        //round up!
+        var seconds = Math.ceil(leg.time / 100);
+        var distance = leg.meters;
+        
+        var m = Math.floor(distance/seconds);
+        var s = Math.round(((distance/seconds % 1)*60));
+        if (s === 60) { m = m + 1;
+            s = 0; }
+
+        if (s < 10) s = "0" + s;
+        return m + ":" + s;
+    };
+});
+
+app.filter('legToRunPace', function() {
+    return function(leg) {
+        //round up!
+        var seconds = Math.ceil(leg.time / 100);
+        var distance = leg.miles;
+
+        var m = Math.floor((seconds / 60) / distance);
+        var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
+        if (s === 60) { m = m + 1; s = 0; }
+
+        if (s < 10) s = "0" + s;
+        return m + ":" + s;
+    };
+});
+
+app.filter('legToBikePace', function() {
+    return function(leg) {
+        //round up!
+        var hours = leg.time / 360000;
+        var distance = leg.miles;
+        var mph = Math.floor(distance/hours);
+        return mph;
+    };
+});
+
+app.filter('resultSportIcons', function() {
+    return function(result) {
+        var res = " ";
+        if( result.legs){
+            result.legs.forEach(function(leg) {
+                if(leg.legType ==='swim'){
+                    res += '<span class="hoverhand" title="swim ('+leg.distanceName+')">🏊</span>';
+                }else if(leg.legType ==='bike'){
+                    res += '<span class="hoverhand" title="bike ('+leg.distanceName+')">🚴</span>';
+                }else if(leg.legType ==='run'){
+                    res += '<span class="hoverhand" title="run ('+leg.distanceName+')">🏃</span>';
+                }
+            });
+        }
+        return res;
+    };
+});
+
 
 
 

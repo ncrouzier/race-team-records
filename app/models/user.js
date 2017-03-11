@@ -18,8 +18,6 @@ userSchema.pre('save', function(next, done) {
         this.createdAt = Date.now();
     }
     this.updatedAt = Date.now();
-
-    this.updateCategory();
     next();
 });
 

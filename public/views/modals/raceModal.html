@@ -1,13 +1,13 @@
 <div class="modal-header">
-    <span class="modal-title h3 bold"> {{race.racename}}</span> -- <span ng-show="race.racetype.isVariable === true" ng-bind-html="(race.distanceName +' <span class=\''+getRaceTypeClass(race.racetype.surface)+'\'>(' + race.racetype.surface +')</span>')"></span><span ng-show="race.racetype.isVariable === false" ng-bind-html="(race.racetype.name +' <span class=\''+getRaceTypeClass(race.racetype.surface)+'\'>(' + race.racetype.surface +')</span>')"></span>  -- <span >{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</span>
-    <br>{{race.results.length}} racer<span ng-show="race.results.length > 1">s</span>
+    <span class="modal-title h3 bold"> {{raceinfo.race.racename}}</span> -- <span ng-show="raceinfo.race.racetype.isVariable === true" ng-bind-html="(raceinfo.race.distanceName +' <span class=\''+getRaceTypeClass(raceinfo.race.racetype.surface)+'\'>(' + raceinfo.race.racetype.surface +')</span>')"></span><span ng-show="raceinfo.race.racetype.isVariable === false" ng-bind-html="(raceinfo.race.racetype.name +' <span class=\''+getRaceTypeClass(raceinfo.race.racetype.surface)+'\'>(' + raceinfo.race.racetype.surface +')</span>')"></span>  -- <span >{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}</span>
+    <br>{{raceinfo.results.length}} racer<span ng-show="raceinfo.results.length > 1">s</span>
     <br>Average time: {{avg | secondsToTimeString}}
 </div>
 <div class="modal-body" style ="padding: 0px;">
     <div id="member-list" class="row">
         <div class="col-md-12">
             <ul class="results-list list-group" style="margin-bottom: 0px;">
-                <li class="list-group-item text-left resultlistheader" ng-show="race.results.length >0">
+                <li class="list-group-item text-left resultlistheader" ng-show="raceinfo.results.length >0">
                     <div class="row">
                         <div class="col-sm-3">
                             <span class="listheader" title="Race's name">Racer</span>
@@ -29,16 +29,19 @@
                         </div>
                     </div>
                 </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="result in race.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                <li class="list-group-item text-left resultlistrow" ng-repeat="result in raceinfo.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                     <div class="row">
                         <div class="col-sm-3">
-                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter:race | cut:false:25:"..."}}</span></a>
+                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo.race}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}</span></a>
                         </div>
                         <div class="col-sm-3">
                             <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
                         </div>
-                        <div class="col-sm-3">
-                            <span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=90" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>World Class</span>'" | unsafe>{{result | resultToPace:race}} <i  class="ageworld fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=80 && result.agegrade<90" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>National Class</span>'" | unsafe>{{result | resultToPace:race}} <i class="agenational fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade>=70 && result.agegrade<80" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span><br><span>Regional Class</span>'" | unsafe>{{result | resultToPace:race}} <i class="ageregional fa fa-star"></i></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade<70" uib-tooltip-html="'<span>Age Grade: {{result.agegrade}}%</span>'" | unsafe>{{result | resultToPace:race}}</span><span ng-show="result.agegrade === undefined">{{result | resultToPace:race}} </span>
+                        <div class="col-sm-2" ng-show="!raceinfo.race.isMultisport">
+                            <result-pace-raceinfo></result-pace-raceinfo>
+                        </div>
+                        <div class="col-sm-2" ng-show="raceinfo.race.isMultisport">
+                            <span  class="hoverhandandunderline" title="View details" ng-click="showResultDetailsModal(result,raceinfo.race)" >View details</span>
                         </div>
                         <div class="col-sm-1">
                             <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>

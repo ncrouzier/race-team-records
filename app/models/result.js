@@ -8,16 +8,6 @@ var SystemInfo = require('./systeminfo');
 
 // define the schema for our user model
 var resultSchema = mongoose.Schema({
-    // racename: String,
-    // racetype: {
-    //     _id: mongoose.Schema.ObjectId,
-    //     name: String,
-    //     surface: String,
-    //     meters: Number,
-    //     miles: Number,
-    //     isVariable: Boolean
-    // },
-    // racedate: Date,
     time: Number,
     ranking: {
         agerank: Number,
@@ -38,6 +28,8 @@ var resultSchema = mongoose.Schema({
         _id: mongoose.Schema.ObjectId,
         racename: String,
         distanceName: String,
+        racedate: Date,
+        isMultisport: Boolean,
         racetype: {
             _id: mongoose.Schema.ObjectId,
             name: String,
@@ -45,9 +37,18 @@ var resultSchema = mongoose.Schema({
             meters: Number,
             miles: Number,
             isVariable: Boolean
-        },
-        racedate: Date
+        }
     },
+    legs:[{ //for multisport
+        order:Number,
+        legName:String, 
+        legType:String, //run,swim,bike
+        time: Number,
+        meters: Number,
+        miles: Number,
+        distanceName: String,
+        isTransition:Boolean
+    }],
     category: String,
     comments: String,
     resultlink: String,

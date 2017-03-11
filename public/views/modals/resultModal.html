@@ -127,6 +127,94 @@
         </div>
         <div class="row">
             <div class="col-md-12">
+                <label class="text-left">Is MultiSport?</label> 
+                 <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()" > <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport"  ng-click="formData.legs.push({});"></i>
+            </div>
+        </div>
+        <div class="row" ng-class="$even?'lightbluebg':''" ng-show="formData.race.isMultisport" ng-repeat="leg in formData.legs track by $index">
+           <div class="col-md-12">
+                <div class="row">
+
+                    <div class="col-md-1 text-center">
+                        <div class="form-group" >
+                            <label class="text-left">Transition?</label>
+                            <input type="checkbox" ng-model="leg.isTransition" ng-checked="leg.isTransition">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group" >
+                            <label class="text-left">Leg name:</label>
+                            <input type="text" name="legname" class="form-control  text-left" ng-model="leg.legName" ng-required="leg.isTransition"  required auto-focus>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                       <div class="form-group" >
+                            <label class="text-left">Sport type:</label>
+                            <div>
+                                <ui-select ng-required="!leg.isTransition"  ng-model="leg.legType" theme="select2" style="min-width: 60px;width: 100%;">{{sportList}}
+                                    <ui-select-match placeholder="Sport?">{{$select.selected}}</ui-select-match>
+                                    <ui-select-choices repeat="sport in sportList">
+                                        <div ng-bind="sport"></div>
+                                    </ui-select-choices>
+                                </ui-select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                       <div class="form-group" >
+                            <label class="text-left">Miles:</label>
+                            <input type="text" name="miles" class="form-control  text-left" ng-model="leg.miles"   ng-required="!leg.isTransition"  ng-disabled="leg.isTransition" ng-change="updateMeters(leg)" required auto-focus>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                       <div class="form-group" >
+                            <label class="text-left">Meters:</label>
+                            <input type="text" name="meters" class="form-control  text-left" ng-model="leg.meters"  ng-required="!leg.isTransition"  ng-disabled="leg.isTransition" ng-change="updateMiles(leg)" required auto-focus>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                       <div class="form-group" >
+                            <label class="text-left">Distance Name:</label>
+                            <input type="text" name="distanceName" class="form-control  text-left" ng-model="leg.distanceName" ng-required="!leg.isTransition" ng-disabled="leg.isTransition" required auto-focus>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group" >
+                            <label class=" text-left">Hours:</label>
+                            <input type="text" ng-model="leg.timeExp.hours" only-digits class="form-control input-md text-left" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group" >
+                            <label class="text-left">Minutes:</label>
+                            <input type="text" ng-model="leg.timeExp.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group" >
+                            <label class="text-left">Seconds:</label>
+                            <input type="text" ng-model="leg.timeExp.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group" >
+                            <label class="text-left">Centiseconds:</label>
+                            <input type="text" ng-model="leg.timeExp.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group" >
+                            <label class="text-left">Controls</label><br>
+                            <i ng-show="$index >0" class="red hoverhand fa fa-trash-o" ng-click="formData.legs.splice($index, 1);" title="Clear form" ></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
                 <label class="text-left">Comments/remarks</label>
                 <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
             </div>

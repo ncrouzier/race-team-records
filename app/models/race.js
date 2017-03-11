@@ -10,6 +10,8 @@ var SystemInfo = require('./systeminfo');
 var raceSchema = mongoose.Schema({
     racename: String,
     distanceName: String,
+    racedate: Date,
+    isMultisport: Boolean,
     racetype: {
         _id: mongoose.Schema.ObjectId,
         name: String,
@@ -18,7 +20,6 @@ var raceSchema = mongoose.Schema({
         miles: Number,
         isVariable: Boolean
     },
-    racedate: Date,
     createdAt: Date,
     updatedAt: Date
 

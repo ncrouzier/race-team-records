@@ -36,7 +36,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             "sort": '-count',
             "filters": {
                 "dateFrom": fromDate,
-                "dateTo": toDate
+                "dateTo": toDate-1
             }
         }).then(function(races) {
             $scope.racesList = races;
@@ -53,7 +53,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         ResultsService.getMilesRaced({
             "filters": {
                 "dateFrom": fromDate,
-                "dateTo": toDate
+                "dateTo": toDate-1
             }
         }).then(function(result) {
             $scope.miscStats.milesRaced = parseFloat(result.milesRaced).toFixed(2);
@@ -90,7 +90,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             sort: '-racedate',
             "filters": {
                 "dateFrom": fromDate,
-                "dateTo": toDate
+                "dateTo": toDate-1
             }
         }).then(function(races) {
             if (races !== undefined && races.length >0){
@@ -144,6 +144,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 $scope.attendanceStats.selectedAttendanceRaces.push([item.racename,resultarray,foundRunners,numberOfRacer]);
 
             });
+    };
+    $scope.getRaceTypeClass = function(s) {
+        if (s !== undefined) {
+            return s.replace(/ /g, '') + '-col';
+        }
     };
 
     $scope.removeRace = function(index){

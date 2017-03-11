@@ -106,7 +106,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.time.seconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) / 100);
         $scope.time.centiseconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) % 100);
 
-        if( $scope.formData.legs !== null){
+        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
             $scope.formData.legs.forEach(function(l) {
                 l.timeExp = {};
                 l.timeExp.hours = Math.floor(l.time / 360000);
@@ -167,7 +167,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             return [value];
         });
 
-        if( $scope.formData.legs !== null){
+        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
             $scope.formData.legs.forEach(function(l,i) {
                 l.order = i;
                 if (l.timeExp === undefined){l.timeExp ={};}
@@ -224,7 +224,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.ranking = undefined;
         }
 
-        if( $scope.formData.legs !== null){
+        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
             $scope.formData.legs.forEach(function(l,i) {
                 l.order = i;
                 if (l.timeExp === undefined){l.timeExp ={};}

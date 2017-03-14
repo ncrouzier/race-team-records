@@ -1035,7 +1035,17 @@ module.exports = function(app, qs, passport, async, _) {
         var openFemaleRecords = [];
         var masterFemaleRecords = [];
 
-        raceTypeQuery = RaceType.find().sort('meters').where('name').ne('Odd road distance');
+        raceTypeQuery = RaceType.find().sort('meters').and([
+        {
+            'name': {'$ne':'Odd road distance'}
+        },
+         {
+            'name': {'$ne':'Odd trail distance'}
+        },
+         {
+            'name': {'$ne':'Multisport'}
+        }]);
+
         raceTypeQuery.exec(function(err, racetypes) {
             if (err) {
                 res.send(err)

@@ -184,10 +184,47 @@ app.filter('legToBikePace', function() {
     };
 });
 
+app.filter('resultToBikePace', function() {
+    return function(result,raceinfo) {
+        //round up!
+        var hours = result.time / 360000;
+        var distance;
+        if(raceinfo){
+            distance = raceinfo.race.racetype.miles;
+        }else{
+            distance = result.race.racetype.miles;
+        }
+        var mph = Math.floor(distance/hours);
+        return mph;
+    };
+});
+
+app.filter('resultToSwimPace', function() {
+    return function(result,raceinfo) {
+        //round up!
+        var seconds = Math.ceil(result.time / 100);
+        var distance;
+        if(raceinfo){
+            distance = raceinfo.race.racetype.meters;
+        }else{
+            distance = result.race.racetype.meters;
+        }
+        
+        
+        var m = Math.floor(distance/seconds);
+        var s = Math.round(((distance/seconds % 1)*60));
+        if (s === 60) { m = m + 1;
+            s = 0; }
+
+        if (s < 10) s = "0" + s;
+        return m + ":" + s;
+    };
+});
+
 app.filter('resultSportIcons', function() {
     return function(result) {
         var res = " ";
-        if( result.legs){
+        if( result.race.isMultisport){
             result.legs.forEach(function(leg) {
                 if(leg.legType ==='swim'){
                     res += '<span class="hoverhand" title="swim ('+leg.distanceName+')">🏊</span>';
@@ -197,7 +234,39 @@ app.filter('resultSportIcons', function() {
                     res += '<span class="hoverhand" title="run ('+leg.distanceName+')">🏃</span>';
                 }
             });
+        }else {
+            if( result.race.racetype.name === 'Swim'){
+                res += '<span class="hoverhand" title="swim">🏊</span>';
+            }else if ( result.race.racetype.name === 'Cycling'){
+                res += '<span class="hoverhand" title="bike">🚴</span>';
+            }
         }
+        
+        return res;
+    };
+});
+
+app.filter('raceinfoSportIcons', function() {
+    return function(raceinfo) {
+        var res = " ";
+        if( raceinfo.race.isMultisport === true && raceinfo.results[0] && raceinfo.results[0].legs){
+            raceinfo.results[0].legs.forEach(function(leg) {
+                if(leg.legType ==='swim'){
+                    res += '<span class="hoverhand" title="swim ('+leg.distanceName+')">🏊</span>';
+                }else if(leg.legType ==='bike'){
+                    res += '<span class="hoverhand" title="bike ('+leg.distanceName+')">🚴</span>';
+                }else if(leg.legType ==='run'){
+                    res += '<span class="hoverhand" title="run ('+leg.distanceName+')">🏃</span>';
+                }
+            });
+        }else {
+            if( raceinfo.race.racetype.name === 'Swim'){
+                res += '<span class="hoverhand" title="swim">🏊</span>';
+            }else if ( raceinfo.race.racetype.name === 'Cycling'){
+                res += '<span class="hoverhand" title="bike">🚴</span>';
+            }
+        }
+        
         return res;
     };
 });

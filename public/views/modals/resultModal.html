@@ -49,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="row" ng-show="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
+        <div class="row" ng-show="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
             <div class="col-md-3">
                 <div class="form-group" ng-class="{ 'has-error' : formresult.race.distanceName.$invalid && !formresult.race.distanceName.$pristine}">
                     <label class="text-left">Distance Display Name:</label>

@@ -51,7 +51,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
         $scope.editmode = false;
     }
 
-    $scope.surfaces = ['road', 'track', 'cross country', 'ultra', 'other', 'multiple'];
+    $scope.surfaces = ['road', 'track', 'cross country', 'ultra', 'other', 'multiple', 'pool', 'open water'];
 
     $scope.onMetersChange = function() {
         if ($scope.autoconvert) {

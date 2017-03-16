@@ -13,7 +13,7 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.surface.$invalid && !formracetype.surface.$pristine}">
-                    <label class="text-left">Surface: {{formData.surface}}</label>
+                    <label class="text-left">Surface:</label>
                     <br>
                     <ui-select name="surface" ng-model="formData.surface" theme="select2" style="min-width: 300px;" required>
                         <ui-select-match placeholder="Select a surface">{{$select.selected}}</ui-select-match>

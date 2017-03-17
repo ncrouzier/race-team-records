@@ -1044,7 +1044,11 @@ module.exports = function(app, qs, passport, async, _) {
         },
          {
             'name': {'$ne':'Multisport'}
-        }]);
+        },{
+            'name': {'$ne':'Swim'}
+        },{
+            'name': {'$ne':'Cycling'}
+        },]);
 
         raceTypeQuery.exec(function(err, racetypes) {
             if (err) {

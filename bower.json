@@ -18,5 +18,17 @@
     "nanogallery": "~5.9.1",
     "async": "~2.0.0-rc.2",
     "angulartics-google-analytics": "~0.1.4"
-  }
+  },
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/libs",
+    "test",
+    "tests"
+  ]
 }

@@ -148,7 +148,7 @@ app.filter('legToSwimPace', function() {
         //round up!
         var seconds = Math.ceil(leg.time / 100);
         var distance = leg.meters;
-        
+
         var m = Math.floor(distance/seconds);
         var s = Math.round(((distance/seconds % 1)*60));
         if (s === 60) { m = m + 1;
@@ -209,8 +209,8 @@ app.filter('resultToSwimPace', function() {
         }else{
             distance = result.race.racetype.meters;
         }
-        
-        
+
+
         var m = Math.floor(distance/seconds);
         var s = Math.round(((distance/seconds % 1)*60));
         if (s === 60) { m = m + 1;
@@ -241,7 +241,7 @@ app.filter('resultSportIcons', function() {
                 res += '<span class="hoverhand" title="bike">🚴</span>';
             }
         }
-        
+
         return res;
     };
 });
@@ -266,7 +266,7 @@ app.filter('raceinfoSportIcons', function() {
                 res += '<span class="hoverhand" title="bike">🚴</span>';
             }
         }
-        
+
         return res;
     };
 });
@@ -415,7 +415,7 @@ app.filter('categoryFilter', function() {
     };
 
 });
-app.filter('memberFilter', function(query) {
+app.filter('memberFilter', function() {
     return function(members, query) {
         var filtered = [];
         angular.forEach(members, function(member) {
@@ -427,7 +427,7 @@ app.filter('memberFilter', function(query) {
         return filtered;
     };
 });
-app.filter('resultSuperFilter', function(query) {
+app.filter('resultSuperFilter', function() {
     return function(results, query) {
         if (undefined !== query) {
             var filtered = [];
@@ -460,7 +460,7 @@ app.filter('resultSuperFilter', function(query) {
                 });
                 if (foundname) return;
 
-                //time 
+                //time
                 var time = secondsToTimeString(result.time);
                 if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
                     filtered.push(result);

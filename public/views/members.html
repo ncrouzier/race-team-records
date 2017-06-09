@@ -1,7 +1,7 @@
 <div class="jumbotron">
-    <div class="row btn-row"> 
+    <div class="row btn-row">
         <div class="col-md-3 col-sm-3 btn-col-member">
-            <span>Search members:</span><i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" title="Add member"></i>  
+            <span>Search members:</span><i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-show="user.role == 'admin'" ng-click="showAddMemberModal()" title="Add member"></i>
             <br>
                 <ui-select class="member-ui-select" name="memberselect" ng-model="membersList[$index]" on-select="onSelectMember($item, $model)" theme="select2" required>
                     <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
@@ -46,7 +46,7 @@
                     </div>
                     <div class="row">
                         <div class="col-sm-7">
-                            
+
                             <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
                         </div>
                         <div class="col-sm-5">
@@ -124,7 +124,7 @@
                                             <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)"  title="remove result"></i> </span >
                                             </div>
                                         </div>
-                                    </li> 
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -137,4 +137,3 @@
             </div>
     </div>
     </div>
-   

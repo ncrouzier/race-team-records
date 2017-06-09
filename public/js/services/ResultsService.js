@@ -18,13 +18,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     //retrieve results
     factory.getResultsWithCacheSupport = function(params) {
         return UtilsService.getSystemInfo('mcrrc').then(function(sysinfo) {
-            var date = new Date(sysinfo.resultUpdate);            
+            var date = new Date(sysinfo.resultUpdate);
             if (localStorageService.get('cachedResults') === undefined || date > new Date(localStorageService.get('cachedResultsDate'))) {
                 return results.getList(params).then(function(results) {
                     localStorageService.set('cachedResultsDate', date);
                     localStorageService.set('cachedResults', results);
                     return results;
-                }); 
+                });
             } else {
                 return $q(function(resolve, reject) {
                     resolve(Restangular.restangularizeCollection(null, localStorageService.get('cachedResults'), 'results',true));
@@ -79,13 +79,16 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function() {
+    factory.showAddResultModal = function(result) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/resultModal.html',
             controller: 'ResultModalInstanceController',
             size: 'lg',
             resolve: {
-                result: false
+                editmode: false,
+                result: function() {
+                    return result;
+                }
             }
         });
 
@@ -109,6 +112,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 controller: 'ResultModalInstanceController',
                 size: 'lg',
                 resolve: {
+                    editmode: true,
                     result: function() {
                         return result;
                     }
@@ -139,16 +143,16 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                     race: race
                 }
             });
-            return modalInstance.result.then(function() {  
+            return modalInstance.result.then(function() {
                 return null;
             }, function() {
                 return null;
-            });        
+            });
     };
 
     // =====================================
     // RACE MODALS =========================
-    // =====================================    
+    // =====================================
 
 
     factory.getRaces = function(params) {
@@ -182,7 +186,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                             raceinfo: races[0]
                         }
                     });
-                    modalInstance.result.then(function() {  
+                    modalInstance.result.then(function() {
                     }, function() {});
                 }
             },
@@ -200,14 +204,14 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                     raceinfo: raceinfo
                 }
             });
-            return modalInstance.result.then(function() {  
+            return modalInstance.result.then(function() {
                 return null;
             }, function() {
                 return null;
-            });        
+            });
     };
 
-    
+
 
     // =====================================
     // RACETYPE API CALLS ==================

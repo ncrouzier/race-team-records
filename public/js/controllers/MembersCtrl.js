@@ -6,7 +6,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     });
     // var members = Restangular.all('members');
 
-    
+
 
     $scope.membersList = [];
     $scope.query = "";
@@ -39,8 +39,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // ADMIN OPTIONS ====================
     // =====================================
 
-    $scope.showAddMemberModal = function() {
-        MembersService.showAddMemberModal().then(function(member) {
+    $scope.showAddMemberModal = function(resultSource) {
+        MembersService.showAddMemberModal(resultSource).then(function(member) {
             if (member !== null) {
                 $scope.membersList.push(member);
             }
@@ -155,7 +155,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     });
 
     $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {        
+        ResultsService.showRaceFromResultModal(result).then(function(result) {
         });
     };
 
@@ -167,7 +167,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
 angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'member', function($scope, $uibModalInstance, $filter, member) {
-    
+
     // make sure dates are always UTC
     $scope.$watch('formData.dateofbirth ', function(date) {
         $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
@@ -183,7 +183,7 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.editmode = false;
     }
 
-    
+
 
 
 

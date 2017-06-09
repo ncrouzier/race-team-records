@@ -55,7 +55,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     };
 
     $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {        
+        ResultsService.showRaceFromResultModal(result).then(function(result) {
         });
     };
 
@@ -77,7 +77,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         $scope.paramModel.limit = 5;
     }
 
-    
+
     ResultsService.getRaceTypes({
         sort: 'meters',
         isVariable: 'false'
@@ -89,6 +89,6 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
 
 
 
-   
+
 
 }]);

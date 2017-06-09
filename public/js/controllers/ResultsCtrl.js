@@ -29,8 +29,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
 
-    $scope.showAddResultModal = function() {
-        ResultsService.showAddResultModal().then(function(result) {
+    $scope.showAddResultModal = function(resultSource) {
+        ResultsService.showAddResultModal(resultSource).then(function(result) {
             if (result !== null) {
                 $scope.resultsList.unshift(result);
             }
@@ -62,7 +62,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService) {
 
 
     $scope.autoconvert = true;
@@ -93,39 +93,49 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     });
 
 
-    $scope.editmode = false;
-    if (result) {
-        $scope.editmode = true;
-        
-        $scope.formData = result;
-        $scope.nbOfMembers = result.members.length;
+    if (editmode){
+      if (result) {
+          $scope.editmode = true;
+
+          $scope.formData = result;
+          $scope.nbOfMembers = result.members.length;
+          $scope.time = {};
+
+          $scope.time.hours = Math.floor($scope.formData.time / 360000);
+          $scope.time.minutes = Math.floor((($scope.formData.time % 8640000) % 360000) / 6000);
+          $scope.time.seconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) / 100);
+          $scope.time.centiseconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) % 100);
+
+          if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
+              $scope.formData.legs.forEach(function(l) {
+                  l.timeExp = {};
+                  l.timeExp.hours = Math.floor(l.time / 360000);
+                  l.timeExp.minutes = Math.floor(((l.time % 8640000) % 360000) / 6000);
+                  l.timeExp.seconds = Math.floor((((l.time % 8640000) % 360000) % 6000) / 100);
+                  l.timeExp.centiseconds = Math.floor((((l.time % 8640000) % 360000) % 6000) % 100);
+              });
+          }
+
+      }else{}
+    }else{
+      $scope.editmode = false;
+      if (result){
+        $scope.formData = {};
+        $scope.formData.race = result.race;
+        $scope.formData.ranking = {};
+        $scope.formData.members = [];
+        $scope.formData.members[0] = {};
+        $scope.nbOfMembers = 1;
         $scope.time = {};
 
-        $scope.time.hours = Math.floor($scope.formData.time / 360000);
-        $scope.time.minutes = Math.floor((($scope.formData.time % 8640000) % 360000) / 6000);
-        $scope.time.seconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) / 100);
-        $scope.time.centiseconds = Math.floor(((($scope.formData.time % 8640000) % 360000) % 6000) % 100);
-
-        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
-            $scope.formData.legs.forEach(function(l) {
-                l.timeExp = {};
-                l.timeExp.hours = Math.floor(l.time / 360000);
-                l.timeExp.minutes = Math.floor(((l.time % 8640000) % 360000) / 6000);
-                l.timeExp.seconds = Math.floor((((l.time % 8640000) % 360000) % 6000) / 100);
-                l.timeExp.centiseconds = Math.floor((((l.time % 8640000) % 360000) % 6000) % 100);
-            });
-        }
-
-    } else {
-        $scope.editmode = false;
-        
+      }else{
         $scope.formData = {};
         if(localStorageService.get('race') !== null){
             $scope.formData.race = localStorageService.get('race');
         }else{
             $scope.formData.race = {};
         }
-        
+
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
         $scope.formData.ranking.agetotal = localStorageService.get('agetotal');
@@ -141,12 +151,14 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
         //Multisports
         if ($scope.formData.race.isMultisport){
-            $scope.formData.legs = []; 
+            $scope.formData.legs = [];
             $scope.formData.legs[0] = {};
         }
+      }
 
-        
+
     }
+
 
 
 
@@ -178,8 +190,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
                 l.time = l.timeExp.hours * 360000 + l.timeExp.minutes * 6000 + l.timeExp.seconds * 100 + l.timeExp.centiseconds;
             });
         }
-        
-        
+
+
 
         //save race related info for futur addition
         localStorageService.set('race', $scope.formData.race);
@@ -306,9 +318,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         leg.miles = leg.meters * 0.000621371;
     };
 
-    $scope.toggleIsMultisport = function() {  
+    $scope.toggleIsMultisport = function() {
         if ($scope.formData.race.isMultisport) {
-            $scope.formData.legs = []; 
+            $scope.formData.legs = [];
             $scope.formData.legs[0] = {};
             $scope.formData.race.racetype = $scope.multisportRacetype;
         }else{
@@ -387,4 +399,3 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
         }
     };
 }]);
-

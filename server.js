@@ -73,6 +73,9 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 
 // launch ======================================================================
 // app.listen(port);
-app.listen(osport, osipaddress, function() {
-    console.log('The magic happens on port ' + port);
+// app.listen(osport, osipaddress, function() {
+//     console.log('The magic happens on port ' + port);
+// });
+app.listen(port, function() {
+  console.log('Node app is running on port', port);
 });

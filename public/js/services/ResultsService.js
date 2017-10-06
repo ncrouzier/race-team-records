@@ -21,8 +21,10 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             var date = new Date(sysinfo.resultUpdate);
             if (localStorageService.get('cachedResults') === undefined || date > new Date(localStorageService.get('cachedResultsDate'))) {
                 return results.getList(params).then(function(results) {
+                  if(!params.preload){
                     localStorageService.set('cachedResultsDate', date);
                     localStorageService.set('cachedResults', results);
+                  }
                     return results;
                 });
             } else {

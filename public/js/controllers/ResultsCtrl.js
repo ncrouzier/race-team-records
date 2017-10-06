@@ -21,9 +21,17 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time'
+        "sort": '-race.racedate race.racename time',
+        "limit": 200,
+        "preload":true
     }).then(function(results) {
         $scope.resultsList = results;
+        //now load the whole thing
+        ResultsService.getResultsWithCacheSupport({
+            "sort": '-race.racedate race.racename time'
+        }).then(function(results) {
+            $scope.resultsList = results;
+        });
     });
 
 

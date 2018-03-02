@@ -148,9 +148,12 @@ app.filter('legToSwimPace', function() {
         //round up!
         var seconds = Math.ceil(leg.time / 100);
         var distance = leg.meters;
+        var hundreds = distance/100;
 
-        var m = Math.floor(distance/seconds);
-        var s = Math.round(((distance/seconds % 1)*60));
+        var secperhundreds = Math.floor(seconds/hundreds);
+
+        var m = Math.floor((secperhundreds / 60));
+        var s = Math.round(((secperhundreds % 60)));
         if (s === 60) { m = m + 1;
             s = 0; }
 
@@ -209,10 +212,11 @@ app.filter('resultToSwimPace', function() {
         }else{
             distance = result.race.racetype.meters;
         }
+        var hundreds = distance/100;
+        var secperhundreds = Math.floor(seconds/hundreds);
 
-
-        var m = Math.floor(distance/seconds);
-        var s = Math.round(((distance/seconds % 1)*60));
+        var m = Math.floor((secperhundreds / 60));
+        var s = Math.round(((secperhundreds % 60)));
         if (s === 60) { m = m + 1;
             s = 0; }
 

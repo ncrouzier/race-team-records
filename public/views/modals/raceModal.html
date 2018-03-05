@@ -30,7 +30,7 @@
                     </div>
                 </li>
                 <li class="list-group-item text-left resultlistrow" ng-repeat="result in raceinfo.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                    <div class="row">
+                    <div class="row" style="display: flex; align-items: center;">
                         <div class="col-sm-3">
                             <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo.race}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}</span></a>
                         </div>

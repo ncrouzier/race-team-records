@@ -10,22 +10,22 @@
                 <li class="list-group-item text-left resultlistheader" ng-show="raceinfo.results.length >0">
                     <div class="row">
                         <div class="col-sm-3">
-                            <span class="listheader" title="Race's name">Racer</span>
+                            <span class="listheader hoverhand" title="Race's name">RACER</span>
                         </div>
-                        <div class="col-sm-3">
-                            <span class="listheader" title="Net Time">Net Time</span>
+                        <div class="col-sm-1" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Age Ranking">AGE</span>
                         </div>
-                        <div class="col-sm-3">
-                            <span class="listheader" title="Pace">Pace</span>
+                        <div class="col-sm-1" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Gender Ranking">GENDER</span>
                         </div>
-                        <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Age</span>
+                        <div class="col-sm-1" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
                         </div>
-                        <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Gender</span>
+                        <div class="col-sm-3" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Pace">PACE</span>
                         </div>
-                        <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Overall</span>
+                        <div class="col-sm-3" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Net Time">NET TIME</span>
                         </div>
                     </div>
                 </li>
@@ -34,23 +34,23 @@
                         <div class="col-sm-3">
                             <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo.race}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}</span></a>
                         </div>
-                        <div class="col-sm-3">
-                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
-                        </div>
-                        <div class="col-sm-3" ng-show="!raceinfo.race.isMultisport">
-                            <result-pace-raceinfo></result-pace-raceinfo>
-                        </div>
-                        <div class="col-sm-3" ng-show="raceinfo.race.isMultisport">
-                            <span  class="hoverhandandunderline" title="View details" ng-click="showResultDetailsModal(result,raceinfo.race)" >View details</span>
-                        </div>
-                        <div class="col-sm-1">
+                        <div class="col-sm-1" style="text-align: center;">
                             <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
-                        <div class="col-sm-1">
+                        <div class="col-sm-1" style="text-align: center;">
                             <span class="center" title="Gender ranking" ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
-                        <div class="col-sm-1">
+                        <div class="col-sm-1" style="text-align: center;">
                             <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                        </div>
+                        <div class="col-sm-3" ng-show="!raceinfo.race.isMultisport" style="text-align: center;">
+                            <result-pace-raceinfo></result-pace-raceinfo>
+                        </div>
+                        <div class="col-sm-3" ng-show="raceinfo.race.isMultisport" style="text-align: center;">
+                            <span class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result,raceinfo.race)" >View details</span>
+                        </div>
+                        <div class="col-sm-3" style="text-align: center;">
+                            <span class="resultTime">{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
                         </div>
                     </div>
                 </li>

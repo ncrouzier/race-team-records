@@ -74,7 +74,7 @@
                     </div>
                 </li>
                 <li class="list-group-item text-left resultlistrow" ng-repeat="result in resultsList"   ng-class="{ 'gold': $index === 0,  'silver': $index === 1 , 'bronze': $index === 2,'goldhover': $index == 0 && hover,  'silverhover': $index == 1 && hover, 'bronzehover': $index === 2 && hover, hoverlistbg: hover}"   ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                    <div class="row">
+                    <div class="row" style="display: flex; align-items: center;">
                         <div class="col-sm-1">
                             {{$index + 1}}
                         </div>

@@ -19,13 +19,13 @@
                             <span class="listheader" title="Pace">Pace</span>
                         </div>
                         <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Overall</span>
+                            <span class="listheader" title="Pace">Age</span>
                         </div>
                         <div class="col-sm-1">
                             <span class="listheader" title="Pace">Gender</span>
                         </div>
                         <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Age</span>
+                            <span class="listheader" title="Pace">Overall</span>
                         </div>
                     </div>
                 </li>
@@ -44,15 +44,15 @@
                             <span  class="hoverhandandunderline" title="View details" ng-click="showResultDetailsModal(result,raceinfo.race)" >View details</span>
                         </div>
                         <div class="col-sm-1">
-                            <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                            <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
                         <div class="col-sm-1">
                             <span class="center" title="Gender ranking" ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
                         <div class="col-sm-1">
-                            <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                            <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
-                    </div>                 
+                    </div>
                 </li>
                 <!-- <li dir-paginate="result in resultsList | itemsPerPage: 10">{{ result.racename }}</li> -->
             </ul>

@@ -53,23 +53,23 @@
             <ul class="results-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
                     <div class="row">
-                        <div class="col-sm-1">
-                            <span class="listheader" title="Rank">#</span>
+                        <div class="col-sm-1" >
+                            <span class="listheader hoverhand" title="Rank">#</span>
                         </div>
                         <div class="col-sm-3">
-                            <span class="listheader" title="Race's name">Racer</span>
+                            <span class="listheader hoverhand" title="Race's name">RACER</span>
                         </div>
-                        <div class="col-sm-4    ">
-                            <span class="listheader" title="Event and date">Event</span>
+                        <div class="col-sm-4">
+                            <span class="listheader hoverhand" title="Event and date">EVENT</span>
                         </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            <span class="listheader" title="Net Time">Net Time</span>
+                        <div class="col-sm-1" style="text-align: center;">
+                            <span class="listheader hoverhand" title="Pace">PACE</span>
                         </div>
-                        <div class="col-sm-1">
-                            <span class="listheader" title="Pace">Pace</span>
+                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style="text-align: left;">
+                            <span class="listheader hoverhand" title="Net Time">NET TIME</span>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <span class="listheader" title="Edit">Edit</span>
+                            <span class="listheader hoverhand" title="Edit">EDIT</span>
                         </div>
                     </div>
                 </li>
@@ -82,16 +82,16 @@
                             <result-members-names></result-members-names>
                         </div>
                         <div class="col-sm-4">
-                            <span class="hoverhandandunderline" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span><span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i>
+                            <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span><span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i>
                             </a>
                             <br>
-                            <small>{{ result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                            <small>{{ result.race.racedate | date:'longDate':'UTC' }}</small>
                         </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            {{result.time | secondsToTimeString}} <span class="timediff" ng-if="$index >0">+{{(result.time -resultsList[$index - 1].time ) | secondsToTimeDiff}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
-                        </div>
-                        <div class="col-sm-1">
+                        <div class="col-sm-1" style=" text-align: center;">
                             <result-pace></result-pace>
+                        </div>
+                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style=" text-align: left;">
+                            <span class= "resultTime">{{result.time | secondsToTimeString}}</span> <span class="timediff" ng-if="$index >0">+{{(result.time -resultsList[$index - 1].time ) | secondsToTimeDiff}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
                             <i class="hoverhand fa fa-pencil-square-o" ng-click="retrieveResultForEdit(result)" title="edit result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result"></i>

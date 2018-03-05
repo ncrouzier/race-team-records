@@ -3,7 +3,7 @@
         <uib-tab index="0" heading="Best Turnouts" >
             <div class="row text-left">
                 <div class="col-md-9" >
-                
+
                 </div>
                 <div class="col-md-3" >
                     <div style="float:right;"><ui-select ng-model="raceStats.year" ng-change="getRacesStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
@@ -21,34 +21,39 @@
                         <li class="list-group-item text-left resultlistheader" ng-show="racesList.length >0">
                             <div class="row">
                                 <div class="col-sm-3">
-                                    <span class="listheader" title="Event and date">Event Name</span>
+                                    <span class="listheader hoverhand" title="Event and date">EVENT NAME</span>
+                                </div>
+                                <div class="col-sm-3" style="text-align: center;">
+                                    <span class="listheader hoverhand" title="Event type">EVENT TYPE</span>
+                                </div>
+                                <div class="col-sm-3" style="text-align: center;">
+                                    <span class="listheader hoverhand" title="Number of team members racing"># TEAM MEMBER RACING</span>
                                 </div>
                                 <div class="col-sm-3">
-                                    <span class="listheader" title="Event and date">Event Type</span>
-                                </div>
-                                <div class="col-sm-3">
-                                    <span class="listheader" title="Pace">Team Members Racing</span>
-                                </div>
-                                <div class="col-sm-3">
-                                    <span class="listheader" title="Pace">Best Time</span>
+                                    <span class="listheader hoverhand" title="Best time">BEST TIME</span>
                                 </div>
                             </div>
                         </li>
                         <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                             <div class="row">
                                 <div class="col-sm-3">
-                                    <span class="hoverhandandunderline bold" ng-click="showRaceModal(raceinfo)">{{raceinfo.race.racename }}</span>
+                                    <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)">{{raceinfo.race.racename }}</span>
                                     <br>
                                     <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
                                 </div>
-                                <div class="col-sm-3">
-                                    <span>{{ raceinfo.race.racetype.name}}</span>
+                                <div class="col-sm-3" style="text-align: center;">
+                                  <div ng-if="raceinfo.race.racetype.isVariable">
+                                      {{raceinfo.race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.race.racetype.surface}})</span>
+                                  </div>
+                                  <div ng-if="!raceinfo.race.racetype.isVariable">
+                                      {{raceinfo.race.racetype.name}}
+                                  </div>
                                 </div>
-                                <div class="col-sm-3">
+                                <div class="col-sm-3" style="text-align: center;">
                                     {{ raceinfo.count }}
                                 </div>
                                 <div class="col-sm-3">
-                                    <span>{{raceinfo.results[0].time | secondsToTimeString}}</span>
+                                    <span class= "resultTime">{{raceinfo.results[0].time | secondsToTimeString}}</span>
                                 </div>
                             </div>
                         </li>
@@ -59,7 +64,7 @@
         <uib-tab index="1" heading="Misc." select="">
             <div class="row text-left">
                 <div class="col-md-9" >
-                
+
                 </div>
                 <div class="col-md-3" >
                     <div style="float:right;"><ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
@@ -90,7 +95,7 @@
                                 <br>
                                 <small>{{race.racetype.name}}</small>
                             </ui-select-choices>
-                    </ui-select> 
+                    </ui-select>
 
                     <ui-select ng-model="attendanceStats.year" ng-change="getAttendanceStatsByYear()" theme="select2" style="min-width: 60px;">{{yearsList}}
                         <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
@@ -124,7 +129,7 @@
                 <td>
                 </td>
             </tr>
-  
+
 
         </uib-tab>
     </uib-tabset>

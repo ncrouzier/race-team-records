@@ -116,6 +116,7 @@ footer {
 }
 
 .container {
+    min-width: 992px; // just give up on mobile few for this version...
     min-height: 800px;
     .jumbotron {
         min-height: 730px;
@@ -126,6 +127,8 @@ footer {
         -moz-border-radius: 0px;
         border-radius: 0px;
         padding-top: 15px;
+        padding-left: 20px;
+        padding-right: 20px;
         p {
             margin-bottom: 10px;
         }
@@ -147,15 +150,37 @@ footer {
     font-size: 14px;
     color: @gray;
     .resultlistheader {
+        font-size: 12px;
         border-bottom: thick solid;
         font-weight: bold;
         color: @blue-dark;
+        text-align: left;
     }
     .resultlistrow {
         padding-top: 3px;
         padding-bottom: 3px;
         .timediff {
             color: @red;
+        }
+        .resultEvent{
+          text-align: left;
+          font-size: 16px;
+          font-weight: normal;
+          word-wrap: break-word;
+        }
+        .resultPace{
+          text-align: center;
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .resultTime{
+          text-align: center;
+          font-size: 20px;
+          font-weight: bold;
+        }
+        .resultPaceTxt{
+          color:#808080;
+          font-size: 70%;
         }
     }
 }
@@ -563,5 +588,3 @@ footer {
 .lightergraybg {
     background-color: @gray-lighter;
 }
-
-

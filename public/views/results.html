@@ -23,45 +23,74 @@
             <ul class="results-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
                     <div class="row">
-                        <div class="col-sm-3">
-                            <span class="listheader" title="Race's name">Racer</span>
-                        </div>
-                        <div class="col-sm-4">
-                            <span class="listheader" title="Event and date">Event</span>
-                        </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            <span class="listheader" title="Net Time">Net Time</span>
-                        </div>
                         <div class="col-sm-2">
-                            <span class="listheader" title="Pace">Pace</span>
+                            <span class="listheader hoverhand" title="Racer's name">RACER</span>
                         </div>
-                        <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <span class="listheader" title="Edit">Edit</span>
+                        <div class="col-sm-10">
+                            <div class="row">
+                              <div class="col-sm-5">
+                                  <span class="listheader hoverhand" title="Event and date">EVENT</span>
+                              </div>
+                              <div class="col-sm-1" style="text-align: center;">
+                                  <span class="listheader hoverhand" title="Age Group Ranking" >AGE</span>
+                              </div>
+                              <div class="col-sm-1" style="text-align: center;">
+                                  <span class="listheader hoverhand" title="Gender Ranking">GENDER</span>
+                              </div>
+                              <div class="col-sm-1" style="text-align: center;">
+                                  <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
+                              </div>
+                              <div class="col-sm-2" style="text-align: center;">
+                                  <span class="listheader hoverhand" title="Pace">PACE</span>
+                              </div>
+                              <div ng-class="user.role == 'admin' ?'col-sm-1' :'col-sm-2'" style="text-align: center;">
+                                  <span class="listheader hoverhand" title="Net Time">NET TIME</span>
+                              </div>
+
+                              <div class="col-sm-1" ng-show="user.role == 'admin'">
+                                  <span class="listheader hoverhand" title="Edit">EDIT</span>
+                              </div>
+                            </div>
                         </div>
+
                     </div>
                 </li>
                 <li dir-paginate="result in resultsList | resultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                    <div class="row">
-                        <div class="col-sm-3">
+                    <div class="row" style="display: flex; align-items: center;">
+                        <div class="col-sm-2" style="font-size: 16px;">
                             <result-members-names></result-members-names>
                         </div>
-                        <div class="col-sm-4">
-                            <span class="hoverhandandunderline" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span> <span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span>
-                            <br>
-                            <small>{{result.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                        <div class="col-sm-10" >
+                            <div class="row" style="display: flex; align-items: center;">
+                              <div class="col-sm-5">
+                                  <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span> <span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span>
+                                  <br>
+                                  <small>{{result.race.racedate | date:'longDate':'UTC' }}</small>
+                              </div>
+                              <div class="col-sm-1" style="text-align: center;">
+                                <span ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')" class="hoverhand" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
+                              </div>
+                              <div class="col-sm-1" style=" text-align: center;">
+                                <span ng-show="(result.ranking.genderrank !== undefined && result.ranking.genderrank !== '')" class="hoverhand" title="Gender ranking" ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></span>
+                              </div>
+                              <div class="col-sm-1" style=" text-align: center;">
+                                <span ng-show="(result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" class="hoverhand" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></span>
+                              </div>
+                              <div class="col-sm-2" ng-show="!result.race.isMultisport" style="text-align: center;">
+                                  <result-pace></result-pace>
+                              </div>
+                              <div class="col-sm-2" ng-show="result.race.isMultisport" style="text-align: center;">
+                                  <span  class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result)" >View details</span>
+                              </div>
+                              <div ng-class="user.role == 'admin' ?'col-sm-1' :'col-sm-2'" style="text-align: center;">
+                                  <span class= "resultTime">{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a>
+                              </div>
+                              <div class="col-sm-1" ng-show="user.role == 'admin'">
+                                  <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-clone" ng-show="user.role == 'admin'" ng-click="showAddResultModal(result)" title="Duplicate a result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result" ></i> </span >
+                              </div>
+                            </div>
                         </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'">
-                            <span>{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
-                        </div>
-                        <div class="col-sm-2" ng-show="!result.race.isMultisport">
-                            <result-pace></result-pace>
-                        </div>
-                        <div class="col-sm-2" ng-show="result.race.isMultisport">
-                            <span  class="hoverhandandunderline" title="View details" ng-click="showResultDetailsModal(result)" >View details</span>
-                        </div>
-                        <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-clone" ng-show="user.role == 'admin'" ng-click="showAddResultModal(result)" title="Duplicate a result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result" ></i> </span >
-                        </div>
+
                     </div>
                 </li>
             </ul>

@@ -7039,40 +7039,56 @@ footer {
   font-size: 0.7em;
 }
 .logo-title {
-  height: 80px;
-  margin-left: 0px;
+  margin-top: 80px;
+  margin-left: 350px;
   margin-right: 0px;
   padding-left: 15px;
 }
-.logo-title > h1 {
-  font-size: 60px;
+.logo-title > span {
+  font-size: 25px;
   margin-top: 10px;
-  text-shadow: -2px 0 #1d283c, 0 2px #1d283c, 2px 0 #1d283c, 0 -2px #1d283c;
-  font-family: Arial;
+  font-family: BebasNeueRegular, Arial;
 }
-@media (max-width: 2px) {
-  .logo-title > h1 {
-    text-shadow: -2px 0 #ffffff, 0 2px #ffffff, 2px 0 #ffffff, 0 -2px #ffffff;
-  }
-}
-.logo-title > h1 > a,
-.logo-title > h1 > a:hover {
+.logo-title > span > a,
+.logo-title > span > a:hover {
   text-decoration: none;
-  color: #FA4D19;
+  color: #2d5185;
+}
+.logo-title-bottom {
+  margin-top: 0px;
+  margin-left: 350px;
+  margin-right: 0px;
+  padding-left: 15px;
+}
+.logo-title-bottom > span {
+  font-size: 57px;
+  margin-top: 10px;
+  font-family: BebasNeueRegular, Arial;
+}
+.logo-title-bottom > span > a,
+.logo-title-bottom > span > a:hover {
+  text-decoration: none;
+  color: #2d5185;
+}
+.navimgbis {
+  height: 150px;
+  background-color: #fff;
+  margin-left: 0px;
+  margin-right: 0px;
 }
 .navimg {
-  background: url('../../images/topcover.jpg') left bottom no-repeat;
+  background: url('../../images/topcover2.jpg') left top no-repeat;
   margin-left: 0px;
   margin-right: 0px;
   background-size: cover;
   height: 200px;
 }
-@media (min-width: 2px) {
+@media (min-width: 992px) {
   .navimg {
     height: 250px;
   }
 }
-@media (min-width: 992px) {
+@media (min-width: 1200px) {
   .navimg {
     height: 300px;
   }
@@ -7080,7 +7096,18 @@ footer {
 .navimg .logo-stats {
   padding-top: 10px;
   padding-right: 20px;
-  color: #FFFFFF;
+  color: #2d5185;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+.navimg .logo-stats a {
+  color: #2d5185;
+}
+.navimg .logo-stats a:hover {
+  text-decoration: none;
+  color: #2d5185;
 }
 .navimg .copyrightrow {
   margin-left: 0px;
@@ -7088,7 +7115,11 @@ footer {
   text-align: right;
   padding-right: 5px;
   opacity: 0.75;
-  color: #FFFFFF;
+  color: #000;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 12px;
   padding-top: 100px;
 }
 @media (min-width: 2px) {
@@ -7098,15 +7129,15 @@ footer {
 }
 @media (min-width: 992px) {
   .navimg .copyrightrow {
-    padding-top: 200px;
+    padding-top: 275px;
   }
 }
-.navimg a {
-  color: #FFFFFF;
+.navimg .copyrightrow a {
+  color: #2d5185;
 }
-.navimg a:hover {
+.navimg .copyrightrow a:hover {
   text-decoration: none;
-  color: #FFFFFF;
+  color: #2d5185;
 }
 @media (min-width: 768px) {
   .navbar-collapse.collapse {

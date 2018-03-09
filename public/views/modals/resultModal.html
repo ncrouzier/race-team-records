@@ -262,10 +262,10 @@
                 <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
             </div>
         </div>
+        <div class="modal-footer"><button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='MD'" >USA/MD</button>
+            <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
+            <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
+            <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+        </div>
     </form>
-</div>
-<div class="modal-footer">
-    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
-    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
-    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
 </div>

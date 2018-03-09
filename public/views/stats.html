@@ -61,13 +61,13 @@
                 </div>
             </div>
         </uib-tab>
-        <uib-tab index="1" heading="US Map" select="displayTrig = true">
+        <uib-tab index="1" heading="US Map" select="displayTrig = true" deselect="displayTrig = false">
           <div class="row text-left" >
             <div usa-map ng-if="displayTrig" style="min-height:700px;">
             </div>
           </div>
         </uib-tab>
-        <uib-tab index="2" heading="World Map" select="displayTrigW = true" >
+        <uib-tab index="2" heading="World Map" select="displayTrigW = true" deselect="displayTrigW = false">
           <div class="row text-left" >
             <div world-map ng-if="displayTrigW" style="min-height:700px;" >
 

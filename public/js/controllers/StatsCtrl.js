@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -21,9 +21,17 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.yearsList.push(i);
     }
 
-    
+    $scope.getMapStats = function() {
+
+    };
+  
+
+
 
     $scope.getRacesStats = function() {
+
+
+
         var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
         var toDate = new Date().getTime();
         if ($scope.raceStats.year !== "All Time") {
@@ -68,7 +76,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             $scope.attendanceRacesList = races;
         });
 
-       
+
         MembersService.getMembers({
             "filters[memberStatus]": "current",
             sort: 'firstname'
@@ -100,7 +108,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                     $scope.onSelectRace(races[i]);
                 }
             }
-            
+
         });
 
 
@@ -123,11 +131,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                     found =false;
                     for (j =0;j<results.length;j++){
                         for(k=0;k<results[j].members.length;k++){
-                           
+
                             if($scope.membersList[i]._id === results[j].members[k]._id){
                                 found = results[j];
                             }
-                        }         
+                        }
                     }
                     if(found){
                         found.text = "y";

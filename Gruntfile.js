@@ -18,7 +18,7 @@ module.exports = function(grunt) {
             },
             build: {
                 files: {
-                    'public/dist/js/app.min.js': [
+                        'public/dist/js/app.min.js': [
                         'public/libs/jquery/dist/jquery.js',
                         'public/libs/angular/angular.js',
                         'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
@@ -36,6 +36,7 @@ module.exports = function(grunt) {
                         'public/libs/jspdf/dist/jspdf.min.js',
                         'public/libs/nanogallery/dist/jquery.nanogallery.min.js',
                         'public/libs/async/dist/async.min.js',
+                        'public/libs/datamaps/dist/datamaps.all.min.js',
                         'public/js/**/*.js',
                         'public/js/*.js'
                     ]

@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron" >
     <uib-tabset>
         <uib-tab index="0" heading="Best Turnouts" >
             <div class="row text-left">
@@ -61,7 +61,20 @@
                 </div>
             </div>
         </uib-tab>
-        <uib-tab index="1" heading="Misc." select="">
+        <uib-tab index="1" heading="US Map" select="displayTrig = true">
+          <div class="row text-left" >
+            <div usa-map ng-if="displayTrig" style="min-height:700px;">
+            </div>
+          </div>
+        </uib-tab>
+        <uib-tab index="2" heading="World Map" select="displayTrigW = true" >
+          <div class="row text-left" >
+            <div world-map ng-if="displayTrigW" style="min-height:700px;" >
+
+            </div>
+          </div>
+          </uib-tab>
+        <uib-tab index="3" heading="Misc." select="">
             <div class="row text-left">
                 <div class="col-md-9" >
 
@@ -81,7 +94,7 @@
         Miles raced: {{miscStats.milesRaced | number}}<br>
         </uib-tab>
 
-        <uib-tab ng-show="user.role == 'admin'" index="2" heading="Participation stats"select="">
+        <uib-tab ng-show="user.role == 'admin'" index="4" heading="Participation stats" select="">
             <div class="row text-left">
                 <div class="col-md-12" >
                     <div style="float:left;">

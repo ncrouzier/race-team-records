@@ -17,7 +17,8 @@
     "jspdf": "~1.2.61",
     "nanogallery": "~5.9.1",
     "async": "~2.0.0-rc.2",
-    "angulartics-google-analytics": "~0.1.4"
+    "angulartics-google-analytics": "~0.1.4",
+    "datamaps": "0.5.8"
   },
   "description": "",
   "main": "",

@@ -20,6 +20,10 @@ var raceSchema = mongoose.Schema({
         miles: Number,
         isVariable: Boolean
     },
+    location:{
+      country: String,
+      state: String
+    },
     createdAt: Date,
     updatedAt: Date
 
@@ -44,7 +48,7 @@ raceSchema.methods.updateSystemInfo = function(name,date) {
     }, function(err, systemInfo) {
         if (err)
             console.log("error fetching systemInfo")
-        if (systemInfo) {           
+        if (systemInfo) {
             systemInfo.raceUpdate = date;
             systemInfo.save(function(err) {
                 if (err) {

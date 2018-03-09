@@ -70,7 +70,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
 
 
     $scope.autoconvert = true;
@@ -94,18 +94,32 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     });
 
     $scope.sportList = ['swim','bike','run'];
+    $scope.states = UtilsService.states;
+    $scope.countries = UtilsService.countries;
+
+
 
     // make sure dates are always UTC
     $scope.$watch('formData.race.racedate ', function(date) {
         $scope.formData.race.racedate = $filter('date')($scope.formData.race.racedate, 'yyyy-MM-dd', 'UTC');
     });
 
+    $scope.$watch('formData.race.location.country', function(country) {
+      if(country !== 'USA'){
+        $scope.formData.race.location.state = null;
+      }
+
+    });
+
 
     if (editmode){
       if (result) {
+
           $scope.editmode = true;
 
           $scope.formData = result;
+          if ($scope.formData.race.location === undefined){ $scope.formData.race.location = {};}
+
           $scope.nbOfMembers = result.members.length;
           $scope.time = {};
 
@@ -130,11 +144,14 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
       if (result){
         $scope.formData = {};
         $scope.formData.race = result.race;
+        $scope.formData.race.location = {};
         $scope.formData.ranking = {};
         $scope.formData.members = [];
         $scope.formData.members[0] = {};
         $scope.nbOfMembers = 1;
         $scope.time = {};
+
+
 
       }else{
         $scope.formData = {};
@@ -143,6 +160,22 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }else{
             $scope.formData.race = {};
         }
+
+
+        $scope.formData.race.location = {};
+        if (localStorageService.get('country') !== null){
+          $scope.formData.race.location.country=localStorageService.get('country');
+        }else{
+          //default country
+          $scope.formData.race.location.country="USA";
+        }
+        if(localStorageService.get('state') !== null){
+          $scope.formData.race.location.state=localStorageService.get('state');
+        }else{
+          // default state
+          $scope.formData.race.location.state="MD";
+        }
+
 
         $scope.formData.resultlink = localStorageService.get('resultLink');
         $scope.formData.ranking = {};
@@ -207,6 +240,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('agetotal', $scope.formData.ranking.agetotal);
         localStorageService.set('gendertotal', $scope.formData.ranking.gendertotal);
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
+        localStorageService.set('country',$scope.formData.race.location.country);
+        localStorageService.set('state',$scope.formData.race.location.state);
 
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;

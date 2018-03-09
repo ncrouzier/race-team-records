@@ -37,11 +37,15 @@ var resultSchema = mongoose.Schema({
             meters: Number,
             miles: Number,
             isVariable: Boolean
+        },
+        location:{
+          country: String,
+          state: String
         }
     },
     legs:[{ //for multisport
         order:Number,
-        legName:String, 
+        legName:String,
         legType:String, //run,swim,bike
         time: Number,
         meters: Number,
@@ -134,7 +138,7 @@ resultSchema.methods.updateSystemInfo = function(name,date) {
     }, function(err, systemInfo) {
         if (err)
             console.log("error fetching systemInfo")
-        if (systemInfo) {           
+        if (systemInfo) {
             systemInfo.resultUpdate = date;
             systemInfo.save(function(err) {
                 if (err) {

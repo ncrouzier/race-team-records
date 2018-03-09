@@ -108,7 +108,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     // =====================================
     // SYSTEM INFO =========================
-    // ===================================== 
+    // =====================================
 
     //Init SytemInfo, should only happen once.
     SystemInfo.findOne({
@@ -245,7 +245,7 @@ module.exports = function(app, qs, passport, async, _) {
         });
     });
 
-    // create member 
+    // create member
     app.post('/api/members', isAdminLoggedIn, function(req, res) {
         // create a member, information comes from AJAX request from Angular
         Member.create({
@@ -558,7 +558,7 @@ module.exports = function(app, qs, passport, async, _) {
 
             if (err) {
                 res.send(err)
-            } else { 
+            } else {
                 var filteredResult = results;
                 if (req.query.filters) {
                     var filters = JSON.parse(req.query.filters);
@@ -600,7 +600,7 @@ module.exports = function(app, qs, passport, async, _) {
         });
     });
 
-    // create result 
+    // create result
     app.post('/api/results', isAdminLoggedIn, function(req, res) {
 
 
@@ -641,6 +641,8 @@ module.exports = function(app, qs, passport, async, _) {
                 'isMultisport': req.body.race.isMultisport,
                 'distanceName': req.body.race.distanceName,
                 'racedate': req.body.race.racedate,
+                'location.country': req.body.race.location.country,
+                'location.state': req.body.race.location.state,
                 'racetype._id': req.body.race.racetype._id
             }, function(err, race) {
                 if (err) {
@@ -652,7 +654,11 @@ module.exports = function(app, qs, passport, async, _) {
                             isMultisport: req.body.race.isMultisport,
                             distanceName: req.body.race.distanceName,
                             racedate: req.body.race.racedate,
-                            racetype: req.body.race.racetype                            
+                            location: {
+                                country: req.body.race.location.country,
+                                state: req.body.race.location.state
+                            },
+                            racetype: req.body.race.racetype
                         }, function(err, r) {
                             if (err) {
                                 res.send(err);
@@ -708,7 +714,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     //update a result
     app.put('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
-        
+
         var members = [];
         for (i = 0; i < req.body.members.length; i++) {
             members.push({
@@ -742,6 +748,8 @@ module.exports = function(app, qs, passport, async, _) {
                     'isMultisport':req.body.race.isMultisport,
                     'distanceName': req.body.race.distanceName,
                     'racedate': req.body.race.racedate,
+                    'location.country': req.body.race.location.country,
+                    'location.state': req.body.race.location.state,
                     'racetype._id': req.body.race.racetype._id
                 }, function(err, race) {
                     if (err) {
@@ -753,6 +761,10 @@ module.exports = function(app, qs, passport, async, _) {
                                 isMultisport: req.body.race.isMultisport,
                                 distanceName: req.body.race.distanceName,
                                 racedate: req.body.race.racedate,
+                                location: {
+                                    country: req.body.race.location.country,
+                                    state: req.body.race.location.state
+                                },
                                 racetype: req.body.race.racetype
                             }, function(err, r) {
                                 if (err) {
@@ -763,6 +775,8 @@ module.exports = function(app, qs, passport, async, _) {
                                     result.race.isMultisport = r.isMultisport;
                                     result.race.distanceName = r.distanceName;
                                     result.race.racedate = r.racedate;
+                                    result.race.location.country = r.location.country;
+                                    result.race.location.state = r.location.state;
                                     result.race.racetype = {
                                         _id: r.racetype._id,
                                         name: r.racetype.name,
@@ -817,6 +831,8 @@ module.exports = function(app, qs, passport, async, _) {
                             result.race.isMultisport = race.isMultisport;
                             result.race.distanceName = race.distanceName;
                             result.race.racedate = race.racedate;
+                            result.race.location.country = race.location.country;
+                            result.race.location.state = race.location.state
                             result.race.racetype = {
                                 _id: race.racetype._id,
                                 name: race.racetype.name,
@@ -937,12 +953,58 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.limit(limit);
         }
 
-
         query.exec(function(err, races) {
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
             if (err)
                 res.send(err)
-            res.json(races); // return all members in JSON format
+            res.json(races); // return all races in JSON format
+        });
+    });
+
+
+    // get a location data
+    app.get('/api/locations', function(req, res) {
+        var type = req.query.type;
+
+        if (type === "country"){
+          var typeq = '$location.country';
+        }else if (type === "state"){
+          var typeq = '$location.state';
+        }else{
+          var typeq = '$location.state';
+        }
+
+        query = Race.aggregate([
+               {
+                $group: {
+                    _id: typeq,
+                    number:{$sum:1}
+                }
+              },
+              {
+                $project: {
+                    _id: 0, //
+                    name: "$_id",
+                    count: "$number"
+                }
+            }
+        ]);
+
+
+        query.exec(function(err, results) {
+            if (err) {
+                res.send(err);
+            } else {
+              var data = {};
+              var ret = {};
+              // var i = 0;
+              results.forEach(function(resu) {
+                ret[resu["name"]]={count:resu["count"],fillKey:"RACED"};
+                  // i++;
+              });
+
+                res.json(ret); // return all race in JSON format
+            }
         });
     });
 
@@ -1357,7 +1419,7 @@ module.exports = function(app, qs, passport, async, _) {
 
 // route middleware to make sure a user is logged in
 function isLoggedIn(req, res, next) {
-    // if user is authenticated in the session, carry on 
+    // if user is authenticated in the session, carry on
     if (req.isAuthenticated()) {
         return next();
     }
@@ -1367,7 +1429,7 @@ function isLoggedIn(req, res, next) {
 
 // route middleware to make sure a user is logged in and an admin
 function isAdminLoggedIn(req, res, next) {
-    // if user is authenticated in the session and has an admin role, carry on 
+    // if user is authenticated in the session and has an admin role, carry on
     if (req.isAuthenticated() && req.user.role === 'admin') {
         return next();
     }

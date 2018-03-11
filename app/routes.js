@@ -996,10 +996,21 @@ module.exports = function(app, qs, passport, async, _) {
                 res.send(err);
             } else {
               var data = {};
-              var ret = {};
-              // var i = 0;
+              var ret = [];
+              var total = 0;
+
               results.forEach(function(resu) {
-                ret[resu["name"]]={count:resu["count"],fillKey:"RACED"};
+                if(resu["name"] !== null){
+                  total += resu["count"];
+                }
+              });
+
+              results.forEach(function(resu) {
+                if(resu["name"] !== null){
+                  //ret[resu["name"]]={count:resu["count"],fillKey:"red"};
+                  ret.push([resu["name"],resu["count"]])
+                }
+
                   // i++;
               });
 

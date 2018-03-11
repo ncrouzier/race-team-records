@@ -1,121 +1,133 @@
 <div class="modal-header">
-    <h3 ng-show="!editmode" class="modal-title">Add Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
-    <h3 ng-show="editmode" class="modal-title">Edit Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
+  <h3 ng-show="!editmode" class="modal-title">Add Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
+  <h3 ng-show="editmode" class="modal-title">Edit Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
 </div>
 <div class="modal-body">
-    <form name="formresult">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.raceename.$invalid && !formresult.race.raceename.$pristine}">
-                    <label class="text-left">Race name:</label>
-                    <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.race.racename" ng-required="true" required auto-focus>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
-                    <label class="text-left">Race date:</label>
-                    <p class="input-group">
-                        <input type="text" datetimepicker-neutral-timezone name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
-                        <span class="input-group-btn">
+  <form name="formresult">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="form-group" ng-class="{ 'has-error' : formresult.race.raceename.$invalid && !formresult.race.raceename.$pristine}">
+          <label class="text-left">Race name:</label>
+          <input type="text" name="raceename" class="form-control  text-left" ng-model="formData.race.racename" ng-required="true" required auto-focus>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
+          <label class="text-left">Race date:</label>
+          <p class="input-group">
+            <input type="text" datetimepicker-neutral-timezone name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'"
+              required close-text="Close" />
+            <span class="input-group-btn">
                             <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                         </span>
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-5">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
-                    <label class="text-left">Race Type:</label>
-                    <br>
-                    <ui-select name="racetype" ng-disabled="formData.race.isMultisport" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;" >
-                        <ui-select-match placeholder="Select a race type">
-                            <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
-                        </ui-select-match>
+          </p>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
+          <label class="text-left">Race Type:</label>
+          <br>
+          <ui-select name="racetype" ng-required="true" ng-disabled="formData.race.isMultisport" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;">
+            <ui-select-match placeholder="Select a race type">
+              <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
+            </ui-select-match>
 
-                        <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
-                            <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
-                                <!-- <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div> -->
-                                <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
-                                <span ng-show="!racetype.isVariable">
+            <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+              <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                <!-- <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div> -->
+                <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
+                <span ng-show="!racetype.isVariable">
                                     <small>length in meters: {{racetype.meters | number}} m</small>
                                     <br>
                                     <small>length in miles: {{racetype.miles | number}} miles</small>
                                 </span>
-                                <span ng-show="racetype.isVariable">
+                <span ng-show="racetype.isVariable">
                                 <small>Specify distance for each race result</small>
                                 </span>
-                            </div>
-                        </ui-select-choices>
-                    </ui-select>
-                </div>
-            </div>
+              </div>
+            </ui-select-choices>
+          </ui-select>
         </div>
-        <div class="row">
-          <div class="col-md-6">
-            <div class="form-group">
-                <label class="control-label text-left">Country:</label>
-                <br>
-                <ui-select name="country" ng-model="formData.race.location.country" theme="select2" style="min-width: 300px;" >
-                    <ui-select-match placeholder="Select a country">
-                        <div ng-bind-html="$select.selected.name"></div>
-                    </ui-select-match>
-                  <ui-select-choices repeat="country.code as country in countries | propsFilter: {name: $select.search, code: $select.search}">
-                      <div ng-class="">
-                          <div ng-bind-html="(country.name + ' (' + country.code+')')| highlightignorespan: $select.search"></div>
-                          </span>
-                      </div>
-                  </ui-select-choices>
-                  </ui-select>
-            </div>
+      </div>
+    </div>
+      <div class="row" ng-show="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
+        <div class="col-md-3">
+          <div class="form-group" ng-class="{ 'has-error' : formresult.race.distanceName.$invalid && !formresult.race.distanceName.$pristine}">
+            <label class="text-left">Distance Display Name:</label>
+            <input type="text" name="distanceName" ng-model="formData.race.distanceName" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
           </div>
-          <div class="col-md-6">
-            <div class="form-group">
-                <label class="control-label text-left">State:</label>
-                <br>
-                <ui-select ng-disabled="formData.race.location.country !== 'USA'" name="state" ng-model="formData.race.location.state" theme="select2" style="min-width: 300px;" >
-                    <ui-select-match placeholder="Select a state">
-                        <div ng-bind-html="$select.selected.name"></div>
-                    </ui-select-match>
-                  <ui-select-choices repeat="state.code as state in states | propsFilter: {name: $select.search, code: $select.search}">
-                      <div ng-class="">
-                          <div ng-bind-html="(state.name + ' (' + state.code+')')| highlightignorespan: $select.search"></div>
-                          </span>
-                      </div>
-                  </ui-select-choices>
-                  </ui-select>
-            </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.meters.$invalid && !formresult.race.racetype.meters.$pristine}">
+            <label class="text-left">Distance in meters:</label>
+            <input type="text" ng-change="onMetersChange()" name="meters" ng-model="formData.race.racetype.meters" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
+          </div>
+        </div>
+        <div class="col-md-1 text-center">
+          <label><small>Auto convert</small></label>
+          <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
+        </div>
+        <div class="col-md-4">
+          <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.miles.$invalid && !formresult.race.racetype.miles.$pristine}">
+            <label class="text-left">Distance in miles:</label>
+            <input type="text" ng-change="onMilesChange()" name="miles" ng-model="formData.race.racetype.miles" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="control-label text-left">Country:</label>
+            <br>
+            <ui-select name="country" ng-model="formData.race.location.country" required theme="select2" style="min-width: 250px;">
+              <ui-select-match placeholder="Select a country">
+                <div ng-bind-html="$select.selected.name"></div>
+              </ui-select-match>
+              <ui-select-choices repeat="country.code as country in countries | propsFilter: {name: $select.search, code: $select.search}">
+                <div ng-class="">
+                  <div ng-bind-html="(country.name + ' (' + country.code+')')| highlightignorespan: $select.search"></div>
+                  </span>
+                </div>
+              </ui-select-choices>
+            </ui-select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="control-label text-left">State:</label>
+            <br>
+            <ui-select ng-disabled="formData.race.location.country !== 'USA'" name="state" ng-model="formData.race.location.state" ng-required="formData.race.location.country === 'USA'"  theme="select2" style="min-width: 250px;">
+              <ui-select-match placeholder="Select a state">
+                <div ng-bind-html="$select.selected.name"></div>
+              </ui-select-match>
+              <ui-select-choices repeat="state.code as state in states | propsFilter: {name: $select.search, code: $select.search}">
+                <div ng-class="">
+                  <div ng-bind-html="(state.name + ' (' + state.code+')')| highlightignorespan: $select.search"></div>
+                  </span>
+                </div>
+              </ui-select-choices>
+            </ui-select>
           </div>
         </div>
 
-        <div class="row" ng-show="formData.race.racetype.isVariable && formData.race.racetype.surface !== 'multiple'">
-            <div class="col-md-3">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.distanceName.$invalid && !formresult.race.distanceName.$pristine}">
-                    <label class="text-left">Distance Display Name:</label>
-                    <input type="text" name="distanceName"  ng-model="formData.race.distanceName" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.meters.$invalid && !formresult.race.racetype.meters.$pristine}">
-                    <label class="text-left">Distance in meters:</label>
-                    <input type="text" ng-change="onMetersChange()" name="meters"  ng-model="formData.race.racetype.meters" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
-                </div>
-            </div>
-            <div class="col-md-1 text-center">
-                <label><small>Auto convert</small></label>
-                <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
-            </div>
-            <div class="col-md-4">
-                <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.miles.$invalid && !formresult.race.racetype.miles.$pristine}">
-                    <label class="text-left">Distance in miles:</label>
-                    <input type="text" ng-change="onMilesChange()" name="miles"  ng-model="formData.race.racetype.miles" class="form-control input-md text-left" ng-required="formData.race.racetype.isVariable && !formData.race.racetype.surface === 'multiple'">
-                </div>
-            </div>
+        <div class="col-md-4">
+          <div class="form-group">
+            <label class="control-label text-left">Shortcuts:</label>
+            <br>
+            <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='MD'">MD</button>
+            <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='DC'">DC</button>
+            <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='VA'">VA</button>
+            <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='PA'">PA</button>
+            <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='DE'">DE</button>
+          </div>
         </div>
-        <div class="row">
-            <div class="col-md-5">
-                <div class="form-group">
-                    <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a racer"></i>
-                    <br>
-                    <span ng-repeat="member in formData.members track by $index">
+      </div>
+      <div class="row">
+        <div class="col-md-5">
+          <div class="form-group">
+            <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a racer"></i>
+            <br>
+            <span ng-repeat="member in formData.members track by $index">
                         <ui-select name="member_{{$index}}"  ng-model="formData.members[$index]" theme="select2" style="min-width: 300px;" required>
                             <ui-select-match   placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}  <i ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="male" ></i><i ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="female" ></i></ui-select-match>
                             <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
@@ -125,147 +137,147 @@
                         </ui-select>
                         <i ng-show="$index !=0" class="hoverhand fa fa-times" ng-click="formData.members.splice($index, 1);" title="Delete member"></i>
                     </span>
-                </div>
-            </div>
+          </div>
+        </div>
 
-            <div class="col-md-1">
+        <div class="col-md-1">
+          <label class=" text-left">Hours:</label>
+          <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left" placeholder="0">
+        </div>
+        <div class="col-md-1">
+          <label class="text-left">Minutes:</label>
+          <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+        </div>
+        <div class="col-md-1">
+          <label class="text-left">Seconds:</label>
+          <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+        </div>
+        <div class="col-md-1">
+          <label class="text-left">Centiseconds:</label>
+          <input type="text" ng-model="time.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <label class=" text-left">Age group:</label>
+          <input type="text" ng-model="formData.ranking.agerank" name="agerank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+          <input type="text" ng-model="formData.ranking.agetotal" only-digits class="form-inline  input-md text-left" style="width: 50px;">
+        </div>
+        <div class="col-md-4">
+          <label class=" text-left">Gender:</label>
+          <input type="text" ng-model="formData.ranking.genderrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+          <input type="text" ng-model="formData.ranking.gendertotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
+        </div>
+        <div class="col-md-4">
+          <label class=" text-left">Overall:</label>
+          <input type="text" ng-model="formData.ranking.overallrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
+          <input type="text" ng-model="formData.ranking.overalltotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <label class="text-left">Is MultiSport?</label>
+          <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()"> <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport" ng-click="formData.legs.push({});"></i>
+        </div>
+      </div>
+      <div class="row" ng-class="$even?'lightbluebg':''" ng-show="formData.race.isMultisport" ng-repeat="leg in formData.legs track by $index">
+        <div class="col-md-12">
+          <div class="row">
+
+            <div class="col-md-1 text-center">
+              <div class="form-group">
+                <label class="text-left">Transition?</label>
+                <input type="checkbox" ng-model="leg.isTransition" ng-checked="leg.isTransition">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label class="text-left">Leg name:</label>
+                <input type="text" name="legname" class="form-control  text-left" ng-model="leg.legName" ng-required="leg.isTransition" required auto-focus>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label class="text-left">Sport type:</label>
+                <div>
+                  <ui-select ng-required="!leg.isTransition" ng-disabled="leg.isTransition" ng-model="leg.legType" theme="select2" style="min-width: 60px;width: 100%;">{{sportList}}
+                    <ui-select-match placeholder="Sport?">{{$select.selected}}</ui-select-match>
+                    <ui-select-choices repeat="sport in sportList">
+                      <div ng-bind="sport"></div>
+                    </ui-select-choices>
+                  </ui-select>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label class="text-left">Miles:</label>
+                <input type="text" name="miles" class="form-control  text-left" ng-model="leg.miles" ng-required="!leg.isTransition" ng-disabled="leg.isTransition" ng-change="updateMeters(leg)" required auto-focus>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label class="text-left">Meters:</label>
+                <input type="text" name="meters" class="form-control  text-left" ng-model="leg.meters" ng-required="!leg.isTransition" ng-disabled="leg.isTransition" ng-change="updateMiles(leg)" required auto-focus>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label class="text-left">Distance Name:</label>
+                <input type="text" name="distanceName" class="form-control  text-left" ng-model="leg.distanceName" ng-required="!leg.isTransition" ng-disabled="leg.isTransition" required auto-focus>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-2">
+              <div class="form-group">
                 <label class=" text-left">Hours:</label>
-                <input type="text" ng-model="time.hours" only-digits class="form-control input-md text-left" placeholder="0">
+                <input type="text" ng-model="leg.timeExp.hours" only-digits class="form-control input-md text-left" placeholder="0">
+              </div>
             </div>
-            <div class="col-md-1">
+            <div class="col-md-2">
+              <div class="form-group">
                 <label class="text-left">Minutes:</label>
-                <input type="text" ng-model="time.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+                <input type="text" ng-model="leg.timeExp.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+              </div>
             </div>
-            <div class="col-md-1">
+            <div class="col-md-2">
+              <div class="form-group">
                 <label class="text-left">Seconds:</label>
-                <input type="text" ng-model="time.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+                <input type="text" ng-model="leg.timeExp.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
+              </div>
             </div>
-            <div class="col-md-1">
+            <div class="col-md-2">
+              <div class="form-group">
                 <label class="text-left">Centiseconds:</label>
-                <input type="text" ng-model="time.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <label class=" text-left">Age group:</label>
-                <input type="text" ng-model="formData.ranking.agerank" name="agerank" only-digits class="form-inline input-md text-left" style="width: 50px;">
-                <input type="text" ng-model="formData.ranking.agetotal" only-digits class="form-inline  input-md text-left" style="width: 50px;">
+                <input type="text" ng-model="leg.timeExp.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
+              </div>
             </div>
             <div class="col-md-4">
-                <label class=" text-left">Gender:</label>
-                <input type="text" ng-model="formData.ranking.genderrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
-                <input type="text" ng-model="formData.ranking.gendertotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
+              <div class="form-group">
+                <label class="text-left">Controls</label><br>
+                <i ng-show="$index >0" class="red hoverhand fa fa-trash-o" ng-click="formData.legs.splice($index, 1);" title="Clear form"></i>
+              </div>
             </div>
-            <div class="col-md-4">
-                <label class=" text-left">Overall:</label>
-                <input type="text" ng-model="formData.ranking.overallrank" only-digits class="form-inline input-md text-left" style="width: 50px;">
-                <input type="text" ng-model="formData.ranking.overalltotal" only-digits class="form-inline input-md text-left" style="width: 50px;">
-            </div>
+          </div>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <label class="text-left">Is MultiSport?</label>
-                 <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()" > <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport"  ng-click="formData.legs.push({});"></i>
-            </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <label class="text-left">Comments/remarks</label>
+          <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
         </div>
-        <div class="row" ng-class="$even?'lightbluebg':''" ng-show="formData.race.isMultisport" ng-repeat="leg in formData.legs track by $index">
-           <div class="col-md-12">
-                <div class="row">
-
-                    <div class="col-md-1 text-center">
-                        <div class="form-group" >
-                            <label class="text-left">Transition?</label>
-                            <input type="checkbox" ng-model="leg.isTransition" ng-checked="leg.isTransition">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group" >
-                            <label class="text-left">Leg name:</label>
-                            <input type="text" name="legname" class="form-control  text-left" ng-model="leg.legName" ng-required="leg.isTransition"  required auto-focus>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                       <div class="form-group" >
-                            <label class="text-left">Sport type:</label>
-                            <div>
-                                <ui-select ng-required="!leg.isTransition" ng-disabled="leg.isTransition"  ng-model="leg.legType" theme="select2" style="min-width: 60px;width: 100%;">{{sportList}}
-                                    <ui-select-match placeholder="Sport?">{{$select.selected}}</ui-select-match>
-                                    <ui-select-choices repeat="sport in sportList">
-                                        <div ng-bind="sport"></div>
-                                    </ui-select-choices>
-                                </ui-select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                       <div class="form-group" >
-                            <label class="text-left">Miles:</label>
-                            <input type="text" name="miles" class="form-control  text-left" ng-model="leg.miles"   ng-required="!leg.isTransition"  ng-disabled="leg.isTransition" ng-change="updateMeters(leg)" required auto-focus>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                       <div class="form-group" >
-                            <label class="text-left">Meters:</label>
-                            <input type="text" name="meters" class="form-control  text-left" ng-model="leg.meters"  ng-required="!leg.isTransition"  ng-disabled="leg.isTransition" ng-change="updateMiles(leg)" required auto-focus>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                       <div class="form-group" >
-                            <label class="text-left">Distance Name:</label>
-                            <input type="text" name="distanceName" class="form-control  text-left" ng-model="leg.distanceName" ng-required="!leg.isTransition" ng-disabled="leg.isTransition" required auto-focus>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="form-group" >
-                            <label class=" text-left">Hours:</label>
-                            <input type="text" ng-model="leg.timeExp.hours" only-digits class="form-control input-md text-left" placeholder="0">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group" >
-                            <label class="text-left">Minutes:</label>
-                            <input type="text" ng-model="leg.timeExp.minutes" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group" >
-                            <label class="text-left">Seconds:</label>
-                            <input type="text" ng-model="leg.timeExp.seconds" only-digits-for-min-sec class="form-control input-md text-left" placeholder="0">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group" >
-                            <label class="text-left">Centiseconds:</label>
-                            <input type="text" ng-model="leg.timeExp.centiseconds" only-digits-for-centisec class="form-control input-md text-left" placeholder="0">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group" >
-                            <label class="text-left">Controls</label><br>
-                            <i ng-show="$index >0" class="red hoverhand fa fa-trash-o" ng-click="formData.legs.splice($index, 1);" title="Clear form" ></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <label class="text-left">Result web link:</label>
+          <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <label class="text-left">Comments/remarks</label>
-                <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <label class="text-left">Result web link:</label>
-                <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
-            </div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='MD'" >MD</button><button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='DC'" >DC</button><button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='VA'" >VA</button>
-            <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
-            <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
-            <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
-        </div>
-    </form>
-</div>
+      </div>
+      <div class="modal-footer">
+        <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
+        <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
+        <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+      </div>
+  </form>
+  </div>

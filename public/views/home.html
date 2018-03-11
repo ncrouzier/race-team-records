@@ -31,7 +31,7 @@
                         <div class="col-sm-3">
                             <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)" >{{raceinfo.race.racename }}</span>
                             <br>
-                            <small>{{raceinfo.race.racedate | date:'longDate':'UTC' }}</small>
+                            <small>{{raceinfo.race.racedate | date:'longDate':'UTC' }} <span ng-if="raceinfo.race.location.state !== null" ng-bind-html="'-- ' + raceinfo.race.location.state"></span><span ng-if="raceinfo.race.location.state === null" ng-bind-html="'-- ' + raceinfo.race.location.country"></span></small>
                         </div>
                         <div class="col-sm-3" style="text-align: center;">
                             <div ng-if="raceinfo.race.racetype.isVariable">

@@ -101,14 +101,15 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     // make sure dates are always UTC
     $scope.$watch('formData.race.racedate ', function(date) {
+      if($scope.formData.race !== undefined){
         $scope.formData.race.racedate = $filter('date')($scope.formData.race.racedate, 'yyyy-MM-dd', 'UTC');
+      }
     });
 
     $scope.$watch('formData.race.location.country', function(country) {
-      if(country !== 'USA'){
+      if($scope.formData.race !== undefined && country !== 'USA'){
         $scope.formData.race.location.state = null;
       }
-
     });
 
 

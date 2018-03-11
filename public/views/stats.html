@@ -39,7 +39,7 @@
                                 <div class="col-sm-3">
                                     <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)">{{raceinfo.race.racename }}</span>
                                     <br>
-                                    <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}</small>
+                                    <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}  <span ng-if="raceinfo.race.location.state !== null" ng-bind-html="'-- ' + raceinfo.race.location.state"></span><span ng-if="raceinfo.race.location.state === null" ng-bind-html="'-- ' + raceinfo.race.location.country"></span></small>
                                 </div>
                                 <div class="col-sm-3" style="text-align: center;">
                                   <div ng-if="raceinfo.race.racetype.isVariable">
@@ -61,13 +61,13 @@
                 </div>
             </div>
         </uib-tab>
-        <uib-tab index="1" heading="US Map" select="displayTrig = true" deselect="displayTrig = false">
+        <uib-tab index="1" heading="US Races Map" title="States where team members have raced" select="displayTrig = true" deselect="displayTrig = false">
           <div class="row text-left" >
             <div usa-map ng-if="displayTrig" style="min-height:700px;">
             </div>
           </div>
         </uib-tab>
-        <uib-tab index="2" heading="World Map" select="displayTrigW = true" deselect="displayTrigW = false">
+        <uib-tab index="2" heading="World Races Map" title="Countries where team members have raced" select="displayTrigW = true" deselect="displayTrigW = false">
           <div class="row text-left" >
             <div world-map ng-if="displayTrigW" style="min-height:700px;" >
 
@@ -94,7 +94,7 @@
         Miles raced: {{miscStats.milesRaced | number}}<br>
         </uib-tab>
 
-        <uib-tab ng-show="user.role == 'admin'" index="4" heading="Participation stats" select="">
+        <uib-tab ng-show="user.role == 'admin'" index="4" heading="Participation Stats" select="">
             <div class="row text-left">
                 <div class="col-md-12" >
                     <div style="float:left;">
@@ -106,7 +106,7 @@
                                 <div ng-bind-html="race.racename | highlight: $select.search"></div>
                                 <small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}}</small>
                                 <br>
-                                <small>{{race.racetype.name}}</small>
+                                <small>{{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'-- ' + race.location.state"></span><span ng-if="race.location.state === null" ng-bind-html="'-- ' + race.location.country"></span></small>
                             </ui-select-choices>
                     </ui-select>
 

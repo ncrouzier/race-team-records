@@ -456,13 +456,14 @@ app.filter('resultSuperFilter', function() {
                 var foundname = false;
                 result.members.forEach(function(member) {
                     name = member.firstname + ' ' + member.lastname + ', ';
-                    if (name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (!foundname && name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         foundname = true;
                         return;
                     }
                 });
                 if (foundname) return;
+
 
                 //time
                 var time = secondsToTimeString(result.time);

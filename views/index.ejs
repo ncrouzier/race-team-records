@@ -26,16 +26,15 @@
 </head>
 <body ng-controller="MainController">
 	<div class="container">
-		<div class="row navimg" style="position: relative" >
+		<div ng-class="getbg" class="row navimg" style="position: relative" >
 			<div class="">
 				<div class="logo-stats">
 					<span><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
 				</div>
 			</div>
 			<div class="copyrightrow">
-			     <span><a href="http://www.mcrrcphotos.com/2017-Photos/Race-Photos/Piece-of-Cake-10K5K/Piece-of-Cake-10K5K-BButters/i-5hgMqmQ/A" target="_blank" title="Photo by B.Butters at Piece of Cake 10K 2017">© B.Butters</a></span>
+			     <span ng-bind-html="getcr"></span>
 		  </div>
-
 		</div>
 
 

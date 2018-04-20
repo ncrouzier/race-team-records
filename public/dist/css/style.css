@@ -7077,11 +7077,16 @@ footer {
   margin-right: 0px;
 }
 .navimg {
-  background: url('../../images/topcover2.jpg') left top no-repeat;
   margin-left: 0px;
   margin-right: 0px;
   background-size: cover;
   height: 200px;
+}
+.navimg-2 {
+  background: url('../../images/topcover2.jpg') left top no-repeat;
+}
+.navimg-3 {
+  background: url('../../images/topcover3.jpg') left top no-repeat;
 }
 @media (min-width: 992px) {
   .navimg {

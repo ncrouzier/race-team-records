@@ -37,6 +37,8 @@ if (process.env.MLAB_MONGODB_DB_URL) {
 	mongoose.connect(process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords');
 } else if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records');
+} else if (process.env.MLAB_MONGODB_DEV_URL){
+	mongoose.connect(process.env.MLAB_MONGODB_DEV_URL);
 } else {
 	// mongoose.connect(process.env.MLAB_MONGODB_URL);
     mongoose.connect('mongodb://127.0.0.1:27017/mcrrcrecords'); // connect to our database

@@ -32,6 +32,9 @@
 					<span><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
 				</div>
 			</div>
+      <div class="birthdaytext" ng-if="birthdays.length >0">
+           <span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a><span ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2"> and </span></span>!🎂</span>
+      </div>
 			<div class="copyrightrow">
 			     <span ng-bind-html="getcr"></span>
 		  </div>
@@ -71,7 +74,7 @@
 
 				</ul>
 				<ul class="nav navbar-nav nav-submit-admin">
-					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
+					<li><a class="submitmenu" ui-sref="/gallery" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
 					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
@@ -92,7 +95,7 @@
 					<li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>
 				</ul>
 				<ul class="nav navbar-nav nav-submit-admin">
-					<li><a class="submitmenu" href="http://bit.ly/reportresult" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
+					<li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
 				</ul>
 			<%}%>
 			</div><!-- /.navbar-collapse -->

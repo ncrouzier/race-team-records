@@ -9,6 +9,10 @@ var memberSchema = mongoose.Schema({
     dateofbirth: Date,
     bio: String,
     memberStatus: String,
+    membershipDates: [{
+        start: Date,
+        end: Date
+    }],
     pictureLink: String,
     createdAt: Date,
     updatedAt: Date
@@ -16,6 +20,18 @@ var memberSchema = mongoose.Schema({
 
 // keep track of when members are updated and created
 memberSchema.pre('save', function(next, done) {
+
+    //set memberStatus
+    this.memberStatus = 'past';
+    var currentDate = new Date();
+    for (i = 0; i < this.membershipDates.length; i++) {
+      if (this.membershipDates[i].end === undefined || (currentDate > this.membershipDates[i].start && currentDate < this.membershipDates[i].end)){
+           this.memberStatus = 'current';
+           break;
+      }
+    }
+
+
     if (this.isNew) {
         this.createdAt = Date.now();
     }

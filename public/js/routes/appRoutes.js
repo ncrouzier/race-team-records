@@ -73,6 +73,8 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",
             controller: 'TableReportController'
+        }).state('/submit', {
+            url: "http://bit.ly/reportresult"
         });
 
 });

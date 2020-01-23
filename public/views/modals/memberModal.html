@@ -31,15 +31,8 @@
                         </p>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-sm-6">
-                        <label class="text-left">Sex:</label>
-                        <br>
-                        <div class="btn-group">
-                            <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Male'">Male</label>
-                            <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Female'">Female</label>
-                        </div>
-                    </div>
+                <!-- <div class="row">
+
                     <div class="col-sm-6">
                         <label class="text-left">Member Status</label>
                         <br>
@@ -48,15 +41,51 @@
                             <label class="btn btn-primary" ng-model="formData.memberStatus" uib-btn-radio="'past'">Past</label>
                         </div>
                     </div>
+                </div> -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        {{formData.firstname}} is a <span class="bold">{{formData.memberStatus}}</span> member!<br>
+                        <label class="text-left">Membership Dates:</label> <i class="hoverhand fa fa-plus" style="color:#03C03C;"  ng-click="addMembershipDates()" title="Add member"></i><br>
+                        <div ng-repeat="membershipdate in formData.membershipDates track by $index" class="row" style="margin-bottom:5px" >
+                          <div class="col-sm-9 daterangecol">
+                            <div class=" input-group">
+                            <input type="text" datetimepicker-neutral-timezone class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.start" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipStartDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="openStartDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                            <input type="text" datetimepicker-neutral-timezone class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.end" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipEndDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="openEndDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                          </div>
+                        </div>
+                          <div class="col-sm-3 daterangeoptioncol" >
+                            <button ng-show="$index === formData.membershipDates.length-1" type="button" class="btn btn-default daterangeoptionbutton" ng-click="membershipdate.end = undefined">Ongoing</button>
+                            <button ng-show="$index !=0" type="button" ng-click="formData.membershipDates.splice($index, 1);" class="btn btn-default daterangeoptionbutton"><i   class="hoverhand fa fa-times"  title="Delete date range {{$index}}"></i></button>
+                          </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="col-sm-6">
+              <div class="row">
+                <div class="col-sm-12">
+                    <label class="text-left">Sex:</label>
+                    <br>
+                    <div class="btn-group">
+                        <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Male'">Male</label>
+                        <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Female'">Female</label>
+                    </div>
+                </div>
+              </div>
                 <div class="row">
                     <div class="col-sm-12">
                         <label class="text-left">Member bio:</label>
                         <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
                     </div>
                 </div>
+
                 <div class="row">
                     <div class="col-sm-10">
                         <label class="text-left">Picture Link:</label>

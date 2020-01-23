@@ -170,7 +170,23 @@ module.exports = function(app, qs, passport, async, _) {
                 if (filters.memberStatus !== 'all') {
                     query = query.where('memberStatus').equals(filters.memberStatus);
                 }
+            }
 
+            if (filters.dateofbirth) {
+                if (filters.dateofbirth === 'today') {
+
+                  query = query.and({
+                     "$expr": {
+                         "$and": [
+                              { "$eq": [ { "$dayOfMonth": "$dateofbirth" }, { "$dayOfMonth": new Date() } ] },
+                              { "$eq": [ { "$month"     : "$dateofbirth" }, { "$month"     : new Date() } ] }
+                         ]
+                      }
+                  });
+
+
+                  //  query = query.gte('dateofbirth', getAddDateToDate(new Date(), 0, 0, 0));
+                }
             }
         }
         if (sort) {
@@ -256,6 +272,7 @@ module.exports = function(app, qs, passport, async, _) {
             bio: req.body.bio,
             pictureLink: req.body.pictureLink,
             memberStatus: req.body.memberStatus,
+            membershipDates: req.body.membershipDates,
             done: false
         }, function(err, member) {
             if (err) {
@@ -277,6 +294,7 @@ module.exports = function(app, qs, passport, async, _) {
             member.bio = req.body.bio;
             member.pictureLink = req.body.pictureLink;
             member.memberStatus = req.body.memberStatus;
+            member.membershipDates = req.body.membershipDates;
             member.save(function(err) {
                 if (!err) {
                     Result.find({
@@ -1451,7 +1469,7 @@ function isAdminLoggedIn(req, res, next) {
 
 function getAddDateToDate(date, years, months, days) {
     var resDate = new Date(date);
-    resDate.setFullYear(resDate.getFullYear() + years, resDate.getMonth() + months, resDate.getDay() + days);
+    resDate.setFullYear(resDate.getFullYear() + years, resDate.getMonth() + months, resDate.getDate() + days);
     return resDate;
 }
 

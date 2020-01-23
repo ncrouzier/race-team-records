@@ -37,7 +37,7 @@ app.factory('MyCachingRestService', function(Restangular) {
 });
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService', function($scope, AuthService, $state, ResultsService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService', function($scope, AuthService, $state, ResultsService,MembersService) {
     $scope.$state = $state;
 
     var navBackGround = ["navimg-2", "navimg-3","navimg-4","navimg-5"];
@@ -63,6 +63,19 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
         $scope.milesRaced = parseFloat(result.milesRaced).toFixed(2);
         $scope.currentYear = new Date().getFullYear();
     });
+
+
+        var birthdayParams = {
+            "filters[dateofbirth]": 'today',//birthday today
+            "filters[memberStatus]": 'current',
+            sort: 'dateofbirth'
+        };
+
+        MembersService.getMembers(birthdayParams).then(function(members) {
+            $scope.birthdays = members;
+        });
+
+
 
     //load result in cache
     ResultsService.getResultsWithCacheSupport({

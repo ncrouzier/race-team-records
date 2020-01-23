@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs','sortMembersFilter', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs,sortMembersFilter) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs','$filter', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs,$filter) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -16,6 +16,12 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.attendanceStats.year = "All Time";
 
     $scope.field = 'firstname';
+
+    $scope.current = {memberStatus:"current"};
+    $scope.past = {memberStatus:"past"};
+    $scope.none = {};
+
+    $scope.statusChoice =$scope.current;
     $scope.reverseSort = false;
 
     var currentYear = new Date().getFullYear();
@@ -84,7 +90,22 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             // "filters[memberStatus]": "current",
             sort: 'firstname'
         }).then(function(members) {
+          var now = new Date();
+          var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),0,0,0);
+          var nowUTCDate = new Date(nowUTC);
+          members.forEach(function(m){
+            var date = new Date($filter('date')(m.dateofbirth, 'yyyy-MM-dd', 'UTC'));
+            var currentYear = new Date().getUTCFullYear();
+            var birthdayDate =  new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate(),0,0,0));
+
+             if (birthdayDate.getTime() < nowUTCDate.getTime()){
+                 birthdayDate.setUTCFullYear(currentYear+1);
+             }
+             m.fromNow = birthdayDate.getTime() - nowUTCDate.getTime();
+          });
+
             $scope.membersList = members;
+
         });
     };
 

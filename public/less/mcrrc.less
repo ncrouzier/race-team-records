@@ -56,24 +56,30 @@ footer {
 .navimg {
     &-2{
       background: url('../../images/topcover2.jpg') left top no-repeat;
+      background-size: contain;
     }
     &-3{
       background: url('../../images/topcover3.jpg') left top no-repeat;
+      background-size: contain;
     }
     &-4{
       background: url('../../images/topcover4.jpg') left top no-repeat;
+      background-size: contain;
     }
     &-5{
       background: url('../../images/topcover5.jpg') left top no-repeat;
+      background-size: contain;
     }
     margin-left: 0px;
     margin-right: 0px;
-    background-size: cover;
+
     @media (min-width: @screen-md-min) {
         height: 250px;
+        width: 100%;
     }
     @media (min-width: @screen-lg-min) {
         height: 300px;
+        width: 100%;
     }
     height: 200px;
     .logo-stats {
@@ -116,6 +122,29 @@ footer {
                 text-decoration: none;
                 color: #2d5185;
             }
+        }
+    }
+
+
+    .birthdaytext {
+        margin-left: 0px;
+        margin-right: 0px;
+        text-align: center;
+        padding-right: 5px;
+        opacity: 1;
+        color: #ff0000;
+        right: 0;
+        bottom: 10px;
+        font-size: 20px;
+
+        @media (min-width: @screen-sm-min) {
+            padding-top: 165px;
+        }
+        @media (min-width: @screen-md-min) {
+            padding-top: 215px;
+        }
+        @media (min-width: @screen-lg-min) {
+            padding-top: 265px;
         }
     }
     // a {
@@ -618,6 +647,18 @@ footer {
 
 .redbg {
     background-color: @red-bg;
+}
+
+.daterangecol{
+  padding-right: 0px;
+}
+.daterangeoptioncol{
+  padding-left: 5px;
+  padding-right: 5px;
+}
+  .daterangeoptionbutton{
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .greenbg {

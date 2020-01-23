@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs','sortMembersFilter', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs,sortMembersFilter) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {

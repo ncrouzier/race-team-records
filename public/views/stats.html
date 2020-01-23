@@ -124,7 +124,7 @@
             <table style="width:100%">
             <tr>
                 <th style="width:100px;">Race</th>
-                <th style="text-align:center;" class="hoverhand" ng-repeat="m in membersList track by $index"><span ng-attr-title="{{m.firstname +' '+ m.lastname}}">{{m.firstname.charAt(0)}}{{m.lastname.charAt(0)}}</span></th>
+                <th style="text-align:center;" class="hoverhand" ng-repeat="m in membersList | filter:{memberStatus:'current'}  track by $index"><span ng-attr-title="{{m.firstname +' '+ m.lastname}}">{{m.firstname.charAt(0)}}{{m.lastname.charAt(0)}}</span></th>
                 <th></th>
               </tr>
               <tr ng-repeat="r in attendanceStats.selectedAttendanceRaces">
@@ -136,12 +136,44 @@
             <tr>
                 <td>#Races ran
                 </td>
-                <td style="text-align:center;" class="bold" ng-repeat="m in membersList track by $index">
+                <td style="text-align:center;" class="bold" ng-repeat="m in membersList | filter:{memberStatus:'current'} track by $index">
                   {{attendanceStats.racedRaces[$index]}}
                 </td>
                 <td>
                 </td>
             </tr>
+            </table>
+
+
+        </uib-tab>
+        <uib-tab ng-if="user.role == 'admin'" index="5" heading="Team Members Stats" select="">
+            <div class="row text-left">
+                <div class="col-md-12" >
+                    <div style="float:left;">
+
+
+                    </div>
+                </div>
+            </div>
+            <table style="width:100%">
+            <tr>
+                <th style="width:25%;"><a href="#" ng-click="field='firstname'; reverseSort = !reverseSort">Member <span ng-show="field == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                <th style="width:25%;"><a href="#" ng-click="field='age'; reverseSort = !reverseSort">Age <span ng-show="field == 'age'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                <th style="width:25%;"><a href="#" ng-click="field='dateofbirth'; reverseSort = !reverseSort">DoB <span ng-show="field == 'dateofbirth'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                <th style="width:25%;"><a href="#" ng-click="field='status'; reverseSort = !reverseSort">Status <span ng-show="field == 'status'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a>
+                  <label><input type="radio" ng-model='statusChoice' ng-value="{}" name="rdoResult">All</label>
+                  <label><input type="radio" ng-model='statusChoice' ng-value="{memberStatus:'current'}" name="rdoResult">Current</label>
+                  <label><input type="radio" ng-model='statusChoice' ng-value="{memberStatus:'past'}" name="rdoResult">Past</label></th>
+
+              </tr>
+              <tr ng-repeat="m in membersList |filter:statusChoice |sortMembers:field:reverseSort">
+              <td>{{m.firstname}} {{m.lastname}}</td>
+              <td>{{m | memberAgeFilter}}</td>
+              <td>{{m.dateofbirth |  date:'yyyy-MM-dd' }}</td>
+              <td>{{m.memberStatus}}</td>
+
+              </tr>
+            </<table>
 
 
         </uib-tab>

@@ -15,6 +15,9 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.attendanceStats.selectedAttendanceRaces = [];
     $scope.attendanceStats.year = "All Time";
 
+    $scope.field = 'firstname';
+    $scope.reverseSort = false;
+
     var currentYear = new Date().getFullYear();
     $scope.yearsList = ['All Time'];
     for (i = currentYear; i >= 2013; i--) {
@@ -24,7 +27,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.getMapStats = function() {
 
     };
-  
+
 
 
 
@@ -78,7 +81,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
 
         MembersService.getMembers({
-            "filters[memberStatus]": "current",
+            // "filters[memberStatus]": "current",
             sort: 'firstname'
         }).then(function(members) {
             $scope.membersList = members;

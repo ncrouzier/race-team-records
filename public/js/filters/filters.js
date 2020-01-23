@@ -291,6 +291,21 @@ app.filter('membersNamesFilter', function() {
     };
 });
 
+app.filter('memberAgeFilter', function() {
+    function calculateAgeAtDate(birthday, date) {
+        var bd = new Date(birthday);
+        var customDate = new Date(date);
+        var ageDifMs = customDate.getTime() - bd.getTime();
+        var ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970);
+    }
+    return function(member) {
+        var res = "";
+        res = calculateAgeAtDate(member.dateofbirth, new Date());
+        return res;
+    };
+});
+
 
 app.filter('membersNamesWithAgeFilter', function() {
     function calculateAgeAtDate(birthday, date) {
@@ -692,6 +707,63 @@ function inline_ordinal_suffix_of(i, withStyle) {
         return i + "th";
     }
 }
+
+app.filter('sortMembers', function () {
+  return function (items,type,reverseSort) {
+    var sorted = [];
+    if (items !== undefined){
+      items.forEach(function (i) {
+        sorted.push(i);
+      });
+      if(type === "firstname"){
+          sorted.sort(function(a, b) {
+            var nameA = a.firstname.toUpperCase(); // ignore upper and lowercase
+            var nameB = b.firstname.toUpperCase(); // ignore upper and lowercase
+            if (nameA < nameB) {
+              return 1;
+            }
+            if (nameA > nameB) {
+              return -1;
+            }
+             return 0;
+          });
+        }else if (type === "age" || type ==="dateofbirth"){
+        sorted.sort(function(a, b) {
+          var dateA = new Date(a.dateofbirth); // ignore upper and lowercase
+          var dateB = new Date(b.dateofbirth); // ignore upper and lowercase
+          if (dateA < dateB) {
+            return -1;
+          }
+          if (dateA > dateB) {
+            return 1;
+          }
+           return 0;
+        });
+      }else if(type === "status"){
+          sorted.sort(function(a, b) {
+            var nameA = a.memberStatus.toUpperCase(); // ignore upper and lowercase
+            var nameB = b.memberStatus.toUpperCase(); // ignore upper and lowercase
+            if (nameA < nameB) {
+              return 1;
+            }
+            if (nameA > nameB) {
+              return -1;
+            }
+             return 0;
+          });
+        }else{
+
+      }
+
+    }
+    if(!reverseSort){
+      return  Array.prototype.reverse.call(sorted);
+    }else{
+      return sorted;
+    }
+
+  };
+});
 
 app.filter("sanitize", ['$sce', function($sce) {
     return function(htmlCode) {

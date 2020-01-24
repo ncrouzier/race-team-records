@@ -150,15 +150,16 @@
             <div class="row text-left">
               <div class="col-md-12" >
                   <div>
-                    <Next 5 birthdays:</br>
+                    <span class="bold"> Next 5 birthdays:</span></br>
                     <span ng-repeat="m in membersList |filter:{memberStatus:'current'} | orderBy:'fromNow' |  limitTo:5 ">
-                      {{m.firstname}} {{m.lastname}} will be {{(m | memberAgeFilter)+1}} on {{m.dateofbirth |  date:'MM/dd': 'UTC' }}!</br></span>
+                      <a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a> will be {{(m | memberAgeFilter)+1}} on {{m.dateofbirth |  date:'MM/dd': 'UTC' }}</br></span></br>
                   </div>
               </div>
                 <div class="col-md-12" >
                     <div>
                       <table style="width:100%">
                         <tr>
+                            <th style="min-width:25px"></th>
                             <th style="width:25%;"><a href="#" ng-click="field='firstname'; reverseSort = !reverseSort">Member <span ng-show="field == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
                             <th style="width:25%;"><a href="#" ng-click="field='age'; reverseSort = !reverseSort">Age <span ng-show="field == 'age'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
                             <th style="width:25%;"><a href="#" ng-click="field='dateofbirth'; reverseSort = !reverseSort">DoB <span ng-show="field == 'dateofbirth'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
@@ -168,8 +169,9 @@
                               <label><input type="radio" ng-model="statusChoice" ng-value="past" name="rdoResult">Past</label></th>
 
                           </tr>
-                          <tr ng-repeat="m in membersList |filter:statusChoice |sortMembers:field:reverseSort">
-                          <td>{{m.firstname}} {{m.lastname}}</td>
+                          <tr ng-repeat="m in membersList |filter:statusChoice |sortMembers:field:reverseSort track by $index">
+                          <td>{{$index}}</td>
+                          <td><a ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a></td>
                           <td>{{m | memberAgeFilter}}</td>
                           <td>{{m.dateofbirth |  date:'yyyy-MM-dd': 'UTC' }}</td>
                           <td>{{m.memberStatus}}</td>

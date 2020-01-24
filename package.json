@@ -37,4 +37,9 @@
     "grunt-contrib-watch": "~0.6.1",
     "grunt-nodemon": "~0.3.0"
   }
+},
+{
+  "scripts": {
+    "build": "grunt build"
+  }
 }

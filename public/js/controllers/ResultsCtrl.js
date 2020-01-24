@@ -160,7 +160,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race = localStorageService.get('race');
         }else{
             $scope.formData.race = {};
+            $scope.formData.race.racedate = new Date($filter('date')(new Date().setHours(0,0,0,0), 'yyyy-MM-dd', 'UTC'));
         }
+
 
 
         $scope.formData.race.location = {};

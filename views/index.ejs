@@ -29,10 +29,10 @@
 		<div ng-class="getbg" class="row navimg" style="position: relative" >
 			<div class="">
 				<div class="logo-stats">
-					<span><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
+					<span ng-cloak ng-if="milesRaced"><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
 				</div>
 			</div>
-      <div class="birthdaytext" ng-if="birthdays.length >0">
+      <div class="birthdaytext" ng-if="birthdays.length >0" ng-cloak>
            <span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a><span ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2"> and </span></span>!🎂</span>
       </div>
 			<div class="copyrightrow">

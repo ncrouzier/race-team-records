@@ -170,15 +170,19 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
 
     // make sure dates are always UTC
     $scope.$watch('formData.dateofbirth ', function(date) {
-        $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
+      $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
     });
 
     $scope.$watch('formData.addMembershipDates', function(date) {
-      for (i=0;i<$scope.formData.membershipDates.length;i++) {
-          $scope.formData.membershipDates[i].start = $filter('date')($scope.formData.membershipDates[i].start, 'yyyy-MM-dd', 'UTC');
-          $scope.formData.membershipDates[i].end = $filter('date')($scope.formData.membershipDates[i].end, 'yyyy-MM-dd', 'UTC');
+      if ($scope.formData.membershipDates){
+        for (i=0;i<$scope.formData.membershipDates.length;i++) {
+            $scope.formData.membershipDates[i].start = $filter('date')($scope.formData.membershipDates[i].start, 'yyyy-MM-dd', 'UTC');
+            $scope.formData.membershipDates[i].end = $filter('date')($scope.formData.membershipDates[i].end, 'yyyy-MM-dd', 'UTC');
+        }
       }
+
     });
+
 
 
     $scope.editmode = false;
@@ -188,6 +192,7 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
     } else {
         $scope.formData = {};
         $scope.formData.memberStatus = 'current';
+        $scope.formData.dateofbirth = new Date($filter('date')(new Date().setHours(0,0,0,0), 'yyyy-MM-dd', 'UTC'));
         $scope.editmode = false;
     }
 

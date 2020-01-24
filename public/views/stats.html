@@ -170,7 +170,7 @@
 
                           </tr>
                           <tr ng-repeat="m in membersList |filter:statusChoice |sortMembers:field:reverseSort track by $index">
-                          <td>{{$index}}</td>
+                          <td>{{$index+1}}</td>
                           <td><a ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a></td>
                           <td>{{m | memberAgeFilter}}</td>
                           <td>{{m.dateofbirth |  date:'yyyy-MM-dd': 'UTC' }}</td>

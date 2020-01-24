@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+     "build": "grunt build"
   },
   "name": "mcrrc-race-team-records",
   "main": "server.js",

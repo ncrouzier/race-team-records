@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js"
   },
   "name": "mcrrc-race-team-records",
   "main": "server.js",

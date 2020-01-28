@@ -7,6 +7,9 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
 
     $scope.getResults = function() {
         if ($scope.paramModel.racetype !== '') {
+          if(!$scope.paramModel.racetype.hasAgeGradedInfo){
+             $scope.paramModel.sortMode = 'time';
+          }
             var params = {
                 "filters": {
                     "sex": $scope.paramModel.sex,

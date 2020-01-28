@@ -1,6 +1,6 @@
 <div class="jumbotron">
     <div class="row">
-        <div class="col-sm-6 col-md-3">
+        <div class="col-sm-4 col-md-4 col-lg-3 recordsoptionbutton-1" >
             <span>Race type:</span>
             <br>
             <ui-select ng-model="paramModel.racetype" ng-change="getResults()" theme="select2" style="min-width: 200px;">
@@ -10,7 +10,7 @@
                 </ui-select-choices>
             </ui-select>
         </div>
-        <div class="col-sm-6 col-md-3">
+        <div class="col-sm-4 col-md-4 col-lg-3 recordsoptionbutton-1" >
             <span>Gender:</span>
             <br>
             <div class="btn-group">
@@ -19,7 +19,7 @@
                 <label class="btn-record btn btn-primary" ng-model="paramModel.sex" ng-change="getResults()" uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
-        <div class="col-sm-6 col-md-3">
+        <div class="col-sm-4 col-md-4 col-lg-3 recordsoptionbutton-1" >
             <span>Division:</span>
             <br>
             <div class="btn-group">
@@ -28,7 +28,15 @@
                 <label class="btn-record btn btn-primary" ng-model="paramModel.category" ng-change="getResults()" uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
-        <div class="col-sm-6 col-md-2">
+        <div  class="col-sm-4 col-md-4 col-lg-2 recordsoptionbutton-4" >
+            <span title="Allow a member to appear multiple times in the records">Sort by:</span>
+            <br>
+            <div class="btn-group">
+                <label class="btn-record btn btn-primary" ng-model="paramModel.sortMode" ng-change="getResults()" uib-btn-radio="'time'">Time</label>
+                <label ng-disabled="!paramModel.racetype.hasAgeGradedInfo"  class="btn-record btn btn-primary" ng-model="paramModel.sortMode" ng-change="getResults()" uib-btn-radio="'-agegrade'">Age graded</label>
+            </div>
+        </div>
+        <div class="col-sm-4 col-md-4 col-lg-1 recordsoptionbutton-3" >
             <span title="Allow a member to appear multiple times in the records">Duplicates?</span>
             <br>
             <div class="btn-group">
@@ -36,7 +44,7 @@
                 <label class="btn-record btn btn-primary" ng-model="paramModel.mode" ng-change="getResults()" uib-btn-radio="'Best'">No</label>
             </div>
         </div>
-        <div class="col-sm-6 col-md-1">
+        <div class="col-sm-4 col-md-4 col-md-1 recordsoptionbutton-2">
             <span>Size:</span>
             <br>
             <ui-select ng-model="paramModel.limit" ng-change="getResults()" theme="select2" style="min-width: 60px;">

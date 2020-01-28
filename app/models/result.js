@@ -36,7 +36,8 @@ var resultSchema = mongoose.Schema({
             surface: String,
             meters: Number,
             miles: Number,
-            isVariable: Boolean
+            isVariable: Boolean,
+            hasAgeGradedInfo:Boolean
         },
         location:{
           country: String,

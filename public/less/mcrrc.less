@@ -656,9 +656,36 @@ footer {
   padding-left: 5px;
   padding-right: 5px;
 }
-  .daterangeoptionbutton{
+.daterangeoptionbutton{
   padding-left: 5px;
   padding-right: 5px;
+}
+
+.recordsoptionbutton{
+  padding-left: 5px;
+  padding-right: 5px;
+  &-1{
+    @media (min-width: @screen-lg-min) {
+        max-width: 225px;
+    }
+  }
+  &-2{
+    @media (min-width: @screen-lg-min) {
+        max-width: 120px;
+    }
+  }
+  &-3{
+    @media (min-width: @screen-lg-min) {
+        min-width: 125px;
+    }
+  }
+  &-4{
+    @media (min-width: @screen-lg-min) {
+        min-width: 195px;
+    }
+  }
+
+
 }
 
 .greenbg {

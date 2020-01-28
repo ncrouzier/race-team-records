@@ -48,6 +48,7 @@ angular.module('mcrrcApp.results').controller('RaceTypeModalInstanceController',
     } else {
         $scope.formData = {};
         $scope.formData.isVariable = false;
+        $scope.formData.hasAgeGradedInfo = false;
         $scope.editmode = false;
     }
 

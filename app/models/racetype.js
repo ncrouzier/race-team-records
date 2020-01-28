@@ -8,6 +8,7 @@ var racetypeSchema = mongoose.Schema({
     meters: Number,
     miles: Number,
     isVariable: Boolean,
+    hasAgeGradedInfo: Boolean,
     createdAt: Date,
     updatedAt: Date
 

@@ -559,9 +559,10 @@ module.exports = function(app, qs, passport, async, _) {
                     query = query.limit(limit);
                 }
             }
+
         }
         if (sort) {
-            query = query.sort(sort);
+              query = query.sort(sort);
         }
         if (limit && ((filters && !filters.mode) || !filters)) {
             query = query.limit(limit);
@@ -800,6 +801,7 @@ module.exports = function(app, qs, passport, async, _) {
                                         name: r.racetype.name,
                                         surface: r.racetype.surface,
                                         isVariable: r.racetype.isVariable,
+                                        hasAgeGradedInfo: r.racetype.hasAgeGradedInfo,
                                         meters: r.racetype.meters,
                                         miles: r.racetype.miles
                                     };
@@ -856,6 +858,7 @@ module.exports = function(app, qs, passport, async, _) {
                                 name: race.racetype.name,
                                 surface: race.racetype.surface,
                                 isVariable: race.racetype.isVariable,
+                                hasAgeGradedInfo: race.racetype.hasAgeGradedInfo,
                                 meters: race.racetype.meters,
                                 miles: race.racetype.miles
                             };
@@ -1330,7 +1333,8 @@ module.exports = function(app, qs, passport, async, _) {
             surface: req.body.surface,
             meters: req.body.meters,
             miles: req.body.miles,
-            isVariable: req.body.isVariable
+            isVariable: req.body.isVariable,
+            hasAgeGradedInfo: req.body.hasAgeGradedInfo
         }, function(err, racetype) {
             if (err) {
                 res.send(err);
@@ -1349,6 +1353,7 @@ module.exports = function(app, qs, passport, async, _) {
             racetype.meters = req.body.meters;
             racetype.miles = req.body.miles;
             racetype.isVariable = req.body.isVariable;
+            racetype.hasAgeGradedInfo =  req.body.hasAgeGradedInfo;
             racetype.save(function(err) {
                 if (!err) {
                     Result.find({
@@ -1367,16 +1372,18 @@ module.exports = function(app, qs, passport, async, _) {
                                             surface: req.body.surface,
                                             meters: req.body.meters,
                                             miles: req.body.miles,
-                                            isVariable: req.body.isVariable
+                                            isVariable: req.body.isVariable,
+                                            hasAgeGradedInfo:req.body.hasAgeGradedInfo
                                         };
                                     } else {
                                         results[i].race.racetype = {
                                             _id: results[i].race.racetype._id,
                                             name: req.body.name,
                                             surface: req.body.surface,
-                                            meters: results[i].racetype.meters,
-                                            miles: results[i].racetype.miles,
-                                            isVariable: req.body.isVariable
+                                            meters: results[i].race.racetype.meters,
+                                            miles: results[i].race.racetype.miles,
+                                            isVariable: req.body.isVariable,
+                                            hasAgeGradedInfo:req.body.hasAgeGradedInfo
                                         };
                                     }
 

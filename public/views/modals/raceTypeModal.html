@@ -3,15 +3,15 @@
 </div>
 <div class="modal-body">
     <form name="formracetype">
-        
+
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.racetypename.$invalid && !formracetype.racetypename.$pristine}">
                     <label class="text-left">Race type name:</label>
                     <input type="text" name="racetypename" class="form-control input-md text-left" ng-model="formData.name" required>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-5">
                 <div class="form-group" ng-class="{ 'has-error' : formracetype.surface.$invalid && !formracetype.surface.$pristine}">
                     <label class="text-left">Surface:</label>
                     <br>
@@ -22,6 +22,12 @@
                         </ui-select-choices>
                     </ui-select>
                 </div>
+            </div>
+            <div class="col-md-2">
+                <label class="text-left">Age Graded?</label><br>
+                <button type="button" class="btn btn-primary" ng-model="formData.hasAgeGradedInfo" ng-click="formData.hasAgeGradedInfo = !formData.hasAgeGradedInfo" btn-checkbox>
+                    {{formData.hasAgeGradedInfo}}
+                </button>
             </div>
         </div>
         <div class="row">

@@ -7619,6 +7619,30 @@ footer {
   padding-left: 5px;
   padding-right: 5px;
 }
+.recordsoptionbutton {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+@media (min-width: 1200px) {
+  .recordsoptionbutton-1 {
+    max-width: 225px;
+  }
+}
+@media (min-width: 1200px) {
+  .recordsoptionbutton-2 {
+    max-width: 120px;
+  }
+}
+@media (min-width: 1200px) {
+  .recordsoptionbutton-3 {
+    min-width: 125px;
+  }
+}
+@media (min-width: 1200px) {
+  .recordsoptionbutton-4 {
+    min-width: 195px;
+  }
+}
 .greenbg {
   background-color: #8cd98c;
 }

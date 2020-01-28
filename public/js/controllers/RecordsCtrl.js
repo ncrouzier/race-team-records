@@ -12,10 +12,10 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
                     "sex": $scope.paramModel.sex,
                     "category": $scope.paramModel.category,
                     "mode": $scope.paramModel.mode,
-                    "racetype": $scope.paramModel.racetype,
+                    "racetype": $scope.paramModel.racetype
                 },
                 "limit": $scope.paramModel.limit,
-                "sort": $scope.paramModel.sort
+                "sort": $scope.paramModel.sortMode
             };
 
 
@@ -72,9 +72,9 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         $scope.paramModel.sex = '.*';
         $scope.paramModel.category = '.*';
         $scope.paramModel.mode = 'All';
-        $scope.paramModel.sort = 'time';
         $scope.paramModel.racetype = "";
         $scope.paramModel.limit = 5;
+        $scope.paramModel.sortMode = 'time';
     }
 
 

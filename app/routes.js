@@ -173,20 +173,15 @@ module.exports = function(app, qs, passport, async, _) {
             }
 
             if (filters.dateofbirth) {
-                if (filters.dateofbirth === 'today') {
-                
+                  var dob = new Date(filters.dateofbirth);
                   query = query.and({
                      "$expr": {
                          "$and": [
-                              { "$eq": [ { "$dayOfMonth": "$dateofbirth" }, { "$dayOfMonth": filters.dateofbirth2 } ] },
-                              { "$eq": [ { "$month"     : "$dateofbirth" }, { "$month"     : filters.dateofbirth2 } ] }
+                              { "$eq": [ { "$dayOfMonth": "$dateofbirth" }, { "$dayOfMonth": dob } ] },
+                              { "$eq": [ { "$month"     : "$dateofbirth" }, { "$month"     : dob } ] }
                          ]
                       }
                   });
-
-
-                  //  query = query.gte('dateofbirth', getAddDateToDate(new Date(), 0, 0, 0));
-                }
             }
         }
         if (sort) {

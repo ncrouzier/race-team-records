@@ -15,10 +15,10 @@
     "angulartics": "~1.0.3",
     "angular-local-storage": "~0.2.7",
     "jspdf": "~1.2.61",
-    "nanogallery": "~5.9.1",
     "async": "~2.0.0-rc.2",
     "angulartics-google-analytics": "~0.1.4",
-    "datamaps": "0.5.8"
+    "datamaps": "0.5.8",
+    "moment": "^2.24.0"
   },
   "description": "",
   "main": "",

@@ -66,9 +66,8 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
 
 
         var birthdayParams = {
-            "filters[dateofbirth]": 'today',//birthday today
+            "filters[dateofbirth]": moment().format('LLL'),//birthday today
             "filters[memberStatus]": 'current',
-            "filters[dateofbirth2]": new Date(),
             sort: 'dateofbirth'
         };
 

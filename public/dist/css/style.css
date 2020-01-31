@@ -7510,6 +7510,9 @@ footer {
 .bold {
   font-weight: bold;
 }
+.italic {
+  font-style: italic;
+}
 .black {
   color: #4D5153;
 }

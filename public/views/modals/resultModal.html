@@ -265,7 +265,7 @@
       <div class="row">
         <div class="col-md-12">
           <label class="text-left">Comments/remarks</label>
-          <textarea class="form-control" rows="3" name="message" ng-model="formData.comments" ]></textarea>
+          <textarea class="form-control" rows="3" name="message" ng-model="formData.comments"></textarea>
         </div>
       </div>
       <div class="row">
@@ -274,7 +274,21 @@
           <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
         </div>
       </div>
+      <span ng-show="showMore" class="hoverhand" ng-click="showMore=!showMore"><i class="fa fa-chevron-up" ></i>show less<i class="fa fa-chevron-up" ></i></span>
+      <span ng-show="!showMore" class="hoverhand" ng-click="showMore=!showMore"><i class="fa fa-chevron-down" ></i>show more<i class="fa fa-chevron-down" ></i></span>
+      <div class="row" ng-show="showMore">
+        <div class="col-md-3">
+          <label class="text-left">Include result in records:</label>
+          <input type="checkbox" ng-model="formData.isRecordEligible"></span>
+        </div>
+        <div class="col-md-9">
+          <label class="text-left">JSON custom options:</label>
+          <textarea class="form-control" rows="3" name="customOptions" ng-model="customOptionsString"></textarea>
+        </div>
+      </div>
       <div class="modal-footer">
+        <!-- <span class="modal-title">Exclude from records: -->
+
         <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
         <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
         <button class="btn btn-danger" ng-click="cancel()">Cancel</button>

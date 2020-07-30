@@ -187,7 +187,7 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
 
     $scope.editmode = false;
     if (member) {
-        $scope.formData = member;
+        $scope.formData = member; 
         $scope.editmode = true;
     } else {
         $scope.formData = {};

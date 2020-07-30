@@ -54,7 +54,6 @@ module.exports = function(app, qs, passport, async, _) {
     // });
 
     app.post('/api/signup', function(req, res, next) {
-        console.log(req);
         passport.authenticate('local-signup', function(err, user, info) {
             console.log(err);
             if (err) {
@@ -524,8 +523,9 @@ module.exports = function(app, qs, passport, async, _) {
         query = Result.find();
 
         if (req.query.filters) {
+            //filters means we are in record mode (I think)
             var filters = JSON.parse(req.query.filters);
-
+            query = query.where('isRecordEligible').equals(true);
             if (filters.category) {
                 query = query.regex('category', filters.category);
             }
@@ -543,7 +543,6 @@ module.exports = function(app, qs, passport, async, _) {
             }
             if (filters.raceid) {
                 query = query.where('race._id').equals(new mongoose.Types.ObjectId(filters.raceid));
-
             }
             if (filters.racetype) {
                 var racetype = filters.racetype;
@@ -632,7 +631,6 @@ module.exports = function(app, qs, passport, async, _) {
 
 
 
-
         AgeGrading.findOne({
             sex: members[0].sex.toLowerCase(),
             type: req.body.race.racetype.surface,
@@ -688,6 +686,8 @@ module.exports = function(app, qs, passport, async, _) {
                                     resultlink: req.body.resultlink,
                                     agegrade: agegrade,
                                     is_accepted: false,
+                                    isRecordEligible: req.body.isRecordEligible,
+                                    customOptions: req.body.customOptions,
                                     done: false
                                 }, function(err, result) {
                                     if (err) {
@@ -709,6 +709,8 @@ module.exports = function(app, qs, passport, async, _) {
                             resultlink: req.body.resultlink,
                             agegrade: agegrade,
                             is_accepted: false,
+                            isRecordEligible: req.body.isRecordEligible,
+                            customOptions: req.body.customOptions,
                             done: false
                         }, function(err, result) {
                             if (err) {
@@ -808,6 +810,8 @@ module.exports = function(app, qs, passport, async, _) {
                                     result.resultlink = req.body.resultlink;
                                     result.agegrade = agegrade,
                                     result.is_accepted = req.body.is_accepted;
+                                    result.isRecordEligible = req.body.isRecordEligible;
+                                    result.customOptions = req.body.customOptions;
                                     result.save(function(err) {
                                         if (err) {
                                             res.send(err);
@@ -865,7 +869,9 @@ module.exports = function(app, qs, passport, async, _) {
                             result.comments = req.body.comments;
                             result.resultlink = req.body.resultlink;
                             result.agegrade = agegrade,
-                                result.is_accepted = req.body.is_accepted;
+                            result.is_accepted = req.body.is_accepted;
+                            result.isRecordEligible = req.body.isRecordEligible;
+                            result.customOptions = req.body.customOptions;
                             result.save(function(err) {
                                 if (err) {
                                     res.send(err);
@@ -1147,7 +1153,7 @@ module.exports = function(app, qs, passport, async, _) {
 
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Open').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -1162,7 +1168,7 @@ module.exports = function(app, qs, passport, async, _) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Master').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -1176,7 +1182,7 @@ module.exports = function(app, qs, passport, async, _) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Open').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);
@@ -1190,7 +1196,7 @@ module.exports = function(app, qs, passport, async, _) {
                 });
                 calls.push(function(callback) {
                     query = Result.find();
-                    query = query.regex('category', 'Master').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                    query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
                     query.exec(function(err, results) {
                         if (err) {
                             callback(err);

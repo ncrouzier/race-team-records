@@ -58,7 +58,13 @@ var resultSchema = mongoose.Schema({
     comments: String,
     resultlink: String,
     agegrade: Number,
+    isRecordEligible: Boolean,
     is_accepted: Boolean,
+    customOptions:[{
+      name:String,
+      value:String,
+      text:String
+    }],
     createdAt: Date,
     updatedAt: Date
 

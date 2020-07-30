@@ -6,13 +6,14 @@ module.exports = function(grunt) {
         // check all js files for errors
         jshint: {
             options: {
-                smarttabs: true
+                smarttabs: true,
+                 esversion: 6
             },
             all: ['public/js/**/*.js', '!public/js/libs/*.js']
         },
 
         // take all the js files and minify them into app.min.js
-        uglify: {
+        terser: {
             options: {
                 mangle: false
             },
@@ -116,7 +117,7 @@ module.exports = function(grunt) {
             },
             js: {
                 files: ['public/js/**/*.js', 'public/js/*.js'],
-                tasks: ['jshint', 'uglify']
+                tasks: ['jshint', 'terser']
             }
         },
 
@@ -140,7 +141,7 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-terser');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-contrib-watch');
@@ -148,7 +149,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-concurrent');
     grunt.loadNpmTasks('grunt-contrib-copy');
 
-    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'uglify', 'copy', 'concurrent']);
-    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'uglify', 'copy']);
+    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'terser', 'copy', 'concurrent']);
+    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'terser', 'copy']);
 
 };

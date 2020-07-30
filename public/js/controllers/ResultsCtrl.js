@@ -1,5 +1,7 @@
 angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService) {
 
+
+
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
@@ -67,11 +69,26 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         ResultsService.showResultDetailsModal(result).then(function(result) {});
     };
 
+    // $scope.getResultIcon = function(result){
+    //   return result.customOptions[result.customOptions.findIndex(x => x.name == "resultIcon")];
+    // };
+
 
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
 
+
+    var deleteIdFromSubdocs = function (obj, isRoot) {
+      for (var key in obj) {
+          if (isRoot === false && key === "_id") {
+              delete obj[key];
+          } else if (typeof obj[key] === "object") {
+              deleteIdFromSubdocs(obj[key], false);
+          }
+      }
+      return obj;
+    };
 
     $scope.autoconvert = true;
     MembersService.getMembers({
@@ -99,6 +116,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
 
+
+
     // make sure dates are always UTC
     $scope.$watch('formData.race.racedate ', function(date) {
       if($scope.formData.race !== undefined){
@@ -115,7 +134,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     if (editmode){
       if (result) {
-
           $scope.editmode = true;
 
           $scope.formData = result;
@@ -139,11 +157,16 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
               });
           }
 
+          if (result.customOptions !== undefined){
+            $scope.customOptionsString = JSON.stringify(deleteIdFromSubdocs(result.customOptions,true));
+          }
+
       }else{}
     }else{
       $scope.editmode = false;
       if (result){
         $scope.formData = {};
+        $scope.formData.isRecordEligible = true;
         $scope.formData.race = result.race;
         $scope.formData.race.location = {};
         $scope.formData.ranking = {};
@@ -152,10 +175,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.nbOfMembers = 1;
         $scope.time = {};
 
-
-
       }else{
         $scope.formData = {};
+        $scope.formData.isRecordEligible = true;
         if(localStorageService.get('race') !== null){
             $scope.formData.race = localStorageService.get('race');
         }else{
@@ -255,6 +277,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race.racetype.miles = 0;
         }
 
+
+        if ($scope.customOptionsString !== undefined){
+          $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
+        }
         $uibModalInstance.close($scope.formData);
     };
 
@@ -267,7 +293,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.remove('agetotal');
         localStorageService.remove('gendertotal');
         localStorageService.remove('overalltotal');
-
     };
 
     $scope.editResult = function() {
@@ -303,7 +328,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race.racetype.miles = 0;
         }
 
-
+        if ($scope.customOptionsString !== undefined){
+          $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
+        }
         $uibModalInstance.close($scope.formData);
     };
 
@@ -394,6 +421,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
 
+
 }]);
 
 
@@ -425,6 +453,10 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
     $scope.showResultDetailsModal = function(result,race) {
         ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
+
+
+
+
 }]);
 
 

@@ -8,30 +8,16 @@ app.directive('rankingResult', function() {
 
 app.directive('resultIcon', function() {
     return {
-        controller: controller,
         scope: {
           result:'=result',
         },
         link: function($scope, element, attrs) {
           // $scope.imgsrc = "";
           // $scope.title = "";
-          $scope.test = "slkdjfksjdf";
           if ($scope.result.customOptions !== undefined){
-            $scope.resultIcon = $scope.result.customOptions[$scope.result.customOptions.findIndex(x => x.name == "resultIcon")];
-            if ($scope.resultIcon !== undefined){
-              $scope.imgsrc = $scope.resultIcon.value;
-              $scope.title = $scope.resultIcon.text;
-              $scope.tooltip  = '<span>'+$scope.title+'</span>';
-            }
+            $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
           }
         },
-        template:	'<span ng-if="resultIcon" class="hoverhand" uib-tooltip-html="tooltip"> <img src="{{imgsrc}}"  width="16" height="16"></span>'
+        template:	'<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  width="16" height="16"></span>'
     };
-
-    function controller($scope, $attrs) {
-
-        // $scope.getResultIcon = function(result){
-        //   return result.customOptions[result.customOptions.findIndex(x => x.name == "resultIcon")];
-        // };
-    }
 });

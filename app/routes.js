@@ -1446,11 +1446,18 @@ module.exports = function(app, qs, passport, async, _) {
     });
 
 
+    app.get('/.well-known/acme-challenge/lfjIpE_Pf7QymSNIa3Dkm54V19d--Gnze39R-sicRAI', function(req, res) {
+        res.render('.well-known/acme-challenge/lfjIpE_Pf7QymSNIa3Dkm54V19d--Gnze39R-sicRAI.ejs', {
+
+        }); // load the index.ejs file
+    });
+
     app.get('*', function(req, res) {
         res.render('index.ejs', {
             user: req.user
         }); // load the index.ejs file
     });
+
 
 };
 

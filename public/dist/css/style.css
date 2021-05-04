@@ -7101,6 +7101,10 @@ footer {
   background: url('../../images/topcover6.jpg') left top no-repeat;
   background-size: contain;
 }
+.navimg-7 {
+  background: url('../../images/topcover7.jpg') left top no-repeat;
+  background-size: contain;
+}
 @media (min-width: 992px) {
   .navimg {
     height: 250px;

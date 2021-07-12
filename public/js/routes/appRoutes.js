@@ -75,6 +75,8 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             controller: 'TableReportController'
         }).state('/submit', {
             url: "http://bit.ly/reportresult"
+        }).state('/instagram', {
+            url: "https://www.instagram.com/moco_racing"
         });
 
 });

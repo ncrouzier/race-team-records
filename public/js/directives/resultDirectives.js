@@ -16,20 +16,36 @@ app.directive('resultIcon', function() {
           // $scope.title = "";
 
           function sameDay(d1, d2) {
-            return d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+            return d1.getUTCMonth() === d2.getUTCMonth() && d1.getUTCDate() === d2.getUTCDate();
           }
 
+          //return thanksgiving date for a given year.
+          function thanksgivingDayUSA(year){
+            first = new Date(year,10,1);
+            day_of_week = first.getUTCDay();
+            return new Date(year,10,22 + (11 - day_of_week) % 7);
+          }
 
           if ($scope.result.customOptions !== undefined){
             $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
           }
+          var d1= new Date($scope.result.race.racedate);
+          var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
           $scope.isbirthdayRace = false;
           $scope.result.members.forEach(function(member) {
-              if(sameDay(new Date(member.dateofbirth),new Date($scope.result.race.racedate))){
+              if(sameDay(new Date(member.dateofbirth),raceDate)){
                   $scope.isbirthdayRace = true;
               }
           });
+          $scope.isThanksgiving = false;
+          if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
+            if (sameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
+              $scope.isThanksgiving = true;
+            }
+
+          }
+
         },
-        template:	'<span class="hoverhand" uib-tooltip="Birthday Race" ng-if="isbirthdayRace">🎂</span> <span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  width="16" height="16"></span>'
+        template:	'<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span><span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span> <span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  width="16" height="16"></span>'
     };
 });

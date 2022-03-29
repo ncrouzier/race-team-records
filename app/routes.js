@@ -1450,7 +1450,7 @@ module.exports = function(app, qs, passport, async, _) {
         // res.render('.well-known/acme-challenge/jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ', {
         //
         // });
-        res.send("jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ.8UJGEF4qHOtZdN1CO4-P_iE1SSJMRT2PQCy7OtsHxzE");
+        res.send("");
     });
 
     app.get('*', function(req, res) {

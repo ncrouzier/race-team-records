@@ -1446,10 +1446,11 @@ module.exports = function(app, qs, passport, async, _) {
     });
 
 
-    app.get('/.well-known/acme-challenge/lfjIpE_Pf7QymSNIa3Dkm54V19d--Gnze39R-sicRAI', function(req, res) {
-        res.render('.well-known/acme-challenge/lfjIpE_Pf7QymSNIa3Dkm54V19d--Gnze39R-sicRAI.ejs', {
-
-        }); // load the index.ejs file
+    app.get('/.well-known/acme-challenge/jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ', function(req, res) {
+        // res.render('.well-known/acme-challenge/jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ', {
+        //
+        // });
+        res.send("jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ.8UJGEF4qHOtZdN1CO4-P_iE1SSJMRT2PQCy7OtsHxzE");
     });
 
     app.get('*', function(req, res) {

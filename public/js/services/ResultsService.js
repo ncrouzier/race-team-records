@@ -140,6 +140,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 templateUrl: 'views/modals/resultDetailsModal.html',
                 controller: 'ResultDetailslInstanceController',
                 size: 'lg',
+                backdrop: 'static',
                 resolve: {
                     result: result,
                     race: race

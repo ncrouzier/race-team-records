@@ -86,6 +86,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             templateUrl: 'views/modals/resultModal.html',
             controller: 'ResultModalInstanceController',
             size: 'lg',
+            backdrop: 'static',
             resolve: {
                 editmode: false,
                 result: function() {
@@ -113,6 +114,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
                 size: 'lg',
+                backdrop: 'static',
                 resolve: {
                     editmode: true,
                     result: function() {
@@ -140,7 +142,6 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 templateUrl: 'views/modals/resultDetailsModal.html',
                 controller: 'ResultDetailslInstanceController',
                 size: 'lg',
-                backdrop: 'static',
                 resolve: {
                     result: result,
                     race: race

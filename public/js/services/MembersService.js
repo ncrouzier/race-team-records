@@ -69,6 +69,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
             templateUrl: 'views/modals/memberModal.html',
             controller: 'MemberModalInstanceController',
             size: 'lg',
+            backdrop: 'static',
             resolve: {
                 member: false
             }

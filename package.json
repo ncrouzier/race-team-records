@@ -17,6 +17,7 @@
     "express": "4.15.2",
     "express-session": "1.15.1",
     "grunt-contrib-copy": "^0.7.0",
+    "heroku-ssl-redirect": "^0.1.1",
     "method-override": "~3.0.0",
     "mongoose": "^5.2.18",
     "morgan": "~1.9.1",

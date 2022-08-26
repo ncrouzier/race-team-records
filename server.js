@@ -3,6 +3,7 @@
 // set up ======================================================================
 // get all the tools we need
 var express = require('express');
+const sslRedirect = require('heroku-ssl-redirect').default
 var app = express();
 var osipaddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 var osport = process.env.OPENSHIFT_NODEJS_PORT || 8080;
@@ -30,6 +31,7 @@ var qs = require('querystring');
 
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
+app.use(sslRedirect());
 
 // configuration ===============================================================
 // mongoose.connect(configDB.url); // connect to our database

@@ -2,8 +2,6 @@
 
 // set up ======================================================================
 // get all the tools we need
-const sslRedirect = require('heroku-ssl-redirect').default
-
 var express = require('express');
 var app = express();
 var osipaddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
@@ -31,8 +29,6 @@ var _ = require('underscore');
 var qs = require('querystring');
 
 process.env.TZ = 'UTC';
-
-app.use(sslRedirect());
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
 
 // configuration ===============================================================

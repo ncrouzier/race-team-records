@@ -76,7 +76,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         }).state('/submit', {
             url: "http://bit.ly/reportresult"
         }).state('/instagram', {
-            url: "https://www.instagram.com/moco_racing"
+            url: "https://www.instagram.com/mcrrc"
         });
 
 });

@@ -63,7 +63,7 @@ module.exports = function(grunt) {
                     keepSpecialComments: 0
                 },
                 files: {
-                    'public/dist/css/style.min.css': [
+                        'public/dist/css/style.min.css': [
                         'public/libs/fontawesome/css/font-awesome.css',
                         'public/libs/nanogallery/dist/css/nanogallery.min.css',
                         'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',

@@ -7,7 +7,6 @@ var authenticationModule = angular.module('mcrrcApp.authentication', []);
 
 app.config(function(paginationTemplateProvider) {
     paginationTemplateProvider.setPath('views/templates/dirPagination.tpl.html');
-
 });
 
 app.config(function(localStorageServiceProvider) {

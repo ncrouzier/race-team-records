@@ -13,18 +13,30 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         .state('/', {
             url: "/",
             templateUrl: "views/home.html",
-            controller: 'HomeController'
+            controller: 'HomeController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/home.html');
+                gtag('event', 'page_view');
+            }
         }).state('/members', {
             url: "/members?member",
             params: {
                 member: null,
             },
             templateUrl: "views/members.html",
-            controller: 'MembersController'
+            controller: 'MembersController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/members.html');
+                gtag('event', 'page_view');
+            }
         }).state('/results', {
             url: "/results",
             templateUrl: "views/results.html",
-            controller: 'ResultsController'
+            controller: 'ResultsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/results.html');
+                gtag('event', 'page_view');
+            }
         }).state('/login', {
             url: "/login",
             templateUrl: "views/login.html",
@@ -44,11 +56,19 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         }).state('/records', {
             url: "/records",
             templateUrl: "views/records.html",
-            controller: 'RecordsController'
+            controller: 'RecordsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/records.html');
+                gtag('event', 'page_view');
+            }
         }).state('/stats', {
             url: "/stats",
             templateUrl: "views/stats.html",
-            controller: 'StatsController'
+            controller: 'StatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/stats.html');
+                gtag('event', 'page_view');
+            }
         }).state('/report', {
             url: "/report",
             templateUrl: "views/report.html",
@@ -64,7 +84,11 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         }).state('/contact', {
             url: "/contact",
             templateUrl: "views/contact.html",
-            controller: 'ContactController'
+            controller: 'ContactController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/contact.html');
+                gtag('event', 'page_view');
+            }
         }).state('/bulk', {
             url: "/bulk",
             templateUrl: "views/bulkOperations.html",
@@ -76,7 +100,11 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         }).state('/submit', {
             url: "http://bit.ly/reportresult"
         }).state('/instagram', {
-            url: "https://www.instagram.com/mcrrc"
+            url: "https://www.instagram.com/mcrrc",
+            onEnter: function() {
+                gtag('set', 'page_path', '/instagram');
+                gtag('event', 'page_view');
+            }
         });
 
 });

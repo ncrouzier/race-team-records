@@ -92,7 +92,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.autoconvert = true;
     MembersService.getMembers({
-        sort: 'firstname'
+        sort: 'memberStatus firstname'
     }).then(function(members) {
         $scope.membersList = members;
 

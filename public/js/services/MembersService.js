@@ -60,6 +60,14 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
             });
     };
 
+
+    factory.getParticipation = function(params){
+        return Restangular.one('stats/participation').get(params).then(function(results) {
+            return results;
+        });
+       
+    };
+
     // =====================================
     // MEMBER MODALS ======================
     // =====================================

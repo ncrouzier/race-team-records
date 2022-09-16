@@ -92,10 +92,12 @@ module.exports = function(app, qs, passport, async, _) {
     // =====================================
     // LOGOUT ==============================
     // =====================================
-    app.get('/logout', function(req, res) {
-        req.logout();
-        res.redirect('/');
+    app.get('/logout', function (req, res){
+        req.session.destroy(function (err) {
+            res.redirect('/'); 
+        });
     });
+    
 
     var SystemInfo = require('./models/systeminfo');
     var RaceType = require('./models/racetype');
@@ -1041,6 +1043,148 @@ module.exports = function(app, qs, passport, async, _) {
         });
     });
 
+
+     // get participation stats
+     app.get('/api/stats/participation', function(req, res) {
+        var startdateReq = parseInt(req.query.startdate);
+        var enddateReq = parseInt(req.query.enddate);
+        var memberStatusReq = req.query.memberstatus;
+        console.log(startdateReq,enddateReq);
+        if (startdateReq !== undefined){
+            var startdate = new Date(startdateReq);    
+        }else{            
+            var startdate = new Date(new Date().getFullYear(), 0, 1);
+        }
+
+        if (enddateReq !== undefined){
+            var enddate = new Date(enddateReq);
+        }else{            
+            var enddate = new Date();
+        }
+
+        if (memberStatusReq !== undefined){
+            if (memberStatusReq.toLowerCase() === 'past'){
+                memberstatus = 'past';
+            }else if (memberStatusReq.toLowerCase() === 'all'){
+                memberstatus = '.*';
+            }else{
+                memberstatus = 'current';
+            }
+        }else{            
+            var memberstatus = 'current';
+        }
+
+
+        console.log("start date ",startdate);
+        console.log("end date ",enddate);
+        console.log("memberstatus ",memberstatus);
+
+         query = Member.aggregate(
+            [
+                {
+                  '$match': {
+                    '$or': [
+                      {
+                        'membershipDates': {
+                          '$elemMatch': {
+                            'start': {
+                              '$lte': startdate
+                            }, 
+                            'end': {
+                              '$gte': startdate
+                            }
+                          }
+                        }
+                      }, {
+                        'membershipDates': {
+                          '$elemMatch': {
+                            'start': {
+                              '$lte': enddate
+                            },
+                            '$or': [
+                              {
+                                'end': {
+                                  '$gte': enddate
+                                }
+                              }, {
+                                'end': {
+                                  '$exists': false
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }, {
+                  '$lookup': {
+                    'from': 'results', 
+                    'localField': '_id', 
+                    'foreignField': 'members._id', 
+                    'as': 'results', 
+                    'pipeline': [
+                      {
+                        '$match': {
+                          '$and': [
+                            {
+                              'race.racedate': {
+                                '$gt': startdate
+                              }
+                            }, {
+                              'race.racedate': {
+                                '$lt': enddate
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }, {
+                  '$replaceRoot': {
+                    'newRoot': {
+                      'name': {
+                        '$concat': [
+                          '$firstname', ' ', '$lastname'
+                        ]
+                      }, 
+                      'numberofraces': {
+                        '$size': '$results'
+                      }, 
+                      'max': {
+                        '$ifNull': [
+                          {
+                            '$max': '$results.agegrade'
+                          }, 'N/A'
+                        ]
+                      }
+                    }
+                  }
+                }, {
+                  '$sort': {
+                    'numberofraces': -1, 
+                    'max': -1
+                  }
+                }
+              ]);   
+
+
+        query.exec(function(err, participation) {
+            if (err) {
+                res.send(err);
+            } else {
+
+                // results.forEach(function(resu) {
+                //     resu.results = _.sortBy(resu.results, 'time');
+                // });
+
+                res.json(participation); // return all members in JSON format
+            }
+        });
+    });
+
+    
 
     // get raceinfo list
     app.get('/api/raceinfos', function(req, res) {

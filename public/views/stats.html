@@ -94,7 +94,36 @@
         Miles raced: {{miscStats.milesRaced | number}}<br>
         </uib-tab>
 
-        <uib-tab ng-show="user.role == 'admin'" index="4" heading="Participation Stats" select="">
+        <uib-tab ng-if="user.role !== 'admin'" index="4" heading="Participation Stats" select="">
+            <div class="row text-left">
+                <div class="col-md-9" >
+
+                </div>
+                <div class="col-md-3" >
+                    <div style="float:right;"><ui-select ng-model="participationStats.year" ng-change="getParticipationStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
+                        <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                        <ui-select-choices repeat="year in yearsList">
+                            <div ng-bind="year"></div>
+                        </ui-select-choices>
+                    </ui-select>
+                    </div>
+                </div>
+            </div>
+            <table style="width:100%">
+                <tr>
+                    <th style="width:100px;">Member</th>
+                    <th style="width:100px;">Number of races ran</th>
+                    <th style="width:100px;">Max AG %</th>
+                  </tr>
+                  <tr ng-repeat="r in participationStats">
+                  <td><span>{{r.name}}</span></td>
+                  <td><span>{{r.numberofraces}}</span></td>
+                  <td><span>{{r.max}}</span></td>                  
+                  </tr>                
+                </table>
+        </uib-tab>
+
+        <!-- <uib-tab ng-show="user.role == 'admin'" index="5" heading="Participation Stats" select="">
             <div class="row text-left">
                 <div class="col-md-12" >
                     <div style="float:left;">
@@ -145,8 +174,8 @@
             </table>
 
 
-        </uib-tab>
-        <uib-tab ng-if="user.role == 'admin'" index="5" heading="Team Members Stats" select="">
+        </uib-tab> -->
+        <uib-tab ng-if="user.role == 'admin'" index="6" heading="Team Members Stats" select="">
             <div class="row text-left">
               <div class="col-md-12" >
                   <div>

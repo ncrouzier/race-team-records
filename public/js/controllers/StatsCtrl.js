@@ -30,16 +30,31 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.yearsList.push(i);
     }
 
+    $scope.participationStats = {};
+
     $scope.getMapStats = function() {
 
     };
 
-
+    $scope.getParticipationStats = function () {
+        var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
+        var toDate = new Date().getTime();
+        if ($scope.participationStats.year !== "All Time") {
+            fromDate = new Date(Date.UTC($scope.participationStats.year, 0, 1)).getTime();
+            toDate = new Date(Date.UTC($scope.participationStats.year + 1, 0, 1)).getTime();
+        }
+        MembersService.getParticipation({
+            "startdate": fromDate,
+            "enddate": toDate,
+            "memberstatus": 'current'
+        }).then(function (stats) {
+            $scope.participationStats = stats;
+            console.log(stats);
+        });
+    };
 
 
     $scope.getRacesStats = function() {
-
-
 
         var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
         var toDate = new Date().getTime();
@@ -132,10 +147,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                     $scope.onSelectRace(races[i]);
                 }
             }
-
         });
-
-
     };
 
     $scope.onSelectRace = function(item, model) {
@@ -202,7 +214,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.getMiscStats();
     $scope.getAttendanceStats();
 
-
+    $scope.getParticipationStats();
 
 
 }]);

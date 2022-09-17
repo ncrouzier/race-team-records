@@ -73,7 +73,6 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             "enddate": new Date($scope.partdates.participationStatsEnd).getTime()
         }).then(function (stats) {
             $scope.participationStats = stats;
-            console.log(stats);
         });
     };
 

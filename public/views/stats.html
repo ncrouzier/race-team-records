@@ -94,7 +94,7 @@
         Miles raced: {{miscStats.milesRaced | number}}<br>
         </uib-tab>
 
-        <uib-tab ng-if="user.role !== 'admin'" index="4" heading="Participation Stats" select="">
+        <uib-tab ng-if="user.role === 'admin'" index="4" heading="Participation Stats" select="">
             <div class="row text-left">
                 <div class="col-md-3">
                     <label class="text-left">From:</label>

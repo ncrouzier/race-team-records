@@ -1049,7 +1049,6 @@ module.exports = function(app, qs, passport, async, _) {
         var startdateReq = parseInt(req.query.startdate);
         var enddateReq = parseInt(req.query.enddate);
         var memberStatusReq = req.query.memberstatus;
-        console.log(startdateReq,enddateReq);
         if (startdateReq !== undefined){
             var startdate = new Date(startdateReq);    
         }else{            
@@ -1073,11 +1072,6 @@ module.exports = function(app, qs, passport, async, _) {
         }else{            
             var memberstatus = 'current';
         }
-
-
-        console.log("start date ",startdate);
-        console.log("end date ",enddate);
-        console.log("memberstatus ",memberstatus);
 
          query = Member.aggregate(
             [

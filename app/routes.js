@@ -1087,9 +1087,17 @@ module.exports = function(app, qs, passport, async, _) {
                       {
                         'membershipDates': {
                           '$elemMatch': {
-                            'start': {
-                              '$lte': startdate
-                            }, 
+                            '$or': [
+                                {
+                                    'start': {
+                                        '$lte': startdate
+                                    }
+                                },{
+                                    'start': {
+                                        '$lte': new Date('2013-01-01T00:00:00.000Z')
+                                    }   
+                                }
+                            ],
                             'end': {
                               '$gte': startdate
                             }

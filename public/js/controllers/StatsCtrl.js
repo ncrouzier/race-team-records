@@ -36,17 +36,41 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     };
 
+
+    $scope.partdates = {};
+    $scope.partdates.participationStatsStart =  new Date(new Date().getFullYear(), 0, 1);
+    $scope.partdates.participationStatsEnd = new Date();    
+    // make sure dates are always UTC
+    $scope.$watch('partdates.participationStatsStart ', function (date) {
+        $scope.partdates.participationStatsStart = $filter('date')($scope.partdates.participationStatsStart, 'yyyy-MM-dd', 'UTC');
+    });
+    $scope.$watch('partdates.participationStatsEnd ', function (date) {
+        $scope.partdates.participationStatsEnd = $filter('date')($scope.partdates.participationStatsEnd, 'yyyy-MM-dd', 'UTC');        
+    });
+
+    $scope.participationStatsStartPicker = {};
+    $scope.openParticipationStatsStartPicker = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.participationStatsStartPicker.opened = true;
+    };
+
+    
+    $scope.participationStatsEndPicker = {};
+    $scope.openParticipationStatsEndPicker = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.participationStatsEndPicker.opened = true;
+    };
+    
+    $scope.selectDate= function () {
+       $scope.getParticipationStats();
+    };
+
     $scope.getParticipationStats = function () {
-        var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
-        var toDate = new Date().getTime();
-        if ($scope.participationStats.year !== "All Time") {
-            fromDate = new Date(Date.UTC($scope.participationStats.year, 0, 1)).getTime();
-            toDate = new Date(Date.UTC($scope.participationStats.year + 1, 0, 1)).getTime();
-        }
         MembersService.getParticipation({
-            "startdate": fromDate,
-            "enddate": toDate,
-            "memberstatus": 'current'
+            "startdate": new Date($scope.partdates.participationStatsStart).getTime(),
+            "enddate": new Date($scope.partdates.participationStatsEnd).getTime()
         }).then(function (stats) {
             $scope.participationStats = stats;
             console.log(stats);
@@ -213,8 +237,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.getRacesStats();
     $scope.getMiscStats();
     $scope.getAttendanceStats();
-
     $scope.getParticipationStats();
-
+  
 
 }]);

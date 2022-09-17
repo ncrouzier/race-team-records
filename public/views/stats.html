@@ -96,31 +96,68 @@
 
         <uib-tab ng-if="user.role !== 'admin'" index="4" heading="Participation Stats" select="">
             <div class="row text-left">
-                <div class="col-md-9" >
-
-                </div>
-                <div class="col-md-3" >
-                    <div style="float:right;"><ui-select ng-model="participationStats.year" ng-change="getParticipationStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
-                        <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
-                        <ui-select-choices repeat="year in yearsList">
-                            <div ng-bind="year"></div>
-                        </ui-select-choices>
-                    </ui-select>
+                <div class="col-md-3">
+                    <label class="text-left">From:</label>
+                    <div class="input-group">
+                        {{participationStatsStart.getTime()}}
+                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+                            uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsStart"
+                            ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsStartPicker.opened"
+                            min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default"
+                                ng-click="openParticipationStatsStartPicker($event)"><i
+                                    class="glyphicon glyphicon-calendar"></i></button>
+                        </span>
                     </div>
                 </div>
+                
+                <div class="col-md-3">
+                    <label class="text-left">To:</label>
+                    <div class="input-group">
+                        {{participationStatsEnd.getTime()}}
+                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+                            uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsEnd"
+                            ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsEndPicker.opened"
+                            min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-click="openParticipationStatsEndPicker($event)"><i
+                                    class="glyphicon glyphicon-calendar"></i></button>
+                        </span>
+                    </div>                 
+                    <!-- <ui-select ng-model="participationStats.year" ng-change="getParticipationStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
+                                <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                                <ui-select-choices repeat="year in yearsList">
+                                    <div ng-bind="year"></div>
+                                </ui-select-choices>
+                            </ui-select> -->
+                </div>
+                <div class="col-md-6">
+                    <!-- <label class="text-left">Fetch</label>
+                    <div class="input-group">
+                        <button type="button" class="btn btn-default"
+                        ng-click="getParticipationStats($event)">Get stats</button>
+                    </div> -->
+                </div>
             </div>
-            <table style="width:100%">
-                <tr>
-                    <th style="width:100px;">Member</th>
-                    <th style="width:100px;">Number of races ran</th>
-                    <th style="width:100px;">Max AG %</th>
-                  </tr>
-                  <tr ng-repeat="r in participationStats">
-                  <td><span>{{r.name}}</span></td>
-                  <td><span>{{r.numberofraces}}</span></td>
-                  <td><span>{{r.max}}</span></td>                  
-                  </tr>                
-                </table>
+            <div class="row text-left">
+                <div class="col-md-12">
+                    <table style="width:100%">
+                        <tr>
+                            <th style="width:100px;">Member</th>
+                            <th style="width:100px;">Number of races ran</th>
+                            <th style="width:100px;">Max AG %</th>
+                        </tr>
+                        <tr ng-repeat="r in participationStats">
+                            <td><span>{{r.name}}</span></td>
+                            <td><span>{{r.numberofraces}}</span></td>
+                            <td><span>{{r.max}}</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        
+        
         </uib-tab>
 
         <!-- <uib-tab ng-show="user.role == 'admin'" index="5" heading="Participation Stats" select="">

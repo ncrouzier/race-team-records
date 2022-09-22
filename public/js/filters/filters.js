@@ -711,7 +711,7 @@ function inline_ordinal_suffix_of(i, withStyle) {
 app.filter('sortMembers', function () {
   return function (items,type,reverseSort) {
     var sorted = [];
-    if (items !== undefined){
+    if (items !== undefined && Array.isArray(items)){
       items.forEach(function (i) {
         sorted.push(i);
       });
@@ -751,10 +751,30 @@ app.filter('sortMembers', function () {
             }
              return 0;
           });
-        }else{
-
+        }else if(type === "numberofraces"){
+            sorted.sort(function(a, b) {              
+              if (a.numberofraces < b.numberofraces) {
+                return 1;
+              }
+              if (a.numberofraces > b.numberofraces) {
+                return -1;
+              }
+               return 0;
+            });
+          }else if(type === "maxage"){
+            sorted.sort(function(a, b) {              
+              if (a.max < b.max) {
+                return 1;
+              }
+              if (a.max > b.max) {
+                return -1;
+              }
+               return 0;
+            });
+          }else{
+            return sorted;
       }
-
+      
     }
     if(!reverseSort){
       return  Array.prototype.reverse.call(sorted);

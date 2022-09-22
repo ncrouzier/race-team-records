@@ -16,6 +16,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.attendanceStats.year = "All Time";
 
     $scope.field = 'firstname';
+    // $scope.fieldParticipation = 'maxage';
 
     $scope.current = {memberStatus:"current"};
     $scope.past = {memberStatus:"past"};
@@ -23,6 +24,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     $scope.statusChoice =$scope.current;
     $scope.reverseSort = false;
+    $scope.reverseSortParticipation = false;
 
     var currentYear = new Date().getFullYear();
     $scope.yearsList = ['All Time'];

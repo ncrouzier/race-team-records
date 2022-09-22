@@ -1145,12 +1145,10 @@ module.exports = function(app, qs, passport, async, _) {
                   }
                 }, {
                   '$replaceRoot': {
-                    'newRoot': {
-                      'name': {
-                        '$concat': [
-                          '$firstname', ' ', '$lastname'
-                        ]
-                      }, 
+                    'newRoot': {                      
+                      'firstname': '$firstname',
+                      'lastname': '$lastname',
+                      'memberStatus': '$memberStatus',
                       'numberofraces': {
                         '$size': '$results'
                       }, 

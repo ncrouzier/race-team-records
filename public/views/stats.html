@@ -144,12 +144,12 @@
                 <div class="col-md-12">
                     <table style="width:100%">
                         <tr>
-                            <th style="width:100px;">Member</th>
-                            <th style="width:100px;">Number of races ran</th>
-                            <th style="width:100px;">Max AG %</th>
+                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation">Member <span ng-show="fieldParticipation == 'firstname'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
+                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation">Number of races ran <span ng-show="fieldParticipation == 'numberofraces'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
+                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation">Max AG % <span ng-show="fieldParticipation == 'maxage'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
                         </tr>
-                        <tr ng-repeat="r in participationStats">
-                            <td><span>{{r.name}}</span></td>
+                        <tr ng-class="r.memberStatus === 'past' ?'red':'' " ng-repeat="r in participationStats |sortMembers:fieldParticipation:reverseSortParticipation track by $index">
+                            <td><a ui-sref="/members({ member: r.firstname+r.lastname }) ">{{r.firstname}} {{r.lastname}}</a></td>
                             <td><span>{{r.numberofraces}}</span></td>
                             <td><span>{{r.max}}</span></td>
                         </tr>
@@ -226,10 +226,10 @@
                       <table style="width:100%">
                         <tr>
                             <th style="min-width:25px"></th>
-                            <th style="width:25%;"><a href="#" ng-click="field='firstname'; reverseSort = !reverseSort">Member <span ng-show="field == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
-                            <th style="width:25%;"><a href="#" ng-click="field='age'; reverseSort = !reverseSort">Age <span ng-show="field == 'age'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
-                            <th style="width:25%;"><a href="#" ng-click="field='dateofbirth'; reverseSort = !reverseSort">DoB <span ng-show="field == 'dateofbirth'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
-                            <th style="width:25%;"><a href="#" ng-click="field='status'; reverseSort = !reverseSort">Status <span ng-show="field == 'status'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a>
+                            <th style="width:25%;"><a href="" ng-click="field='firstname'; reverseSort = !reverseSort">Member <span ng-show="field == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='age'; reverseSort = !reverseSort">Age <span ng-show="field == 'age'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='dateofbirth'; reverseSort = !reverseSort">DoB <span ng-show="field == 'dateofbirth'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='status'; reverseSort = !reverseSort">Status <span ng-show="field == 'status'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a>
                               <label><input type="radio" ng-model="statusChoice" ng-value="none" name="rdoResult">All</label>
                               <label><input type="radio" ng-model="statusChoice" ng-value="current" name="rdoResult">Current</label>
                               <label><input type="radio" ng-model="statusChoice" ng-value="past" name="rdoResult">Past</label></th>

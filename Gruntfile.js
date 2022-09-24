@@ -67,16 +67,17 @@ module.exports = function(grunt) {
                 },
                 files: {
                         'public/dist/css/style.min.css': [
-                        'public/libs/fontawesome/css/font-awesome.css',
-                        'public/libs/nanogallery/dist/css/nanogallery.min.css',
-                        'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',
-                        'public/css/libs/select2.css',
-                        'public/css/libs/select2-override.css',
-                        'public/css/libs/bootstrap.css',
-                        'public/libs/angular-loading-bar/build/loading-bar.css',
-                        'public/libs/angular-ui-select/dist/select.css',
-                        'public/dist/css/style.css'
-                    ]
+                            'public/libs/fontawesome/css/font-awesome.css',
+                            'public/libs/nanogallery/dist/css/nanogallery.min.css',
+                            'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',
+                            'public/css/libs/select2.css',
+                            'public/css/libs/select2-override.css',
+                            'public/css/libs/bootstrap.css',
+                            'public/libs/angular-loading-bar/build/loading-bar.css',
+                            'public/libs/angular-ui-select/dist/select.css',
+                            'public/libs/angular-dialog-service/dist/dialogs.min.css',
+                            'public/dist/css/style.css'
+                        ]
                 }
             }
         },

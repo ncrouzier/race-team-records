@@ -32,7 +32,7 @@
                         <td>
                             <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
                                 <p class="input-group" style="width: 100px;">
-                                    <input  type="text" datetimepicker-neutral-timezone name="racedate" class="form-control bulkinput" uib-datepicker-popup="yyyy-MM-dd" ng-model="result.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened[$index]" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
+                                    <input  type="text"  name="racedate" class="form-control bulkinput" uib-datepicker-popup="yyyy-MM-dd" ng-model="result.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened[$index]" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
                                     <span class="input-group-btn">
                                         <button type="button" class="btn btn-default bulkinput" ng-click="openDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
                                     </span>
@@ -185,7 +185,7 @@
                         <td>
                             <div class="form-group" ng-class="{ 'has-error' : formeditresult.race.racedate.$invalid && !formeditresult.race.racedate.$pristine}">
                                 <p class="input-group" style="width: 100px;">
-                                    <input  type="text" datetimepicker-neutral-timezone name="racedate" class="form-control bulkinput" uib-datepicker-popup="yyyy-MM-dd" ng-model="result.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened[$index]" min-date="'2013-01-01'" max-date="'3015-06-22'"  close-text="Close" />
+                                    <input  type="text"  name="racedate" class="form-control bulkinput" uib-datepicker-popup="yyyy-MM-dd" ng-model="result.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened[$index]" min-date="'2013-01-01'" max-date="'3015-06-22'"  close-text="Close" />
                                     <span class="input-group-btn">
                                         <button type="button" class="btn btn-default bulkinput" ng-click="openDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
                                     </span>

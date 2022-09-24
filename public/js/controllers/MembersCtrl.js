@@ -169,26 +169,35 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 angular.module('mcrrcApp.members').controller('MemberModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'member', function($scope, $uibModalInstance, $filter, member) {
 
     // make sure dates are always UTC
-    $scope.$watch('formData.dateofbirth ', function(date) {
-      $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
-    });
+    // $scope.$watch('formData.dateofbirth ', function(date) {
+    //   $scope.formData.dateofbirth = $filter('date')($scope.formData.dateofbirth, 'yyyy-MM-dd', 'UTC');
+    // });
 
-    $scope.$watch('formData.addMembershipDates', function(date) {
-      if ($scope.formData.membershipDates){
-        for (i=0;i<$scope.formData.membershipDates.length;i++) {
-            $scope.formData.membershipDates[i].start = $filter('date')($scope.formData.membershipDates[i].start, 'yyyy-MM-dd', 'UTC');
-            $scope.formData.membershipDates[i].end = $filter('date')($scope.formData.membershipDates[i].end, 'yyyy-MM-dd', 'UTC');
-        }
-      }
-
-    });
+    // $scope.$watch('formData.addMembershipDates', function(date) {
+    //   if ($scope.formData.membershipDates){
+    //     for (i=0;i<$scope.formData.membershipDates.length;i++) {
+    //         $scope.formData.membershipDates[i].start = $filter('date')($scope.formData.membershipDates[i].start, 'yyyy-MM-dd', 'UTC');
+    //         $scope.formData.membershipDates[i].end = $filter('date')($scope.formData.membershipDates[i].end, 'yyyy-MM-dd', 'UTC');
+    //     }
+    //   }
+    // });
 
 
 
     $scope.editmode = false;
     if (member) {
         $scope.formData = member; 
+        $scope.formData.dateofbirth = new Date(member.dateofbirth); 
         $scope.editmode = true;
+        for (i=0;i<$scope.formData.membershipDates.length;i++) {
+            if ($scope.formData.membershipDates[i].start !== undefined){
+                $scope.formData.membershipDates[i].start = new Date($scope.formData.membershipDates[i].start);
+            }
+            if ($scope.formData.membershipDates[i].end !== undefined){
+                $scope.formData.membershipDates[i].end = new Date($scope.formData.membershipDates[i].end);
+            }
+        }
+       
     } else {
         $scope.formData = {};
         $scope.formData.memberStatus = 'current';

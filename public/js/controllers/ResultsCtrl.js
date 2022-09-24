@@ -119,11 +119,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
     // make sure dates are always UTC
-    $scope.$watch('formData.race.racedate ', function(date) {
-      if($scope.formData.race !== undefined){
-        $scope.formData.race.racedate = $filter('date')($scope.formData.race.racedate, 'yyyy-MM-dd', 'UTC');
-      }
-    });
+    // $scope.$watch('formData.race.racedate ', function(date) {
+    //   if($scope.formData.race !== undefined){
+    //     $scope.formData.race.racedate = $filter('date')($scope.formData.race.racedate, 'yyyy-MM-dd', 'UTC');
+    //   }
+    // });
 
     $scope.$watch('formData.race.location.country', function(country) {
       if($scope.formData.race !== undefined && country !== 'USA'){
@@ -137,6 +137,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           $scope.editmode = true;
 
           $scope.formData = result;
+
+          $scope.formData.race.racedate = new Date($scope.formData.race.racedate);
           if ($scope.formData.race.location === undefined){ $scope.formData.race.location = {};}
 
           $scope.nbOfMembers = result.members.length;
@@ -166,9 +168,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
       $scope.editmode = false;
       if (result){
         $scope.formData = {};
-        $scope.formData.isRecordEligible = true;
+        $scope.formData.isRecordEligible = true;        
         $scope.formData.race = result.race;
-        $scope.formData.race.location = {};
+        $scope.formData.race.location.country = result.race.location.country;
+        $scope.formData.race.location.state = result.race.location.state;
+        $scope.formData.race.racedate = new Date(result.race.racedate);
         $scope.formData.ranking = {};
         $scope.formData.members = [];
         $scope.formData.members[0] = {};
@@ -182,7 +186,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race = localStorageService.get('race');
         }else{
             $scope.formData.race = {};
-            $scope.formData.race.racedate = new Date($filter('date')(new Date().setHours(0,0,0,0), 'yyyy-MM-dd', 'UTC'));
+            // $scope.formData.race.racedate = new Date($filter('date')(new Date().setHours(0,0,0,0), 'yyyy-MM-dd', 'UTC'));
+            $scope.formData.race.racedate = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0));
         }
 
 

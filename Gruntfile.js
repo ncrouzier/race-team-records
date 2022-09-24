@@ -9,7 +9,10 @@ module.exports = function(grunt) {
                 smarttabs: true,
                  esversion: 6
             },
-            all: ['public/js/**/*.js', '!public/js/libs/*.js']
+            all: [
+                'public/js/**/*.js',
+                '!public/js/libs/*.js',
+                '!public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js']
         },
 
         // take all the js files and minify them into app.min.js
@@ -22,7 +25,7 @@ module.exports = function(grunt) {
                         'public/dist/js/app.min.js': [
                         'public/libs/jquery/dist/jquery.js',
                         'public/libs/angular/angular.js',
-                        'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                        // 'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
                         'public/libs/angular-loading-bar/build/loading-bar.js',
                         'public/libs/angular-sanitize/angular-sanitize.js',
                         'public/libs/angular-ui-router/release/angular-ui-router.js',

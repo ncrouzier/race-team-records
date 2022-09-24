@@ -99,8 +99,8 @@
                 <div class="col-md-3">
                     <label class="text-left">From:</label>
                     <div class="input-group">
-                        {{participationStatsStart.getTime()}}
-                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+                        
+                        <input type="text" class="form-control"
                             uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsStart"
                             ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsStartPicker.opened"
                             min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
@@ -115,8 +115,8 @@
                 <div class="col-md-3">
                     <label class="text-left">To:</label>
                     <div class="input-group">
-                        {{participationStatsEnd.getTime()}}
-                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+
+                        <input type="text"  class="form-control"
                             uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsEnd"
                             ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsEndPicker.opened"
                             min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />

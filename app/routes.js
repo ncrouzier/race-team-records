@@ -1414,11 +1414,15 @@ module.exports = function(app, qs, passport, async, _) {
             if (err) {
                 res.send(err)
             } else {
+                var raceWon = 0;
                 var sum = 0;
                 results.forEach(function(r) {
                     sum += r.race.racetype.miles;
+                    if(r.ranking.genderrank === 1 || r.ranking.overallrank === 1){
+                        raceWon++;
+                    }
                 });
-                res.json({resultsCount:results.length, milesRaced:sum});
+                res.json({resultsCount:results.length, milesRaced:sum, raceWon:raceWon});
 
             }
         });

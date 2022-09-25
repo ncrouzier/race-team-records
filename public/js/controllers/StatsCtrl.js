@@ -120,6 +120,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         }).then(function(result) {
             $scope.miscStats.milesRaced = parseFloat(result.milesRaced).toFixed(2);
             $scope.miscStats.resultsCount = parseFloat(result.resultsCount);
+            $scope.miscStats.raceWon = parseInt(result.raceWon);
         });
     };
 

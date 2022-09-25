@@ -92,6 +92,8 @@
         Number of results: {{miscStats.resultsCount}}<br>
 
         Miles raced: {{miscStats.milesRaced | number}}<br>
+
+        Number of race won: {{miscStats.raceWon | number}}<br>
         </uib-tab>
 
         <uib-tab ng-if="user.role === 'admin'" index="4" heading="Participation Stats" select="">

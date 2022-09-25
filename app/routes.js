@@ -1051,6 +1051,7 @@ module.exports = function(app, qs, passport, async, _) {
         var memberStatusReq = req.query.memberstatus;
         if (startdateReq !== undefined){
             var startdate = new Date(startdateReq);    
+            console.log(startdate);
         }else{            
             var startdate = new Date(new Date().getFullYear(), 0, 1);
         }
@@ -1131,11 +1132,11 @@ module.exports = function(app, qs, passport, async, _) {
                           '$and': [
                             {
                               'race.racedate': {
-                                '$gt': startdate
+                                '$gte': startdate
                               }
                             }, {
                               'race.racedate': {
-                                '$lt': enddate
+                                '$lte': enddate
                               }
                             }
                           ]

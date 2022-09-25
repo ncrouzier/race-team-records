@@ -12,10 +12,10 @@
             <ul class="results-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="racesList.length >0">
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <span class="listheader hoverhand" title="Event and date">EVENT NAME</span>
                         </div>
-                        <div class="col-sm-3" style="text-align: center;">
+                        <div class="col-sm-2" style="text-align: left;">
                             <span class="listheader hoverhand" title="Event type">EVENT TYPE</span>
                         </div>
                         <div class="col-sm-3" style="text-align: center;">
@@ -28,12 +28,12 @@
                 </li>
                 <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false" >
                     <div class="row" >
-                        <div class="col-sm-3">
+                        <div class="col-sm-4" style="line-height: 1.1;">
                             <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)" >{{raceinfo.race.racename }}</span>
                             <br>
                             <small>{{raceinfo.race.racedate | date:'longDate':'UTC' }} <span ng-if="raceinfo.race.location.state !== null" ng-bind-html="'-- ' + raceinfo.race.location.state"></span><span ng-if="raceinfo.race.location.state === null" ng-bind-html="'-- ' + raceinfo.race.location.country"></span></small>
                         </div>
-                        <div class="col-sm-3" style="text-align: center;">
+                        <div class="col-sm-2" style="text-align: left;">
                             <div ng-if="raceinfo.race.racetype.isVariable">
                                 {{raceinfo.race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.race.racetype.surface}})</span>
                             </div>

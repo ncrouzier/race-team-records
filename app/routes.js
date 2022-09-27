@@ -1163,15 +1163,23 @@ module.exports = function(app, qs, passport, async, _) {
                             '$max': '$results.agegrade'
                           }, 'N/A'
                         ]
+                      },
+                      'maxsortvalue': {
+                        '$ifNull': [
+                          {
+                            '$max': '$results.agegrade'
+                          }, 0
+                        ]
                       }
                     }
                   }
                 }, {
                   '$sort': {
                     'numberofraces': -1, 
-                    'max': -1
+                    'maxsortvalue': -1
                   }
-                }
+                },
+                { $unset: "maxsortvalue" }
               ]);   
 
 

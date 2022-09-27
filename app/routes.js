@@ -1085,7 +1085,7 @@ module.exports = function(app, qs, passport, async, _) {
                             '$or': [
                                 {
                                     'start': {
-                                        '$lte': startdate
+                                        '$lte': startdate 
                                     }
                                 },{
                                     'start': {
@@ -1094,7 +1094,7 @@ module.exports = function(app, qs, passport, async, _) {
                                 }
                             ],
                             'end': {
-                              '$gte': startdate
+                              '$gte': startdate 
                             }
                           }
                         }
@@ -1102,12 +1102,16 @@ module.exports = function(app, qs, passport, async, _) {
                         'membershipDates': {
                           '$elemMatch': {
                             'start': {
-                              '$lte': enddate
+                              '$lte': enddate 
                             },
                             '$or': [
                               {
                                 'end': {
-                                  '$gte': enddate
+                                  '$gte': enddate 
+                                }
+                              },{
+                                'end': {
+                                  '$gte': startdate 
                                 }
                               }, {
                                 'end': {

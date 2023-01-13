@@ -1051,6 +1051,7 @@ module.exports = function(app, qs, passport, async, _) {
         var memberStatusReq = req.query.memberstatus;
         if (startdateReq !== undefined){
             var startdate = new Date(startdateReq);    
+            console.log(startdate);
         }else{            
             var startdate = new Date(new Date().getFullYear(), 0, 1);
         }
@@ -1084,7 +1085,7 @@ module.exports = function(app, qs, passport, async, _) {
                             '$or': [
                                 {
                                     'start': {
-                                        '$lte': startdate
+                                        '$lte': startdate 
                                     }
                                 },{
                                     'start': {
@@ -1093,7 +1094,7 @@ module.exports = function(app, qs, passport, async, _) {
                                 }
                             ],
                             'end': {
-                              '$gte': startdate
+                              '$gte': startdate 
                             }
                           }
                         }
@@ -1101,12 +1102,16 @@ module.exports = function(app, qs, passport, async, _) {
                         'membershipDates': {
                           '$elemMatch': {
                             'start': {
-                              '$lte': enddate
+                              '$lte': enddate 
                             },
                             '$or': [
                               {
                                 'end': {
-                                  '$gte': enddate
+                                  '$gte': enddate 
+                                }
+                              },{
+                                'end': {
+                                  '$gte': startdate 
                                 }
                               }, {
                                 'end': {
@@ -1131,11 +1136,11 @@ module.exports = function(app, qs, passport, async, _) {
                           '$and': [
                             {
                               'race.racedate': {
-                                '$gt': startdate
+                                '$gte': startdate
                               }
                             }, {
                               'race.racedate': {
-                                '$lt': enddate
+                                '$lte': enddate
                               }
                             }
                           ]
@@ -1158,15 +1163,23 @@ module.exports = function(app, qs, passport, async, _) {
                             '$max': '$results.agegrade'
                           }, 'N/A'
                         ]
+                      },
+                      'maxsortvalue': {
+                        '$ifNull': [
+                          {
+                            '$max': '$results.agegrade'
+                          }, 0
+                        ]
                       }
                     }
                   }
                 }, {
                   '$sort': {
                     'numberofraces': -1, 
-                    'max': -1
+                    'maxsortvalue': -1
                   }
-                }
+                },
+                { $unset: "maxsortvalue" }
               ]);   
 
 
@@ -1414,11 +1427,15 @@ module.exports = function(app, qs, passport, async, _) {
             if (err) {
                 res.send(err)
             } else {
+                var raceWon = 0;
                 var sum = 0;
                 results.forEach(function(r) {
                     sum += r.race.racetype.miles;
+                    if(r.ranking.genderrank === 1 || r.ranking.overallrank === 1){
+                        raceWon++;
+                    }
                 });
-                res.json({resultsCount:results.length, milesRaced:sum});
+                res.json({resultsCount:results.length, milesRaced:sum, raceWon:raceWon});
 
             }
         });

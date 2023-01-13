@@ -20,10 +20,10 @@
                     <ul class="results-list list-group">
                         <li class="list-group-item text-left resultlistheader" ng-show="racesList.length >0">
                             <div class="row">
-                                <div class="col-sm-3">
+                                <div class="col-sm-4">
                                     <span class="listheader hoverhand" title="Event and date">EVENT NAME</span>
                                 </div>
-                                <div class="col-sm-3" style="text-align: center;">
+                                <div class="col-sm-2" style="text-align: left;">
                                     <span class="listheader hoverhand" title="Event type">EVENT TYPE</span>
                                 </div>
                                 <div class="col-sm-3" style="text-align: center;">
@@ -36,12 +36,12 @@
                         </li>
                         <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                             <div class="row">
-                                <div class="col-sm-3">
+                                <div class="col-sm-4" style="line-height: 1.1;">
                                     <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)">{{raceinfo.race.racename }}</span>
                                     <br>
                                     <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}  <span ng-if="raceinfo.race.location.state !== null" ng-bind-html="'-- ' + raceinfo.race.location.state"></span><span ng-if="raceinfo.race.location.state === null" ng-bind-html="'-- ' + raceinfo.race.location.country"></span></small>
                                 </div>
-                                <div class="col-sm-3" style="text-align: center;">
+                                <div class="col-sm-2" style="text-align: left;">
                                   <div ng-if="raceinfo.race.racetype.isVariable">
                                       {{raceinfo.race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.race.racetype.surface}})</span>
                                   </div>
@@ -92,6 +92,8 @@
         Number of results: {{miscStats.resultsCount}}<br>
 
         Miles raced: {{miscStats.milesRaced | number}}<br>
+
+        Number of race won: {{miscStats.raceWon | number}}<br>
         </uib-tab>
 
         <uib-tab ng-if="user.role === 'admin'" index="4" heading="Participation Stats" select="">
@@ -99,8 +101,8 @@
                 <div class="col-md-3">
                     <label class="text-left">From:</label>
                     <div class="input-group">
-                        {{participationStatsStart.getTime()}}
-                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+                        
+                        <input type="text" class="form-control"
                             uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsStart"
                             ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsStartPicker.opened"
                             min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
@@ -115,8 +117,8 @@
                 <div class="col-md-3">
                     <label class="text-left">To:</label>
                     <div class="input-group">
-                        {{participationStatsEnd.getTime()}}
-                        <input type="text" datetimepicker-neutral-timezone class="form-control"
+
+                        <input type="text"  class="form-control"
                             uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsEnd"
                             ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsEndPicker.opened"
                             min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
@@ -142,13 +144,15 @@
             </div>
             <div class="row text-left">
                 <div class="col-md-12">
-                    <table style="width:100%">
+                    <table style="table-layout:fixed; width: 100%;">
                         <tr>
-                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation">Member <span ng-show="fieldParticipation == 'firstname'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
-                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation">Number of races ran <span ng-show="fieldParticipation == 'numberofraces'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
-                            <th style="width:100px;"><a href="" ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation">Max AG % <span ng-show="fieldParticipation == 'maxage'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
+                            <th style="width:30px;">#</th>
+                            <th style="width:33%;"><a href="" ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation">Member <span ng-show="fieldParticipation == 'firstname'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
+                            <th style="width:33%;"><a href="" ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation">Number of races ran <span ng-show="fieldParticipation == 'numberofraces'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
+                            <th style="width:33%;"><a href="" ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation">Max AG % <span ng-show="fieldParticipation == 'maxage'"><span ng-show="!reverseSortParticipation">^</span><span ng-show="reverseSortParticipation">v</span></a></th>
                         </tr>
                         <tr ng-class="r.memberStatus === 'past' ?'red':'' " ng-repeat="r in participationStats |sortMembers:fieldParticipation:reverseSortParticipation track by $index">
+                            <td>{{$index+1}}</td>
                             <td><a ui-sref="/members({ member: r.firstname+r.lastname }) ">{{r.firstname}} {{r.lastname}}</a></td>
                             <td><span>{{r.numberofraces}}</span></td>
                             <td><span>{{r.max}}</span></td>

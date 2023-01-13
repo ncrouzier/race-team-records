@@ -24,7 +24,7 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <p class="input-group">
-                            <input type="text" datetimepicker-neutral-timezone class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.dateofbirth" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'1900-01-01'" max-date="'3015-01-01'" required close-text="Close" />
+                            <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.dateofbirth" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'1900-01-01'" max-date="'3015-01-01'" required close-text="Close" />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
@@ -38,11 +38,11 @@
                         <div ng-repeat="membershipdate in formData.membershipDates track by $index" class="row" style="margin-bottom:5px" >
                           <div class="col-sm-9 daterangecol">
                             <div class=" input-group">
-                            <input type="text" datetimepicker-neutral-timezone class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.start" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipStartDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                            <input type="text"  class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.start" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipStartDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" ng-click="openStartDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>
-                            <input type="text" datetimepicker-neutral-timezone class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.end" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipEndDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
+                            <input type="text"  class="form-control" uib-datepicker-popup="yyyy-MM-dd" ng-model="membershipdate.end" ng-model-options="{timezone: 'utc'}" is-open="openedMembershipEndDatePickers[$index]" min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default" ng-click="openEndDatePicker($event,$index)"><i class="glyphicon glyphicon-calendar"></i></button>
                             </span>

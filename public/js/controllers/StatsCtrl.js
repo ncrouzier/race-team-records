@@ -16,14 +16,13 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.attendanceStats.year = "All Time";
 
     $scope.field = 'firstname';
-    // $scope.fieldParticipation = 'maxage';
 
     $scope.current = {memberStatus:"current"};
     $scope.past = {memberStatus:"past"};
     $scope.none = {};
 
     $scope.statusChoice =$scope.current;
-    $scope.reverseSort = false;
+    $scope.reverseSort = false; 
     $scope.reverseSortParticipation = false;
 
     var currentYear = new Date().getFullYear();
@@ -40,15 +39,21 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
 
     $scope.partdates = {};
-    $scope.partdates.participationStatsStart =  new Date(new Date().getFullYear(), 0, 1);
-    $scope.partdates.participationStatsEnd = new Date();    
+    var start = new Date(Date.UTC(new Date().getFullYear(),0,1,0,0,0,0));
+    // start.setFullYear(new Date().getFullYear(), 0, 1);
+    // start.setHours(0, 0, 0, 0);
+    var end = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0));
+    // end.setUTCFullYear(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+    // end.setUTCHours(0, 0, 0, 0);    
+    $scope.partdates.participationStatsStart =  start;
+    $scope.partdates.participationStatsEnd = end;
     // make sure dates are always UTC
-    $scope.$watch('partdates.participationStatsStart ', function (date) {
-        $scope.partdates.participationStatsStart = $filter('date')($scope.partdates.participationStatsStart, 'yyyy-MM-dd', 'UTC');
-    });
-    $scope.$watch('partdates.participationStatsEnd ', function (date) {
-        $scope.partdates.participationStatsEnd = $filter('date')($scope.partdates.participationStatsEnd, 'yyyy-MM-dd', 'UTC');        
-    });
+    // $scope.$watch('partdates.participationStatsStart ', function (date) {
+    //     $scope.partdates.participationStatsStart = $filter('date')($scope.partdates.participationStatsStart, 'yyyy-MM-dd', 'UTC');
+    // });
+    // $scope.$watch('partdates.participationStatsEnd ', function (date) {
+    //     $scope.partdates.participationStatsEnd = $filter('date')($scope.partdates.participationStatsEnd, 'yyyy-MM-dd', 'UTC');        
+    // });
 
     $scope.participationStatsStartPicker = {};
     $scope.openParticipationStatsStartPicker = function($event) {
@@ -115,6 +120,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         }).then(function(result) {
             $scope.miscStats.milesRaced = parseFloat(result.milesRaced).toFixed(2);
             $scope.miscStats.resultsCount = parseFloat(result.resultsCount);
+            $scope.miscStats.raceWon = parseInt(result.raceWon);
         });
     };
 

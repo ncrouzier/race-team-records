@@ -63,7 +63,9 @@ var resultSchema = mongoose.Schema({
     customOptions:[{
       name:String,
       value:String,
-      text:String
+      text:String,
+      width:String,
+      height:String
     }],
     createdAt: Date,
     updatedAt: Date

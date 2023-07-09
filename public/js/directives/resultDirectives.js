@@ -41,11 +41,16 @@ app.directive('resultIcon', function() {
           if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
             if (sameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
               $scope.isThanksgiving = true;
-            }
-
+            }        
+          }
+          
+          $scope.isFourthOfJuly = false;
+          if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4){
+            $scope.isFourthOfJuly = true;
           }
 
         },
-        template:	'<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span><span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span> <span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{"width" : resultIcon.width || "16px" , "height" : resultIcon.height || "16px" }"></span>'
-    };
+          template:	'<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span><span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span><span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span> <span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>'
+      };
+    
 });

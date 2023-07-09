@@ -71,13 +71,13 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList">
+                                    <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                         <div class="row">
                                             <div class="col-sm-6">
-                                                <span> {{result.race.racetype.name}}</span>
+                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.race.racetype.name}}</span>
                                             </div>
                                             <div class="col-sm-6">
-                                                <span> {{result.time | secondsToTimeString}}</span>
+                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.time | secondsToTimeString}}</span>
                                             </div>
                                         </div>
                                     </li>

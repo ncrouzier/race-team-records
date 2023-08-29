@@ -1154,6 +1154,7 @@ module.exports = function(app, qs, passport, async, _) {
                       'firstname': '$firstname',
                       'lastname': '$lastname',
                       'memberStatus': '$memberStatus',
+                      'dateofbirth': '$dateofbirth',
                       'numberofraces': {
                         '$size': '$results'
                       }, 

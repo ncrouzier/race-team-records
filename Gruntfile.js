@@ -7,7 +7,7 @@ module.exports = function(grunt) {
         jshint: {
             options: {
                 smarttabs: true,
-                 esversion: 6
+                 esversion: 8
             },
             all: [
                 'public/js/**/*.js',

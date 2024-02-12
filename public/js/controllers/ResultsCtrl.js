@@ -28,16 +28,17 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         "preload":true
     }).then(function(results) {
         $scope.resultsList = results;
-        //now load the whole thing
-        ResultsService.getResultsWithCacheSupport({
-            "sort": '-race.racedate race.racename time'
-        }).then(function(results) {
-            $scope.resultsList = results;
-        });
+        //now load the whole thing unless the initial call return the cache version (>200 res)
+        if (results.length == 200){
+            ResultsService.getResultsWithCacheSupport({
+                "sort": '-race.racedate race.racename time',
+                "preload":false
+            }).then(function(results) {
+                $scope.resultsList = results;
+            });
+        }    
+        
     });
-
-
-
 
     $scope.showAddResultModal = function(resultSource) {
         ResultsService.showAddResultModal(resultSource).then(function(result) {

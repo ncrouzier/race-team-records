@@ -10,6 +10,8 @@ app.config(function(paginationTemplateProvider) {
 });
 
 app.config(function(localStorageServiceProvider) {
+    localStorageServiceProvider.setStorageType('localStorage');
+    localStorageServiceProvider.setDefaultToCookie(false);
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
@@ -81,8 +83,11 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
 
     //load result in cache
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time'
-    }).then(function(results) {});
+        "sort": '-race.racedate race.racename time',
+        "preload":false
+    }).then(function(results) {
+        // console.log('return res in app.js', results);
+    });
 
 
 }]);

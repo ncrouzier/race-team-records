@@ -13,26 +13,47 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // =====================================
 
 
-
+    async function getCurrent(db) {
+        var  results = await db.results.get("current");            
+        return results;
+      }
 
     //retrieve results
-    factory.getResultsWithCacheSupport = function(params) {
-        return UtilsService.getSystemInfo('mcrrc').then(function(sysinfo) {
-            var date = new Date(sysinfo.resultUpdate);
-            if (localStorageService.get('cachedResults') === undefined || date > new Date(localStorageService.get('cachedResultsDate'))) {
-                return results.getList(params).then(function(results) {
-                  if(!params.preload){
-                    localStorageService.set('cachedResultsDate', date);
-                    localStorageService.set('cachedResults', results);
-                  }
-                    return results;
-                });
-            } else {
-                return $q(function(resolve, reject) {
-                    resolve(Restangular.restangularizeCollection(null, localStorageService.get('cachedResults'), 'results',true));
-                });
-            }
+    factory.getResultsWithCacheSupport = async function (params) {
+        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+            return sysinfo;
         });
+
+        var db = new Dexie("mcrrcAppDatabase");
+        db.version(1).stores({
+            results: 'instance,date,data'
+        });
+        var date = new Date(sysinfo.resultUpdate);
+
+        await db.open();
+        var currentCache = await getCurrent(db);
+        // console.log("current database", currentCache);
+        if (currentCache === undefined || date > new Date(currentCache.date)) {
+            // console.log("cache is undefined or out of date so we retrieve from the database",params);
+            return results.getList(params).then(function (resultsFromDatabase) {
+                if (!params.preload) {
+                    // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
+                    db.results.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
+                        // console.log("Done inserting data in cache");        
+                    });
+                }
+                // console.log("done retrieved function");  
+                return resultsFromDatabase;
+            });
+        } else {
+            // console.log("using cache");                        
+            var res = $q(function (resolve, reject) {
+                resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'results', true));
+                // console.log("done restangularizeCollection");
+            });
+            // console.log("done retrieve cache");
+            return res;
+        }
     };
 
 

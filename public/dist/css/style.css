@@ -7441,24 +7441,19 @@ footer {
   padding-bottom: 1px;
   border: 0px;
 }
-@media (max-width: 2px) {
-  .member-picture {
-    max-width: 227.5px;
-  }
-}
 @media (min-width: 2px) {
   .member-picture {
-    max-width: 227.5px;
+    max-width: 347px;
   }
 }
 @media (min-width: 992px) {
   .member-picture {
-    max-width: 310px;
+    max-width: 347px;
   }
 }
 @media (min-width: 1200px) {
   .member-picture {
-    max-width: 385px;
+    max-width: 421px;
   }
 }
 @media (max-width: 992px) {

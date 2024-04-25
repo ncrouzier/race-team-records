@@ -153,6 +153,7 @@ module.exports = function(app, qs, passport, async, _) {
         var filters = req.query.filters;
         var sort = req.query.sort;
         var limit = parseInt(req.query.limit);
+        var select = req.query.select;
 
         query = Member.find();
         if (filters) {
@@ -191,7 +192,9 @@ module.exports = function(app, qs, passport, async, _) {
         if (limit) {
             query = query.limit(limit);
         }
-
+        if (select){
+            query = query.select(select);
+        }
 
         query.exec(function(err, members) {
             // if there is an error retrieving, send the error. nothing after res.send(err) will execute
@@ -203,6 +206,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     // get a member
     app.get('/api/members/:member_id', function(req, res) {
+        res.setHeader("Content-Type", "application/json");
         Member.findOne({
             _id: req.params.member_id
         }, function(err, member) {
@@ -259,6 +263,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     // create member
     app.post('/api/members', isAdminLoggedIn, function(req, res) {
+        res.setHeader("Content-Type", "application/json");
         // create a member, information comes from AJAX request from Angular
         Member.create({
             firstname: req.body.firstname,
@@ -282,6 +287,7 @@ module.exports = function(app, qs, passport, async, _) {
 
     //update a member
     app.put('/api/members/:member_id', isAdminLoggedIn, function(req, res) {
+        res.setHeader("Content-Type", "application/json");
         Member.findById(req.params.member_id, function(err, member) {
             member.firstname = req.body.firstname;
             member.lastname = req.body.lastname;

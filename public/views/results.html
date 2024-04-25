@@ -55,7 +55,7 @@
 
                     </div>
                 </li>
-                <li dir-paginate="result in resultsList | resultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                <li dir-paginate="result in resultsList | resultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                     <div class="row" style="display: flex; align-items: center;">
                         <div class="col-sm-2" style="font-size: 16px;">
                             <result-members-names></result-members-names>

@@ -100,7 +100,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
         }).state('/submit', {
             url: "http://bit.ly/reportresult"
         }).state('/instagram', {
-            url: "https://www.instagram.com/mcrrc",
+            url: "https://www.instagram.com/mcrrc_racing",
             onEnter: function() {
                 gtag('set', 'page_path', '/instagram');
                 gtag('event', 'page_view');

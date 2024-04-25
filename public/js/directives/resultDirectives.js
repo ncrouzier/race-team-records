@@ -15,8 +15,8 @@ app.directive('resultIcon', function() {
           // $scope.imgsrc = "";
           // $scope.title = "";
 
-          function sameDay(d1, d2) {
-            return d1.getUTCMonth() === d2.getUTCMonth() && d1.getUTCDate() === d2.getUTCDate();
+          function isSameDay(date1, date2) {
+            return date1.getUTCMonth() === date2.getUTCMonth() && date1.getUTCDate() === date2.getUTCDate();
           }
 
           //return thanksgiving date for a given year.
@@ -33,13 +33,13 @@ app.directive('resultIcon', function() {
           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
           $scope.isbirthdayRace = false;
           $scope.result.members.forEach(function(member) {
-              if(sameDay(new Date(member.dateofbirth),raceDate)){
+              if(isSameDay(new Date(member.dateofbirth),raceDate)){
                   $scope.isbirthdayRace = true;
               }
           });
           $scope.isThanksgiving = false;
           if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
-            if (sameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
+            if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
               $scope.isThanksgiving = true;
             }        
           }

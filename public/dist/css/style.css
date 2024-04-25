@@ -7814,4 +7814,38 @@ footer {
 .past-member {
   color: #a73a3a;
 }
+.memberListTable {
+  background-color: white;
+  table-layout: fixed;
+  width: 100%;
+  border: #dddddd;
+  border-width: 1px;
+  border-collapse: collapse;
+}
+.memberListHeader {
+  padding: 0.5em;
+  color: #006687;
+  border: 1px;
+  border-bottom: 5px;
+  border-color: #dddddd;
+  border-bottom-color: #006687;
+  border-style: solid;
+}
+.memberListCell {
+  padding: 0.5em;
+  border: 1px;
+  border-style: solid;
+  border-color: #dddddd;
+  font-size: 16px;
+  font-weight: 300;
+}
+.memberListCell:hover {
+  background-color: #006687;
+  font-size: 18;
+  color: #FFF;
+  font-weight: bold;
+}
+.memberListCell:empty {
+  background-color: red;
+}
 

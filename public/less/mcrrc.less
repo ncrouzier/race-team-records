@@ -735,3 +735,45 @@ footer {
 .past-member{
     color: rgb(167, 58, 58);
 }
+
+
+.memberListTable{
+    background-color: white;
+    table-layout:fixed;
+    width: 100%; 
+    border: rgb(221, 221, 221);
+    border-width: 1px;
+    border-collapse: collapse;
+}
+
+.memberListHeader{
+    padding: 0.5em;
+    color: @blue-dark;
+    border: 1px;
+    border-bottom: 5px;
+    border-color: rgb(221, 221, 221);
+    border-bottom-color: @blue-dark;
+    border-style: solid;
+    
+}
+
+.memberListCell{
+    padding: 0.5em;
+    border: 1px;
+    border-style: solid;
+    border-color: rgb(221, 221, 221);
+    font-size: 16px;
+    font-weight: 300;
+    &:hover{
+        
+        background-color: @brand-primary-dark;
+        font-size: 18;
+        color: #FFF;
+        font-weight: bold;
+    }
+    
+}
+
+.memberListCell:empty {
+    background-color: red
+}

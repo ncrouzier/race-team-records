@@ -41,6 +41,17 @@ raceSchema.pre('save', function(next, done) {
     next();
 });
 
+//or deleted
+raceSchema.post('deleteOne', function(doc, next) {
+    var date = Date.now();
+    if (this.isNew) {
+        this.createdAt = date;
+    }
+    this.updatedAt = date;    
+    raceSchema.methods.updateSystemInfo('mcrrc',date);
+    next();
+}); 
+
 
 raceSchema.methods.updateSystemInfo = function(name,date) {
     try{

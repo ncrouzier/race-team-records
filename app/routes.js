@@ -119,7 +119,6 @@ module.exports = async function(app, qs, passport, async, _) {
             name: 'mcrrc'
         }).then(systemInfo => { 
             if (!systemInfo) {
-                console.log(systemInfo);
                 SystemInfo.create({
                     name: "mcrrc"
                 }, function(err) {

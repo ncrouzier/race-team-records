@@ -1,6 +1,8 @@
 var mongoose = require('mongoose');
+const member = require('./models/member');
+const { query } = require('express');
 
-module.exports = function(app, qs, passport, async, _) {
+module.exports = async function(app, qs, passport, async, _) {
 
     // =====================================
     // LOGIN ===============================
@@ -112,35 +114,40 @@ module.exports = function(app, qs, passport, async, _) {
     // =====================================
 
     //Init SytemInfo, should only happen once.
-    SystemInfo.findOne({
-        name: 'mcrrc'
-    }, function(err, systemInfo) {
-        if (err)
-            console.log("error fetching systemInfo")
-        if (!systemInfo) {
-            SystemInfo.create({
-                name: "mcrrc"
-            }, function(err) {
-                if (err) {
-                    console.log(err);
-                }
-            });
-        }
-    });
-
-
+    try{
+        SystemInfo.findOne({
+            name: 'mcrrc'
+        }).then(systemInfo => { 
+            if (!systemInfo) {
+                console.log(systemInfo);
+                SystemInfo.create({
+                    name: "mcrrc"
+                }, function(err) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+            }    
+        });
+    }catch (err) {
+        console.log("error fetching systemInfo")
+    }
+   
+  
 
     // get a member
-    app.get('/api/systeminfos/:name', function(req, res) {
-        SystemInfo.findOne({
-            name: req.params.name
-        }, function(err, systeminfo) {
-            if (err)
-                res.send(err);
-            if (systeminfo) {
-                res.json(systeminfo);
-            }
-        });
+    app.get('/api/systeminfos/:name', async function(req, res) {
+        try{
+            SystemInfo.findOne({
+                name: req.params.name
+            }).then(systeminfo => {
+                if (systeminfo) {
+                    res.json(systeminfo);
+                }
+            });
+        }catch (err){
+            res.send(err);
+        }
     });
 
     // =====================================
@@ -150,12 +157,12 @@ module.exports = function(app, qs, passport, async, _) {
 
     //get all members
     app.get('/api/members', function(req, res) {
-        var filters = req.query.filters;
-        var sort = req.query.sort;
-        var limit = parseInt(req.query.limit);
-        var select = req.query.select;
+        const filters = req.query.filters;
+        const sort = req.query.sort;
+        const limit = parseInt(req.query.limit);
+        const select = req.query.select;
 
-        query = Member.find();
+        let query = Member.find();
         if (filters) {
             if (filters.category) {
                 var datetobemaster = getAddDateToDate(new Date(), -40, 0, 0);
@@ -195,30 +202,33 @@ module.exports = function(app, qs, passport, async, _) {
         if (select){
             query = query.select(select);
         }
-
-        query.exec(function(err, members) {
-            // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-            if (err)
-                res.send(err)
-            res.json(members); // return all members in JSON format
-        });
+        try{
+            const members = query.exec().then(members => {
+                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
+                    
+                res.json(members); // return all members in JSON format
+            });
+        }catch(err){
+            res.send(err);
+        }
+       
     });
 
     // get a member
     app.get('/api/members/:member_id', function(req, res) {
         res.setHeader("Content-Type", "application/json");
-        Member.findOne({
-            _id: req.params.member_id
-        }, function(err, member) {
-            if (err)
-                res.send(err);
-
-            if (member) {
-                res.json(member);
-            }
-
-
-        });
+        try{
+            Member.findOne({
+                _id: req.params.member_id
+            }).then(member =>{    
+                if (member) {
+                    res.json(member);
+                }
+            });
+        }catch(err){
+            res.send(err);
+        }
+       
     });
 
 
@@ -229,23 +239,24 @@ module.exports = function(app, qs, passport, async, _) {
 
         pbraces.forEach(function(pb) {
             calls.push(function(callback) {
-                var query = Result.find({
+                let query = Result.find({
                     'members._id': req.params.member_id,
                     'race.racetype.name': pb
                 });
                 query = query.sort('time');
-                query.exec(function(err, results) {
-                    if (err) {
-                        return callback(err);
-                    } else {
+                try{
+                    query.exec().then(results => {            
                         if (results.length > 0) {
                             pbs.push(results[0]);
                             callback(null);
                         } else {
                             callback(null);
                         }
-                    }
                 });
+                }catch(err){
+                    return callback(err);
+                }
+                
             });
         });
 
@@ -288,25 +299,20 @@ module.exports = function(app, qs, passport, async, _) {
     //update a member
     app.put('/api/members/:member_id', isAdminLoggedIn, function(req, res) {
         res.setHeader("Content-Type", "application/json");
-        Member.findById(req.params.member_id, function(err, member) {
-            member.firstname = req.body.firstname;
-            member.lastname = req.body.lastname;
-            member.dateofbirth = req.body.dateofbirth;
-            member.sex = req.body.sex;
-            member.bio = req.body.bio;
-            member.pictureLink = req.body.pictureLink;
-            member.memberStatus = req.body.memberStatus;
-            member.membershipDates = req.body.membershipDates;
-            member.save(function(err) {
-                if (!err) {
-                    Result.find({
-                            'members._id': member._id
-                        },
-                        function(err, results) {
-                            if (err) {
-                                console.log(err);
-                                res.send(err);
-                            } else {
+        try{
+            Member.findById(req.params.member_id).then(member=> {
+                member.firstname = req.body.firstname;
+                member.lastname = req.body.lastname;
+                member.dateofbirth = req.body.dateofbirth;
+                member.sex = req.body.sex;
+                member.bio = req.body.bio;
+                member.pictureLink = req.body.pictureLink;
+                member.memberStatus = req.body.memberStatus;
+                member.membershipDates = req.body.membershipDates;
+                try{
+                    member.save().then(() => {       
+                        try{
+                            Result.find({'members._id': member._id}).then(results => {                                
                                 for (i = 0; i < results.length; i++) {
                                     for (j = 0; j < results[i].members.length; j++) { //itirates members if relay race
                                         if (results[i].members[j]._id.equals(req.body._id)) {
@@ -316,24 +322,32 @@ module.exports = function(app, qs, passport, async, _) {
                                             results[i].members[j].dateofbirth = req.body.dateofbirth;
                                         }
                                     }
-                                    results[i].save(function(err) {
-                                        if (err) {
-                                            console.log(err);
-                                            res.send(err);
-                                        }
-                                    });
+                                    try {
+                                        results[i].save().then(()=> {});
+                                    }catch(resultsiSaveErr){
+                                        console.log(resultsiSaveErr);
+                                        res.send(resultsiSaveErr);
+                                    }
+                                    
 
                                 }
-                                res.end('{"success" : "Member updated successfully", "status" : 200}');
-                            }
-                        }
-                    );
-                } else {
-                    console.log(err);
-                    res.send(err);
+                                res.end('{"success" : "Member updated successfully", "status" : 200}');                                
+                            });  
+                        }catch(ResultFindErr){
+                            console.log(ResultFindErr);
+                            res.send(ResultFindErr);
+                        }                                                  
+                    });
+                }catch(memberSaveErr){
+                    console.log(memberSaveErr);
+                    res.send(memberSaveErr);
                 }
+                
             });
-        });
+        }catch(MemberFindByIdErr){
+            res.send(MemberFindByIdErr);
+        }
+        
 
 
 
@@ -342,15 +356,20 @@ module.exports = function(app, qs, passport, async, _) {
 
     // delete a member
     app.delete('/api/members/:member_id', isAdminLoggedIn, function(req, res) {
-        Member.remove({
-            _id: req.params.member_id
-        }, function(err, member) {
-            if (err) {
-                res.send(err);
-            } else {
-                res.end('{"success" : "Member deleted successfully", "status" : 200}');
-            }
-        });
+        try{
+            Member.deleteOne({
+                _id: req.params.member_id
+            }).then(deleteResult => {               
+                if (deleteResult.deletedCount === 1){
+                    res.send('{"success" : "Member deleted successfully", "status" : 200}');   
+                }else{
+                    res.send('{"error" : "Member not deleted", "status" : 200}');   
+                }                            
+            });
+        }catch(MemberDeleteOneErr){
+            res.send(MemberDeleteOneErr);
+        }
+        
     });
 
 
@@ -521,6 +540,140 @@ module.exports = function(app, qs, passport, async, _) {
 
     });
 
+    // update pbs
+    app.get('/updatePbs', async function(req, res) {
+        var data = req.body;
+
+        query2 = Member.find();
+        query2 = query2.sort("lastname");
+        query2.exec(async function(err, members) {
+
+            if (err) {
+                res.send(err)
+            } else {
+                if (members) {
+                    var numberOfUpdates = 0;
+                    for (const member of members) {
+                        console.log("member: " +member.lastname);
+                        //SYNC ISSUE
+                        resultquery = Result.find();
+                        resultquery = resultquery.where('members._id').equals(member._id);
+                        resultquery.sort('-race.racedate');
+                        await resultquery.exec(function(err, results) {
+                            if (err) {
+                                res.send(err);
+                            }
+                            if (results){
+                                var numberOfresults = 0;
+                                 for(const res of results){
+                                    numberOfresults++;
+
+                                    if (res && res.members && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers or multi sport events
+                                        numberOfUpdates++;
+                                        // if (ag[res.racetype.name.toLowerCase()] !== undefined) {
+                                        //     agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
+                                        //     res.agegrade = agegrade;
+                                        //     res.save(function(err) {
+                                        //         if (err) {
+                                        //             console.error(err.message);
+                                        //         } else {
+                                        //             numberOfUpdates++;
+                                        //             callback();
+                                        //         }
+                                        //     });
+        
+                                        // } else {
+                                        //     callback();
+                                        // }
+                                        // callback2();
+                                    } else {
+                                        // callback2();
+                                    }
+
+                                }
+                                    console.log(member.lastname + " " +numberOfresults);
+            
+                                
+                            }
+                            
+
+
+                        });
+                    }
+                    console.log("-------------------> finiii!");
+                    res.json({ 'numberOfUpdates': numberOfUpdates });
+                }
+
+            }
+        });
+
+
+
+        // query = Result.find();
+        // query = query.or([{
+        //     'race.racetype.surface': 'track'
+        // }, {
+        //     'race.racetype.surface': 'road'
+        // }]);
+
+        // query.exec(function(err, results) {
+
+        //     if (err) {
+        //         res.send(err)
+        //     } else {
+        //         if (results) {
+        //             var numberOfUpdates = 0;
+        //             async.forEachOf(results, function(res, key, callback) {
+
+        //                 //SYNC ISSUE
+        //                 AgeGrading.findOne({
+        //                     sex: res.members[0].sex.toLowerCase(),
+        //                     type: res.race.racetype.surface,
+        //                     age: calculateAge(res.race.racedate, res.members[0].dateofbirth),
+        //                 }, function(err, ag) {
+        //                     if (err) {
+        //                         res.send(err);
+        //                     }
+        //                     if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
+        //                         if (ag[res.racetype.name.toLowerCase()] !== undefined) {
+        //                             agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
+        //                             res.agegrade = agegrade;
+        //                             res.save(function(err) {
+        //                                 if (err) {
+        //                                     console.error(err.message);
+        //                                 } else {
+        //                                     numberOfUpdates++;
+        //                                     callback();
+        //                                 }
+        //                             });
+
+        //                         } else {
+        //                             callback();
+        //                         }
+
+        //                     } else {
+        //                         callback();
+        //                     }
+
+
+        //                 });
+        //             }, function(err) {
+        //                 if (err) {
+        //                     console.error(err.message);
+        //                 }
+        //                 res.json({ 'numberOfUpdates': numberOfUpdates });
+
+        //             });
+
+        //         }
+
+        //     }
+
+
+        // });
+
+    });
+
 
 
     // get all results
@@ -528,7 +681,7 @@ module.exports = function(app, qs, passport, async, _) {
         var sort = req.query.sort;
         var limit = parseInt(req.query.limit);
 
-        query = Result.find();
+        let query = Result.find();
 
         if (req.query.filters) {
             //filters means we are in record mode (I think)
@@ -575,11 +728,12 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.where('members._id').equals(member._id);
         }
 
-        query.exec(function(err, results) {
+        try{
 
-            if (err) {
-                res.send(err)
-            } else {
+        }catch(err){
+            res.send(err)
+        }
+        query.exec().then(results =>{       
                 var filteredResult = results;
                 if (req.query.filters) {
                     var filters = JSON.parse(req.query.filters);
@@ -598,12 +752,6 @@ module.exports = function(app, qs, passport, async, _) {
                     }
                 }
                 res.json(filteredResult);
-
-            }
-
-
-
-
         });
     });
 
@@ -750,209 +898,231 @@ module.exports = function(app, qs, passport, async, _) {
             });
         }
 
-        AgeGrading.findOne({
-            sex: members[0].sex.toLowerCase(),
-            type: req.body.race.racetype.surface,
-            age: calculateAge(req.body.race.racedate, members[0].dateofbirth),
-        }, function(err, ag) {
-            var agegrade;
-            if (err)
-                console.log("error fetching agegrading")
-            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
-                if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
-                    agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
+        try{
+            AgeGrading.findOne({
+                sex: members[0].sex.toLowerCase(),
+                type: req.body.race.racetype.surface,
+                age: calculateAge(req.body.race.racedate, members[0].dateofbirth),
+            }).then(ag => {
+                var agegrade;            
+                if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
+                    if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
+                        agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
+                    }
                 }
-            }
-
-            Result.findById(req.params.result_id, function(err, result) {
-                var oldraceid = result.race._id;
-                //does the race exists?
-                Race.findOne({
-                    'racename': req.body.race.racename,
-                    'isMultisport':req.body.race.isMultisport,
-                    'distanceName': req.body.race.distanceName,
-                    'racedate': req.body.race.racedate,
-                    'location.country': req.body.race.location.country,
-                    'location.state': req.body.race.location.state,
-                    'racetype._id': req.body.race.racetype._id
-                }, function(err, race) {
-                    if (err) {
-                        res.send(err);
-                    } else {
-                        if (!race) { //if race does not exists
-                            Race.create({
-                                racename: req.body.race.racename,
-                                isMultisport: req.body.race.isMultisport,
-                                distanceName: req.body.race.distanceName,
-                                racedate: req.body.race.racedate,
-                                location: {
-                                    country: req.body.race.location.country,
-                                    state: req.body.race.location.state
-                                },
-                                racetype: req.body.race.racetype
-                            }, function(err, r) {
-                                if (err) {
-                                    res.send(err);
-                                } else {
-                                    result.race._id = r._id;
-                                    result.race.racename = r.racename;
-                                    result.race.isMultisport = r.isMultisport;
-                                    result.race.distanceName = r.distanceName;
-                                    result.race.racedate = r.racedate;
-                                    result.race.location.country = r.location.country;
-                                    result.race.location.state = r.location.state;
-                                    result.race.racetype = {
-                                        _id: r.racetype._id,
-                                        name: r.racetype.name,
-                                        surface: r.racetype.surface,
-                                        isVariable: r.racetype.isVariable,
-                                        hasAgeGradedInfo: r.racetype.hasAgeGradedInfo,
-                                        meters: r.racetype.meters,
-                                        miles: r.racetype.miles
-                                    };
-                                    result.members = members;
-                                    result.time = req.body.time;
-                                    result.legs = req.body.legs;
-                                    result.ranking = req.body.ranking;
-                                    result.comments = req.body.comments;
-                                    result.resultlink = req.body.resultlink;
-                                    result.agegrade = agegrade,
-                                    result.is_accepted = req.body.is_accepted;
-                                    result.isRecordEligible = req.body.isRecordEligible;
-                                    result.customOptions = req.body.customOptions;
-                                    result.save(function(err) {
-                                        if (err) {
-                                            res.send(err);
-                                        } else {
-
-                                            // check if previous race entry is not a zombie now.
-                                            cleanQuery = Result.find().where('race._id').equals(oldraceid);
-                                            cleanQuery.exec(function(err, cleanResults) {
-                                                if (err) {
-                                                    res.send(err)
+                try{
+                    Result.findById(req.params.result_id).then(result  => {
+                        var oldraceid = result.race._id;
+                        //does the race exists?
+                        try{
+                        Race.findOne({
+                            'racename': req.body.race.racename,
+                            'isMultisport':req.body.race.isMultisport,
+                            'distanceName': req.body.race.distanceName,
+                            'racedate': req.body.race.racedate,
+                            'location.country': req.body.race.location.country,
+                            'location.state': req.body.race.location.state,
+                            'racetype._id': req.body.race.racetype._id
+                        },).then(race => {                                       
+                            if (!race) { //if race does not exists
+                                try{
+                                    Race.create({
+                                        racename: req.body.race.racename,
+                                        isMultisport: req.body.race.isMultisport,
+                                        distanceName: req.body.race.distanceName,
+                                        racedate: req.body.race.racedate,
+                                        location: {
+                                            country: req.body.race.location.country,
+                                            state: req.body.race.location.state
+                                        },
+                                        racetype: req.body.race.racetype
+                                    }).then(r => {                                
+                                        result.race._id = r._id;
+                                        result.race.racename = r.racename;
+                                        result.race.isMultisport = r.isMultisport;
+                                        result.race.distanceName = r.distanceName;
+                                        result.race.racedate = r.racedate;
+                                        result.race.location.country = r.location.country;
+                                        result.race.location.state = r.location.state;
+                                        result.race.racetype = {
+                                            _id: r.racetype._id,
+                                            name: r.racetype.name,
+                                            surface: r.racetype.surface,
+                                            isVariable: r.racetype.isVariable,
+                                            hasAgeGradedInfo: r.racetype.hasAgeGradedInfo,
+                                            meters: r.racetype.meters,
+                                            miles: r.racetype.miles
+                                        };
+                                        result.members = members;
+                                        result.time = req.body.time;
+                                        result.legs = req.body.legs;
+                                        result.ranking = req.body.ranking;
+                                        result.comments = req.body.comments;
+                                        result.resultlink = req.body.resultlink;
+                                        result.agegrade = agegrade,
+                                        result.is_accepted = req.body.is_accepted;
+                                        result.isRecordEligible = req.body.isRecordEligible;
+                                        result.customOptions = req.body.customOptions;
+                                        try{
+                                            result.save().then(savedResult=> {
+                                                // check if previous race entry is not a zombie now.
+                                                cleanQuery = Result.find().where('race._id').equals(oldraceid);
+                                                try{
+                                                    cleanQuery.exec().then(cleanResults => {            
+                                                        if (cleanResults) {
+                                                            if (cleanResults.length === 0) {
+                                                                try{
+                                                                    Race.deleteOne({
+                                                                        _id: oldraceid
+                                                                    }).then(raceD => {                                                                        
+                                                                            console.log("remove zombie race entry successful");                                                                     
+                                                                    });
+                                                                }catch(RacedeleteOneErr){
+                                                                    res.send(RacedeleteOneErr);
+                                                                }
+                                                                
+                                                            }
+                                                        }
+                                                    });
+                                                }catch(cleanQueryExecErr){
+                                                    res.send(cleanQueryExecErr)
                                                 }
+                                                
+                                                res.json(result);
+                                                // res.end('{"success" : "Result updated successfully", "status" : 200}');
+                                                    
+                                                });            
+                                        }catch(resultSaveErr){
+                                            res.send(resultSaveErr);
+                                        }
+                                                                    
+                                    });
+                                }catch(raceCreateErr){
+                                    res.send(raceCreateErr);
+                                }
+                                
+                            } else { // race exists
+                                //the race is updated here but this should not be necessary (no changes)
+                                result.race._id = race._id;
+                                result.race.racename = race.racename;
+                                result.race.isMultisport = race.isMultisport;
+                                result.race.distanceName = race.distanceName;
+                                result.race.racedate = race.racedate;
+                                result.race.location.country = race.location.country;
+                                result.race.location.state = race.location.state
+                                result.race.racetype = {
+                                    _id: race.racetype._id,
+                                    name: race.racetype.name,
+                                    surface: race.racetype.surface,
+                                    isVariable: race.racetype.isVariable,
+                                    hasAgeGradedInfo: race.racetype.hasAgeGradedInfo,
+                                    meters: race.racetype.meters,
+                                    miles: race.racetype.miles
+                                };
+        
+                                result.members = members;
+                                result.time = req.body.time;
+                                result.legs = req.body.legs;
+                                result.ranking = req.body.ranking;
+                                result.comments = req.body.comments;
+                                result.resultlink = req.body.resultlink;
+                                result.agegrade = agegrade,
+                                result.is_accepted = req.body.is_accepted;
+                                result.isRecordEligible = req.body.isRecordEligible;
+                                result.customOptions = req.body.customOptions;
+                                try{
+                                    result.save().then(savedResult => {                                                                       
+                                        // check if previous race entry is not a zombie now.
+                                        cleanQuery = Result.find().where('race._id').equals(oldraceid);
+                                        try{
+                                            cleanQuery.exec().then(cleanResults => {            
                                                 if (cleanResults) {
                                                     if (cleanResults.length === 0) {
-                                                        Race.remove({
-                                                            _id: oldraceid
-                                                        }, function(err, raceD) {
-                                                            if (err) {
-                                                                res.send(err);
-                                                            } else {
-                                                                //remove zombie race entry successful
-                                                            }
-                                                        });
+                                                        try{
+                                                            Race.deleteOne({
+                                                                _id: oldraceid
+                                                            }).then(raceD => {                                                                        
+                                                                    console.log("remove zombie race entry successful");                                                                     
+                                                            });
+                                                        }catch(RacedeleteOneErr){
+                                                            res.send(RacedeleteOneErr);
+                                                        }
+                                                        
                                                     }
                                                 }
                                             });
-                                            res.json(result);
-                                            // res.end('{"success" : "Result updated successfully", "status" : 200}');
+                                        }catch(cleanQueryExecErr){
+                                            res.send(cleanQueryExecErr)
                                         }
+                                        res.json(result);                                        
                                     });
+                                }catch(resultSaveErr){
+                                    res.send(resultSaveErr);
                                 }
-                            });
-                        } else { // race exists
-                            //the race is updated here but this should not be necessary (no changes)
-                            result.race._id = race._id;
-                            result.race.racename = race.racename;
-                            result.race.isMultisport = race.isMultisport;
-                            result.race.distanceName = race.distanceName;
-                            result.race.racedate = race.racedate;
-                            result.race.location.country = race.location.country;
-                            result.race.location.state = race.location.state
-                            result.race.racetype = {
-                                _id: race.racetype._id,
-                                name: race.racetype.name,
-                                surface: race.racetype.surface,
-                                isVariable: race.racetype.isVariable,
-                                hasAgeGradedInfo: race.racetype.hasAgeGradedInfo,
-                                meters: race.racetype.meters,
-                                miles: race.racetype.miles
-                            };
-
-                            result.members = members;
-                            result.time = req.body.time;
-                            result.legs = req.body.legs;
-                            result.ranking = req.body.ranking;
-                            result.comments = req.body.comments;
-                            result.resultlink = req.body.resultlink;
-                            result.agegrade = agegrade,
-                            result.is_accepted = req.body.is_accepted;
-                            result.isRecordEligible = req.body.isRecordEligible;
-                            result.customOptions = req.body.customOptions;
-                            result.save(function(err) {
-                                if (err) {
-                                    res.send(err);
-                                } else {
-                                    // check if previous race entry is not a zombie now.
-                                    cleanQuery = Result.find().where('race._id').equals(oldraceid);
-                                    cleanQuery.exec(function(err, cleanResults) {
-                                        if (err) {
-                                            res.send(err)
-                                        }
-                                        if (cleanResults) {
-                                            if (cleanResults.length === 0) {
-                                                Race.remove({
-                                                    _id: oldraceid
-                                                }, function(err, raceD) {
-                                                    if (err) {
-                                                        res.send(err);
-                                                    } else {
-                                                        //remove zombie race entry successful
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    });
-                                    res.json(result);
-                                    // res.end('{"success" : "Result updated successfully", "status" : 200}');
-                                }
-                            });
-                        }
+                                
+                            }                    
+                        });
+                    }catch(err){
+                        res.send(err);
                     }
-                });
-
-            }); //result FindById
-
-        });
+                    }); //result FindById
+                }catch(ResultFindByIdErr){
+                    console.log("error fetching race by Id")
+                }
+                
+               
+            }); // AgeGrading findOne
+        }catch(ageGradingFindOneErr){
+            console.log("error fetching agegrading")
+        }
+        
 
     });
 
 
     // delete a result
     app.delete('/api/results/:result_id', isAdminLoggedIn, function(req, res) {
-        Result.findById(req.params.result_id, function(err, result) {
-            var oldraceid = result.race._id;
-            Result.remove({
-                _id: req.params.result_id
-            }, function(err, result) {
-                if (err) {
-                    res.send(err);
-                } else {
-                    // check if previous race entry is not a zombie now.
-                    cleanQuery = Result.find().where('race._id').equals(oldraceid);
-                    cleanQuery.exec(function(err, cleanResults) {
-                        if (err) {
-                            res.send(err)
-                        }
-                        if (cleanResults) {
-                            if (cleanResults.length === 0) {
-                                Race.remove({
-                                    _id: oldraceid
-                                }, function(err, raceD) {
-                                    if (err) {
-                                        res.send(err);
-                                    } else {
-                                        //remove zombie race entry successful
+        res.setHeader("Content-Type", "application/json");
+        try{
+            Result.findById(req.params.result_id).then(result => {
+                var oldraceid = result.race._id;
+                try{
+                    Result.deleteOne({
+                        _id: req.params.result_id
+                    }).then(result => {                                                  
+                            cleanQuery = Result.find().where('race._id').equals(oldraceid);
+                            try{
+                                cleanQuery.exec().then(cleanResults => {            
+                                    if (cleanResults) {
+                                        if (cleanResults.length === 0) {
+                                            try{
+                                                Race.deleteOne({
+                                                    _id: oldraceid
+                                                }).then(raceD => {                                                                        
+                                                        console.log("remove zombie race entry successful");                                                                     
+                                                });
+                                            }catch(RacedeleteOneErr){
+                                                res.send(RacedeleteOneErr);
+                                            }
+                                            
+                                        }
                                     }
                                 });
-                            }
-                        }
+                            }catch(cleanQueryExecErr){
+                                res.send(cleanQueryExecErr)
+                            }                            
+                            res.end('{"success" : "Result deleted successfully", "status" : 200}');
+                        
                     });
-                    res.end('{"success" : "Result deleted successfully", "status" : 200}');
+                }catch(DeleteOneErr){
+                    res.send(DeleteOneErr);
                 }
+                
             });
-        });
+        }catch(findByIdErr){
+            res.send(findByIdErr)
+        }
+       
 
 
     });
@@ -965,7 +1135,7 @@ module.exports = function(app, qs, passport, async, _) {
     app.get('/api/races', function(req, res) {
         var sort = req.query.sort;
         var limit = parseInt(req.query.limit);
-        query = Race.find();
+        let query = Race.find();
 
         if (req.query.filters) {
             var filters = JSON.parse(req.query.filters);
@@ -983,12 +1153,15 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.limit(limit);
         }
 
-        query.exec(function(err, races) {
-            // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-            if (err)
-                res.send(err)
-            res.json(races); // return all races in JSON format
-        });
+        try{
+            query.exec().then(races => {
+                // if there is an error retrieving, send the error. nothing after res.send(err) will execute           
+                res.json(races); // return all races in JSON format
+            });
+        }catch(err){
+            res.send(err)
+        }
+      
     });
 
 
@@ -1004,7 +1177,7 @@ module.exports = function(app, qs, passport, async, _) {
           var typeq = '$location.state';
         }
 
-        query = Race.aggregate([
+        let query = Race.aggregate([
                {
                 $group: {
                     _id: typeq,
@@ -1020,33 +1193,34 @@ module.exports = function(app, qs, passport, async, _) {
             }
         ]);
 
-
-        query.exec(function(err, results) {
-            if (err) {
-                res.send(err);
-            } else {
-              var data = {};
-              var ret = [];
-              var total = 0;
-
-              results.forEach(function(resu) {
-                if(resu["name"] !== null){
-                  total += resu["count"];
-                }
-              });
-
-              results.forEach(function(resu) {
-                if(resu["name"] !== null){
-                  //ret[resu["name"]]={count:resu["count"],fillKey:"red"};
-                  ret.push([resu["name"],resu["count"]])
-                }
-
-                  // i++;
-              });
-
-                res.json(ret); // return all race in JSON format
-            }
-        });
+        try{
+            query.exec().then(results => {
+            
+                var data = {};
+                var ret = [];
+                var total = 0;
+  
+                results.forEach(function(resu) {
+                  if(resu["name"] !== null){
+                    total += resu["count"];
+                  }
+                });
+  
+                results.forEach(function(resu) {
+                  if(resu["name"] !== null){
+                    //ret[resu["name"]]={count:resu["count"],fillKey:"red"};
+                    ret.push([resu["name"],resu["count"]])
+                  }
+  
+                    // i++;
+                });
+  
+                res.json(ret); // return all race in JSON format            
+          });
+        }catch(err){
+            res.send(err);
+        }
+        
     });
 
 
@@ -1080,7 +1254,7 @@ module.exports = function(app, qs, passport, async, _) {
             var memberstatus = 'current';
         }
 
-         query = Member.aggregate(
+        let query = Member.aggregate(
             [
                 {
                   '$match': {
@@ -1189,19 +1363,14 @@ module.exports = function(app, qs, passport, async, _) {
                 { $unset: "maxsortvalue" }
               ]);   
 
-
-        query.exec(function(err, participation) {
-            if (err) {
-                res.send(err);
-            } else {
-
-                // results.forEach(function(resu) {
-                //     resu.results = _.sortBy(resu.results, 'time');
-                // });
-
-                res.json(participation); // return all members in JSON format
-            }
+        try{
+            query.exec().then(participation => {
+                res.json(participation); // return all members in JSON format        
         });
+        }catch(err){
+            res.send(err);
+        }
+        
     });
 
     
@@ -1212,7 +1381,7 @@ module.exports = function(app, qs, passport, async, _) {
         var limit = parseInt(req.query.limit);
         var resultId = req.query.resultId;
 
-        query = Result.aggregate([
+        let query = Result.aggregate([
 
             {
                 $project: {
@@ -1268,18 +1437,17 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.limit(limit); //no idea why I need to parse
         }
 
-        query.exec(function(err, results) {
-            if (err) {
-                res.send(err);
-            } else {
-
+        try{
+            query.exec().then(results =>{               
                 results.forEach(function(resu) {
                     resu.results = _.sortBy(resu.results, 'time');
                 });
-
-                res.json(results); // return all members in JSON format
-            }
-        });
+                res.json(results); // return all members in JSON format                
+            });
+        }catch(err){
+            res.send(err);
+        }
+        
 
     });
 
@@ -1294,7 +1462,7 @@ module.exports = function(app, qs, passport, async, _) {
         var openFemaleRecords = [];
         var masterFemaleRecords = [];
 
-        raceTypeQuery = RaceType.find().sort('meters').and([
+        let raceTypeQuery = RaceType.find().sort('meters').and([
         {
             'name': {'$ne':'Odd road distance'}
         },
@@ -1309,115 +1477,122 @@ module.exports = function(app, qs, passport, async, _) {
             'name': {'$ne':'Cycling'}
         },]);
 
-        raceTypeQuery.exec(function(err, racetypes) {
-            if (err) {
-                res.send(err)
-            }
-            racetypes.forEach(function(rt) {
-
-                calls.push(function(callback) {
-                    query = Result.find();
-                    query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                    query.exec(function(err, results) {
-                        if (err) {
-                            callback(err);
+        try{
+            raceTypeQuery.exec().then(racetypes => {            
+                racetypes.forEach(function(rt) {
+    
+                    calls.push(function(callback) {
+                        let query = Result.find();
+                        try{
+                            query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                            query.exec().then(results => {                            
+                                openMaleRecords.push({
+                                    'racetype': rt,
+                                    'records': results
+                                });
+                                callback(null);
+                            });
+                        }catch(queryExecErr){
+                            callback(queryExecErr);
                         }
-                        openMaleRecords.push({
-                            'racetype': rt,
-                            'records': results
-                        });
-                        callback(null);
+                       
+    
                     });
-
+                    calls.push(function(callback) {
+                        let query = Result.find();
+                        try{
+                            query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                            query.exec().then(results => {                            
+                                masterMaleRecords.push({
+                                    'racetype': rt,
+                                    'records': results
+                                });
+                                callback(null);
+                            });
+                        }catch(queryExecErr){
+                            callback(queryExecErr);
+                        }
+                    });
+                    calls.push(function(callback) {
+                        let query = Result.find();
+                        try{
+                            query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                            query.exec().then(results => {                            
+                                openFemaleRecords.push({
+                                    'racetype': rt,
+                                    'records': results
+                                });
+                                callback(null);
+                            });
+                        }catch(queryExecErr){
+                            callback(queryExecErr);
+                        }
+                    });
+                    calls.push(function(callback) {
+                        let query = Result.find();
+                        try{
+                            query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
+                            query.exec().then(results => {                            
+                                masterFemaleRecords.push({
+                                    'racetype': rt,
+                                    'records': results
+                                });
+                                callback(null);
+                            });
+                        }catch(queryExecErr){
+                            callback(queryExecErr);
+                        }
+                    });
                 });
-                calls.push(function(callback) {
-                    query = Result.find();
-                    query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                    query.exec(function(err, results) {
-                        if (err) {
-                            callback(err);
+    
+    
+                async.parallel(calls, function(err) {
+                    if (err)
+                        return res.send(err);
+    
+                    openMaleRecords.sort(sortRecordDistanceByDistance);
+                    masterMaleRecords.sort(sortRecordDistanceByDistance);
+                    openFemaleRecords.sort(sortRecordDistanceByDistance);
+                    masterFemaleRecords.sort(sortRecordDistanceByDistance);
+    
+                    fullreport = {
+                        'openMaleRecords': {
+                            'category': 'Open',
+                            'sex': 'Male',
+                            'recordsList': openMaleRecords
+                        },
+    
+                        'masterMaleRecords': {
+                            'category': 'Master',
+                            'sex': 'Male',
+                            'recordsList': masterMaleRecords
+                        },
+    
+                        'openFemaleRecords': {
+                            'category': 'Open',
+                            'sex': 'Female',
+                            'recordsList': openFemaleRecords
+                        },
+    
+                        'masterFemaleRecords': {
+                            'category': 'Matser',
+                            'sex': 'Female',
+                            'recordsList': masterFemaleRecords
                         }
-                        masterMaleRecords.push({
-                            'racetype': rt,
-                            'records': results
-                        });
-                        callback(null);
-                    });
-                });
-                calls.push(function(callback) {
-                    query = Result.find();
-                    query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                    query.exec(function(err, results) {
-                        if (err) {
-                            callback(err);
-                        }
-                        openFemaleRecords.push({
-                            'racetype': rt,
-                            'records': results
-                        });
-                        callback(null);
-                    });
-                });
-                calls.push(function(callback) {
-                    query = Result.find();
-                    query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                    query.exec(function(err, results) {
-                        if (err) {
-                            callback(err);
-                        }
-                        masterFemaleRecords.push({
-                            'racetype': rt,
-                            'records': results
-                        });
-                        callback(null);
-                    });
+                    };
+    
+                    res.json(fullreport);
                 });
             });
-
-
-            async.parallel(calls, function(err) {
-                if (err)
-                    return res.send(err);
-
-                openMaleRecords.sort(sortRecordDistanceByDistance);
-                masterMaleRecords.sort(sortRecordDistanceByDistance);
-                openFemaleRecords.sort(sortRecordDistanceByDistance);
-                masterFemaleRecords.sort(sortRecordDistanceByDistance);
-
-                fullreport = {
-                    'openMaleRecords': {
-                        'category': 'Open',
-                        'sex': 'Male',
-                        'recordsList': openMaleRecords
-                    },
-
-                    'masterMaleRecords': {
-                        'category': 'Master',
-                        'sex': 'Male',
-                        'recordsList': masterMaleRecords
-                    },
-
-                    'openFemaleRecords': {
-                        'category': 'Open',
-                        'sex': 'Female',
-                        'recordsList': openFemaleRecords
-                    },
-
-                    'masterFemaleRecords': {
-                        'category': 'Matser',
-                        'sex': 'Female',
-                        'recordsList': masterFemaleRecords
-                    }
-                };
-
-                res.json(fullreport);
-            });
-        });
+        }catch(raceTypeQueryExecErr){
+            res.send(err)
+        }
+        
 
     });
 
 
-    app.get('/api/milesraced', function(req, res) {
+    app.get('/api/milesraced', async function(req, res) {
         var query = Result.find();
 
         if (req.query.filters) {
@@ -1429,23 +1604,21 @@ module.exports = function(app, qs, passport, async, _) {
                 query.lte('race.racedate', new Date(filters.dateTo));
             }
         }
-
-        query.exec(function(err, results) {
-            if (err) {
-                res.send(err)
-            } else {
-                var raceWon = 0;
-                var sum = 0;
-                results.forEach(function(r) {
-                    sum += r.race.racetype.miles;
-                    if(r.ranking.genderrank === 1 || r.ranking.overallrank === 1){
-                        raceWon++;
-                    }
-                });
-                res.json({resultsCount:results.length, milesRaced:sum, raceWon:raceWon});
-
-            }
-        });
+        try{
+            query.exec().then(results =>  {                
+                    var raceWon = 0;
+                    var sum = 0;
+                    results.forEach(function(r) {
+                        sum += r.race.racetype.miles;
+                        if(r.ranking.genderrank === 1 || r.ranking.overallrank === 1){
+                            raceWon++;
+                        }
+                    });
+                    res.json({resultsCount:results.length, milesRaced:sum, raceWon:raceWon});
+            });
+        }catch (err){
+            res.send(err);
+        }
     });
     // =====================================
     // RaceTypes =============================
@@ -1460,7 +1633,7 @@ module.exports = function(app, qs, passport, async, _) {
         var surface = req.query.surface;
         var isVariable = req.query.isVariable;
 
-        query = RaceType.find();
+        let query = RaceType.find();
         if (surface) {
             query = query.where('surface').equals(surface);
         }
@@ -1474,119 +1647,131 @@ module.exports = function(app, qs, passport, async, _) {
             query = query.limit(limit);
         }
 
-        query.exec(function(err, racetypes) {
-            if (err)
-                res.send(err)
-            res.json(racetypes);
-        });
+        try{
+            query.exec().then(racetypes => {                                
+                res.json(racetypes);
+            });
+        }catch(err){
+            res.send(err)
+        }
+        
     });
 
     // get a racetype
     app.get('/api/racetypes/:racetype_id', function(req, res) {
-        RaceType.findOne({
-            _id: req.params.racetype_id
-        }, function(err, racetype) {
-            if (err)
-                res.send(err);
-
-            if (racetype) {
-                res.json(racetype);
-            }
-        });
+        try{
+            RaceType.findOne({
+                _id: req.params.racetype_id
+            }).then(racetype =>{               
+                if (racetype) {
+                    res.json(racetype);
+                }
+            });
+        }catch(raceTypeFindOneErr){
+            res.send(raceTypeFindOneErr);
+        }
+        
     });
 
     // create racetype and send back all racetypes after creation
     app.post('/api/racetypes', isAdminLoggedIn, function(req, res) {
-        RaceType.create({
-            name: req.body.name,
-            surface: req.body.surface,
-            meters: req.body.meters,
-            miles: req.body.miles,
-            isVariable: req.body.isVariable,
-            hasAgeGradedInfo: req.body.hasAgeGradedInfo
-        }, function(err, racetype) {
-            if (err) {
-                res.send(err);
-            } else {
-                res.end('{"success" : "Result created successfully", "status" : 200}');
-            }
-
-        });
+        try{
+            RaceType.create({
+                name: req.body.name,
+                surface: req.body.surface,
+                meters: req.body.meters,
+                miles: req.body.miles,
+                isVariable: req.body.isVariable,
+                hasAgeGradedInfo: req.body.hasAgeGradedInfo
+            }).then(racetype => {              
+                    res.end('{"success" : "Result created successfully", "status" : 200}');                    
+            });
+        }catch(raceTypeErr){
+            res.send(raceTypeErr);
+        }        
     });
 
     //update a racetype
     app.put('/api/racetypes/:racetype_id', isAdminLoggedIn, function(req, res) {
-        RaceType.findById(req.params.racetype_id, function(err, racetype) {
-            racetype.name = req.body.name;
-            racetype.surface = req.body.surface;
-            racetype.meters = req.body.meters;
-            racetype.miles = req.body.miles;
-            racetype.isVariable = req.body.isVariable;
-            racetype.hasAgeGradedInfo =  req.body.hasAgeGradedInfo;
-            racetype.save(function(err) {
-                if (!err) {
-                    Result.find({
-                            'race.racetype._id': racetype._id
-                        },
-                        function(err, results) {
-                            if (err) {
-                                console.log(err);
-                                res.send(err);
-                            } else {
-                                for (i = 0; i < results.length; i++) {
-                                    if (!req.body.isVariable) {
-                                        results[i].race.racetype = {
-                                            _id: results[i].race.racetype._id,
-                                            name: req.body.name,
-                                            surface: req.body.surface,
-                                            meters: req.body.meters,
-                                            miles: req.body.miles,
-                                            isVariable: req.body.isVariable,
-                                            hasAgeGradedInfo:req.body.hasAgeGradedInfo
-                                        };
-                                    } else {
-                                        results[i].race.racetype = {
-                                            _id: results[i].race.racetype._id,
-                                            name: req.body.name,
-                                            surface: req.body.surface,
-                                            meters: results[i].race.racetype.meters,
-                                            miles: results[i].race.racetype.miles,
-                                            isVariable: req.body.isVariable,
-                                            hasAgeGradedInfo:req.body.hasAgeGradedInfo
-                                        };
-                                    }
-
-                                    results[i].save(function(err) {
-                                        if (err) {
-                                            console.log(err);
-                                            res.send(err);
+        try{
+            RaceType.findById(req.params.racetype_id).then(racetype => {
+                racetype.name = req.body.name;
+                racetype.surface = req.body.surface;
+                racetype.meters = req.body.meters;
+                racetype.miles = req.body.miles;
+                racetype.isVariable = req.body.isVariable;
+                racetype.hasAgeGradedInfo =  req.body.hasAgeGradedInfo;
+                try{
+                    racetype.save().then(()=> {       
+                            try{
+                                Result.find({
+                                    'race.racetype._id': racetype._id
+                                }).then(results => {                                    
+                                    for (i = 0; i < results.length; i++) {
+                                        if (!req.body.isVariable) {
+                                            results[i].race.racetype = {
+                                                _id: results[i].race.racetype._id,
+                                                name: req.body.name,
+                                                surface: req.body.surface,
+                                                meters: req.body.meters,
+                                                miles: req.body.miles,
+                                                isVariable: req.body.isVariable,
+                                                hasAgeGradedInfo:req.body.hasAgeGradedInfo
+                                            };
+                                        } else {
+                                            results[i].race.racetype = {
+                                                _id: results[i].race.racetype._id,
+                                                name: req.body.name,
+                                                surface: req.body.surface,
+                                                meters: results[i].race.racetype.meters,
+                                                miles: results[i].race.racetype.miles,
+                                                isVariable: req.body.isVariable,
+                                                hasAgeGradedInfo:req.body.hasAgeGradedInfo
+                                            };
                                         }
-                                    });
+                                        try{
+                                            results[i].save().then(()=> {                                          
+                                            });
+                                        }catch(resultsiSaveErr){
+                                            console.log(resultsiSaveErr);
+                                            res.send(resultsiSaveErr);
+                                        }
+                                        
+                                    }
+                                    res.end('{"success" : "Result updated successfully", "status" : 200}');                                    
                                 }
-                                res.end('{"success" : "Result updated successfully", "status" : 200}');
-                            }
-                        }
-                    );
-                } else {
-                    console.log(err);
-                    res.send(err);
+                            );   
+                            }catch(resultFindErr){
+                                console.log(resultFindErr);
+                                res.send(resultFindErr);
+                            }              
+                                                 
+                    });
+                }catch(racetypeSaveErr){
+                    console.log(racetypeSaveErr);
+                    res.send(racetypeSaveErr);
                 }
+                
             });
-        });
+        }catch(raceTypeFindByIdErr){
+            console.log(raceTypeFindByIdErr);
+            res.send(raceTypeFindByIdErr);
+        }
+        
     });
 
 
     // delete a racetype
     app.delete('/api/racetypes/:racetype_id', isAdminLoggedIn, function(req, res) {
-        RaceType.remove({
-            _id: req.params.racetype_id
-        }, function(err, racetype) {
-            if (err) {
-                res.send(err);
-            } else {
-                res.end('{"success" : "Racetype deleted successfully", "status" : 200}');
-            }
-        });
+        try{
+            RaceType.deleteOne({
+                _id: req.params.racetype_id
+            }, function(err, racetype) {           
+                    res.end('{"success" : "Racetype deleted successfully", "status" : 200}');            
+            });
+        }catch(raceTypedeleteOneErr){
+            res.send(raceTypedeleteOneErr);
+        }
     });
 
     // MAIL
@@ -1614,12 +1799,6 @@ module.exports = function(app, qs, passport, async, _) {
     });
 
 
-    app.get('/.well-known/acme-challenge/jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ', function(req, res) {
-        // res.render('.well-known/acme-challenge/jkst3PTGOtqEuBGTXdxPwRP2TuiijSWuTa1iATWONWQ', {
-        //
-        // });
-        res.send("");
-    });
 
     app.get('*', function(req, res) {
         res.render('index.ejs', {

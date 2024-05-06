@@ -14,6 +14,11 @@ var memberSchema = mongoose.Schema({
         end: Date
     }],
     pictureLink: String,
+    personalBests: [{
+        race: String,
+        surface: String,
+        time: Date
+    }],
     createdAt: Date,
     updatedAt: Date
 });

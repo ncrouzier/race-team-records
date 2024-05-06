@@ -113,18 +113,34 @@ var resultSchema = mongoose.Schema({
 // });
 
 // keep track of when results are updated and created
-resultSchema.pre('save', function(next, done) {
+resultSchema.post('save', function(doc, next) {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
     }
     this.updatedAt = date;
-
+    console.log(this);
     this.updateCategory();
     this.updateSystemInfo('mcrrc',date);
     next();
 });
 
+//or deleted
+resultSchema.post('deleteOne', function(doc, next) {
+    var date = Date.now();
+    if (this.isNew) {
+        this.createdAt = date;
+    }
+    this.updatedAt = date;
+    console.log(resultSchema.methods);
+    console.log(next);
+    
+    resultSchema.methods.updateSystemInfo('mcrrc',date);
+    next();
+}); 
+
+
+//check category of result after a save
 resultSchema.methods.updateCategory = function() {
     var membersLength = this.members.length;
     var isOpen = false;
@@ -142,21 +158,23 @@ resultSchema.methods.updateCategory = function() {
 };
 
 resultSchema.methods.updateSystemInfo = function(name,date) {
-    SystemInfo.findOne({
-        name: name
-    }, function(err, systemInfo) {
-        if (err)
-            console.log("error fetching systemInfo")
-        if (systemInfo) {
-            systemInfo.resultUpdate = date;
-            systemInfo.save(function(err) {
-                if (err) {
-                    res.send(err);
-                }
-            });
-        }
-
-    });
+    try{
+        SystemInfo.findOne({
+            name: name
+        }).then(systemInfo =>{
+            if (systemInfo) {
+                systemInfo.resultUpdate = date;
+                systemInfo.save().then(err => {
+                    if (!err) {
+                        console.log("error fetching systemInfo", err);
+                    }
+                });
+            }
+    
+        });
+    }catch(SystemInfoFindOneErr){
+        console.log("error fetching systemInfo")
+    }
 };
 
 

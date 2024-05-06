@@ -43,21 +43,24 @@ raceSchema.pre('save', function(next, done) {
 
 
 raceSchema.methods.updateSystemInfo = function(name,date) {
-    SystemInfo.findOne({
-        name: name
-    }, function(err, systemInfo) {
-        if (err)
-            console.log("error fetching systemInfo")
-        if (systemInfo) {
-            systemInfo.raceUpdate = date;
-            systemInfo.save(function(err) {
-                if (err) {
-                    res.send(err);
-                }
-            });
-        }
-
-    });
+    try{
+        SystemInfo.findOne({
+            name: name
+        }).then(systemInfo =>{
+            if (systemInfo) {
+                systemInfo.raceUpdate = date;
+                systemInfo.save().then(err => {
+                    if (!err) {
+                        console.log("error fetching systemInfo", err);
+                    }
+                });
+            }
+    
+        });
+    }catch(SystemInfoFindOneErr){
+        console.log("error fetching systemInfo")
+    }
+    
 };
 
 

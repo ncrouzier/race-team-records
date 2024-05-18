@@ -1,9 +1,9 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
-
+const racetype = require('./racetype');
+const racetypeSchema = require('./racetype').schema
 
 var SystemInfo = require('./systeminfo');
-
 
 
 // define the schema for our user model
@@ -12,21 +12,14 @@ var raceSchema = mongoose.Schema({
     distanceName: String,
     racedate: Date,
     isMultisport: Boolean,
-    racetype: {
-        _id: mongoose.Schema.ObjectId,
-        name: String,
-        surface: String,
-        meters: Number,
-        miles: Number,
-        isVariable: Boolean
-    },
+    racetype: racetypeSchema,
     location:{
       country: String,
       state: String
     },
     createdAt: Date,
     updatedAt: Date
-
+ 
 });
 
 // keep track of when results are updated and created

@@ -44,13 +44,15 @@
             <div class="row">
                 <div class="col-sm-12">
                 <table class = "memberListTable">
-                    <tbody>
+                    <thead>
                         <tr style="font-size:15px; font-weight: bold; line-height: 33px;">
-                        <td class="memberListHeader" title="Under 40">Open Men</td>
-                        <td class="memberListHeader" title="Under 40">Open Women</td>
-                        <td class="memberListHeader" title="40 and over">Masters Men</td>
-                        <td class="memberListHeader" title="40 and over">Masters Women</td>
-                        </tr>                
+                        <th class="memberListHeader" title="Under 40">Open Men</th>
+                        <th class="memberListHeader" title="Under 40">Open Women</th>
+                        <th class="memberListHeader" title="40 and over">Masters Men</th>
+                        <th class="memberListHeader" title="40 and over">Masters Women</th>
+                        </tr>   
+                    </thead>
+                    <tbody>         
                         <tr style="font-size:15px; line-height: 33px;" ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
                             {{memberListcolumns[0][$index]}}
                             <td ng-if="memberListcolumns[0][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[0][$index])"><span>{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span></td><td ng-if="!memberListcolumns[0][$index]"></td>
@@ -76,8 +78,38 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-7">
-        
-                                <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
+                                <div class="row row-no-left-margin">
+                                    <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
+                                </div>
+                                <div class="row row-no-left-margin">
+                                    <h3>Prs:</h3>
+                                    <div class="col-sm-12">
+                                        <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
+                                        <ul class="pb-list list-group">
+                                            <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <span class="listheader hoverhand" title="Time">TIME</span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                            <li class="list-group-item text-left pblistrow" ng-repeat="pbs in currentMember.personalBests" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{pbs.name}}</span>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{pbs.time | secondsToTimeString}}</span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
                             </div>
                             <div class="col-sm-5">
                                 <div class="row ">
@@ -86,30 +118,30 @@
                                     </div>
                                 </div>
                                 <div class="row row-no-right-margin">
-                                 <div class="col-sm-12">
-                                    <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
-                                    <ul class="pb-list list-group">
-                                        <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
-                                            <div class="row">
-                                                <div class="col-sm-6">
-                                                    <span class="listheader hoverhand" title="Race">RACE</span>
+                                    <div class="col-sm-12">
+                                        <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
+                                        <ul class="pb-list list-group">
+                                            <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <span class="listheader hoverhand" title="Time">TIME</span>
+                                                    </div>
                                                 </div>
-                                                <div class="col-sm-6">
-                                                    <span class="listheader hoverhand" title="Time">TIME</span>
+                                            </li>
+                                            <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.race.racetype.name}}</span>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.time | secondsToTimeString}}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                        <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                                            <div class="row">
-                                                <div class="col-sm-6">
-                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.race.racetype.name}}</span>
-                                                </div>
-                                                <div class="col-sm-6">
-                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.time | secondsToTimeString}}</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </ul>
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>

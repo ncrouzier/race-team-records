@@ -1,6 +1,7 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
-
+const raceSchema = require('./race').schema
+// const memberSchema = require('./member').schema
 
 var SystemInfo = require('./systeminfo');
 
@@ -24,26 +25,7 @@ var resultSchema = mongoose.Schema({
         sex: String,
         dateofbirth: Date
     }],
-    race:{
-        _id: mongoose.Schema.ObjectId,
-        racename: String,
-        distanceName: String,
-        racedate: Date,
-        isMultisport: Boolean,
-        racetype: {
-            _id: mongoose.Schema.ObjectId,
-            name: String,
-            surface: String,
-            meters: Number,
-            miles: Number,
-            isVariable: Boolean,
-            hasAgeGradedInfo:Boolean
-        },
-        location:{
-          country: String,
-          state: String
-        }
-    },
+    race: raceSchema,
     legs:[{ //for multisport
         order:Number,
         legName:String,
@@ -60,6 +42,10 @@ var resultSchema = mongoose.Schema({
     agegrade: Number,
     isRecordEligible: Boolean,
     is_accepted: Boolean,
+    achievements: [{
+        category: String,
+        description: String
+    }],  
     customOptions:[{
       name:String,
       value:String,
@@ -119,7 +105,6 @@ resultSchema.post('save', function(doc, next) {
         this.createdAt = date;
     }
     this.updatedAt = date;
-    console.log(this);
     this.updateCategory();
     this.updateSystemInfo('mcrrc',date);
     next();
@@ -131,10 +116,7 @@ resultSchema.post('deleteOne', function(doc, next) {
     if (this.isNew) {
         this.createdAt = date;
     }
-    this.updatedAt = date;
-    console.log(resultSchema.methods);
-    console.log(next);
-    
+    this.updatedAt = date;    
     resultSchema.methods.updateSystemInfo('mcrrc',date);
     next();
 }); 

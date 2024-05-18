@@ -29,7 +29,8 @@
     "rebuild": "^0.1.2",
     "serve-favicon": "^2.5.0",
     "terser": "^5.16.1",
-    "underscore": "^1.9.1"
+    "underscore": "^1.9.1",
+    "connect-mongo": "5.1.0"
   },
   "devDependencies": {
     "grunt": "~1.5.3",

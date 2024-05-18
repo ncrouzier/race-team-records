@@ -182,7 +182,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // $scope.user = data.user;
     // when landing on the page, get all members and show them
 
-    // get all members
+    // get all members if we have a member in the url
     if($stateParams.member){
         $scope.paramModel.memberStatus = 'all';
     }

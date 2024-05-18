@@ -17,16 +17,19 @@ module.exports = function(passport) {
 
     // used to serialize the user for the session
     passport.serializeUser(function(user, done) {
+        // console.log("serializing user",user);
         done(null, user.id);
     });
 
     // used to deserialize the user
     passport.deserializeUser(function(id, done) {
         try{
-            User.findById(id).then(user => {
+            User.findById(id).then(user => {                
+                // console.log("deserializing user",user);
                 done(null, user);
             });
         }catch{
+            console.log("err");
             done(err);
         }
        
@@ -73,11 +76,14 @@ module.exports = function(passport) {
                     
     
                     // save the user
-                    newUser.save(function(err) {
-                        if (err)
-                            throw err;
-                        return done(null, newUser);
-                    });
+                    try{
+                        newUser.save().then(err => {                            
+                            return done(null, newUser);
+                        });
+                    }catch(newUserSaveErr){
+                        throw newUserSaveErr;
+                    }
+                    
                 }
     
             });   

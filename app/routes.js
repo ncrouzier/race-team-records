@@ -435,7 +435,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                 result.save(function(err) {
                                     if (err) {
                                         callback(err);
-                                    } else {
+                                    } else {                                    
                                         callback(null);
                                     }
                                 });
@@ -528,31 +528,52 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
 
-    async function findAchievements(result,results){
+    async function updateAchievements(member){
         //check if it's a race count milestone
         const raceNumber = [1, 10, 25 , 50, 100 , 200 ,300 ,400, 500 ,600 ,700 ,800 ,900 ,1000];
+
+        let resultquery = Result.find({
+            'members._id': member._id
+        });
+        resultquery.sort('race.racedate'); 
+        const results = await resultquery.exec();
+        console.log(results.length);
+        
+
         //write code to find index of the element with the same id as result._id
-        const index = results.findIndex(item => item._id === result._id);
-        if (raceNumber.find(num => num ===index+1)){
+        // const index = results.findIndex(item => item._id === result._id);
+        let index= 0;
+        for(let result of results){ 
+            if (raceNumber.find(num => num ===index+1)){
             
-            if (ind = result.achievements.findIndex(item => item.category === "race count") !== -1){
-                //we update
-                  console.log("found and updated race milestone"+addOrdinalSuffix(index+1));
-                result.achievements[ind]={
-                    category:"race count",
-                    description:"Their "+addOrdinalSuffix(index+1)+" race"};
-            }else{
-                //we add
-                // console.log("found and added race milestone",result.members[0].lastname,index+1);
-                result.achievements.push({
-                    category:"race count",
-                    description:"Their "+addOrdinalSuffix(index+1)+" race"}
-                );
-               
+                if (ind = result.customOptions.findIndex(item => item.name === "raceCount") !== -1){
+                    //we update                
+                    result.customOptions[ind]={
+                        name:"raceCount",
+                        text:"Their "+addOrdinalSuffix(index+1)+" race with the team!",
+                        value: index+1
+                    };
+                }else{
+                    //we add
+                    result.customOptions.push({
+                        name:"raceCount",
+                        text:"Their "+addOrdinalSuffix(index+1)+" race with the team!",
+                        value: index+1
+                    });
+                   
+                }            
+                await result.save();
+            }else {
+                //we remove
+                let ind = result.customOptions.findIndex(item => item.name === "raceCount");
+                if (ind !== -1){
+                    result.customOptions.splice(ind,1);                
+                    await result.save();
+                }                
             }
-            
-            await result.save();
+            index++;
         }
+        
        
     } 
 
@@ -562,16 +583,8 @@ module.exports = async function(app, qs, passport, async, _) {
             memberQuery = memberQuery.sort("lastname");
     
             memberQuery.exec().then(async members => { 
-                for (let member of members) {
-                    let resultquery = Result.find({
-                        'members._id': member._id
-                    });
-                    resultquery.sort('race.racedate'); 
-                    const results = await resultquery.exec();
-    
-                    for(let res of results){    
-                        findAchievements(res,results);
-                    }
+                for (const member of members) {                        
+                    updateAchievements(res,member);            
                 }
     
             });
@@ -580,61 +593,81 @@ module.exports = async function(app, qs, passport, async, _) {
             res.send(err);
         }
         
-
     });
+
+
+    async function postResultsave(member){
+        updatePBs(member);
+        updateAchievements(member);
+    }
+
+    async function updatePBs(member){
+        const pbDistances = [ "10k", "5k", "1 mile","10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
+        
+        //remove all non manual entries
+        for (let i = 0; i < member.personalBests.length; i++) {
+            if (member.personalBests[i].source === "computed") {
+                console.log("removing", member.personalBests[i]);
+                member.personalBests.splice(i,1);
+            }
+          }
+
+        let resultquery = Result.find({
+            'members._id': member._id
+        });
+        resultquery.and({"race.racetype.name":{ $in : pbDistances}});
+        resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra"]}}); //don't deal with 
+        resultquery.and({"$expr": {"$eq": [{$size: "$members"},1]}}); // only deal with single members
+        resultquery.sort('race.racedate');                        
+        await resultquery.exec().then( results =>{
+            if (results){
+                    for(const res of results){                                    
+                    
+                    //version where we don't mix surfaces
+                    //const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface) )
+                    const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
+                    //pb entry exists?
+                    if (index > -1 ) {
+                        //if it exists we update it
+                        if (res.time <= member.personalBests[index].time) {
+                            member.personalBests[index] = {
+                                result: res,
+                                name: res.race.racetype.name,
+                                surface: res.race.racetype.surface,
+                                distance: res.race.racetype.meters,
+                                time: res.time,
+                                source: "computed"
+                            }
+                        }                                                                            
+                    }else{
+                        // if not we create it
+                        member.personalBests.push({
+                            result: res,
+                            name: res.race.racetype.name,
+                            surface: res.race.racetype.surface,
+                            distance: res.race.racetype.meters,
+                            time: res.time,
+                            source: "computed"
+                        })
+                    }//end with pb   
+
+                }                                            
+            }                        
+        });
+        member.save();
+    }
 
 
     // update pbs
     app.get('/updatePbs', isAdminLoggedIn, async function(req, res) {
-        const pbDistances = ["4x400", "10k", "5k", "1 mile","10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
-
+       
         let memberQuery = Member.find();
         memberQuery = memberQuery.sort("lastname");
 
         memberQuery.exec().then(async members => {            
-                if (members) {
-                    console.log("number of members: " +members.length);
+                if (members) {                
                     for (let member of members) {
-                        // console.log("member: " +member.lastname);
-                        //SYNC ISSUE
-                        let resultquery = Result.find({
-                            'members._id': member._id
-                        });
-                        resultquery.and({"race.racetype.name":{ $in : pbDistances}});
-                        resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra"]}}); //don't deal with 
-                        resultquery.and({"$expr": {"$eq": [{$size: "$members"},1]}}); // only deal with single members
-                        resultquery.sort('race.racedate');                        
-                        await resultquery.exec().then( results =>{
-                            if (results){
-                                 for(const res of results){                                    
-                                    
-                                    //start with pb
-                                    const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface) )
-                                    //pb entry exists?
-                                    if (index > -1 ) {
-                                        //if it exists we update it
-                                        if (res.time <= member.personalBests[index].time) {
-                                            member.personalBests[index] = {
-                                                result: res,
-                                                name: res.race.racetype.name,
-                                                surface: res.race.racetype.surface,
-                                                time: res.time
-                                            }
-                                        }                                                                            
-                                    }else{
-                                        // if not we create it
-                                        member.personalBests.push({
-                                            result: res,
-                                            name: res.race.racetype.name,
-                                            surface: res.race.racetype.surface,
-                                            time: res.time
-                                        })
-                                    }//end with pb   
-
-                                }                                            
-                            }                        
-                        });
-                        member.save();
+                        updatePBs(member)
                     }
                     console.log("-------------------> finiii!");
                     res.json({ "done": true });
@@ -865,7 +898,12 @@ module.exports = async function(app, qs, passport, async, _) {
                                             isRecordEligible: req.body.isRecordEligible,
                                             customOptions: req.body.customOptions,
                                             done: false
-                                        }).then(result =>{                                            
+                                        }).then(async result =>{   
+                                            //update PBs
+                                            for (let m of result.members) {
+                                                let member = await Member.findById(m._id);    
+                                                postResultsave(member);   
+                                            }                                               
                                             res.json(result);                                                                        
                                         });                                       
                                     }catch(resultCreateErr){                                  
@@ -892,7 +930,12 @@ module.exports = async function(app, qs, passport, async, _) {
                                     isRecordEligible: req.body.isRecordEligible,
                                     customOptions: req.body.customOptions,
                                     done: false
-                                }).then(result =>{                                            
+                                }).then(async result =>{      
+                                    //update PBs
+                                    for (let m of result.members) {
+                                        let member = await Member.findById(m._id);    
+                                        postResultsave(member);   
+                                    }                                   
                                     res.json(result);                                                                        
                                 }); 
                             }catch(resultCreateErr){
@@ -939,60 +982,32 @@ module.exports = async function(app, qs, passport, async, _) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
             }            
-                let result = await Result.findById(req.params.result_id);
-                const oldraceid = result.race._id;
-                //does the race exists?
-               
-                const race = await Race.findOne({
-                    'racename': req.body.race.racename,
-                    'isMultisport':req.body.race.isMultisport,
-                    'distanceName': req.body.race.distanceName,
-                    'racedate': req.body.race.racedate,
-                    'location.country': req.body.race.location.country,
-                    'location.state': req.body.race.location.state,
-                    'racetype._id': req.body.race.racetype._id
-                });                                     
-                    if (!race) { //if race does not exists                        
-                            const r = await Race.create({
-                                racename: req.body.race.racename,
-                                isMultisport: req.body.race.isMultisport,
-                                distanceName: req.body.race.distanceName,
-                                racedate: req.body.race.racedate,
-                                location: {
-                                    country: req.body.race.location.country,
-                                    state: req.body.race.location.state
-                                },
-                                racetype: req.body.race.racetype
-                            });                                                         
-                                result.race = r;
-                                result.members = members;
-                                result.time = req.body.time;
-                                result.legs = req.body.legs;
-                                result.ranking = req.body.ranking;
-                                result.comments = req.body.comments;
-                                result.resultlink = req.body.resultlink;
-                                result.agegrade = agegrade;
-                                result.is_accepted = req.body.is_accepted;
-                                result.isRecordEligible = req.body.isRecordEligible;
-                                result.customOptions = req.body.customOptions;                                
-                                result.save();
-
-                                // check if previous race entry is not a zombie now.
-                                let cleanQuery = Result.find().where('race._id').equals(oldraceid);                                    
-                                const cleanResults = await cleanQuery.exec(); 
-                                    if (cleanResults) {
-                                        if (cleanResults.length === 0) {
-                                                Race.deleteOne({
-                                                    _id: oldraceid
-                                                }).then(raceD => {                                                                        
-                                                        console.log("remove zombie race entry successful");                                                                     
-                                                });                                                    
-                                        }
-                                    }                                                                           
-                                res.json(result);
-                                                         
-                    } else { // race exists       
-                        result.race = race;                     
+            let result = await Result.findById(req.params.result_id);
+            const oldraceid = result.race._id;
+            //does the race exists?
+            
+            const race = await Race.findOne({
+                'racename': req.body.race.racename,
+                'isMultisport':req.body.race.isMultisport,
+                'distanceName': req.body.race.distanceName,
+                'racedate': req.body.race.racedate,
+                'location.country': req.body.race.location.country,
+                'location.state': req.body.race.location.state,
+                'racetype._id': req.body.race.racetype._id
+            });                                     
+            if (!race) { //if race does not exists                        
+                    const r = await Race.create({
+                        racename: req.body.race.racename,
+                        isMultisport: req.body.race.isMultisport,
+                        distanceName: req.body.race.distanceName,
+                        racedate: req.body.race.racedate,
+                        location: {
+                            country: req.body.race.location.country,
+                            state: req.body.race.location.state
+                        },
+                        racetype: req.body.race.racetype
+                    });                                                         
+                        result.race = r;
                         result.members = members;
                         result.time = req.body.time;
                         result.legs = req.body.legs;
@@ -1002,23 +1017,61 @@ module.exports = async function(app, qs, passport, async, _) {
                         result.agegrade = agegrade;
                         result.is_accepted = req.body.is_accepted;
                         result.isRecordEligible = req.body.isRecordEligible;
-                        result.customOptions = req.body.customOptions;
+                        result.customOptions = req.body.customOptions;                                
+                        result.save();
 
-                            result.save();                                                                  
-                                // check if previous race entry is not a zombie now.
-                                let cleanQuery = Result.find().where('race._id').equals(oldraceid);                              
-                                cleanResults = await cleanQuery.exec();            
-                                        if (cleanResults) {
-                                            if (cleanResults.length === 0) {                                                
-                                                    Race.deleteOne({
-                                                        _id: oldraceid
-                                                    }).then(raceD => {                                                                        
-                                                            console.log("remove zombie race entry successful");                                                                     
-                                                    });                                                          
-                                            }
-                                        }                                
-                                res.json(result);                                                                                                            
-                    }                    
+                        // check if previous race entry is not a zombie now.
+                        let cleanQuery = Result.find().where('race._id').equals(oldraceid);                                    
+                        const cleanResults = await cleanQuery.exec(); 
+                            if (cleanResults) {
+                                if (cleanResults.length === 0) {
+                                        Race.deleteOne({
+                                            _id: oldraceid
+                                        }).then(raceD => {                                                                        
+                                                console.log("remove zombie race entry successful");                                                                     
+                                        });                                                    
+                                }
+                            }         
+                        //update PBs
+                        for (let m of result.members) {
+                            let member = await Member.findById(m._id);                                
+                            postResultsave(member);   
+                        }                                                                                         
+                        res.json(result);
+                                                    
+            } else { // race exists       
+                result.race = race;                     
+                result.members = members;
+                result.time = req.body.time;
+                result.legs = req.body.legs;
+                result.ranking = req.body.ranking;
+                result.comments = req.body.comments;
+                result.resultlink = req.body.resultlink;
+                result.agegrade = agegrade;
+                result.is_accepted = req.body.is_accepted;
+                result.isRecordEligible = req.body.isRecordEligible;
+                result.customOptions = req.body.customOptions;
+
+                result.save();                                                                  
+                // check if previous race entry is not a zombie now.
+                let cleanQuery = Result.find().where('race._id').equals(oldraceid);                              
+                cleanResults = await cleanQuery.exec();            
+                        if (cleanResults) {
+                            if (cleanResults.length === 0) {                                                
+                                    Race.deleteOne({
+                                        _id: oldraceid
+                                    }).then(raceD => {                                                                        
+                                            console.log("remove zombie race entry successful");                                                                     
+                                    });                                                          
+                            }
+                        }
+                //update PBs
+                for (let m of result.members) {
+                    let member = await Member.findById(m._id);    
+                    postResultsave(member);   
+                }
+                res.json(result);                                                                                                            
+            }                    
                                          
         }catch(err){
             console.log("error updating result", err)
@@ -1033,11 +1086,12 @@ module.exports = async function(app, qs, passport, async, _) {
         res.setHeader("Content-Type", "application/json");
         try{
             Result.findById(req.params.result_id).then(result => {
+                const members = result.members;
                 const oldraceid = result.race._id;
                 try{
                     Result.deleteOne({
                         _id: req.params.result_id
-                    }).then(result => {                                                  
+                    }).then(async result => {                                                  
                             let cleanQuery = Result.find().where('race._id').equals(oldraceid);
                             try{
                                 cleanQuery.exec().then(cleanResults => {            
@@ -1058,7 +1112,11 @@ module.exports = async function(app, qs, passport, async, _) {
                                 });
                             }catch(cleanQueryExecErr){
                                 res.send(cleanQueryExecErr)
-                            }                            
+                            }        
+                            for (let m of members) {
+                                let member = await Member.findById(m._id);    
+                                postResultsave(member);   
+                            }                                               
                             res.end('{"success" : "Result deleted successfully", "status" : 200}');
                         
                     });

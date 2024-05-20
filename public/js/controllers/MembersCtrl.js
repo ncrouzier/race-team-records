@@ -79,7 +79,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         ResultsService.getResults({
             sort: '-race.racedate',
-            member: member_light
+            member: {_id :member_light._id}
         }).then(function(results) {
             $scope.currentMemberResultList = results; 
         });

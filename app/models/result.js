@@ -42,10 +42,6 @@ var resultSchema = mongoose.Schema({
     agegrade: Number,
     isRecordEligible: Boolean,
     is_accepted: Boolean,
-    achievements: [{
-        category: String,
-        description: String
-    }],  
     customOptions:[{
       name:String,
       value:String,

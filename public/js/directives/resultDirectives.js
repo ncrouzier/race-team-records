@@ -28,7 +28,10 @@ app.directive('resultIcon', function() {
 
           if ($scope.result.customOptions !== undefined){
             $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
+            $scope.raceCount = $scope.result.customOptions.find(x => x.name === "raceCount");
           }
+         
+
           var d1= new Date($scope.result.race.racedate);
           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
           $scope.isbirthdayRace = false;
@@ -50,7 +53,12 @@ app.directive('resultIcon', function() {
           }
 
         },
-          template:	'<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span><span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span><span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span> <span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>'
+          template:	'<span ng-if="raceCount" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value}}</div></span>'+
+          '<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span>' +
+          '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
+          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
+          '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>'
+          
       };
     
 });

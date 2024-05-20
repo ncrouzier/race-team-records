@@ -81,8 +81,18 @@
                                 <div class="row row-no-left-margin">
                                     <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
                                 </div>
-                                <div class="row row-no-left-margin">
-                                    <h3>Prs:</h3>
+                                <!-- <div class="row row-no-left-margin">                                  
+                                    
+                                </div> -->
+
+                            </div>
+                            <div class="col-sm-5">
+                                <div class="row ">
+                                <div class="col-sm-12">
+                                    <img class="member-picture" ng-show="currentMember.pictureLink" ng-src="{{currentMember.pictureLink}}" / alt="Member's Picture">
+                                    </div>
+                                </div>
+                                <div class="row row-no-right-margin">
                                     <div class="col-sm-12">
                                         <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
                                         <ul class="pb-list list-group">
@@ -96,29 +106,19 @@
                                                     </div>
                                                 </div>
                                             </li>
-                                            <li class="list-group-item text-left pblistrow" ng-repeat="pbs in currentMember.personalBests" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                            <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' " ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                                 <div class="row">
                                                     <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{pbs.name}}</span>
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
                                                     </div>
                                                     <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{pbs.time | secondsToTimeString}}</span>
+                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
                                                     </div>
                                                 </div>
                                             </li>
                                         </ul>
                                     </div>
-                                </div>
-
-                            </div>
-                            <div class="col-sm-5">
-                                <div class="row ">
-                                <div class="col-sm-12">
-                                    <img class="member-picture" ng-show="currentMember.pictureLink" ng-src="{{currentMember.pictureLink}}" / alt="Member's Picture">
-                                    </div>
-                                </div>
-                                <div class="row row-no-right-margin">
-                                    <div class="col-sm-12">
+                                    <!-- <div class="col-sm-12">
                                         <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
                                         <ul class="pb-list list-group">
                                             <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
@@ -142,7 +142,7 @@
                                                 </div>
                                             </li>
                                         </ul>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>

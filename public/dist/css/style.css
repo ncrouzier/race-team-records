@@ -7843,4 +7843,14 @@ footer {
 .memberListCell:empty {
   background-color: red;
 }
+.raceCountBox {
+  display: inline-block;
+  border: 1px solid #006687;
+  border-radius: 10%;
+  padding: 2px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  background-color: #006687;
+}
 

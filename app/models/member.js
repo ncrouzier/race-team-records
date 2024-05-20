@@ -19,8 +19,9 @@ var memberSchema = mongoose.Schema({
         result: resultSchema,
         name: String,
         surface: String,
+        distance: Number,
         time: Number,
-
+        source: String
     }],
     createdAt: Date,
     updatedAt: Date

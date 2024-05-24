@@ -92,6 +92,7 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 // app.listen(osport, osipaddress, function() {
 //     console.log('The magic happens on port ' + port);
 // });
-app.listen(port, function() {
+var server = app.listen(port, function() {
   console.log('Node app is running on port', port);
 });
+server.timeout = 60000;

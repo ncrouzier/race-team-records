@@ -95,4 +95,4 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 var server = app.listen(port, function() {
   console.log('Node app is running on port', port);
 });
-server.timeout = 60000;
+

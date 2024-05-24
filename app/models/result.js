@@ -1,14 +1,14 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt-nodejs');
 const raceSchema = require('./race').schema
 // const memberSchema = require('./member').schema
 
-var SystemInfo = require('./systeminfo');
+const SystemInfo = require('./systeminfo');
 
 
 
 // define the schema for our user model
-var resultSchema = mongoose.Schema({
+const resultSchema = mongoose.Schema({
     time: Number,
     ranking: {
         agerank: Number,
@@ -44,11 +44,16 @@ var resultSchema = mongoose.Schema({
     is_accepted: Boolean,
     customOptions:[{
       name:String,
-      value:String,
+      value: mongoose.Schema.Types.Mixed,
       text:String,
       width:String,
       height:String
     }],
+    achievements:[{
+        name:String,
+        text:String,
+        value: mongoose.Schema.Types.Mixed        
+      }],
     createdAt: Date,
     updatedAt: Date
 

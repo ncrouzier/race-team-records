@@ -376,374 +376,6 @@ module.exports = async function(app, qs, passport, async, _) {
     // RESULTS =============================
     // =====================================
 
-
-    app.get('/updateResults', isAdminLoggedIn, function(req, res) {
-        let query = Result.find();
-
-        query.exec(function(err, results) {
-
-            if (err) {
-                res.send(err)
-            } else if (results) {
-                let numberOfUpdates = 0;
-                let numberOfCreated = 0;
-
-                async.forEachOfSeries(results, function(result, key, callback) {
-                    if (result.racename !== undefined && result.racedate !== undefined && result.racetype !== undefined) { // only take care of old model
-                        async.waterfall([
-                            function(callback) {
-                                Race.findOne({
-                                    'racename': result.racename,
-                                    'racedate': result.racedate,
-                                    'racetype._id': result.racetype._id
-                                }, function(err, race) {
-                                    if (err) {
-                                        callback(err);
-                                    } else {
-                                        callback(null, race);
-                                    }
-
-
-                                });
-                            },
-                            function(race, callback) {
-                                if (!race) { //do not deal with multiple racers
-                                    Race.create({
-                                        racename: result.racename,
-                                        racetype: result.racetype,
-                                        racedate: result.racedate,
-                                    }, function(err, r) {
-                                        if (err) {
-                                            callback(err);
-                                        } else {
-                                            numberOfCreated++;
-                                            result.race = r;
-                                            callback(null);
-                                        }
-                                    });
-                                } else {
-                                    numberOfUpdates++;
-                                    result.race = race;
-                                    callback(null);
-                                }
-
-                            },
-                            function(callback) {
-                                result.racename = undefined;
-                                result.racedate = undefined;
-                                result.racetype = undefined;
-                                result.save(function(err) {
-                                    if (err) {
-                                        callback(err);
-                                    } else {                                    
-                                        callback(null);
-                                    }
-                                });
-                            }
-                        ], function(err) {
-                            if (err) {
-                                console.error(err.message);
-                            } else {
-                                callback(); //foreach
-                                // console.log('done');
-                            }
-                        });
-                    } else {
-                        callback();
-                    }
-                }, function(err) {
-                    if (err) {
-                        console.error(err.message);
-                    }
-                    res.json({ 'numberOfUpdates': numberOfUpdates, 'numberOfCreated': numberOfCreated });
-
-                });
-
-            }
-
-        });
-
-    });
-
-
-
-    // update agegrade
-    app.get('/updateAgeGrade', isAdminLoggedIn, function(req, res) {
-        let query = Result.find();
-        query = query.or([{
-            'race.racetype.surface': 'track'
-        }, {
-            'race.racetype.surface': 'road'
-        }]);
-
-        query.exec(function(err, results) {
-
-            if (err) {
-                res.send(err)
-            } else if (results) {
-                    let numberOfUpdates = 0;
-                    async.forEachOf(results, function(res, key, callback) {
-
-                        //SYNC ISSUE
-                        AgeGrading.findOne({
-                            sex: res.members[0].sex.toLowerCase(),
-                            type: res.race.racetype.surface,
-                            age: calculateAge(res.race.racedate, res.members[0].dateofbirth),
-                        }, function(err, ag) {
-                            if (err) {
-                                res.send(err);
-                            }
-                            if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
-                                if (ag[res.racetype.name.toLowerCase()] !== undefined) {
-                                    const agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
-                                    res.agegrade = agegrade;
-                                    res.save(function(err) {
-                                        if (err) {
-                                            console.error(err.message);
-                                        } else {
-                                            numberOfUpdates++;
-                                            callback();
-                                        }
-                                    });
-
-                                } else {
-                                    callback();
-                                }
-                            } else {
-                                callback();
-                            }
-                        });
-                    }, function(err) {
-                        if (err) {
-                            console.error(err.message);
-                        }
-                        res.json({ 'numberOfUpdates': numberOfUpdates });
-
-                    });
-
-                }
-
-        });
-
-    });
-
-
-    async function updateAchievements(member){
-        //check if it's a race count milestone
-        const raceNumber = [1, 10, 25 , 50, 100 , 200 ,300 ,400, 500 ,600 ,700 ,800 ,900 ,1000];
-
-        let resultquery = Result.find({
-            'members._id': member._id
-        });
-        resultquery.sort('race.racedate'); 
-        const results = await resultquery.exec();
-        console.log(results.length);
-        
-
-        //write code to find index of the element with the same id as result._id
-        // const index = results.findIndex(item => item._id === result._id);
-        let index= 0;
-        for(let result of results){ 
-            if (raceNumber.find(num => num ===index+1)){
-            
-                if (ind = result.customOptions.findIndex(item => item.name === "raceCount") !== -1){
-                    //we update                
-                    result.customOptions[ind]={
-                        name:"raceCount",
-                        text:"Their "+addOrdinalSuffix(index+1)+" race with the team!",
-                        value: index+1
-                    };
-                }else{
-                    //we add
-                    result.customOptions.push({
-                        name:"raceCount",
-                        text:"Their "+addOrdinalSuffix(index+1)+" race with the team!",
-                        value: index+1
-                    });
-                   
-                }            
-                await result.save();
-            }else {
-                //we remove
-                let ind = result.customOptions.findIndex(item => item.name === "raceCount");
-                if (ind !== -1){
-                    result.customOptions.splice(ind,1);                
-                    await result.save();
-                }                
-            }
-            index++;
-        }
-        
-       
-    } 
-
-    app.get('/updateAchievements', isAdminLoggedIn, async function(req, res) {
-        try{
-            let memberQuery = Member.find();
-            memberQuery = memberQuery.sort("lastname");
-    
-            memberQuery.exec().then(async members => { 
-                for (const member of members) {                        
-                    updateAchievements(res,member);            
-                }
-    
-            });
-            res.send("done");
-        }catch(err){
-            res.send(err);
-        }
-        
-    });
-
-
-    async function postResultsave(member){
-        updatePBs(member);
-        updateAchievements(member);
-    }
-
-    async function updatePBs(member){
-        const pbDistances = [ "10k", "5k", "1 mile","10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
-        
-        //remove all non manual entries
-        for (let i = 0; i < member.personalBests.length; i++) {
-            if (member.personalBests[i].source === "computed") {
-                console.log("removing", member.personalBests[i]);
-                member.personalBests.splice(i,1);
-            }
-          }
-
-        let resultquery = Result.find({
-            'members._id': member._id
-        });
-        resultquery.and({"race.racetype.name":{ $in : pbDistances}});
-        resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra"]}}); //don't deal with 
-        resultquery.and({"$expr": {"$eq": [{$size: "$members"},1]}}); // only deal with single members
-        resultquery.sort('race.racedate');                        
-        await resultquery.exec().then( results =>{
-            if (results){
-                    for(const res of results){                                    
-                    
-                    //version where we don't mix surfaces
-                    //const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface) )
-                    const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
-                    //pb entry exists?
-                    if (index > -1 ) {
-                        //if it exists we update it
-                        if (res.time <= member.personalBests[index].time) {
-                            member.personalBests[index] = {
-                                result: res,
-                                name: res.race.racetype.name,
-                                surface: res.race.racetype.surface,
-                                distance: res.race.racetype.meters,
-                                time: res.time,
-                                source: "computed"
-                            }
-                        }                                                                            
-                    }else{
-                        // if not we create it
-                        member.personalBests.push({
-                            result: res,
-                            name: res.race.racetype.name,
-                            surface: res.race.racetype.surface,
-                            distance: res.race.racetype.meters,
-                            time: res.time,
-                            source: "computed"
-                        })
-                    }//end with pb   
-
-                }                                            
-            }                        
-        });
-        member.save();
-    }
-
-
-    // update pbs
-    app.get('/updatePbs', isAdminLoggedIn, async function(req, res) {
-       
-        let memberQuery = Member.find();
-        memberQuery = memberQuery.sort("lastname");
-
-        memberQuery.exec().then(async members => {            
-                if (members) {                
-                    for (let member of members) {
-                        updatePBs(member)
-                    }
-                    console.log("-------------------> finiii!");
-                    res.json({ "done": true });
-                }
-            
-        });
-
-
-
-        // query = Result.find();
-        // query = query.or([{
-        //     'race.racetype.surface': 'track'
-        // }, {
-        //     'race.racetype.surface': 'road'
-        // }]);
-
-        // query.exec(function(err, results) {
-
-        //     if (err) {
-        //         res.send(err)
-        //     } else {
-        //         if (results) {
-        //             var numberOfUpdates = 0;
-        //             async.forEachOf(results, function(res, key, callback) {
-
-        //                 //SYNC ISSUE
-        //                 AgeGrading.findOne({
-        //                     sex: res.members[0].sex.toLowerCase(),
-        //                     type: res.race.racetype.surface,
-        //                     age: calculateAge(res.race.racedate, res.members[0].dateofbirth),
-        //                 }, function(err, ag) {
-        //                     if (err) {
-        //                         res.send(err);
-        //                     }
-        //                     if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
-        //                         if (ag[res.racetype.name.toLowerCase()] !== undefined) {
-        //                             agegrade = (ag[res.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
-        //                             res.agegrade = agegrade;
-        //                             res.save(function(err) {
-        //                                 if (err) {
-        //                                     console.error(err.message);
-        //                                 } else {
-        //                                     numberOfUpdates++;
-        //                                     callback();
-        //                                 }
-        //                             });
-
-        //                         } else {
-        //                             callback();
-        //                         }
-
-        //                     } else {
-        //                         callback();
-        //                     }
-
-
-        //                 });
-        //             }, function(err) {
-        //                 if (err) {
-        //                     console.error(err.message);
-        //                 }
-        //                 res.json({ 'numberOfUpdates': numberOfUpdates });
-
-        //             });
-
-        //         }
-
-        //     }
-
-
-        // });
-
-    });
-
-
-
     // get all results
     app.get('/api/results', function(req, res) {
         let sort = req.query.sort;
@@ -783,11 +415,11 @@ module.exports = async function(app, qs, passport, async, _) {
 
         }
         if (sort) {
-              query = query.sort(sort);
+            query = query.sort(sort);
         }
                
         if (limit && ((filters && !filters.mode) || !filters)) {
-                query = query.limit(limit);
+            query = query.limit(limit);
         }
         
 
@@ -869,7 +501,8 @@ module.exports = async function(app, qs, passport, async, _) {
                         'racedate': req.body.race.racedate,
                         'location.country': req.body.race.location.country,
                         'location.state': req.body.race.location.state,
-                        'racetype._id': req.body.race.racetype._id
+                        'racetype._id': req.body.race.racetype._id,
+                        'order': req.body.race.order
                     }).then(race => {
                         if (!race) { //if race does not exists
                             try{
@@ -878,6 +511,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                     isMultisport: req.body.race.isMultisport,
                                     distanceName: req.body.race.distanceName,
                                     racedate: req.body.race.racedate,
+                                    order: req.body.race.order,
                                     location: {
                                         country: req.body.race.location.country,
                                         state: req.body.race.location.state
@@ -897,12 +531,13 @@ module.exports = async function(app, qs, passport, async, _) {
                                             is_accepted: false,
                                             isRecordEligible: req.body.isRecordEligible,
                                             customOptions: req.body.customOptions,
+                                            achievements: [],
                                             done: false
                                         }).then(async result =>{   
                                             //update PBs
                                             for (let m of result.members) {
                                                 let member = await Member.findById(m._id);    
-                                                postResultsave(member);   
+                                                await postResultsave(member);   
                                             }                                               
                                             res.json(result);                                                                        
                                         });                                       
@@ -929,12 +564,13 @@ module.exports = async function(app, qs, passport, async, _) {
                                     is_accepted: false,
                                     isRecordEligible: req.body.isRecordEligible,
                                     customOptions: req.body.customOptions,
+                                    achievements: [],
                                     done: false
                                 }).then(async result =>{      
                                     //update PBs
                                     for (let m of result.members) {
                                         let member = await Member.findById(m._id);    
-                                        postResultsave(member);   
+                                        await postResultsave(member);   
                                     }                                   
                                     res.json(result);                                                                        
                                 }); 
@@ -986,14 +622,15 @@ module.exports = async function(app, qs, passport, async, _) {
             const oldraceid = result.race._id;
             //does the race exists?
             
-            const race = await Race.findOne({
+            const race = await Race.findOne({ //by id would be simpler?
                 'racename': req.body.race.racename,
                 'isMultisport':req.body.race.isMultisport,
                 'distanceName': req.body.race.distanceName,
                 'racedate': req.body.race.racedate,
                 'location.country': req.body.race.location.country,
                 'location.state': req.body.race.location.state,
-                'racetype._id': req.body.race.racetype._id
+                'racetype._id': req.body.race.racetype._id,
+                'order': req.body.race.order
             });                                     
             if (!race) { //if race does not exists                        
                     const r = await Race.create({
@@ -1001,6 +638,7 @@ module.exports = async function(app, qs, passport, async, _) {
                         isMultisport: req.body.race.isMultisport,
                         distanceName: req.body.race.distanceName,
                         racedate: req.body.race.racedate,
+                        order: req.body.race.order,
                         location: {
                             country: req.body.race.location.country,
                             state: req.body.race.location.state
@@ -1017,9 +655,9 @@ module.exports = async function(app, qs, passport, async, _) {
                         result.agegrade = agegrade;
                         result.is_accepted = req.body.is_accepted;
                         result.isRecordEligible = req.body.isRecordEligible;
-                        result.customOptions = req.body.customOptions;                                
-                        result.save();
-
+                        result.customOptions = req.body.customOptions;       
+                        //not dealing with achievements because not editable by user (yet?)                    
+                        await result.save();
                         // check if previous race entry is not a zombie now.
                         let cleanQuery = Result.find().where('race._id').equals(oldraceid);                                    
                         const cleanResults = await cleanQuery.exec(); 
@@ -1051,8 +689,8 @@ module.exports = async function(app, qs, passport, async, _) {
                 result.is_accepted = req.body.is_accepted;
                 result.isRecordEligible = req.body.isRecordEligible;
                 result.customOptions = req.body.customOptions;
-
-                result.save();                                                                  
+                //not dealing with achievements because not editable by user (yet?)                
+                await result.save();                                                                  
                 // check if previous race entry is not a zombie now.
                 let cleanQuery = Result.find().where('race._id').equals(oldraceid);                              
                 cleanResults = await cleanQuery.exec();            
@@ -1113,6 +751,7 @@ module.exports = async function(app, qs, passport, async, _) {
                             }catch(cleanQueryExecErr){
                                 res.send(cleanQueryExecErr)
                             }        
+                            console.log('updating after delete');
                             for (let m of members) {
                                 let member = await Member.findById(m._id);    
                                 postResultsave(member);   
@@ -1135,7 +774,9 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
 
-    //races
+    // =====================================
+    // Races ===============================
+    // =====================================
 
     // get a racelist
     app.get('/api/races', function(req, res) {
@@ -1166,10 +807,463 @@ module.exports = async function(app, qs, passport, async, _) {
             });
         }catch(err){
             res.send(err)
-        }
-      
+        }    
     });
 
+     // get raceinfo list
+     app.get('/api/raceinfos', function(req, res) {
+        const sort = req.query.sort;
+        const limit = parseInt(req.query.limit);
+        let resultId = req.query.resultId;
+
+        let query = Result.aggregate([
+
+            {
+                $project: {
+                    race: '$race', // we need this field
+                    legs: '$legs',
+                    members: {
+                        members: '$members',
+                        time: '$time',
+                        agegrade: '$agegrade',
+                        category: '$category',
+                        resultlink: '$resultlink',
+                        ranking: '$ranking',
+                        result_id: '$_id',
+                        legs: '$legs',
+                        achievements: '$achievements',
+                        customOptions: '$customOptions'
+                    },
+                    
+                }
+            }, {
+                $unwind: "$members"
+
+            }, {
+                $group: {
+                    _id: '$race._id',
+                    // racename: { $first: '$race.racename' },
+                    // distanceName: {$first: '$race.distanceName' },
+                    // racedate: { $first: '$race.racedate' },
+                    // racetype: { $first: '$race.racetype' },
+                    race: { $first: '$race' },
+                    results: { $addToSet: '$members' },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        if (resultId) {
+            query = query.match({ 'results.result_id': new mongoose.Types.ObjectId(resultId) });
+        }
+
+        if (req.query.filters) {
+            const filters = JSON.parse(req.query.filters);
+            if (filters.dateFrom) {
+                query = query.match({ 'race.racedate': { $gte: new Date(filters.dateFrom) } });
+            }
+            if (filters.dateTo) {
+                query = query.match({ 'race.racedate': { $lte: new Date(filters.dateTo) } });
+            }
+        }
+
+        if (sort) {
+            query = query.sort(sort);
+        }
+
+        if (limit) {
+            query = query.limit(limit); //no idea why I need to parse
+        }
+
+        try{
+            query.exec().then(results =>{               
+                results.forEach(function(resu) {
+                    resu.results = _.sortBy(resu.results, 'time');
+                });
+                res.json(results); // return all members in JSON format                
+            });
+        }catch(err){
+            res.send(err);
+        }
+        
+
+    });
+
+
+
+    // =====================================
+    // ACHIEVEMENTS ========================
+    // =====================================
+
+    //old 
+    app.get('/updateResults', isAdminLoggedIn, async function(req, res) {
+        res.json( 'deprecated');
+        let query = Result.find();
+
+        let results = await query.exec();
+        if (results) {
+                let numberOfUpdates = 0;
+                let numberOfCreated = 0;
+
+                async.forEachOfSeries(results, function(result, key, callback) {
+                    if (result.racename !== undefined && result.racedate !== undefined && result.racetype !== undefined) { // only take care of old model
+                        async.waterfall([
+                            function(callback) {
+                                Race.findOne({
+                                    'racename': result.racename,
+                                    'racedate': result.racedate,
+                                    'racetype._id': result.racetype._id
+                                }, function(err, race) {
+                                    if (err) {
+                                        callback(err);
+                                    } else {
+                                        callback(null, race);
+                                    }
+                                });
+                            },
+                            function(race, callback) {
+                                if (!race) { //do not deal with multiple racers
+                                    Race.create({
+                                        racename: result.racename,
+                                        racetype: result.racetype,
+                                        racedate: result.racedate,
+                                    }, function(err, r) {
+                                        if (err) {
+                                            callback(err);
+                                        } else {
+                                            numberOfCreated++;
+                                            result.race = r;
+                                            callback(null);
+                                        }
+                                    });
+                                } else {
+                                    numberOfUpdates++;
+                                    result.race = race;
+                                    callback(null);
+                                }
+                            },
+                            function(callback) {
+                                result.racename = undefined;
+                                result.racedate = undefined;
+                                result.racetype = undefined;
+                                result.save(function(err) {
+                                    if (err) {
+                                        callback(err);
+                                    } else {                                    
+                                        callback(null);
+                                    }
+                                });
+                            }
+                        ], function(err) {
+                            if (err) {
+                                console.error(err.message);
+                            } else {
+                                callback(); //foreach
+                                // console.log('done');
+                            }
+                        });
+                    } else {
+                        callback();
+                    }
+                }, function(err) {
+                    if (err) {
+                        console.error(err.message);
+                    }
+                    res.json({ 'numberOfUpdates': numberOfUpdates, 'numberOfCreated': numberOfCreated });
+
+                });
+
+        }
+    });
+
+
+
+// update agegrade
+app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
+    let query = Result.find();
+    query = query.or([{
+        'race.racetype.surface': 'track'
+    }, {
+        'race.racetype.surface': 'road'
+    }]);
+
+    let results = await query.exec();
+        if (results) {
+            let numberOfUpdates = 0;
+            async.forEachOf(results, function(res, key, callback) {
+                
+                //SYNC ISSUE
+                AgeGrading.findOne({
+                    sex: res.members[0].sex.toLowerCase(),
+                    type: res.race.racetype.surface,
+                    age: calculateAge(res.race.racedate, res.members[0].dateofbirth),
+                }).then(ag =>{                                              
+                    if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
+                        if (ag[res.race.racetype.name.toLowerCase()] !== undefined) {
+                            const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
+                            res.agegrade = agegrade;
+                            res.save().then(() => {                                    
+                                    numberOfUpdates++;
+                                    callback();
+                            });                                
+                        } else {
+                            callback();
+                        }
+                    } else {
+                        callback();
+                    }
+                });
+            }, function(err) {
+                if (err) {
+                    console.error(err.message);
+                }
+                res.json({ 'numberOfUpdates': numberOfUpdates });
+
+            });
+        }
+});
+
+
+
+
+//update all achievements
+app.get('/updateAchievements', isAdminLoggedIn, async function(req, res) {
+    res.setHeader("Content-Type", "application/json");
+    try{
+        let memberQuery = Member.find();
+        memberQuery = memberQuery.sort("lastname");
+        let achievements = [];
+        memberQuery.exec().then(async members => { 
+            for (const member of members) {                        
+                achievements.push({
+                    "member": member.firstname + " " + member.lastname,
+                    "achievements": await updateAchievements(member)
+                });            
+            }
+            res.end('{"success" : "Achievements updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(achievements)+'}');
+        });
+        
+    }catch(err){
+        res.end('{"success" : "Achievements not updated", "status" : 500, "error" : "'+err+'"}');
+    }
+    
+});
+
+// update all pbs
+app.get('/updatePbs', isAdminLoggedIn, async function(req, res) {
+    res.setHeader("Content-Type", "application/json");
+    try{
+    let memberQuery = Member.find();
+    memberQuery = memberQuery.sort("lastname");
+    let pbs = [];
+    memberQuery.exec().then(async members => {            
+            if (members) {                
+                for (let member of members) {
+                    pbs.push({
+                        "member": member.firstname + " " + member.lastname,
+                        "pbs": await updatePBs(member)
+                    });                           
+                }
+                res.end('{"success" : "Pbs updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(pbs)+'}');
+            }            
+    });
+
+    }catch(err){
+        res.end('{"success" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
+    }
+});
+
+
+async function postResultsave(member){
+    await updatePBs(member);
+    await updateAchievements(member);
+}
+
+async function updatePBs(member){
+    //const pbDistances = ["1 mile","5k","5 miles", "8k", "10k", "10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
+    const pbDistances = ["1 mile", "1500m","2 miles","5k","4 miles",
+                         "5 miles", "8k", "10k", "10 miles", "Half Marathon", "20 miles",
+                         "Marathon","50K", "50 miles", "100k", "100 miles"];
+    let returnRes = [];
+    //remove all non manual entries
+    for (let i = 0; i < member.personalBests.length; i++) {
+        if (member.personalBests[i].source === "computed") {
+            member.personalBests.splice(i,1);
+        }
+      }
+
+    let resultquery = Result.find({
+        'members._id': member._id
+    });
+    resultquery.and({"race.racetype.name":{ $in : pbDistances}});
+    resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra"]}}); //don't deal with 
+    resultquery.and({"$expr": {"$eq": [{$size: "$members"},1]}}); // only deal with single members
+    resultquery.sort('race.racedate race.order');                        
+     let results = await resultquery.exec()
+        if (results){
+            for(let res of results){                                    
+                //we clear all pb achievements for this member
+                let ind = res.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                res.achievements.splice(ind,1);               
+
+                //version where we don't mix surfaces
+                //const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface) )
+                const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
+                //pb entry exists?
+                if (index > -1 ) {
+                    //if it exists we update it
+                    if (res.time <= member.personalBests[index].time) {
+
+                        member.personalBests[index] = {
+                            result: res,
+                            name: res.race.racetype.name,
+                            surface: res.race.racetype.surface,
+                            distance: res.race.racetype.meters,
+                            time: res.time,
+                            source: "computed"
+                        }
+                        // console.log("updated pb",member.firstname, res.race.racename);
+                        res.achievements.push({
+                            name:"pb",
+                            text:member.firstname+"'s new "+res.race.racetype.name+" personal best with the team!",
+                            value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                        });
+                        // console.log(res);
+                        await res.save();
+
+                        returnRes.push("New "+res.race.racetype.name+" PB at "+res.race.racename +"!");   
+                    }                                                                            
+                }else{
+                    // if not we create it
+                    member.personalBests.push({
+                        result: res,
+                        name: res.race.racetype.name,
+                        surface: res.race.racetype.surface,
+                        distance: res.race.racetype.meters,
+                        time: res.time,
+                        source: "computed"
+                    })
+                    // console.log("new pb",member.firstname,res.race.racename);
+                    res.achievements.push({
+                        name:"pb",
+                        text:member.firstname+"'s new "+res.race.racetype.name+" personal best with the team!",
+                        value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                    });  
+                    await res.save();
+                    returnRes.push("New "+res.race.racetype.name+" PB at "+res.race.racename +"!");   
+                }//end with pb   
+            }                                            
+        }                                
+    await member.save();
+    return returnRes;
+}
+
+async function updateAchievements(member){
+    // console.log(member.lastname);
+    //check if it's a race count milestone
+    const raceNumber = [1, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000];
+    let returnRes = [];
+
+    let bestAG = 0;
+
+    let resultquery = Result.find({
+        'members': {$elemMatch: { _id: member._id}}
+    });
+
+    resultquery.sort('race.racedate race.order'); 
+    const results = await resultquery.exec();
+
+    //write code to find index of the element with the same id as result._id
+    // const index = results.findIndex(item => item._id === result._id);
+    let index= 0;
+    for(let result of results){ 
+        
+        //check for race count achievement
+        if (raceNumber.find(num => num ===index+1)){
+
+            let ind = result.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));
+            if (ind !== -1){
+                //we update                
+                result.achievements[ind]={
+                    name:"raceCount",
+                    text:member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!",
+                    value: {raceCount:index+1,memberId: new mongoose.Types.ObjectId(member._id)}
+                };
+                returnRes.push(result.race.racename+" is "+ member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");
+                // console.log("updated achievement: ",result.race.racename, " ",member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");
+            }else{
+                //we add
+                result.achievements.push({
+                    name:"raceCount",
+                    text:member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!",
+                    value: {raceCount:index+1,memberId: new mongoose.Types.ObjectId(member._id)}
+                });     
+                returnRes.push(result.race.racename+" is "+ member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");                                
+                // console.log("added achievement: ",result.race.racename, " ",member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");
+            }            
+            // console.log(result);
+            // console.log(result.race.racename, " ", result.race.racedate, " ", result.achievements.length)
+            // await result.save();
+        }else {
+            if (result.achievements){
+                //we remove raceCount info if it's related to the current member
+                let ind = result.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                if (ind !== -1){
+                    // console.log("removing ",result.achievements[ind].value.memberId," member._id: ", member._id," from result ", result._id); 
+                    result.achievements.splice(ind,1);                
+                    // await result.save();
+                }    
+            }            
+        }
+
+        //check for age grade achievement
+        if(result.agegrade){
+            let agInd = result.achievements.findIndex(item => (item.name === "agegrade"))
+            if (agInd !== -1){                    
+                if(result.agegrade > bestAG){
+                    //update
+                    // console.log("update ag for member",member.firstname," ", result.agegrade, "("+bestAG+")");  
+                    bestAG = result.agegrade;
+                    result.achievements[agInd]={
+                        name:"agegrade",
+                        text:member.firstname+"'s best age graded result with the team! " + result.agegrade + "%" ,
+                        value: result.agegrade
+                    };
+                    returnRes.push(result.race.racename+" is "+member.firstname+"'s best age graded result with the team! " + result.agegrade + "%"); 
+                }else{
+                    //we remove it if it's not accurate anymore
+                    result.achievements.splice(agInd,1);  
+                }
+            }else{
+                //add   
+                if(result.agegrade > bestAG){                
+                    // console.log("add ag for member",member.firstname," ", result.agegrade, "("+bestAG+")");  
+                    bestAG = result.agegrade;
+                    result.achievements.push({
+                        name:"agegrade",
+                        text:member.firstname+"'s best age graded result with the team! " + result.agegrade + "%" ,
+                        value: result.agegrade
+                    });                  
+                    returnRes.push(result.race.racename+" is "+member.firstname+"'s best age graded result with the team! " + result.agegrade + "%");   
+                }
+            }
+        }
+
+        // //check if it's a PB
+        // member.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));
+        // if (result._id )
+
+        await result.save();
+        index++;
+    }        
+    return returnRes;
+} 
+
+
+
+    // =====================================
+    // STATS ===============================
+    // =====================================
 
     // get a location data
     app.get('/api/locations', function(req, res) {
@@ -1200,8 +1294,9 @@ module.exports = async function(app, qs, passport, async, _) {
         ]);
 
         try{
-            query.exec().then(results => {        
-                let total;      
+            query.exec().then(results => {                        
+                let ret = [];
+                let total = 0;
                 results.forEach(function(resu) {
                   if(resu["name"] !== null){
                     total += resu["count"];
@@ -1234,7 +1329,6 @@ module.exports = async function(app, qs, passport, async, _) {
         let startdate;
         if (startdateReq !== undefined){
             startdate = new Date(startdateReq);    
-            console.log(startdate);
         }else{            
             startdate = new Date(new Date().getFullYear(), 0, 1);
         }
@@ -1245,21 +1339,6 @@ module.exports = async function(app, qs, passport, async, _) {
         }else{            
             enddate = new Date();
         }
-
-
-        // not used?
-        // let memberstatus;
-        // if (memberStatusReq !== undefined){            
-        //     if (memberStatusReq.toLowerCase() === 'past'){
-        //         memberstatus = 'past';
-        //     }else if (memberStatusReq.toLowerCase() === 'all'){
-        //         memberstatus = '.*';
-        //     }else{
-        //         memberstatus = 'current';
-        //     }
-        // }else{            
-        //     memberstatus = 'current';
-        // }
 
         let query = Member.aggregate(
             [
@@ -1382,81 +1461,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
     
 
-    // get raceinfo list
-    app.get('/api/raceinfos', function(req, res) {
-        const sort = req.query.sort;
-        const limit = parseInt(req.query.limit);
-        let resultId = req.query.resultId;
-
-        let query = Result.aggregate([
-
-            {
-                $project: {
-                    race: '$race', // we need this field
-                    legs: '$legs',
-                    members: {
-                        members: '$members',
-                        time: '$time',
-                        agegrade: '$agegrade',
-                        category: '$category',
-                        resultlink: '$resultlink',
-                        ranking: '$ranking',
-                        result_id: '$_id',
-                        legs: '$legs'
-                    }
-                }
-            }, {
-                $unwind: "$members"
-
-            }, {
-                $group: {
-                    _id: '$race._id',
-                    // racename: { $first: '$race.racename' },
-                    // distanceName: {$first: '$race.distanceName' },
-                    // racedate: { $first: '$race.racedate' },
-                    // racetype: { $first: '$race.racetype' },
-                    race: { $first: '$race' },
-                    results: { $addToSet: '$members' },
-                    count: { $sum: 1 }
-                }
-            }
-        ]);
-
-        if (resultId) {
-            query = query.match({ 'results.result_id': new mongoose.Types.ObjectId(resultId) });
-        }
-
-        if (req.query.filters) {
-            const filters = JSON.parse(req.query.filters);
-            if (filters.dateFrom) {
-                query = query.match({ 'race.racedate': { $gte: new Date(filters.dateFrom) } });
-            }
-            if (filters.dateTo) {
-                query = query.match({ 'race.racedate': { $lte: new Date(filters.dateTo) } });
-            }
-        }
-
-        if (sort) {
-            query = query.sort(sort);
-        }
-
-        if (limit) {
-            query = query.limit(limit); //no idea why I need to parse
-        }
-
-        try{
-            query.exec().then(results =>{               
-                results.forEach(function(resu) {
-                    resu.results = _.sortBy(resu.results, 'time');
-                });
-                res.json(results); // return all members in JSON format                
-            });
-        }catch(err){
-            res.send(err);
-        }
-        
-
-    });
+   
 
 
 
@@ -1627,10 +1632,11 @@ module.exports = async function(app, qs, passport, async, _) {
             res.send(err);
         }
     });
+
+
     // =====================================
     // RaceTypes =============================
     // =====================================
-
 
     // get all racetypes
     app.get('/api/racetypes', function(req, res) {
@@ -1782,7 +1788,6 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
     // MAIL
-
     app.post('/sendEmail', function(req, res) {
         const data = req.body;
         transport.sendMail({

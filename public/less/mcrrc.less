@@ -324,17 +324,19 @@ footer {
 
 .btn-member {
     @media (max-width: @screen-lg-min) {
-        padding: 6px 10px;
+        padding: 6px 8px;
     }
     @media (max-width: @screen-md-min) {
         padding: 6px 4px;
     }
+    padding: 6px 8px;
 }
 
 .btn-record {
     @media (max-width: @screen-lg-min) {
-        padding: 6px 10px;
+        padding: 6px 8px;
     }
+    padding: 6px 8px;
 }
 
 .btn-row {
@@ -351,8 +353,10 @@ footer {
 .select2-container .select2-choice {
     @media (max-width: @screen-lg-min) {
         height: 35px;
-        line-height: 35px;
+        line-height: 33px;
     }
+    height: 36px;
+    line-height: 33px;
 }
 
 .ui-select-container[theme=select2].direction-up .ui-select-dropdown .select2-search {
@@ -787,5 +791,25 @@ footer {
     font-weight: bold;
     color: white;
     background-color: @brand-primary-dark;
+    margin-right: 2px;
+}
 
+.pbBox{
+    display: inline-block;
+    margin-right: 2px;
+}
+
+
+.showMoreButton{
+    display: inline-block;
+    border: 1px solid @brand-primary-dark;
+    padding: 1px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    background-color: @brand-primary-dark;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 10px; 
+    float:right
 }

@@ -24,7 +24,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$s
                 "dateFrom": new Date($filter('date')($scope.datefrom, "yyyy-MM-dd", 'UTC')).getTime(),
                 "dateTo": new Date($filter('date')($scope.dateto, "yyyy-MM-dd", 'UTC')).getTime()
             },
-            "sort": '-race.racedate race.racename'
+            "sort": '-race.racedate -race.order race.racename'
         }).then(function(raceInfosList) {
             $scope.report = "";
             raceInfosList.forEach(function(raceinfo) {
@@ -56,7 +56,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$s
                 "dateFrom": new Date($filter('date')($scope.datefrom, "yyyy-MM-dd", 'UTC')).getTime(),
                 "dateTo": new Date($filter('date')($scope.dateto, "yyyy-MM-dd", 'UTC')).getTime()
             },
-            "sort": '-race.racedate race.racename'
+            "sort": '-race.racedate -race.order race.racename'
         }).then(function(raceInfosList) {
             $scope.reportHTLM = '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">';
             raceInfosList.forEach(function(raceinfo) {
@@ -128,7 +128,7 @@ angular.module('mcrrcApp.results').controller('TableReportController', ['$scope'
                 "datefrom": $filter('date')($stateParams.from, "yyyy-MM-dd", 'UTC'),
                 "dateto": $filter('date')($stateParams.to, "yyyy-MM-dd", 'UTC')
             },
-            "sort": '-race.racedate race.racename time'
+            "sort": '-race.racedate -race.order race.racename time'
         }).then(function(results) {
             $scope.reportHTLM = '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">';
 

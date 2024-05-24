@@ -10,6 +10,7 @@ app.directive('resultIcon', function() {
     return {
         scope: {
           result:'=result',
+          race:'=race'
         },
         link: function($scope, element, attrs) {
           // $scope.imgsrc = "";
@@ -28,9 +29,16 @@ app.directive('resultIcon', function() {
 
           if ($scope.result.customOptions !== undefined){
             $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
-            $scope.raceCount = $scope.result.customOptions.find(x => x.name === "raceCount");
           }
-         
+          if ($scope.result.achievements !== undefined){
+            $scope.raceCounts = $scope.result.achievements.filter(x => x.name === "raceCount");
+            $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
+            $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");
+          }
+          
+         if (!$scope.result.race){
+          $scope.result.race = $scope.race;
+         }
 
           var d1= new Date($scope.result.race.racedate);
           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
@@ -53,7 +61,9 @@ app.directive('resultIcon', function() {
           }
 
         },
-          template:	'<span ng-if="raceCount" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value}}</div></span>'+
+          template:	'<span ng-if="raceCounts" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text"><div class="pbBox">🎖️</div></span>' +
+          '<span ng-if="raceCounts" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text"><div class="pbBox">🧨</div></span>'+
+          '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value.raceCount}}</div>  </span>'+
           '<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span>' +
           '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
           '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +

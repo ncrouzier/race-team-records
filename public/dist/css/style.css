@@ -7466,9 +7466,12 @@ footer {
     min-width: 200px;
   }
 }
+.btn-member {
+  padding: 6px 8px;
+}
 @media (max-width: 1200px) {
   .btn-member {
-    padding: 6px 10px;
+    padding: 6px 8px;
   }
 }
 @media (max-width: 992px) {
@@ -7476,9 +7479,12 @@ footer {
     padding: 6px 4px;
   }
 }
+.btn-record {
+  padding: 6px 8px;
+}
 @media (max-width: 1200px) {
   .btn-record {
-    padding: 6px 10px;
+    padding: 6px 8px;
   }
 }
 .btn-row {
@@ -7490,10 +7496,14 @@ footer {
     padding-right: 5px;
   }
 }
+.select2-container .select2-choice {
+  height: 36px;
+  line-height: 33px;
+}
 @media (max-width: 1200px) {
   .select2-container .select2-choice {
     height: 35px;
-    line-height: 35px;
+    line-height: 33px;
   }
 }
 .ui-select-container[theme=select2].direction-up .ui-select-dropdown .select2-search {
@@ -7852,5 +7862,23 @@ footer {
   font-weight: bold;
   color: white;
   background-color: #006687;
+  margin-right: 2px;
+}
+.pbBox {
+  display: inline-block;
+  margin-right: 2px;
+}
+.showMoreButton {
+  display: inline-block;
+  border: 1px solid #006687;
+  padding: 1px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  background-color: #006687;
+  margin: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  float: right;
 }
 

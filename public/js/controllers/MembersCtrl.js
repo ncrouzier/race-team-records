@@ -72,29 +72,31 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.setMember = async function(member_light) { 
        if (member_light === undefined) return;
 
+
        // get the member details
        await MembersService.getMember(member_light._id).then(function(fullMember) {
             $scope.currentMember = fullMember;
+            $scope.activeTab = 1;
         });        
 
         ResultsService.getResults({
-            sort: '-race.racedate',
+            sort: '-race.racedate -race.order',
             member: {_id :member_light._id}
         }).then(function(results) {
             $scope.currentMemberResultList = results; 
         });
         
 
-        MembersService.getMemberPbs($scope.currentMember).then(function(results) {
-            $scope.currentMemberPbsList = results;
-        });
+        // MembersService.getMemberPbs($scope.currentMember).then(function(results) {
+        //     $scope.currentMemberPbsList = results;
+        // });
 
         $state.current.reloadOnSearch = false;
         $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
         $timeout(function () {
           $state.current.reloadOnSearch = undefined;
         });
-        $scope.activeTab = 1;
+        // $scope.activeTab = 1;
         $analytics.eventTrack('viewMember', {
             category: 'Member',
             label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
@@ -175,6 +177,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }, function(btn) {});
     };
 
+
+    $scope.defaultPBdistances = ["1 mile","5k", "10k", "10 miles", "Half Marathon","Marathon"];
+
+    $scope.isAllDistancesPresent = () => {
+    return $scope.currentMember.personalBests.every(pb => $scope.defaultPBdistances.includes(pb.name));
+    };
     // =====================================
     // MEMBER API CALLS ====================
     // =====================================

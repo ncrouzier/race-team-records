@@ -23,7 +23,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time',
+        "sort": '-race.racedate -race.order race.racename time members.firstname',
         "limit": 200,
         "preload":true
     }).then(function(results) {
@@ -31,7 +31,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         //now load the whole thing unless the initial call return the cache version (>200 res)
         if (results.length == 200){
             ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate race.racename time',
+                "sort": '-race.racedate -race.order race.racename time members.firstname',
                 "preload":false
             }).then(function(results) {
                 $scope.resultsList = results;
@@ -174,6 +174,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.race.location.country = result.race.location.country;
         $scope.formData.race.location.state = result.race.location.state;
         $scope.formData.race.racedate = new Date(result.race.racedate);
+        $scope.formData.race.order = result.race.order;
         $scope.formData.ranking = {};
         $scope.formData.members = [];
         $scope.formData.members[0] = {};

@@ -94,20 +94,25 @@
                                 </div>
                                 <div class="row row-no-right-margin">
                                     <div class="col-sm-12">
-                                        <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
+                                        <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small> 
                                         <ul class="pb-list list-group">
                                             <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">
                                                 <div class="row">
-                                                    <div class="col-sm-6">
+                                                    <div class="col-sm-6" style="font-size: 15px;">
                                                         <span class="listheader hoverhand" title="Race">RACE</span>
                                                     </div>
-                                                    <div class="col-sm-6">
+                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
                                                         <span class="listheader hoverhand" title="Time">TIME</span>
+                                                        <span ng-show='!isAllDistancesPresent()'  class="showMoreButton" ng-click="showAll = !showAll">{{ showAll ? 'show less' : 'show more' }}</span>
+
                                                     </div>
+
+                                                    
                                                 </div>
                                             </li>
                                             <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' " ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                                                <div class="row">
+                                                
+                                                <div class="row" ng-if="defaultPBdistances.includes(pb.name) || showAll"> 
                                                     <div class="col-sm-6">
                                                         <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
                                                     </div>
@@ -117,38 +122,13 @@
                                                 </div>
                                             </li>
                                         </ul>
-                                    </div>
-                                    <!-- <div class="col-sm-12">
-                                        <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small>
-                                        <ul class="pb-list list-group">
-                                            <li class="list-group-item text-left pblistheader" ng-show="currentMemberResultList.length >0">
-                                                <div class="row">
-                                                    <div class="col-sm-6">
-                                                        <span class="listheader hoverhand" title="Race">RACE</span>
-                                                    </div>
-                                                    <div class="col-sm-6">
-                                                        <span class="listheader hoverhand" title="Time">TIME</span>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li class="list-group-item text-left pblistrow" ng-repeat="result in currentMemberPbsList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                                                <div class="row">
-                                                    <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.race.racetype.name}}</span>
-                                                    </div>
-                                                    <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(result)"> {{result.time | secondsToTimeString}}</span>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div> -->
+                                    </div>                                   
                                 </div>
                             </div>
                         </div>
                         <div id="member-list" class="row">
                             <div class="col-md-12">
-                                <h3>Results:</h3>
+                                <h3 style="margin-top:0px">Results:</h3>
                                 <ul class="results-list list-group">
                                     <li class="list-group-item text-left resultlistheader" ng-show="currentMemberResultList.length >0">
                                         <div class="row">

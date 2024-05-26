@@ -95,33 +95,104 @@
                                 <div class="row row-no-right-margin">
                                     <div class="col-sm-12">
                                         <h4 style="margin-bottom:1px" title="Personal bests as MCRRC race team member">Personal Bests:</h4><small>(as MCRRC race team member)</small> 
-                                        <ul class="pb-list list-group">
-                                            <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">
-                                                <div class="row">
-                                                    <div class="col-sm-6" style="font-size: 15px;">
-                                                        <span class="listheader hoverhand" title="Race">RACE</span>
-                                                    </div>
-                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
-                                                        <span class="listheader hoverhand" title="Time">TIME</span>
-                                                        <span ng-show='!isAllDistancesPresent()'  class="showMoreButton" ng-click="showAll = !showAll">{{ showAll ? 'show less' : 'show more' }}</span>
-
-                                                    </div>
-
-                                                    
-                                                </div>
-                                            </li>
-                                            <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' " ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                                                
-                                                <div class="row" ng-if="defaultPBdistances.includes(pb.name) || showAll"> 
-                                                    <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
-                                                    </div>
-                                                    <div class="col-sm-6">
-                                                        <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
+                                        <uib-tabset class="activePbTab" active="activePbTab">
+                                            <uib-tab index="0" heading="road" >
+                                                <ul class="pb-list list-group">
+                                                    <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                                                                     
+                                                            <div class="row">
+                                                                <div class="col-sm-6" style="font-size: 15px;">
+                                                                    <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                </div>
+                                                                <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                    <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                </div>                                                   
+                                                            </div>                                                    
+                                                    </li>
+                                                    <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'road' " ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">                                                        
+                                                        <div class="row"> 
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </uib-tab>
+                                            <uib-tab index="1" heading="track" >
+                                                <ul class="pb-list list-group">
+                                                    <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                            <div class="row">
+                                                                <div class="col-sm-6" style="font-size: 15px;">
+                                                                    <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                </div>
+                                                                <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                    <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                </div>                                                   
+                                                            </div>                                                    
+                                                    </li>
+                                                    <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'track'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                        <div class="row" > 
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </uib-tab>
+                                            <uib-tab index="2" heading="trail" >
+                                                <ul class="pb-list list-group">
+                                                    <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                            <div class="row">
+                                                                <div class="col-sm-6" style="font-size: 15px;">
+                                                                    <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                </div>
+                                                                <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                    <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                </div>                                                   
+                                                            </div>                                                    
+                                                    </li>
+                                                    <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'cross country'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                        <div class="row" > 
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </uib-tab>
+                                            <uib-tab index="3" heading="ultra" >
+                                                <ul class="pb-list list-group">
+                                                    <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                            <div class="row">
+                                                                <div class="col-sm-6" style="font-size: 15px;">
+                                                                    <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                </div>
+                                                                <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                    <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                </div>                                                   
+                                                            </div>                                                    
+                                                    </li>
+                                                    <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'ultra'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                        <div class="row"> 
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.name}}</span>
+                                                            </div>
+                                                            <div class="col-sm-6">
+                                                                <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result)"> {{pb.time | secondsToTimeString}}</span>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </uib-tab>
+                                        </uib-tabset>
                                     </div>                                   
                                 </div>
                             </div>
@@ -155,7 +226,7 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li dir-paginate="result in currentMemberResultList | itemsPerPage: 10" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <li dir-paginate="result in currentMemberResultList | itemsPerPage: 10" current-page="pagination.current" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                         <div class="row">
                                             <div class="col-sm-5" style="line-height: 1.1;">
                                                 <span class="hoverhandandunderline resultEvent" uib-tooltip="{{result | membersNamesWithAgeFilter}}" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span> <span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>

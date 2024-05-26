@@ -793,3 +793,11 @@ app.filter("sanitize", ['$sce', function($sce) {
 
 app.filter('unsafe', function($sce) {
     return $sce.trustAsHtml; });
+
+app.filter('pbFilter', function() {
+    return function(personalBests, surface) {
+        return personalBests.filter(function(pb) {
+            return pb.surface === surface;
+        });
+    };
+});

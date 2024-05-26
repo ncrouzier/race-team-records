@@ -1081,8 +1081,8 @@ async function postResultsave(member){
 
 async function updatePBs(member){
     //const pbDistances = ["1 mile","5k","5 miles", "8k", "10k", "10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
-    const pbDistances = ["1 mile", "1500m","2 miles","5k","4 miles",
-                         "5 miles", "8k", "10k", "10 miles", "Half Marathon", "20 miles",
+    const pbDistances = ["400m", "800m", "1500m","1 mile","2 miles","5k", "5000m", "4 miles",
+                         "5 miles",  "8k", "10k","10000m", "10 miles", "Half Marathon", "20 miles",
                          "Marathon","50K", "50 miles", "100k", "100 miles"];
     let returnRes = [];
     //remove all non manual entries
@@ -1096,19 +1096,25 @@ async function updatePBs(member){
         'members._id': member._id
     });
     resultquery.and({"race.racetype.name":{ $in : pbDistances}});
-    resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra"]}}); //don't deal with 
+    resultquery.and({"race.racetype.surface":{ $in : ["road", "track", "ultra", "cross country"]}}); //don't deal with swim or multi sports
     resultquery.and({"$expr": {"$eq": [{$size: "$members"},1]}}); // only deal with single members
     resultquery.sort('race.racedate race.order');                        
      let results = await resultquery.exec()
         if (results){
+            let resModification = false;
             for(let res of results){                                    
                 //we clear all pb achievements for this member
-                let ind = res.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));                                
-                res.achievements.splice(ind,1);               
+                if(res.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id))) > -1){
+                    res.achievements = res.achievements.filter(item => !(item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                    resModification = true;
+                }
+                
+                // console.log(res.achievements);
+                // res.achievements.splice(ind,1);               
 
                 //version where we don't mix surfaces
-                //const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface) )
-                const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
+                const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface));
+                // const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
                 //pb entry exists?
                 if (index > -1 ) {
                     //if it exists we update it
@@ -1125,13 +1131,11 @@ async function updatePBs(member){
                         // console.log("updated pb",member.firstname, res.race.racename);
                         res.achievements.push({
                             name:"pb",
-                            text:member.firstname+"'s new "+res.race.racetype.name+" personal best with the team!",
+                            text:member.firstname+"'s new "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") personal best with the team!",
                             value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
                         });
-                        // console.log(res);
-                        await res.save();
-
-                        returnRes.push("New "+res.race.racetype.name+" PB at "+res.race.racename +"!");   
+                        resModification = true;
+                        returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
                     }                                                                            
                 }else{
                     // if not we create it
@@ -1146,12 +1150,15 @@ async function updatePBs(member){
                     // console.log("new pb",member.firstname,res.race.racename);
                     res.achievements.push({
                         name:"pb",
-                        text:member.firstname+"'s new "+res.race.racetype.name+" personal best with the team!",
+                        text:member.firstname+"'s new "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") personal best with the team!",
                         value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
                     });  
-                    await res.save();
-                    returnRes.push("New "+res.race.racetype.name+" PB at "+res.race.racename +"!");   
+                    resModification = true;
+                    returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
                 }//end with pb   
+                if(resModification){
+                    await res.save();
+                }
             }                                            
         }                                
     await member.save();
@@ -1203,7 +1210,7 @@ async function updateAchievements(member){
             }            
             // console.log(result);
             // console.log(result.race.racename, " ", result.race.racedate, " ", result.achievements.length)
-            // await result.save();
+            await result.save();
         }else {
             if (result.achievements){
                 //we remove raceCount info if it's related to the current member
@@ -1211,7 +1218,7 @@ async function updateAchievements(member){
                 if (ind !== -1){
                     // console.log("removing ",result.achievements[ind].value.memberId," member._id: ", member._id," from result ", result._id); 
                     result.achievements.splice(ind,1);                
-                    // await result.save();
+                    await result.save();
                 }    
             }            
         }
@@ -1234,6 +1241,7 @@ async function updateAchievements(member){
                     //we remove it if it's not accurate anymore
                     result.achievements.splice(agInd,1);  
                 }
+                await result.save();
             }else{
                 //add   
                 if(result.agegrade > bestAG){                
@@ -1245,15 +1253,11 @@ async function updateAchievements(member){
                         value: result.agegrade
                     });                  
                     returnRes.push(result.race.racename+" is "+member.firstname+"'s best age graded result with the team! " + result.agegrade + "%");   
+                    await result.save();
                 }
             }
         }
-
-        // //check if it's a PB
-        // member.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));
-        // if (result._id )
-
-        await result.save();
+        
         index++;
     }        
     return returnRes;
@@ -1901,4 +1905,17 @@ function addOrdinalSuffix(number) {
         default:
             return number + "th";
     }
+}
+
+function getSurfaceText(surface) {
+    const surfaceMap = new Map([
+        ['road', 'road'],
+        ['track', 'track'],
+        ['cross country', 'trail'],
+        ['ultra', 'ultra'],
+        ['multiple', 'multi sport'],
+        ['pool', 'pool'],
+        ['open water', 'openwater']
+      ]);
+      return surfaceMap.get(surface);
 }

@@ -71,7 +71,11 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // set the current member to the display panel
     $scope.setMember = async function(member_light) { 
        if (member_light === undefined) return;
-
+       
+       //reset page to 1
+       $scope.pagination = {
+            current: 1
+       };  
 
        // get the member details
        await MembersService.getMember(member_light._id).then(function(fullMember) {
@@ -178,11 +182,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     };
 
 
-    $scope.defaultPBdistances = ["1 mile","5k", "10k", "10 miles", "Half Marathon","Marathon"];
-
-    $scope.isAllDistancesPresent = () => {
-    return $scope.currentMember.personalBests.every(pb => $scope.defaultPBdistances.includes(pb.name));
-    };
+    // $scope.defaultPBdistances = ["1 mile","5k", "10k", "10 miles", "Half Marathon","Marathon"];
+    
+    // $scope.pbTableProperties = {};
+    // $scope.pbTableProperties.surface = "road";
+    // $scope.surfaceTypes = ["road", "track","cross country", "ultra"];
+    // $scope.isAllDistancesPresent = () => {
+    // return $scope.currentMember.personalBests.every(pb => $scope.defaultPBdistances.includes(pb.name));
+    // };
+    
+    
     // =====================================
     // MEMBER API CALLS ====================
     // =====================================

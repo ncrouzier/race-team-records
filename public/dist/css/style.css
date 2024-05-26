@@ -7881,4 +7881,30 @@ footer {
   font-size: 10px;
   float: right;
 }
+.activePbTab .nav > li > a {
+  padding: 5px 5px;
+}
+.nav-tabs > li > a {
+  margin-bottom: 0px;
+  margin-right: 1px;
+}
+.nav-tabs > li > a:hover {
+  margin-bottom: 0px;
+  border: 1px solid #006687;
+  color: #008cba;
+  background-color: #F7FBFC;
+}
+.nav-tabs > li > a .active > a {
+  color: white;
+  background-color: #006687;
+}
+.nav-tabs > li > a .active > a:hover {
+  background-color: #006687;
+  color: white;
+}
+.nav-tabs > li > a .active > a:focus {
+  background-color: #006687;
+  color: white;
+  margin-bottom: 0px;
+}
 

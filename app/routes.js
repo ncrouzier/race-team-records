@@ -1112,50 +1112,52 @@ async function updatePBs(member){
                 // console.log(res.achievements);
                 // res.achievements.splice(ind,1);               
 
-                //version where we don't mix surfaces
-                const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface));
-                // const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
-                //pb entry exists?
-                if (index > -1 ) {
-                    //if it exists we update it
-                    if (res.time <= member.personalBests[index].time) {
+                if(res.isRecordEligible){                
+                    //version where we don't mix surfaces
+                    const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name && r.surface === res.race.racetype.surface));
+                    // const index = member.personalBests.findIndex(r => (r.name === res.race.racetype.name) )
+                    //pb entry exists?
+                    if (index > -1 ) {
+                        //if it exists we update it
+                        if (res.time <= member.personalBests[index].time) {
 
-                        member.personalBests[index] = {
+                            member.personalBests[index] = {
+                                result: res,
+                                name: res.race.racetype.name,
+                                surface: res.race.racetype.surface,
+                                distance: res.race.racetype.meters,
+                                time: res.time,
+                                source: "computed"
+                            }
+                            // console.log("updated pb",member.firstname, res.race.racename);
+                            res.achievements.push({
+                                name:"pb",
+                                text:member.firstname+"'s new "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") personal best with the team!",
+                                value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                            });
+                            resModification = true;
+                            returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
+                        }                                                                            
+                    }else{
+                        // if not we create it
+                        member.personalBests.push({
                             result: res,
                             name: res.race.racetype.name,
                             surface: res.race.racetype.surface,
                             distance: res.race.racetype.meters,
                             time: res.time,
                             source: "computed"
-                        }
-                        // console.log("updated pb",member.firstname, res.race.racename);
+                        })
+                        // console.log("new pb",member.firstname,res.race.racename);
                         res.achievements.push({
                             name:"pb",
                             text:member.firstname+"'s new "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") personal best with the team!",
                             value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
-                        });
+                        });  
                         resModification = true;
                         returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
-                    }                                                                            
-                }else{
-                    // if not we create it
-                    member.personalBests.push({
-                        result: res,
-                        name: res.race.racetype.name,
-                        surface: res.race.racetype.surface,
-                        distance: res.race.racetype.meters,
-                        time: res.time,
-                        source: "computed"
-                    })
-                    // console.log("new pb",member.firstname,res.race.racename);
-                    res.achievements.push({
-                        name:"pb",
-                        text:member.firstname+"'s new "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") personal best with the team!",
-                        value: {time:res.time,memberId: new mongoose.Types.ObjectId(member._id)}
-                    });  
-                    resModification = true;
-                    returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
-                }//end with pb   
+                    }//end with pb   
+                }
                 if(resModification){
                     await res.save();
                 }
@@ -1227,7 +1229,7 @@ async function updateAchievements(member){
         if(result.agegrade){
             let agInd = result.achievements.findIndex(item => (item.name === "agegrade"))
             if (agInd !== -1){                    
-                if(result.agegrade > bestAG){
+                if(result.agegrade > bestAG && result.isRecordEligible){
                     //update
                     // console.log("update ag for member",member.firstname," ", result.agegrade, "("+bestAG+")");  
                     bestAG = result.agegrade;
@@ -1244,7 +1246,7 @@ async function updateAchievements(member){
                 await result.save();
             }else{
                 //add   
-                if(result.agegrade > bestAG){                
+                if(result.agegrade > bestAG && result.isRecordEligible){                
                     // console.log("add ag for member",member.firstname," ", result.agegrade, "("+bestAG+")");  
                     bestAG = result.agegrade;
                     result.achievements.push({

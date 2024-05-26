@@ -79,7 +79,7 @@
 				<ul class="nav navbar-nav nav-submit-admin">
 					<li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
 					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
+				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
 				      </a>
 				      <ul class="dropdown-menu" uib-dropdown-menu>
@@ -95,7 +95,7 @@
 					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-          <li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
+         			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
 					<!-- <li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li> -->
 				</ul>
 				<ul class="nav navbar-nav nav-submit-admin">

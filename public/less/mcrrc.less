@@ -832,22 +832,21 @@ footer {
             color: @brand-primary;
             background-color: @brand-primary-very-light;
         }
-        .active > a{
-            color: white;
+    }
+    >li.active > a:focus{
+        background-color: @brand-primary-dark;
+        color: white;
+        margin-bottom: 0px;
+    }
+    
+    > li.active > a{
+        color: white;
+        background-color: @brand-primary-dark;
+        &:hover{
             background-color: @brand-primary-dark;
-            &:hover{
-                background-color: @brand-primary-dark;
-                color: white;
-            }
-            &:focus{
-                background-color: @brand-primary-dark;
-                color: white;
-                margin-bottom: 0px;
-            }
+            color: white;
         }
     }
-
-   
 }
 
 

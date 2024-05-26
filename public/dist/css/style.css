@@ -7894,17 +7894,17 @@ footer {
   color: #008cba;
   background-color: #F7FBFC;
 }
-.nav-tabs > li > a .active > a {
-  color: white;
-  background-color: #006687;
-}
-.nav-tabs > li > a .active > a:hover {
-  background-color: #006687;
-  color: white;
-}
-.nav-tabs > li > a .active > a:focus {
+.nav-tabs > li.active > a:focus {
   background-color: #006687;
   color: white;
   margin-bottom: 0px;
+}
+.nav-tabs > li.active > a {
+  color: white;
+  background-color: #006687;
+}
+.nav-tabs > li.active > a:hover {
+  background-color: #006687;
+  color: white;
 }
 

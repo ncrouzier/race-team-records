@@ -57,9 +57,11 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         }
     };
 
-    $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {
-        });
+    $scope.showRaceModal = function(race) {
+        if(race){
+            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            });
+        }
     };
 
     // =====================================

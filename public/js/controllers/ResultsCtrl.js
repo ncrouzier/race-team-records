@@ -473,16 +473,16 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
     };
 
     $scope.$on('modal.closing', function(event, reason, closed){
-        $state.transitionTo(
-            '/results',            
-            { 
-                location: true, // This makes it update URL
-                inherit: true, 
-                relative: $state.$current, 
-                notify: false, // This makes it not reload
-                dynamic: true
-            }
-        );         
+        // $state.transitionTo(
+        //     '/results',            
+        //     { 
+        //         location: true, // This makes it update URL
+        //         inherit: true, 
+        //         relative: $state.$current, 
+        //         notify: false, // This makes it not reload
+        //         dynamic: true
+        //     }
+        // );         
     });
 
 

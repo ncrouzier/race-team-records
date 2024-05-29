@@ -246,9 +246,11 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
-    $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {
-        });
+    $scope.showRaceModal = function(race) {
+        if(race){
+            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            });
+        }
     };
 
     $scope.showResultDetailsModal = function(result) {

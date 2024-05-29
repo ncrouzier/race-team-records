@@ -2,7 +2,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
     //
     $locationProvider.html5Mode({
         enabled: true,
-        requireBase: false,
+        requireBase: true, 
         rewriteLinks: false
     });
     // For any unmatched url, redirect to /state1
@@ -29,6 +29,18 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/members.html');
                 gtag('event', 'page_view');
             }
+        })
+        .state('/members/member', {
+            url: "/members/:member",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/members.html",
+            controller: 'MembersController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/members.html');
+                gtag('event', 'page_view');
+            }
         }).state('/results', {
             url: "/results",
             templateUrl: "views/results.html",
@@ -37,7 +49,23 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/results.html');
                 gtag('event', 'page_view');
             }
-        }).state('/login', {
+        }).state('/resultsNoLoad', {            
+        })
+        // .state('/race', {
+        //     url: "/race",
+        //     templateUrl: "views/results.html",
+        //     controller: 'ResultsController',
+        //     onEnter: function() {
+        //         gtag('set', 'page_path', '/results.html');
+        //         gtag('event', 'page_view');
+        //     }
+        // })
+        .state('/races', {
+            url: '/races/:raceId',
+            templateUrl: 'views/results.html',
+            controller: 'ResultsController'
+        })
+        .state('/login', {
             url: "/login",
             templateUrl: "views/login.html",
             controller: 'LoginController'

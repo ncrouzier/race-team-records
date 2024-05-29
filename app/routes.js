@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const member = require('./models/member');
 const { query } = require('express');
+const path = require("path");
 
 module.exports = async function(app, qs, passport, async, _) {
 
@@ -810,60 +811,89 @@ module.exports = async function(app, qs, passport, async, _) {
         }    
     });
 
+    //  app.get('/api/results/:result_id',  async function(req, res) {
+    //     try{
+    //         res.json(await Result.findOne(req.params.result_id));
+    //     }catch(err){
+    //         res.send(err);
+    //     }
+    // });
+
      // get raceinfo list
      app.get('/api/raceinfos', function(req, res) {
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
-        let resultId = req.query.resultId;
+        let raceId = req.query.raceId;
 
-        let query = Result.aggregate([
-
-            {
-                $project: {
-                    race: '$race', // we need this field
-                    legs: '$legs',
-                    members: {
-                        members: '$members',
-                        time: '$time',
-                        agegrade: '$agegrade',
-                        category: '$category',
-                        resultlink: '$resultlink',
-                        ranking: '$ranking',
-                        result_id: '$_id',
-                        legs: '$legs',
-                        achievements: '$achievements',
-                        customOptions: '$customOptions'
-                    },
-                    
+        
+        let query = Race.aggregate([
+            
+              
+              {
+                $lookup: {
+                  from: 'results',
+                  localField: '_id',
+                  foreignField: 'race._id',
+                  as: 'results'
                 }
-            }, {
-                $unwind: "$members"
-
-            }, {
-                $group: {
-                    _id: '$race._id',
-                    // racename: { $first: '$race.racename' },
-                    // distanceName: {$first: '$race.distanceName' },
-                    // racedate: { $first: '$race.racedate' },
-                    // racetype: { $first: '$race.racetype' },
-                    race: { $first: '$race' },
-                    results: { $addToSet: '$members' },
-                    count: { $sum: 1 }
-                }
-            }
+              },
+              {
+                $addFields: { 
+                    count: { "$size": "$results"  }
+                  }
+              }
         ]);
 
-        if (resultId) {
-            query = query.match({ 'results.result_id': new mongoose.Types.ObjectId(resultId) });
+
+
+        // let query = Result.aggregate([
+
+        //     {
+        //         $project: {
+        //             race: '$race', // we need this field
+        //             legs: '$legs',
+        //             members: {
+        //                 members: '$members',
+        //                 time: '$time',
+        //                 agegrade: '$agegrade',
+        //                 category: '$category',
+        //                 resultlink: '$resultlink',
+        //                 ranking: '$ranking',
+        //                 result_id: '$_id',
+        //                 legs: '$legs',
+        //                 achievements: '$achievements',
+        //                 customOptions: '$customOptions'
+        //             },
+                    
+        //         }
+        //     }, {
+        //         $unwind: "$members"
+
+        //     }, {
+        //         $group: {
+        //             _id: '$race._id',
+        //             // racename: { $first: '$race.racename' },
+        //             // distanceName: {$first: '$race.distanceName' },
+        //             // racedate: { $first: '$race.racedate' },
+        //             // racetype: { $first: '$race.racetype' },
+        //             race: { $first: '$race' },
+        //             results: { $addToSet: '$members' },
+        //             count: { $sum: 1 }
+        //         }
+        //     }
+        // ]);
+
+        if (raceId) {
+            query = query.match({ '_id': new mongoose.Types.ObjectId(raceId) });
         }
 
         if (req.query.filters) {
             const filters = JSON.parse(req.query.filters);
             if (filters.dateFrom) {
-                query = query.match({ 'race.racedate': { $gte: new Date(filters.dateFrom) } });
+                query = query.match({ 'racedate': { $gte: new Date(filters.dateFrom) } });
             }
             if (filters.dateTo) {
-                query = query.match({ 'race.racedate': { $lte: new Date(filters.dateTo) } });
+                query = query.match({ 'racedate': { $lte: new Date(filters.dateTo) } });
             }
         }
 
@@ -1082,8 +1112,8 @@ async function postResultsave(member){
 async function updatePBs(member){
     //const pbDistances = ["1 mile","5k","5 miles", "8k", "10k", "10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];
     const pbDistances = ["400m", "800m", "1500m","1 mile","2 miles","5k", "5000m", "4 miles",
-                         "5 miles",  "8k", "10k","10000m", "10 miles", "Half Marathon", "20 miles",
-                         "Marathon","50K", "50 miles", "100k", "100 miles"];
+                         "5 miles","8k", "10k","10000m", "10 miles", "Half Marathon", "20 miles",
+                         "Marathon","50k", "50 miles", "100k", "100 miles"];
     let returnRes = [];
     //remove all non manual entries
     for (let i = 0; i < member.personalBests.length; i++) {
@@ -1815,7 +1845,6 @@ async function updateAchievements(member){
             }
         });
     });
-
 
 
     app.get('*', function(req, res) {

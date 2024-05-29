@@ -67,6 +67,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         $scope.setMember(model);
     };
  
+    $scope.getRaceTypeClass = function(s){
+        if (s !== undefined){
+            return s.replace(/ /g, '')+'-col';
+        }
+    };
+
+    $scope.filterRaceType = function() {
+        console.log("call");
+    };
 
     // set the current member to the display panel
     $scope.setMember = async function(member_light) { 
@@ -88,6 +97,17 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             member: {_id :member_light._id}
         }).then(function(results) {
             $scope.currentMemberResultList = results; 
+
+            // get racetypes from these results
+            $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
+                const { _id, race } = result;
+                if (!racetypes[race.racetype._id]) {
+                    racetypes[race.racetype._id] = race.racetype;
+                }
+                return racetypes;
+            }, {})).sort((a, b) => a.meters - b.meters);
+            // console.log($scope.racetypesList);
+
         });
         
 

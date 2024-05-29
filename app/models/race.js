@@ -11,7 +11,7 @@ var raceSchema = mongoose.Schema({
     racename: String,
     distanceName: String,
     racedate: Date,
-    order: Number, //order in case multiple races on same day, 0 earliest increases as day goes on
+    order: Number, //order in case multiple races on same day, 0 earliest increases as day goes on 
     isMultisport: Boolean,
     racetype: racetypeSchema,
     location:{

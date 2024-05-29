@@ -196,10 +196,10 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
-    factory.showRaceFromResultModal = function(result) {
+    factory.showRaceFromResultModal = function(raceId) {
         return Restangular.one('raceinfos').get({
             limit: 1,
-            resultId: result._id
+            raceId: raceId
         }).then(
             function(races) {
                 if (races.length === 1) {
@@ -220,8 +220,33 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
+    factory.showRaceFromRaceIdModal = function(raceId) {
+        return Restangular.one('raceinfos').get({
+            limit: 1,
+            raceId: raceId
+        }).then(
+            function(races) {
+                if (races.length === 1) {
+                    var modalInstance = $uibModal.open({
+                        templateUrl: 'views/modals/raceModal.html',
+                        controller: 'RaceModalInstanceController',
+                        size: 'lg',
+                        resolve: {
+                            raceinfo: races[0]
+                        }
+                    });
+                    modalInstance.result.then(function() {
+                    }, function() {});
+                }
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+
+
     factory.showRaceModal = function(raceinfo) {
-            var modalInstance = $uibModal.open({
+            modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/raceModal.html',
                 controller: 'RaceModalInstanceController',
                 size: 'lg',
@@ -229,12 +254,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                     raceinfo: raceinfo
                 }
             });
+            
             return modalInstance.result.then(function() {
                 return null;
             }, function() {
                 return null;
             });
     };
+
+    
 
 
 

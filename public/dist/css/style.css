@@ -7208,10 +7208,39 @@ footer {
   margin-left: 0px;
   margin-right: 0px;
 }
+.titleContainer {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #006687;
+  font-weight: 800;
+}
+@media (min-width: 992px) {
+  .titleContainer {
+    height: 250px;
+  }
+}
+@media (min-width: 1200px) {
+  .titleContainer {
+    height: 250px;
+  }
+}
+.titleContainer .titleBox .titleTop {
+  font-size: 40px;
+}
+.titleContainer .titleBox .titleBottom {
+  font-size: 60px;
+}
 .navimg {
   margin-left: 0px;
   margin-right: 0px;
   height: 200px;
+}
+.navimg-1 {
+  background-image: linear-gradient(to right, transparent, white 75%), url(../../images/topcover.jpg);
 }
 .navimg-2 {
   background: url('../../images/topcover2.jpg') left top no-repeat;
@@ -7249,7 +7278,7 @@ footer {
 }
 @media (min-width: 1200px) {
   .navimg {
-    height: 300px;
+    height: 250px;
     width: 100%;
   }
 }
@@ -7705,6 +7734,12 @@ footer {
   color: #ccc;
   position: relative;
   right: 21px;
+}
+.raceTypeClear {
+  cursor: pointer;
+  color: #ccc;
+  position: relative;
+  right: 42px;
 }
 .ranking-tooltip-cat {
   font-size: 1.3em;

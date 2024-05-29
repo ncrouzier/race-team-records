@@ -53,7 +53,43 @@ footer {
     margin-right: 0px;
 }
 
+.titleContainer {
+    @media (min-width: @screen-md-min) {
+        height: 250px;
+    }
+    @media (min-width: @screen-lg-min) {
+        height: 250px;
+    }
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: @brand-primary-dark;
+    font-weight: 800;
+    
+    .titleBox{
+        // background-image: linear-gradient(to right, rgba(255,0,0,0), rgba(255,0,0,1));
+        // padding: 10px;
+        // background-color: white;
+        .titleTop{
+            font-size: 40px;
+            
+        }
+        .titleBottom{
+            font-size: 60px;
+        }
+    }
+    
+}
+
 .navimg {
+    &-1{
+        // background: url('../../images/topcover.jpg') left top no-repeat;
+        background-image: linear-gradient(to right, transparent, white 75%), url(../../images/topcover.jpg);
+        // background-size: contain;
+      }
     &-2{
       background: url('../../images/topcover2.jpg') left top no-repeat;
       background-size: contain;
@@ -90,7 +126,7 @@ footer {
         width: 100%;
     }
     @media (min-width: @screen-lg-min) {
-        height: 300px;
+        height: 250px;
         width: 100%;
     }
     height: 200px;
@@ -600,6 +636,13 @@ footer {
     right:21px;
 }
 
+.raceTypeClear{
+    cursor:pointer;
+    color:#ccc;
+    position:relative;
+    right:42px;
+}
+
 .ranking-tooltip {
     &-cat {
         font-size: 1.3em;
@@ -848,5 +891,7 @@ footer {
         }
     }
 }
+
+
 
 

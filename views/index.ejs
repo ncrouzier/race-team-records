@@ -1,12 +1,13 @@
 <!doctype html>
 <html ng-app="mcrrcApp">
 <head>
-	<title>MCRRC Racing Team</title>
-	<link rel="stylesheet" href="dist/css/style.min.css">
+	<base href="/">
+	<title>MCRRC Racing Team</title>	
+	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 	<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
-	<script src="dist/js/app.min.js"></script>
+	<script type="text/javascript" src="dist/js/app.min.js"></script>
 
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HBYX9M5YQ"></script>
 	<script>
@@ -27,7 +28,11 @@
 </head>
 <body ng-controller="MainController">
 	<div class="container">
-		<div ng-class="getbg" class="row navimg" style="position: relative" >
+		
+			<div ng-class="getbg" class="row navimg" style="position: relative" >
+				<!-- <div class="titleContainer" >
+					<div  class="titleBox"><div class="titleTop" >Montgomery County Road Runners</div><div class="titleBottom" >RACING TEAM</div></div>					
+				</div> -->
 			<div class="">
 				<div class="logo-stats">
 					<span ng-cloak ng-if="milesRaced"><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
@@ -57,7 +62,7 @@
 				<ul class="nav navbar-nav">
 					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
 					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
           			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
@@ -77,7 +82,7 @@
 
 				</ul>
 				<ul class="nav navbar-nav nav-submit-admin">
-					<li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
+					<!-- <li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li> -->
 					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
 				        <%= user.email %> <span class="caret"></span>
@@ -92,7 +97,7 @@
 				<ul class="nav navbar-nav" >
 					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
 					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li ng-class="{active: $state.includes('/results')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
          			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>

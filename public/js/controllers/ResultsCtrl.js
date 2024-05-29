@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
 
 
 
@@ -10,6 +10,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.$watch('resultsTableProperties.pageSize', function(newVal, oldVal) {
         localStorageService.set('resultsPageSize', $scope.resultsTableProperties);
     });
+
+
 
     if (localStorageService.get('resultsPageSize')) {
         $scope.resultsTableProperties = localStorageService.get('resultsPageSize');
@@ -62,9 +64,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function(btn) {});
     };
 
-    $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {});
+    $scope.showRaceModal = function(race) {
+        if(race){
+            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            });
+        }
     };
+
 
     $scope.showResultDetailsModal = function(result) {
         ResultsService.showResultDetailsModal(result).then(function(result) {});
@@ -74,6 +80,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     //   return result.customOptions[result.customOptions.findIndex(x => x.name == "resultIcon")];
     // };
 
+    if($stateParams.raceId){
+        $scope.showRaceModal($stateParams.raceId);
+        console.log("raceId", $stateParams.raceId);
+    }
 
 }]);
 
@@ -433,7 +443,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, raceinfo, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo', 'MembersService', 'ResultsService', 'localStorageService','$state', function($scope, $uibModalInstance, $filter, raceinfo, MembersService, ResultsService, localStorageService,$state) {
 
     $scope.raceinfo = raceinfo;
     var sum = 0;
@@ -462,6 +472,18 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
 
+    $scope.$on('modal.closing', function(event, reason, closed){
+        $state.transitionTo(
+            '/results',            
+            { 
+                location: true, // This makes it update URL
+                inherit: true, 
+                relative: $state.$current, 
+                notify: false, // This makes it not reload
+                dynamic: true
+            }
+        );         
+    });
 
 
 

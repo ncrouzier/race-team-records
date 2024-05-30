@@ -1895,32 +1895,56 @@ async function updateAchievements(member){
 
 
     app.get('/api/milesraced', async function(req, res) {
-        let query = Result.find();
-
+        let filter;
         if (req.query.filters) {
-            const filters = JSON.parse(req.query.filters);
-            if (filters.dateFrom) {
-                query.gte('race.racedate', new Date(filters.dateFrom));
-            }
-            if (filters.dateTo) {
-                query.lte('race.racedate', new Date(filters.dateTo));
-            }
+            filters = JSON.parse(req.query.filters);
+        }else{
+            res.send("no dates provided");
         }
-        try{
-            query.exec().then(results =>  {                
-                    let raceWon = 0;
-                    let sum = 0;
-                    results.forEach(function(r) {
-                        sum += r.race.racetype.miles;
-                        if(r.ranking.genderrank === 1 || r.ranking.overallrank === 1){
-                            raceWon++;
+        let query = Result.aggregate([
+            {
+                $match:
+                  /**
+                   * query: The query in MQL.
+                   */
+                  {
+                    $and: [{
+                        "race.racedate": {
+                          $gte: new Date(filters.dateFrom)
                         }
-                    });
-                    res.json({resultsCount:results.length, milesRaced:sum, raceWon:raceWon});
-            });
-        }catch (err){
-            res.send(err);
-        }
+                      },
+                      {
+                        "race.racedate": {
+                          $lte: new Date(filters.dateTo)
+                        }
+                      }]
+                }
+                  
+              },
+
+            {
+            $group: {            
+                _id: null,
+                resultsCount: {
+                  $sum: 1
+                },
+                 raceWon: {
+                  $sum: {$cond:	[ {$or: [ {$eq: [ "$ranking.overallrank", 1] }, { $eq: [ "$ranking.genderrank", 1] } ]}, 1, 0] 
+                      }
+              },
+                milesRaced:{
+                  $sum: "$race.racetype.miles"
+                }
+              }            
+        }]);
+         try{
+            let queryRes = await query.exec();     
+            return res.json({resultsCount:queryRes[0].resultsCount, milesRaced:queryRes[0].milesRaced, raceWon:queryRes[0].raceWon});
+
+         }catch (err){
+                res.send(err);
+         }
+        
     });
 
 

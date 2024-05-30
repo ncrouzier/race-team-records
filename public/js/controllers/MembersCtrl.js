@@ -228,7 +228,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         "filters[sex]": $scope.paramModel.sex,
         "filters[category]": $scope.paramModel.category,
         "filters[memberStatus]": $scope.paramModel.memberStatus,
-        select: '-bio',
+        select: '-bio -personalBests',
         sort: 'firstname',
         limit: $scope.paramModel.limit
     };

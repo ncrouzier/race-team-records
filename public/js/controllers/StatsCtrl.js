@@ -134,7 +134,8 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
         MembersService.getMembers({
             // "filters[memberStatus]": "current",
-            sort: 'firstname'
+            sort: 'firstname',
+            select: '-bio -personalBests',
         }).then(function(members) {
           var now = new Date();
           var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),0,0,0);

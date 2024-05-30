@@ -1103,11 +1103,265 @@ app.get('/updatePbs', isAdminLoggedIn, async function(req, res) {
     }
 });
 
+app.get('/updatePBsandAchivements', isAdminLoggedIn, async function(req, res) {
+    res.setHeader("Content-Type", "application/json");
+    try{
+        const clear = ((req.query.clear+'').toLowerCase() === 'true')
+        let memberQuery = Member.find();
+        memberQuery = memberQuery.sort("lastname");
+        let pbs = [];
+        memberQuery.exec().then(async members => {            
+                if (members) {                
+                    for (let member of members) {
+                        pbs.push({
+                            "member": member.firstname + " " + member.lastname,
+                            "results": await updatePBsandAchivements(member, clear)
+                        });                           
+                    }
+                    res.end('{"success" : "Pbs updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(pbs)+'}');
+                }            
+        });
+
+    }catch(err){
+        res.end('{"success" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
+    }
+});
+
 
 async function postResultsave(member){
-    await updatePBs(member);
-    await updateAchievements(member);
+    await updatePBsandAchivements(member);
+    // await updatePBs(member);
+    // await updateAchievements(member);
 }
+
+async function updatePBsandAchivements(member,clear){
+    let returnRes = [];
+    let bestAG = 0;
+    let numberOfSaves = 0;
+    const pbDistances = ["400m", "800m", "1500m","1 mile","2 miles","5k", "5000m", "4 miles",
+    "5 miles","8k", "10k","10000m", "10 miles", "Half Marathon", "20 miles",
+    "Marathon","50k", "50 miles", "100k", "100 miles"];
+    const pbSurfaces = ["road", "track", "ultra", "cross country"];
+    const raceNumber = [1, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000];
+
+    if(clear){
+        //remove all non manual entries
+        for (let i = 0; i < member.personalBests.length; i++) {            
+            if (member.personalBests[i].source === "computed") {               
+                member.personalBests.splice(i,1);
+                i--;
+            }
+        }
+    }
+    let tmpPersonalBests = [];
+
+    //get all results for this member
+    let resultquery = Result.find({
+        'members': {$elemMatch: { _id: member._id}}
+    });
+    resultquery.sort('race.racedate race.order'); 
+    const results = await resultquery.exec();
+    let index= 0;
+    for(let result of results){ 
+        let resModification = false;
+        if(clear){
+            if(result.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id))) > -1){
+                result.achievements = result.achievements.filter(item => !(item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                // console.log("resModification");
+                resModification = true;
+            }
+            if(result.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id))) > -1){
+                result.achievements = result.achievements.filter(item => !(item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                // console.log("resModification2");
+                resModification = true;
+            }
+        }
+        //check if this result is a race count milestone
+        if (raceNumber.find(num => num ===index+1)){ 
+
+            let ind = result.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));
+             //if the member already have the achievement and is different from the current result, we update
+            if (ind !== -1 && result.achievements[ind].value.raceCount !== index+1 ){
+                result.achievements[ind]={
+                    name:"raceCount",
+                    text:member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!",
+                    value: {raceCount:index+1,memberId: new mongoose.Types.ObjectId(member._id)}
+                };
+                returnRes.push(result.race.racename+" is "+ member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");
+                // console.log("resModification3");
+                resModification = true;
+            }else if(ind === -1 ){ //if we have no raceCount achievements
+                result.achievements.push({
+                    name:"raceCount",
+                    text:member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!",
+                    value: {raceCount:index+1,memberId: new mongoose.Types.ObjectId(member._id)}
+                });     
+                returnRes.push(result.race.racename+" is "+ member.firstname+"'s "+addOrdinalSuffix(index+1)+" race with the team!");  
+                // console.log("resModification4");
+                resModification = true;   
+            }
+        }else {
+            //result is not a race count milestone            
+            if (result.achievements){
+                //we remove raceCount miletone info if it's related to the current member
+                let ind = result.achievements.findIndex(item => (item.name === "raceCount" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                if (ind !== -1){
+                    result.achievements.splice(ind,1);                
+                    resModification = true;
+                }    
+            }            
+        }// end of if is a race count milestone check
+
+        //now dealing with personal bests
+        if(result.isRecordEligible && result.members.length === 1 && pbDistances.includes(result.race.racetype.name) && pbSurfaces.includes(result.race.racetype.surface)){
+
+            //Does the pb entry for this distance and surface already exist?
+            let index = tmpPersonalBests.findIndex(r => (r.name === result.race.racetype.name && r.surface === result.race.racetype.surface && r.source === "computed"));
+            if (index > -1 ) {
+                //if it exists and the time is better, we update it
+                if (result.time <= tmpPersonalBests[index].time) {
+                    tmpPersonalBests[index] = {
+                        result: result,
+                        name: result.race.racetype.name,
+                        surface: result.race.racetype.surface,
+                        distance: result.race.racetype.meters,
+                        time: result.time,
+                        source: "computed"
+                    }                                   
+                    
+
+                    //result PB achievement
+                    let ind = result.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));
+                    //if achievement exists we update it if needed                 
+                    if (ind !== -1){
+                        if(result.achievements[ind].value.time != result.time){
+                            result.achievements[ind]={
+                                name:"pb",
+                                text:member.firstname+"'s new "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") personal best with the team!",
+                                value: {time:result.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                            };
+                            returnRes.push("New "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") PB at "+result.race.racename +"!");   
+                            // console.log("resModification5");
+                            resModification = true;
+                        }                        
+                    }else{ //otherwise we add it
+                        result.achievements.push({
+                            name:"pb",
+                            text:member.firstname+"'s new "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") personal best with the team!",
+                            value: {time:result.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                        });
+                        returnRes.push("New "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") PB at "+result.race.racename +"!");   
+                        // console.log("resModification6");
+                        resModification = true;
+                    }                    
+                }else{
+                    //if it exists and the time is worse, we remove it
+                    if (result.achievements){
+                        if(result.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id))) > -1){
+                            result.achievements = result.achievements.filter(item => !(item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));                                
+                            // console.log("resModification7 removed",member.firstname," ", result.race.racename );
+                            resModification = true;
+                        }
+                    } 
+                }
+            }else{
+                // the member PB entry doesn't exist, we create it (time is always better than no PB)
+                tmpPersonalBests.push({
+                    result: result,
+                    name: result.race.racetype.name,
+                    surface: result.race.racetype.surface,
+                    distance: result.race.racetype.meters,
+                    time: result.time,
+                    source: "computed"
+                })
+
+                //result PB achievement
+                let ind = result.achievements.findIndex(item => (item.name === "pb" && item.value.memberId && item.value.memberId.equals(member._id)));
+                //if achievement exists we update it                    
+                if (ind !== -1 ){
+                    if(result.achievements[ind].value.time != result.time){
+                        result.achievements[ind]={
+                            name:"pb",
+                            text:member.firstname+"'s new "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") personal best with the team!",
+                            value: {time:result.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                        };
+                        returnRes.push("New "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") PB at "+result.race.racename +"!");   
+                        // console.log("resModification8");
+                        resModification = true;
+                    }
+                }else{ //otherwise we add it
+                    result.achievements.push({
+                        name:"pb",
+                        text:member.firstname+"'s new "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") personal best with the team!",
+                        value: {time:result.time,memberId: new mongoose.Types.ObjectId(member._id)}
+                    });
+                    returnRes.push("New "+result.race.racetype.name+" ("+getSurfaceText(result.race.racetype.surface)+") PB at "+result.race.racename +"!");   
+                    // console.log("resModification9");
+                    resModification = true;
+                }  
+                // resModification = true;
+                // returnRes.push("New "+res.race.racetype.name+" ("+getSurfaceText(res.race.racetype.surface)+") PB at "+res.race.racename +"!");   
+            }//end with pb 
+        }
+
+
+
+
+        if(result.agegrade && result.isRecordEligible){
+             //Does the agregrade entry ?
+            let agInd = result.achievements.findIndex(item => (item.name === "agegrade"))
+            if (agInd !== -1){          
+                //update          
+                if(result.agegrade > bestAG){   
+                    bestAG = result.agegrade;
+                    if(result.achievements[agInd].value !== result.agegrade){                        
+                        result.achievements[agInd]={
+                            name:"agegrade",
+                            text:member.firstname+"'s best age graded result with the team! " + result.agegrade + "%" ,
+                            value: result.agegrade
+                        };
+                        returnRes.push(result.race.racename+" is "+member.firstname+"'s best age graded result with the team! " + result.agegrade + "%"); 
+                        // console.log("resModification10");
+                        resModification = true;
+                    }                                                                      
+                }else if (result.agegrade < bestAG){
+                    //we remove it if it's not accurate anymore
+                    result.achievements.splice(agInd,1);  
+                    // console.log("resModification11");
+                    resModification = true;
+                }else{
+                    //we don't do anything if the agegrade is the same
+                }
+                
+            }else{
+                //add   
+                if(result.agegrade > bestAG ){                
+                    bestAG = result.agegrade;
+                    result.achievements.push({
+                        name:"agegrade",
+                        text:member.firstname+"'s best age graded result with the team! " + result.agegrade + "%" ,
+                        value: result.agegrade
+                    });                  
+                    returnRes.push(result.race.racename+" is "+member.firstname+"'s best age graded result with the team! " + result.agegrade + "%");   
+                    // console.log("resModification12");
+                    resModification = true;
+                }
+            }
+        }
+
+        if(resModification){
+            await result.save();
+            numberOfSaves++;
+        }
+        index++;
+    }
+    member.personalBests=tmpPersonalBests;
+    await member.save();
+    return {"Number of saves": numberOfSaves, "Results": returnRes}; //returnRes;
+}
+
+
+
 
 async function updatePBs(member){
     //const pbDistances = ["1 mile","5k","5 miles", "8k", "10k", "10 miles", "Half Marathon","Marathon","50K", "100k", "100 miles"];

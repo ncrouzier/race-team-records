@@ -1579,7 +1579,10 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                     result.createdAt = date;
                 }
             }
-            await result.save();
+            if(saveNeeded){
+                await result.save();
+            }
+            
         }
         res.end('{"message" : "results updated successfully", "status" : 200 ,  "Results":'+ JSON.stringify(returnRes)+'}');
 

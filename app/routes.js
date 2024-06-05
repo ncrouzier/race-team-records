@@ -924,7 +924,7 @@ module.exports = async function(app, qs, passport, async, _) {
     // =====================================
     // ACHIEVEMENTS ========================
     // =====================================
-
+    /*
     //old 
     app.get('/updateResults', isAdminLoggedIn, async function(req, res) {
         res.json( 'deprecated');
@@ -1005,7 +1005,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
         }
     });
-
+    */
 
 
 // update agegrade
@@ -1126,6 +1126,9 @@ app.get('/updatePBsandAchivements', isAdminLoggedIn, async function(req, res) {
         res.end('{"success" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
+
+
+
 
 
 async function postResultsave(member){
@@ -1548,6 +1551,42 @@ async function updateAchievements(member){
     }        
     return returnRes;
 } 
+
+app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function(req, res) {
+    res.setHeader("Content-Type", "application/json");
+    try{
+        let returnRes = [];
+        let resultquery = Result.find();
+        resultquery.sort('race.racedate race.order'); 
+        const results = await resultquery.exec();
+        for(let result of results){ 
+            let saveNeeded = false;
+            let date = Date.now();
+            if (!result.updatedAt){
+                saveNeeded = true;
+                if (!result.createdAt){
+                    returnRes.push("Result missing createdAt and updatedAt: "+result.race.racename +" (" + result.members[0].firstname + " " + result.members[0].lastname + ")!");                      
+                    result.updatedAt = date;
+                    result.createdAt = date;
+                }else{
+                    returnRes.push("Result only missing updatedAt "+result.race.racename +" (" + result.members[0].firstname + " " + result.members[0].lastname + ")!");  
+                    result.updatedAt = date;
+                }            
+            }else{
+                if (!result.createdAt){
+                    saveNeeded = true;
+                    returnRes.push("Result only missing createdAt "+result.race.racename +" (" + result.members[0].firstname + " " + result.members[0].lastname + ")!");  
+                    result.createdAt = date;
+                }
+            }
+            await result.save();
+        }
+        res.end('{"message" : "results updated successfully", "status" : 200 ,  "Results":'+ JSON.stringify(returnRes)+'}');
+
+    }catch(err){
+        res.end('{"message" : "results not updated", "status" : 500, "error" : "'+err+'"}');
+    }
+});
 
 
 

@@ -100,7 +100,7 @@ const resultSchema = mongoose.Schema({
 // });
 
 // keep track of when results are updated and created
-resultSchema.post('save', function(doc, next) {
+resultSchema.pre('save', function( next) {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;

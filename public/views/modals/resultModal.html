@@ -183,7 +183,9 @@
       <div class="row">
         <div class="col-md-12">
           <label class="text-left">Is MultiSport?</label>
-          <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()"> <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport" ng-click="formData.legs.push({});"></i>
+          <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()">
+          <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport" ng-click="formData.legs.push({});"></i>
+          <span title="Create Triathlon template" class="hoverhand" ng-show="formData.race.isMultisport" ng-click="createTriTemplate()">🏊🚴🏃</span>
         </div>
       </div>
       <div class="row" ng-class="$even?'lightbluebg':''" ng-show="formData.race.isMultisport" ng-repeat="leg in formData.legs track by $index">

@@ -82,14 +82,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     if($stateParams.raceId){
         $scope.showRaceModal($stateParams.raceId);
-        console.log("raceId", $stateParams.raceId);
     }
 
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
 
-
+    $scope.result = result;
     var deleteIdFromSubdocs = function (obj, isRoot) {
       for (var key in obj) {
           if (isRoot === false && key === "_id") {
@@ -173,24 +172,37 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           if (result.customOptions !== undefined){
             $scope.customOptionsString = JSON.stringify(deleteIdFromSubdocs(result.customOptions,true));
           }
+          if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+            $scope.showMore = true;
+          }
 
       }else{}
     }else{
+      //new result
       $scope.editmode = false;
-      if (result){
+      if ($scope.result){ //duplicated result
         $scope.formData = {};
-        $scope.formData.isRecordEligible = true;        
-        $scope.formData.race = result.race;
-        $scope.formData.race.location.country = result.race.location.country;
-        $scope.formData.race.location.state = result.race.location.state;
-        $scope.formData.race.racedate = new Date(result.race.racedate);
-        $scope.formData.race.order = result.race.order;
+        $scope.formData.isRecordEligible = $scope.result.isRecordEligible;        
+        $scope.formData.race = $scope.result.race;
+        $scope.formData.race.location.country = $scope.result.race.location.country;
+        $scope.formData.race.location.state = $scope.result.race.location.state;
+        $scope.formData.race.racedate = new Date($scope.result.race.racedate);
+        $scope.formData.race.order = $scope.result.race.order;
         $scope.formData.ranking = {};
         $scope.formData.members = [];
-        $scope.formData.members[0] = {};
+        $scope.formData.members[0] = {};        
         $scope.nbOfMembers = 1;
+        $scope.formData.legs = $scope.result.legs;   
+        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
+            //we clear all the leg times for the new race
+            $scope.formData.legs.forEach(function(l) {
+                l.timeExp = {};              
+            });
+        }     
         $scope.time = {};
-
+        if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+            $scope.showMore = true;
+        }
       }else{
         $scope.formData = {};
         $scope.formData.isRecordEligible = true;
@@ -234,9 +246,16 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
         //Multisports
-        if ($scope.formData.race.isMultisport){
+        if ($scope.formData.race.isMultisport){            
             $scope.formData.legs = [];
             $scope.formData.legs[0] = {};
+            $scope.formData.legs = localStorageService.get('legs');
+            if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
+                //we clear all the leg times for the new race
+                $scope.formData.legs.forEach(function(l) {
+                    l.timeExp = {};              
+                });
+            }     
         }
       }
 
@@ -285,6 +304,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
         localStorageService.set('country',$scope.formData.race.location.country);
         localStorageService.set('state',$scope.formData.race.location.state);
+        localStorageService.set('legs', $scope.formData.legs);
 
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
@@ -311,6 +331,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.remove('agetotal');
         localStorageService.remove('gendertotal');
         localStorageService.remove('overalltotal');
+        localStorageService.remove('legs');
     };
 
     $scope.editResult = function() {
@@ -416,6 +437,33 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race.racetype = $scope.multisportRacetype;
         }else{
             $scope.formData.legs = null;
+        }
+    };
+
+    $scope.createTriTemplate = function() {
+        if ($scope.formData.race.isMultisport) {
+            $scope.formData.race.racetype = $scope.multisportRacetype;
+            $scope.formData.legs = [];
+            $scope.formData.legs[0] = {};
+            $scope.formData.legs[0].order=0;
+            $scope.formData.legs[0].legName="Swim";
+            $scope.formData.legs[0].legType="swim";
+            $scope.formData.legs[1] = {};
+            $scope.formData.legs[1].order=1;
+            $scope.formData.legs[1].legName="Transition 1";
+            $scope.formData.legs[1].isTransition=true;
+            $scope.formData.legs[2] = {};
+            $scope.formData.legs[2].order=2;
+            $scope.formData.legs[2].legName="Bike";
+            $scope.formData.legs[2].legType="bike";
+            $scope.formData.legs[3] = {};
+            $scope.formData.legs[3].order=3;
+            $scope.formData.legs[3].legName="Transition 2";
+            $scope.formData.legs[3].isTransition=true;
+            $scope.formData.legs[4] = {};
+            $scope.formData.legs[4].order=4;
+            $scope.formData.legs[4].legName="Run";
+            $scope.formData.legs[4].legType="run";            
         }
     };
 

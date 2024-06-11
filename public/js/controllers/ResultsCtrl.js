@@ -177,11 +177,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           }
 
       }else{}
-    }else{
-      const originalResult = JSON.parse(JSON.stringify(result));
+    }else{        
       //new result
       $scope.editmode = false;
-      if (originalResult){ //duplicated result
+      if (result){ //duplicated result
+        const originalResult = JSON.parse(JSON.stringify(result));   
         $scope.formData = {};
         $scope.formData.isRecordEligible = originalResult.isRecordEligible;        
         $scope.formData.race = originalResult.race;
@@ -205,6 +205,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.showMore = true;
         }
       }else{
+        
         $scope.formData = {};
         $scope.formData.isRecordEligible = true;
         if(localStorageService.get('race') !== null){

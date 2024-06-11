@@ -88,7 +88,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
 
-    $scope.result = result;
+    
     var deleteIdFromSubdocs = function (obj, isRoot) {
       for (var key in obj) {
           if (isRoot === false && key === "_id") {
@@ -178,21 +178,22 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
       }else{}
     }else{
+      const originalResult = JSON.parse(JSON.stringify(result));
       //new result
       $scope.editmode = false;
-      if ($scope.result){ //duplicated result
+      if (originalResult){ //duplicated result
         $scope.formData = {};
-        $scope.formData.isRecordEligible = $scope.result.isRecordEligible;        
-        $scope.formData.race = $scope.result.race;
-        $scope.formData.race.location.country = $scope.result.race.location.country;
-        $scope.formData.race.location.state = $scope.result.race.location.state;
-        $scope.formData.race.racedate = new Date($scope.result.race.racedate);
-        $scope.formData.race.order = $scope.result.race.order;
+        $scope.formData.isRecordEligible = originalResult.isRecordEligible;        
+        $scope.formData.race = originalResult.race;
+        $scope.formData.race.location.country = originalResult.race.location.country;
+        $scope.formData.race.location.state = originalResult.race.location.state;
+        $scope.formData.race.racedate = new Date(originalResult.race.racedate);
+        $scope.formData.race.order = originalResult.race.order;
         $scope.formData.ranking = {};
         $scope.formData.members = [];
         $scope.formData.members[0] = {};        
         $scope.nbOfMembers = 1;
-        $scope.formData.legs = $scope.result.legs;   
+        $scope.formData.legs = originalResult.legs;   
         if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
             //we clear all the leg times for the new race
             $scope.formData.legs.forEach(function(l) {

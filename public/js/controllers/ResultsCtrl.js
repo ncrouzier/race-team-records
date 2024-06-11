@@ -327,7 +327,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     $scope.clearForm = function() {
         $scope.formData = {};
         $scope.formData.members = [{}];
+        $scope.formData.isRecordEligible = true;
         $scope.nbOfMembers = 1;
+        
         localStorageService.remove('race');
         localStorageService.remove('resultLink');
         localStorageService.remove('agetotal');

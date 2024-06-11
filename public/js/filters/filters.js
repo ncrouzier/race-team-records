@@ -253,7 +253,7 @@ app.filter('resultSportIcons', function() {
 app.filter('raceinfoSportIcons', function() {
     return function(raceinfo) {
         var res = " ";
-        if( raceinfo.race.isMultisport === true && raceinfo.results[0] && raceinfo.results[0].legs){
+        if( raceinfo.isMultisport === true && raceinfo.results[0] && raceinfo.results[0].legs){
             raceinfo.results[0].legs.forEach(function(leg) {
                 if(leg.legType ==='swim'){
                     res += '<span class="hoverhand" title="swim ('+leg.distanceName+')">🏊</span>';
@@ -264,9 +264,9 @@ app.filter('raceinfoSportIcons', function() {
                 }
             });
         }else {
-            if( raceinfo.race.racetype.name === 'Swim'){
+            if( raceinfo.racetype.name === 'Swim'){
                 res += '<span class="hoverhand" title="swim">🏊</span>';
-            }else if ( raceinfo.race.racetype.name === 'Cycling'){
+            }else if ( raceinfo.racetype.name === 'Cycling'){
                 res += '<span class="hoverhand" title="bike">🚴</span>';
             }
         }
@@ -447,59 +447,69 @@ app.filter('memberFilter', function() {
     };
 });
 app.filter('resultSuperFilter', function() {
-    return function(results, query) {
-        if (undefined !== query) {
+    return function(results, query, racetype) {
+        if ( query || racetype ) {
             var filtered = [];
             angular.forEach(results, function(result) {
-                //race name
-                if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
-                    filtered.push(result);
-                    return;
-                }
-                //racetype
-                if (result.race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
-                    filtered.push(result);
-                    return;
-                }
-                //racetype surface
-                if (result.race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
-                    filtered.push(result);
+                let raceTypeFound = false;
+                if(racetype && result.race.racetype._id !== racetype._id){                                    
                     return;
                 }
 
-                //member name
-                var foundname = false;
-                result.members.forEach(function(member) {
-                    name = member.firstname + ' ' + member.lastname + ', ';
-                    if (!foundname && name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                if(query ){
+                    //race name
+                    if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
-                        foundname = true;
                         return;
                     }
-                });
-                if (foundname) return;
+                    //racetype
+                    if (result.race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(result);
+                        return;
+                    }
+
+                    //racetype surface
+                    if (result.race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(result);
+                        return;
+                    }
+                    //member name
+                    var foundname = false;
+                    result.members.forEach(function(member) {
+                        let name = member.firstname + ' ' + member.lastname + ', ';
+                        if (!foundname && name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                            filtered.push(result);
+                            foundname = true;
+                            return;
+                        }
+                    });
+                    if (foundname) return;
 
 
-                //time
-                var time = secondsToTimeString(result.time);
-                if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
-                    filtered.push(result);
-                    return;
-                }
+                    //time
+                    var time = secondsToTimeString(result.time);
+                    if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                        filtered.push(result);
+                        return;
+                    }
 
-                //pace
-                var pace = resultToPace(result);
-                if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
-                    filtered.push(result);
-                    return;
-                }
+                    //pace
+                    var pace = resultToPace(result);
+                    if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(result);
+                        return;
+                    }
+                }else{
+                    if(racetype && result.race.racetype._id === racetype._id){     
+                        filtered.push(result);                               
+                        return;
+                    }
+                }                           
             });
             return filtered;
         } else {
             return results;
         }
-
-
     };
 });
 
@@ -793,3 +803,11 @@ app.filter("sanitize", ['$sce', function($sce) {
 
 app.filter('unsafe', function($sce) {
     return $sce.trustAsHtml; });
+
+app.filter('pbFilter', function() {
+    return function(personalBests, surface) {
+        return personalBests.filter(function(pb) {
+            return pb.surface === surface;
+        });
+    };
+});

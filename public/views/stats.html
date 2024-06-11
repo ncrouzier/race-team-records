@@ -37,20 +37,20 @@
                         <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                             <div class="row">
                                 <div class="col-sm-4" style="line-height: 1.1;">
-                                    <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)">{{raceinfo.race.racename }}</span>
+                                    <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)">{{raceinfo.racename }}</span>
                                     <br>
-                                    <small>{{raceinfo.race.racedate | date:'yyyy-MM-dd':'UTC' }}  <span ng-if="raceinfo.race.location.state !== null" ng-bind-html="'-- ' + raceinfo.race.location.state"></span><span ng-if="raceinfo.race.location.state === null" ng-bind-html="'-- ' + raceinfo.race.location.country"></span></small>
+                                    <small>{{raceinfo.racedate | date:'yyyy-MM-dd':'UTC' }}  <span ng-if="raceinfo.location.state !== null" ng-bind-html="'-- ' + raceinfo.location.state"></span><span ng-if="raceinfo.location.state === null" ng-bind-html="'-- ' + raceinfo.location.country"></span></small>
                                 </div>
                                 <div class="col-sm-2" style="text-align: left;">
-                                  <div ng-if="raceinfo.race.racetype.isVariable">
-                                      {{raceinfo.race.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.race.racetype.surface}})</span>
+                                  <div ng-if="raceinfo.racetype.isVariable">
+                                      {{raceinfo.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.racetype.surface}})</span>
                                   </div>
-                                  <div ng-if="!raceinfo.race.racetype.isVariable">
-                                      {{raceinfo.race.racetype.name}}
+                                  <div ng-if="!raceinfo.racetype.isVariable">
+                                      {{raceinfo.racetype.name}}
                                   </div>
                                 </div>
                                 <div class="col-sm-3" style="text-align: center;">
-                                    {{ raceinfo.count }}
+                                    {{ raceinfo.results.length }}
                                 </div>
                                 <div class="col-sm-3">
                                     <span class= "resultTime">{{raceinfo.results[0].time | secondsToTimeString}}</span>

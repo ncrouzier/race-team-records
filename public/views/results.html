@@ -63,7 +63,7 @@
                         <div class="col-sm-10" >
                             <div class="row" style="display: flex; align-items: center;">
                               <div class="col-sm-5" style="line-height: 1.1;">
-                                  <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result)">{{ result.race.racename}}</span> <span ng-show="result.comments !== undefined && result.comments !== ''"></span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="'<span>{{result.comments}}</span>'"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>
+                                  <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result.race)">{{ result.race.racename}}</span> <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>
                                   <br>
                                   <small>{{result.race.racedate | date:'longDate':'UTC' }} <span ng-if="result.race.location.state !== null" ng-bind-html="'-- ' + result.race.location.state"></span><span ng-if="result.race.location.state === null" ng-bind-html="'-- ' + result.race.location.country"></span></small>
                               </div>

@@ -7208,10 +7208,39 @@ footer {
   margin-left: 0px;
   margin-right: 0px;
 }
+.titleContainer {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #006687;
+  font-weight: 800;
+}
+@media (min-width: 992px) {
+  .titleContainer {
+    height: 250px;
+  }
+}
+@media (min-width: 1200px) {
+  .titleContainer {
+    height: 250px;
+  }
+}
+.titleContainer .titleBox .titleTop {
+  font-size: 40px;
+}
+.titleContainer .titleBox .titleBottom {
+  font-size: 60px;
+}
 .navimg {
   margin-left: 0px;
   margin-right: 0px;
   height: 200px;
+}
+.navimg-1 {
+  background-image: linear-gradient(to right, transparent, white 75%), url(../../images/topcover.jpg);
 }
 .navimg-2 {
   background: url('../../images/topcover2.jpg') left top no-repeat;
@@ -7249,7 +7278,7 @@ footer {
 }
 @media (min-width: 1200px) {
   .navimg {
-    height: 300px;
+    height: 250px;
     width: 100%;
   }
 }
@@ -7322,7 +7351,7 @@ footer {
 }
 @media (min-width: 1200px) {
   .navimg .birthdaytext {
-    padding-top: 265px;
+    padding-top: 215px;
   }
 }
 @media (min-width: 768px) {
@@ -7388,7 +7417,7 @@ footer {
   height: 100%;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
-  border-radius: 4px;
+  border-radius: 0 0 4px 4px;
 }
 .results-list {
   font-size: 14px;
@@ -7466,9 +7495,12 @@ footer {
     min-width: 200px;
   }
 }
+.btn-member {
+  padding: 6px 8px;
+}
 @media (max-width: 1200px) {
   .btn-member {
-    padding: 6px 10px;
+    padding: 6px 8px;
   }
 }
 @media (max-width: 992px) {
@@ -7476,9 +7508,12 @@ footer {
     padding: 6px 4px;
   }
 }
+.btn-record {
+  padding: 6px 8px;
+}
 @media (max-width: 1200px) {
   .btn-record {
-    padding: 6px 10px;
+    padding: 6px 8px;
   }
 }
 .btn-row {
@@ -7490,10 +7525,14 @@ footer {
     padding-right: 5px;
   }
 }
+.select2-container .select2-choice {
+  height: 36px;
+  line-height: 33px;
+}
 @media (max-width: 1200px) {
   .select2-container .select2-choice {
     height: 35px;
-    line-height: 35px;
+    line-height: 33px;
   }
 }
 .ui-select-container[theme=select2].direction-up .ui-select-dropdown .select2-search {
@@ -7696,6 +7735,12 @@ footer {
   position: relative;
   right: 21px;
 }
+.raceTypeClear {
+  cursor: pointer;
+  color: #ccc;
+  position: relative;
+  right: 42px;
+}
 .ranking-tooltip-cat {
   font-size: 1.3em;
   font-weight: bold;
@@ -7842,5 +7887,59 @@ footer {
 }
 .memberListCell:empty {
   background-color: red;
+}
+.raceCountBox {
+  display: inline-block;
+  border: 1px solid #006687;
+  border-radius: 10%;
+  padding: 2px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  background-color: #006687;
+  margin-right: 2px;
+}
+.pbBox {
+  display: inline-block;
+  margin-right: 2px;
+}
+.showMoreButton {
+  display: inline-block;
+  border: 1px solid #006687;
+  padding: 1px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+  background-color: #006687;
+  margin: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  float: right;
+}
+.activePbTab .nav > li > a {
+  padding: 5px 5px;
+}
+.nav-tabs > li > a {
+  margin-bottom: 0px;
+  margin-right: 1px;
+}
+.nav-tabs > li > a:hover {
+  margin-bottom: 0px;
+  border: 1px solid #006687;
+  color: #008cba;
+  background-color: #F7FBFC;
+}
+.nav-tabs > li.active > a:focus {
+  background-color: #006687;
+  color: white;
+  margin-bottom: 0px;
+}
+.nav-tabs > li.active > a {
+  color: white;
+  background-color: #006687;
+}
+.nav-tabs > li.active > a:hover {
+  background-color: #006687;
+  color: white;
 }
 

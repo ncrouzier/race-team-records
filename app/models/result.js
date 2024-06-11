@@ -1,13 +1,14 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt-nodejs');
+const raceSchema = require('./race').schema
+// const memberSchema = require('./member').schema
 
-
-var SystemInfo = require('./systeminfo');
+const SystemInfo = require('./systeminfo');
 
 
 
 // define the schema for our user model
-var resultSchema = mongoose.Schema({
+const resultSchema = mongoose.Schema({
     time: Number,
     ranking: {
         agerank: Number,
@@ -24,26 +25,7 @@ var resultSchema = mongoose.Schema({
         sex: String,
         dateofbirth: Date
     }],
-    race:{
-        _id: mongoose.Schema.ObjectId,
-        racename: String,
-        distanceName: String,
-        racedate: Date,
-        isMultisport: Boolean,
-        racetype: {
-            _id: mongoose.Schema.ObjectId,
-            name: String,
-            surface: String,
-            meters: Number,
-            miles: Number,
-            isVariable: Boolean,
-            hasAgeGradedInfo:Boolean
-        },
-        location:{
-          country: String,
-          state: String
-        }
-    },
+    race: raceSchema,
     legs:[{ //for multisport
         order:Number,
         legName:String,
@@ -62,11 +44,16 @@ var resultSchema = mongoose.Schema({
     is_accepted: Boolean,
     customOptions:[{
       name:String,
-      value:String,
+      value: mongoose.Schema.Types.Mixed,
       text:String,
       width:String,
       height:String
     }],
+    achievements:[{
+        name:String,
+        text:String,
+        value: mongoose.Schema.Types.Mixed        
+      }],
     createdAt: Date,
     updatedAt: Date
 
@@ -113,18 +100,30 @@ var resultSchema = mongoose.Schema({
 // });
 
 // keep track of when results are updated and created
-resultSchema.pre('save', function(next, done) {
+resultSchema.pre('save', function( next) {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
     }
     this.updatedAt = date;
-
     this.updateCategory();
     this.updateSystemInfo('mcrrc',date);
     next();
 });
 
+//or deleted
+resultSchema.post('deleteOne', function(doc, next) {
+    var date = Date.now();
+    if (this.isNew) {
+        this.createdAt = date;
+    }
+    this.updatedAt = date;    
+    resultSchema.methods.updateSystemInfo('mcrrc',date);
+    next();
+}); 
+
+
+//check category of result after a save
 resultSchema.methods.updateCategory = function() {
     var membersLength = this.members.length;
     var isOpen = false;
@@ -142,21 +141,23 @@ resultSchema.methods.updateCategory = function() {
 };
 
 resultSchema.methods.updateSystemInfo = function(name,date) {
-    SystemInfo.findOne({
-        name: name
-    }, function(err, systemInfo) {
-        if (err)
-            console.log("error fetching systemInfo")
-        if (systemInfo) {
-            systemInfo.resultUpdate = date;
-            systemInfo.save(function(err) {
-                if (err) {
-                    res.send(err);
-                }
-            });
-        }
-
-    });
+    try{
+        SystemInfo.findOne({
+            name: name
+        }).then(systemInfo =>{
+            if (systemInfo) {
+                systemInfo.resultUpdate = date;
+                systemInfo.save().then(err => {
+                    if (!err) {
+                        console.log("error fetching systemInfo", err);
+                    }
+                });
+            }
+    
+        });
+    }catch(SystemInfoFindOneErr){
+        console.log("error fetching systemInfo")
+    }
 };
 
 

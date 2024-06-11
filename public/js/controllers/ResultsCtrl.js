@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
 
 
 
@@ -10,6 +10,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.$watch('resultsTableProperties.pageSize', function(newVal, oldVal) {
         localStorageService.set('resultsPageSize', $scope.resultsTableProperties);
     });
+
+
 
     if (localStorageService.get('resultsPageSize')) {
         $scope.resultsTableProperties = localStorageService.get('resultsPageSize');
@@ -23,7 +25,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate race.racename time',
+        "sort": '-race.racedate -race.order race.racename time members.firstname',
         "limit": 200,
         "preload":true
     }).then(function(results) {
@@ -31,7 +33,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         //now load the whole thing unless the initial call return the cache version (>200 res)
         if (results.length == 200){
             ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate race.racename time',
+                "sort": '-race.racedate -race.order race.racename time members.firstname',
                 "preload":false
             }).then(function(results) {
                 $scope.resultsList = results;
@@ -62,9 +64,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function(btn) {});
     };
 
-    $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {});
+    $scope.showRaceModal = function(race) {
+        if(race){
+            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            });
+        }
     };
+
 
     $scope.showResultDetailsModal = function(result) {
         ResultsService.showResultDetailsModal(result).then(function(result) {});
@@ -74,12 +80,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     //   return result.customOptions[result.customOptions.findIndex(x => x.name == "resultIcon")];
     // };
 
+    if($stateParams.raceId){
+        $scope.showRaceModal($stateParams.raceId);
+    }
 
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
 
-
+    
     var deleteIdFromSubdocs = function (obj, isRoot) {
       for (var key in obj) {
           if (isRoot === false && key === "_id") {
@@ -163,23 +172,38 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           if (result.customOptions !== undefined){
             $scope.customOptionsString = JSON.stringify(deleteIdFromSubdocs(result.customOptions,true));
           }
+          if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+            $scope.showMore = true;
+          }
 
       }else{}
     }else{
+      const originalResult = JSON.parse(JSON.stringify(result));
+      //new result
       $scope.editmode = false;
-      if (result){
+      if (originalResult){ //duplicated result
         $scope.formData = {};
-        $scope.formData.isRecordEligible = true;        
-        $scope.formData.race = result.race;
-        $scope.formData.race.location.country = result.race.location.country;
-        $scope.formData.race.location.state = result.race.location.state;
-        $scope.formData.race.racedate = new Date(result.race.racedate);
+        $scope.formData.isRecordEligible = originalResult.isRecordEligible;        
+        $scope.formData.race = originalResult.race;
+        $scope.formData.race.location.country = originalResult.race.location.country;
+        $scope.formData.race.location.state = originalResult.race.location.state;
+        $scope.formData.race.racedate = new Date(originalResult.race.racedate);
+        $scope.formData.race.order = originalResult.race.order;
         $scope.formData.ranking = {};
         $scope.formData.members = [];
-        $scope.formData.members[0] = {};
+        $scope.formData.members[0] = {};        
         $scope.nbOfMembers = 1;
+        $scope.formData.legs = originalResult.legs;   
+        if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
+            //we clear all the leg times for the new race
+            $scope.formData.legs.forEach(function(l) {
+                l.timeExp = {};              
+            });
+        }     
         $scope.time = {};
-
+        if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+            $scope.showMore = true;
+        }
       }else{
         $scope.formData = {};
         $scope.formData.isRecordEligible = true;
@@ -223,9 +247,16 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
         //Multisports
-        if ($scope.formData.race.isMultisport){
+        if ($scope.formData.race.isMultisport){            
             $scope.formData.legs = [];
             $scope.formData.legs[0] = {};
+            $scope.formData.legs = localStorageService.get('legs');
+            if( $scope.formData.legs !== null && $scope.formData.legs !== undefined){
+                //we clear all the leg times for the new race
+                $scope.formData.legs.forEach(function(l) {
+                    l.timeExp = {};              
+                });
+            }     
         }
       }
 
@@ -274,6 +305,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('overalltotal', $scope.formData.ranking.overalltotal);
         localStorageService.set('country',$scope.formData.race.location.country);
         localStorageService.set('state',$scope.formData.race.location.state);
+        localStorageService.set('legs', $scope.formData.legs);
 
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
@@ -300,6 +332,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.remove('agetotal');
         localStorageService.remove('gendertotal');
         localStorageService.remove('overalltotal');
+        localStorageService.remove('legs');
     };
 
     $scope.editResult = function() {
@@ -408,6 +441,33 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
     };
 
+    $scope.createTriTemplate = function() {
+        if ($scope.formData.race.isMultisport) {
+            $scope.formData.race.racetype = $scope.multisportRacetype;
+            $scope.formData.legs = [];
+            $scope.formData.legs[0] = {};
+            $scope.formData.legs[0].order=0;
+            $scope.formData.legs[0].legName="Swim";
+            $scope.formData.legs[0].legType="swim";
+            $scope.formData.legs[1] = {};
+            $scope.formData.legs[1].order=1;
+            $scope.formData.legs[1].legName="Transition 1";
+            $scope.formData.legs[1].isTransition=true;
+            $scope.formData.legs[2] = {};
+            $scope.formData.legs[2].order=2;
+            $scope.formData.legs[2].legName="Bike";
+            $scope.formData.legs[2].legType="bike";
+            $scope.formData.legs[3] = {};
+            $scope.formData.legs[3].order=3;
+            $scope.formData.legs[3].legName="Transition 2";
+            $scope.formData.legs[3].isTransition=true;
+            $scope.formData.legs[4] = {};
+            $scope.formData.legs[4].order=4;
+            $scope.formData.legs[4].legName="Run";
+            $scope.formData.legs[4].legType="run";            
+        }
+    };
+
     // =====================================
     // DATE PICKER CONFIG ==================
     // =====================================
@@ -432,7 +492,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, raceinfo, MembersService, ResultsService, localStorageService) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo', 'MembersService', 'ResultsService', 'localStorageService','$state', function($scope, $uibModalInstance, $filter, raceinfo, MembersService, ResultsService, localStorageService,$state) {
 
     $scope.raceinfo = raceinfo;
     var sum = 0;
@@ -461,6 +521,18 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
 
+    $scope.$on('modal.closing', function(event, reason, closed){
+        // $state.transitionTo(
+        //     '/results',            
+        //     { 
+        //         location: true, // This makes it update URL
+        //         inherit: true, 
+        //         relative: $state.$current, 
+        //         notify: false, // This makes it not reload
+        //         dynamic: true
+        //     }
+        // );         
+    });
 
 
 

@@ -67,34 +67,60 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         $scope.setMember(model);
     };
  
+    $scope.getRaceTypeClass = function(s){
+        if (s !== undefined){
+            return s.replace(/ /g, '')+'-col';
+        }
+    };
+
+    $scope.filterRaceType = function() {
+        console.log("call");
+    };
 
     // set the current member to the display panel
     $scope.setMember = async function(member_light) { 
        if (member_light === undefined) return;
+       
+       //reset page to 1
+       $scope.pagination = {
+            current: 1
+       };  
 
        // get the member details
        await MembersService.getMember(member_light._id).then(function(fullMember) {
             $scope.currentMember = fullMember;
+            $scope.activeTab = 1;
         });        
 
         ResultsService.getResults({
-            sort: '-race.racedate',
-            member: member_light
+            sort: '-race.racedate -race.order',
+            member: {_id :member_light._id}
         }).then(function(results) {
             $scope.currentMemberResultList = results; 
+
+            // get racetypes from these results
+            $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
+                const { _id, race } = result;
+                if (!racetypes[race.racetype._id]) {
+                    racetypes[race.racetype._id] = race.racetype;
+                }
+                return racetypes;
+            }, {})).sort((a, b) => a.meters - b.meters);
+            // console.log($scope.racetypesList);
+
         });
         
 
-        MembersService.getMemberPbs($scope.currentMember).then(function(results) {
-            $scope.currentMemberPbsList = results;
-        });
+        // MembersService.getMemberPbs($scope.currentMember).then(function(results) {
+        //     $scope.currentMemberPbsList = results;
+        // });
 
         $state.current.reloadOnSearch = false;
         $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
         $timeout(function () {
           $state.current.reloadOnSearch = undefined;
         });
-        $scope.activeTab = 1;
+        // $scope.activeTab = 1;
         $analytics.eventTrack('viewMember', {
             category: 'Member',
             label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
@@ -175,6 +201,17 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }, function(btn) {});
     };
 
+
+    // $scope.defaultPBdistances = ["1 mile","5k", "10k", "10 miles", "Half Marathon","Marathon"];
+    
+    // $scope.pbTableProperties = {};
+    // $scope.pbTableProperties.surface = "road";
+    // $scope.surfaceTypes = ["road", "track","cross country", "ultra"];
+    // $scope.isAllDistancesPresent = () => {
+    // return $scope.currentMember.personalBests.every(pb => $scope.defaultPBdistances.includes(pb.name));
+    // };
+    
+    
     // =====================================
     // MEMBER API CALLS ====================
     // =====================================
@@ -182,7 +219,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // $scope.user = data.user;
     // when landing on the page, get all members and show them
 
-    // get all members
+    // get all members if we have a member in the url
     if($stateParams.member){
         $scope.paramModel.memberStatus = 'all';
     }
@@ -191,7 +228,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         "filters[sex]": $scope.paramModel.sex,
         "filters[category]": $scope.paramModel.category,
         "filters[memberStatus]": $scope.paramModel.memberStatus,
-        select: '-bio',
+        select: '-bio -personalBests',
         sort: 'firstname',
         limit: $scope.paramModel.limit
     };
@@ -209,9 +246,11 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
-    $scope.showRaceModal = function(result) {
-        ResultsService.showRaceFromResultModal(result).then(function(result) {
-        });
+    $scope.showRaceModal = function(race) {
+        if(race){
+            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            });
+        }
     };
 
     $scope.showResultDetailsModal = function(result) {

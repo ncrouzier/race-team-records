@@ -121,7 +121,7 @@ app.directive('autoFocus', function($timeout) {
     };
 });
 
-
+//probably not used?
 app.directive('datetimepickerNeutralTimezone', function() {
     return {
       restrict: 'A',

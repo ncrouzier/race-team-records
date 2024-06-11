@@ -23,11 +23,15 @@
           </p>
         </div>
       </div>
-      <div class="col-md-5">
+      <div class="col-md-1">
+        <label class="text-left">Order:</label>
+        <input type="text" ng-model="formData.race.order" only-decimals class="form-control input-md text-left" placeholder="0">        
+      </div>
+      <div class="col-md-4">
         <div class="form-group" ng-class="{ 'has-error' : formresult.race.racetype.$invalid }">
           <label class="text-left">Race Type:</label>
           <br>
-          <ui-select name="racetype" ng-required="true" ng-disabled="formData.race.isMultisport" ng-model="formData.race.racetype" theme="select2" style="min-width: 300px;">
+          <ui-select name="racetype" ng-required="true" ng-disabled="formData.race.isMultisport" ng-model="formData.race.racetype" theme="select2" style="min-width: 280px;">
             <ui-select-match placeholder="Select a race type">
               <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
             </ui-select-match>
@@ -179,7 +183,9 @@
       <div class="row">
         <div class="col-md-12">
           <label class="text-left">Is MultiSport?</label>
-          <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()"> <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport" ng-click="formData.legs.push({});"></i>
+          <input type="checkbox" ng-model="formData.race.isMultisport" ng-checked="formData.race.isMultisport" ng-click="toggleIsMultisport()">
+          <i class="fa fa-plus hoverhand" ng-show="formData.race.isMultisport" ng-click="formData.legs.push({});"></i>
+          <span title="Create Triathlon template" class="hoverhand" ng-show="formData.race.isMultisport" ng-click="createTriTemplate()">🏊🚴🏃</span>
         </div>
       </div>
       <div class="row" ng-class="$even?'lightbluebg':''" ng-show="formData.race.isMultisport" ng-repeat="leg in formData.legs track by $index">
@@ -280,8 +286,10 @@
       <span ng-show="!showMore" class="hoverhand" ng-click="showMore=!showMore"><i class="fa fa-chevron-down" ></i>show more<i class="fa fa-chevron-down" ></i></span>
       <div class="row" ng-show="showMore">
         <div class="col-md-3">
-          <label class="text-left">Include result in records:</label>
-          <input type="checkbox" ng-model="formData.isRecordEligible"></span>
+          <div class="row"> 
+            <label class="text-left">Include result in records:</label>
+            <input type="checkbox" ng-model="formData.isRecordEligible"></span>
+          </div>                   
         </div>
         <div class="col-md-9">
           <label class="text-left">JSON custom options:</label>

@@ -7,7 +7,7 @@ module.exports = function(grunt) {
         jshint: {
             options: {
                 smarttabs: true,
-                 esversion: 8
+                 esversion: 9
             },
             all: [
                 'public/js/**/*.js',
@@ -18,7 +18,7 @@ module.exports = function(grunt) {
         // take all the js files and minify them into app.min.js
         terser: {
             options: {
-                mangle: false
+                mangle: false                
             },
             build: {
                 files: {
@@ -47,6 +47,35 @@ module.exports = function(grunt) {
                 }
             }
         },
+
+        concat: {
+            options: {
+                stripBanners: true
+            },
+            dist: {
+                src: ['public/libs/jquery/dist/jquery.js',
+                'public/libs/angular/angular.js',
+                'public/libs/angular-loading-bar/build/loading-bar.js',
+                'public/libs/angular-sanitize/angular-sanitize.js',
+                'public/libs/angular-ui-router/release/angular-ui-router.js',
+                'public/libs/angular-ui-select/dist/select.js',
+                'public/libs/lodash/dist/lodash.js',
+                'public/libs/restangular/dist/restangular.js',
+                'public/libs/angular-utils-pagination/dirPagination.js',
+                'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
+                'public/libs/angulartics/dist/angulartics.min.js',
+                'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
+                'public/libs/jspdf/dist/jspdf.min.js',
+                'public/libs/async/dist/async.min.js',
+                'public/libs/datamaps/dist/datamaps.all.min.js',
+                'public/libs/moment/min/moment.min.js',
+                'public/js/**/*.js',
+                'public/js/*.js'],
+                dest: 'public/dist/js/app.min.js'
+            }
+        },
+
 
         // CSS TASKS ===============================================================
         // process the less file to style.css
@@ -152,8 +181,9 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-nodemon');
     grunt.loadNpmTasks('grunt-concurrent');
     grunt.loadNpmTasks('grunt-contrib-copy');
+    grunt.loadNpmTasks('grunt-contrib-concat');
 
-    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'terser', 'copy', 'concurrent']);
-    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'terser', 'copy']);
+    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'concat', 'copy', 'concurrent']);
+    grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'concat', 'copy']);
 
 };

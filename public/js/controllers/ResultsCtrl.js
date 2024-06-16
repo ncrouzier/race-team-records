@@ -81,7 +81,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     // };
 
     if($stateParams.raceId){
-        $scope.showRaceModal($stateParams.raceId);
+        $scope.showRaceModal({_id:$stateParams.raceId});
     }
 
 }]);

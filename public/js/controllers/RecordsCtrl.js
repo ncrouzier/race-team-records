@@ -62,7 +62,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
             ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
             });
         }
-    };
+    };  
 
     // =====================================
     // FILTER PARAMS CONFIG ================

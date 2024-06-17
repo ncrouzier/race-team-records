@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService', function(Restangular, UtilsService, $uibModal, $q, localStorageService) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -212,7 +212,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                         }
                     });
                     modalInstance.result.then(function() {
-                    }, function() {});
+                    }, function() {
+                         if ($state.current.url === '/races/:raceId'){
+                            $state.go('^');
+                         }
+                        
+                    });
                 }
             },
             function(res) {

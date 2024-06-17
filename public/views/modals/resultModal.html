@@ -132,7 +132,7 @@
             <label class="control-label text-left">Racer:</label> <i class="hoverhand fa fa-user-plus" ng-show="user.role != 'admin'" ng-click="addNbMembers()" title="Add a racer"></i>
             <br>
             <span ng-repeat="member in formData.members track by $index">
-                        <ui-select name="member_{{$index}}"  ng-model="formData.members[$index]" theme="select2" style="min-width: 300px;" required>
+                        <ui-select id="member_{{$index}}"  focus-on="memberFocus" name="member_{{$index}}"  ng-model="formData.members[$index]" theme="select2" style="min-width: 300px;" required>
                             <ui-select-match   placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}  <i ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="Men" ></i><i ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="Women" ></i></ui-select-match>
                             <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
                                 <span ng-class="{'past-member' : member.memberStatus === 'past'}">
@@ -201,7 +201,7 @@
             <div class="col-md-3">
               <div class="form-group">
                 <label class="text-left">Leg name:</label>
-                <input type="text" name="legname" class="form-control  text-left" ng-model="leg.legName" ng-required="leg.isTransition" required auto-focus>
+                <input type="text" name="legname" class="form-control  text-left" ng-model="leg.legName" ng-required="leg.isTransition" required >
               </div>
             </div>
             <div class="col-md-2">

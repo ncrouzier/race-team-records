@@ -12,7 +12,7 @@ Author: **[Nicolas Crouzier](https://github.com/ncrouzier)**
 * [Bootstrap](http://getbootstrap.com)
 
 ## Live Demo
-[MCRRC Race Team](https://mcrrc-ncrouzier.rhcloud.com)
+[MCRRC Race Team](https://raceteam.mcrrc.org/)
 
 
 ### TODO/Improvement list

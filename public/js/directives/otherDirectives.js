@@ -15,7 +15,7 @@ app.directive('selectOnClick', function($window) {
   };
 });
 
-app.directive('usaMap', ['$timeout', '$window', 'UtilsService', function($timeout, $window, UtilsService) {
+app.directive('usaMap', ['$timeout', '$window', 'UtilsService','$state', function($timeout, $window, UtilsService,$state) {
   return {
     restrict: 'EA',
     link: function($scope, element, $attr) {
@@ -68,6 +68,13 @@ app.directive('usaMap', ['$timeout', '$window', 'UtilsService', function($timeou
               function redraw() {
                 datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
               }
+
+              datamap.svg.selectAll('.datamaps-subunit').on('click', function(ele) {
+                console.log(ele,dataset[ele.id]);
+                $state.go("/results",{ search: ele.id });
+              });
+              datamap.svg.selectAll('.datamaps-subunit').style('cursor', 'pointer');
+
             }
           });
 

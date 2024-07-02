@@ -42,7 +42,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('event', 'page_view');
             }
         }).state('/results', {
-            url: "/results",
+            url: "/results?search",
             templateUrl: "views/results.html",
             controller: 'ResultsController',
             onEnter: function() {

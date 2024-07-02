@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
-
-
+    
+    // console.log("params",$stateParams);
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -21,26 +21,31 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     }
 
     $scope.resultSize = [5, 10, 25, 50, 100];
-    $scope.resultsList = [];
+   
 
+    
 
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time members.firstname',
-        "limit": 200,
-        "preload":true
-    }).then(function(results) {
-        $scope.resultsList = results;
-        //now load the whole thing unless the initial call return the cache version (>200 res)
-        if (results.length == 200){
-            ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate -race.order race.racename time members.firstname',
-                "preload":false
-            }).then(function(results) {
-                $scope.resultsList = results;
-            });
-        }    
-        
-    });
+    // if($stateParams.reload !== "false"){
+        $scope.resultsList = [];
+        ResultsService.getResultsWithCacheSupport({
+            "sort": '-race.racedate -race.order race.racename time members.firstname',
+            "limit": 200,
+            "preload":true
+        }).then(function(results) {
+            $scope.resultsList = results;
+            //now load the whole thing unless the initial call return the cache version (>200 res)
+            if (results.length == 200){
+                ResultsService.getResultsWithCacheSupport({
+                    "sort": '-race.racedate -race.order race.racename time members.firstname',
+                    "preload":false
+                }).then(function(results) {
+                    $scope.resultsList = results;
+                });
+            }    
+            
+        }); 
+    // }
+    
 
     $scope.showAddResultModal = function(resultSource) {
         ResultsService.showAddResultModal(resultSource).then(function(result) {
@@ -90,7 +95,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout) {
 
     
     var deleteIdFromSubdocs = function (obj, isRoot) {
@@ -494,7 +499,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.opened = true;
     };
 
-
+    //focus on racer if racename is already populated.
+    $timeout(function() {       
+        if ($scope.formData.race.racename !== undefined && $scope.formData.race.racename !== "") {
+            $scope.$broadcast('memberFocus');
+        }
+    }, 400); //
+    
 
 }]);
 
@@ -528,18 +539,8 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
 
-    $scope.$on('modal.closing', function(event, reason, closed){
-        // $state.transitionTo(
-        //     '/results',            
-        //     { 
-        //         location: true, // This makes it update URL
-        //         inherit: true, 
-        //         relative: $state.$current, 
-        //         notify: false, // This makes it not reload
-        //         dynamic: true
-        //     }
-        // );         
-    });
+   
+    
 
 
 

@@ -121,6 +121,7 @@ app.directive('autoFocus', function($timeout) {
     };
 });
 
+
 //probably not used?
 app.directive('datetimepickerNeutralTimezone', function() {
     return {
@@ -145,3 +146,4 @@ app.directive('datetimepickerNeutralTimezone', function() {
       }
     };
   });
+

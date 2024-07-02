@@ -9,7 +9,7 @@
             <ul class="results-list list-group" style="margin-bottom: 0px;">
                 <li class="list-group-item text-left resultlistheader" ng-show="raceinfo.results.length >0">
                     <div class="row">
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <span class="listheader hoverhand" title="Race's name">RACER</span>
                         </div>
                         <div class="col-sm-1" style="text-align: center;">
@@ -21,7 +21,7 @@
                         <div class="col-sm-1" style="text-align: center;">
                             <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
                         </div>
-                        <div class="col-sm-3" style="text-align: center;">
+                        <div class="col-sm-2" style="text-align: center;">
                             <span class="listheader hoverhand" title="Pace">PACE</span>
                         </div>
                         <div class="col-sm-3" style="text-align: center;">
@@ -31,7 +31,7 @@
                 </li>
                 <li class="list-group-item text-left resultlistrow" ng-repeat="result in raceinfo.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                     <div class="row" style="display: flex; align-items: center;">
-                        <div class="col-sm-3">                            
+                        <div class="col-sm-4">                            
                             <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo.race}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}} </span></a><result-icon result="result" race="raceinfo.race"></result-icon>
                         </div>
                         <div class="col-sm-1" style="text-align: center;">
@@ -43,7 +43,7 @@
                         <div class="col-sm-1" style="text-align: center;">
                             <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
                         </div>
-                        <div class="col-sm-3" ng-show="!raceinfo.isMultisport" style="text-align: center;">
+                        <div class="col-sm-2" ng-show="!raceinfo.isMultisport" style="text-align: center;">
                             <result-pace-raceinfo></result-pace-raceinfo>
                         </div>
                         <div class="col-sm-3" ng-show="raceinfo.isMultisport" style="text-align: center;">

@@ -12,7 +12,8 @@ module.exports = function(grunt) {
             all: [
                 'public/js/**/*.js',
                 '!public/js/libs/*.js',
-                '!public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js']
+                '!public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                '!public/js/custom-libs/dexie/dexie.js']
         },
 
         // take all the js files and minify them into app.min.js

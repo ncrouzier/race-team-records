@@ -89,6 +89,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.showRaceModal({_id:$stateParams.raceId});
     }
 
+    if($stateParams.search){
+        $scope.searchQuery = $stateParams.search;
+    }
+
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout) {

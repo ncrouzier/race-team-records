@@ -42,27 +42,28 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('event', 'page_view');
             }
         }).state('/results', {
-            url: "/results", 
+            url: "/results?search",
             templateUrl: "views/results.html",
             controller: 'ResultsController',
-            params: {
-                reload: null,
-            },
-            // reloadOnSearch: false,
             onEnter: function() {
                 gtag('set', 'page_path', '/results.html');
                 gtag('event', 'page_view');
             }
-        }) 
-        .state('/results.races', {
+        }).state('/resultsNoLoad', {            
+        })
+        // .state('/race', {
+        //     url: "/race",
+        //     templateUrl: "views/results.html",
+        //     controller: 'ResultsController',
+        //     onEnter: function() {
+        //         gtag('set', 'page_path', '/results.html');
+        //         gtag('event', 'page_view');
+        //     }
+        // })
+        .state('/races', {
             url: '/races/:raceId',
-            params: {
-                raceId: null,
-                reload: null
-            },
-            templateUrl: 'views/results.html',                     
-            controller: 'ResultsController',
-            // reloadOnSearch: false,
+            templateUrl: 'views/results.html',
+            controller: 'ResultsController'
         })
         .state('/login', {
             url: "/login",

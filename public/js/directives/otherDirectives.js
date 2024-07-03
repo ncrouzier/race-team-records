@@ -15,7 +15,7 @@ app.directive('selectOnClick', function($window) {
   };
 });
 
-app.directive('usaMap', ['$timeout', '$window', 'UtilsService', function($timeout, $window, UtilsService) {
+app.directive('usaMap', ['$timeout', '$window', 'UtilsService','$state', function($timeout, $window, UtilsService,$state) {
   return {
     restrict: 'EA',
     link: function($scope, element, $attr) {
@@ -68,6 +68,15 @@ app.directive('usaMap', ['$timeout', '$window', 'UtilsService', function($timeou
               function redraw() {
                 datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
               }
+              datamap.svg.selectAll('.datamaps-subunit').each(function(d){
+                if(dataset[d.id] && dataset[d.id].count > 0){
+                  d3.select(this).style('cursor', 'pointer');
+                  d3.select(this).on('click', function(ele) {                  
+                  $state.go("/results",{ search: "{\"country\":\"USA\",\"state\":\""+ele.id+"\"}"});                   
+                });      
+              }});
+              
+
             }
           });
 
@@ -87,7 +96,7 @@ app.directive('usaMap', ['$timeout', '$window', 'UtilsService', function($timeou
 }]);
 
 
-app.directive('worldMap', ['$timeout', '$window', 'UtilsService', function($timeout, $window, UtilsService) {
+app.directive('worldMap', ['$timeout', '$window', 'UtilsService','$state', function($timeout, $window, UtilsService,$state) {
   return {
     restrict: 'EA',
     link: function($scope, element, $attr) {
@@ -141,6 +150,14 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService', function($time
               function redraw() {
                 datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
               }
+
+              datamap.svg.selectAll('.datamaps-subunit').each(function(d){
+                if(dataset[d.id] && dataset[d.id].count > 0){
+                  d3.select(this).style('cursor', 'pointer');
+                  d3.select(this).on('click', function(ele) {                  
+                  $state.go("/results",{ search: "{\"country\":\""+ele.id+"\"}"});                   
+                });      
+              }});
             }
           });
 

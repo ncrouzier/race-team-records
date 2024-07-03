@@ -449,14 +449,31 @@ app.filter('memberFilter', function() {
 app.filter('resultSuperFilter', function() {
     return function(results, query, racetype) {
         if ( query || racetype ) {
-            var filtered = [];
+            let filtered = [];
+            let jsonQuery;
+            if (isJson(query)){
+                jsonQuery = JSON.parse(query);
+            }
             angular.forEach(results, function(result) {
                 let raceTypeFound = false;
                 if(racetype && result.race.racetype._id !== racetype._id){                                    
                     return;
                 }
+                if (jsonQuery){
+                    if (jsonQuery.country &&  result.race.location.country &&  jsonQuery.country.toLowerCase() === result.race.location.country.toLowerCase()){
+                        if (jsonQuery.state ){
+                            if (result.race.location.state && jsonQuery.state.toLowerCase() === result.race.location.state.toLowerCase())
+                            filtered.push(result);
+                            return; 
+                        }else{
+                            filtered.push(result);
+                            return; 
+                        }                       
+                    }    
+                }
 
-                if(query ){
+                if(query){                
+
                     //race name
                     if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
@@ -717,6 +734,15 @@ function inline_ordinal_suffix_of(i, withStyle) {
         return i + "th";
     }
 }
+
+function isJson(variable) {
+    try {
+      JSON.parse(variable);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
 app.filter('sortMembers', function () {
   return function (items,type,reverseSort) {

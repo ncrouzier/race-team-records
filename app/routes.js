@@ -1021,6 +1021,7 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
     let results = await query.exec();
         if (results) {
             let numberOfUpdates = 0;
+            let maxDiff= 0;
             async.forEachOf(results, async function(res, key, callback) {
                 
                 //SYNC ISSUE
@@ -1032,7 +1033,11 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
                                                                        
                     if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
                         if (ag[res.race.racetype.name.toLowerCase()] !== undefined) {                            
-                            const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);                                                        
+                            const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);          
+                             if (res.agegrade- agegrade > maxDiff){
+                                maxDiff = res.agegrade-agegrade;
+                                console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
+                             }                                              
                             res.agegrade = agegrade;
                             numberOfUpdates++;                                                        
                             res.save().then(() => {                                    
@@ -1055,7 +1060,10 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
                 if (err) {
                     console.error(err.message);
                 }
-                res.json({ 'numberOfUpdates': numberOfUpdates });
+
+                res.json({ 'numberOfUpdates': numberOfUpdates,
+                    'maxDiff' : maxDiff
+                });
 
             });
         }
@@ -2181,6 +2189,31 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
         }); // load the index.ejs file
     });
 
+    async function getAgeGrading(sex,age,raceSurface,raceDate) {        
+        if (raceSurface === "road") {
+            if (new Date(raceDate).getFullYear() < 2020) {
+                version = "2015";
+            }else{
+                version = "2020";
+            }
+        }
+        if (raceSurface === "track") {
+            if (new Date(raceDate).getFullYear() < 2023) {
+                version = "2005";
+            }else{                
+                version = "2023";
+            }
+        }
+    
+        const ag = await AgeGrading.findOne({
+            sex: sex,
+            type: raceSurface,
+            age: age,
+            version: version
+        });  
+       
+        return ag;
+    }
 
 };
 
@@ -2279,28 +2312,3 @@ function getSurfaceText(surface) {
       return surfaceMap.get(surface);
 }
 
-async function getAgeGrading(sex,age,raceSurface,raceDate) {        
-    if (raceSurface === "road") {
-        if (new Date(raceDate).getFullYear() < 2020) {
-            version = "2015";
-        }else{
-            version = "2020";
-        }
-    }
-    if (raceSurface === "track") {
-        if (new Date(raceDate).getFullYear() < 2023) {
-            version = "2005";
-        }else{                
-            version = "2023";
-        }
-    }
-
-    const ag = await AgeGrading.findOne({
-        sex: sex,
-        type: raceSurface,
-        age: age,
-        version: version
-    });  
-   
-    return ag;
-}

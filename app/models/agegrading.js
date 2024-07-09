@@ -6,6 +6,13 @@ var agegradingSchema = mongoose.Schema({
     type: String,
     sex: String,
     age: Number,
+    'version': String,
+    '60m': Number,
+    '100m': Number,
+    '200m': Number,
+    '400m': Number,
+    '800m': Number,
+    '1000m': Number,
     '1500m': Number,
     '1 mile': Number,
     '2000m': Number,
@@ -37,7 +44,7 @@ var agegradingSchema = mongoose.Schema({
     '100k': Number,
     '150k': Number,
     '100 miles': Number,
-    '200k': Number,
+    '200k': Number,    
     createdAt: Date,
     updatedAt: Date
 });

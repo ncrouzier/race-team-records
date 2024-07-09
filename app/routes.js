@@ -467,7 +467,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
     // create result
-    app.post('/api/results', isAdminLoggedIn, function(req, res) {
+    app.post('/api/results', isAdminLoggedIn, async function(req, res) {
 
         let members = [];
         for (const member of req.body.members) {
@@ -482,108 +482,108 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
         try{  
-            AgeGrading.findOne({
-                sex: members[0].sex.toLowerCase(),
-                type: req.body.race.racetype.surface,
-                age: calculateAge(req.body.race.racedate, members[0].dateofbirth),
-            }).then(ag => {
-                let agegrade;
-                if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
-                    if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
-                        agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
-                    }
-                }            
-                //does the race exists?
-                try{  
-                    Race.findOne({
-                        'racename': req.body.race.racename,
-                        'isMultisport': req.body.race.isMultisport,
-                        'distanceName': req.body.race.distanceName,
-                        'racedate': req.body.race.racedate,
-                        'location.country': req.body.race.location.country,
-                        'location.state': req.body.race.location.state,
-                        'racetype._id': req.body.race.racetype._id,
-                        'order': req.body.race.order
-                    }).then(race => {
-                        if (!race) { //if race does not exists
-                            try{
-                                Race.create({
-                                    racename: req.body.race.racename,
-                                    isMultisport: req.body.race.isMultisport,
-                                    distanceName: req.body.race.distanceName,
-                                    racedate: req.body.race.racedate,
-                                    order: req.body.race.order,
-                                    location: {
-                                        country: req.body.race.location.country,
-                                        state: req.body.race.location.state
-                                    },
-                                    racetype: req.body.race.racetype
-                                }).then(r => {          
-                                    try{
-                                        Result.create({
-                                            race: r,
-                                            members: members,
-                                            time: req.body.time,
-                                            legs: req.body.legs,
-                                            ranking: req.body.ranking,
-                                            comments: req.body.comments,
-                                            resultlink: req.body.resultlink,
-                                            agegrade: agegrade,
-                                            is_accepted: false,
-                                            isRecordEligible: req.body.isRecordEligible,
-                                            customOptions: req.body.customOptions,
-                                            achievements: [],
-                                            done: false
-                                        }).then(async result =>{   
-                                            //update PBs
-                                            for (let m of result.members) {
-                                                let member = await Member.findById(m._id);    
-                                                await postResultsave(member);   
-                                            }                                               
-                                            res.json(result);                                                                        
-                                        });                                       
-                                    }catch(resultCreateErr){                                  
-                                        res.send(resultCreateErr);  
-                                    }                    
-                                });
-                            }catch(raceCreateErr){
-                                res.send(raceCreateErr);
-                            }
-                            
-                        } else { // race exists
-                            try{
+            const ag = await getAgeGrading(members[0].sex.toLowerCase(),
+                calculateAge(req.body.race.racedate,members[0].dateofbirth),
+                req.body.race.racetype.surface,
+                req.body.race.racedate);
+          
 
-                                Result.create({
-                                    race: race,
-                                    members: members,
-                                    time: req.body.time,
-                                    legs: req.body.legs,
-                                    ranking: req.body.ranking,
-                                    comments: req.body.comments,
-                                    resultlink: req.body.resultlink,
-                                    agegrade: agegrade,
-                                    is_accepted: false,
-                                    isRecordEligible: req.body.isRecordEligible,
-                                    customOptions: req.body.customOptions,
-                                    achievements: [],
-                                    done: false
-                                }).then(async result =>{      
-                                    //update PBs
-                                    for (let m of result.members) {
-                                        let member = await Member.findById(m._id);    
-                                        await postResultsave(member);   
-                                    }                                   
-                                    res.json(result);                                                                        
-                                }); 
-                            }catch(resultCreateErr){
-                                res.send(resultCreateErr);
-                            }
-                        }                
-                    });
-                }catch(raceFindOneErr){                    
-                    res.send(raceFindOneErr);
-                }               
-            });
+            let agegrade;
+            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
+                if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
+                    agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
+                }
+            }            
+            //does the race exists?
+            try{  
+                Race.findOne({
+                    'racename': req.body.race.racename,
+                    'isMultisport': req.body.race.isMultisport,
+                    'distanceName': req.body.race.distanceName,
+                    'racedate': req.body.race.racedate,
+                    'location.country': req.body.race.location.country,
+                    'location.state': req.body.race.location.state,
+                    'racetype._id': req.body.race.racetype._id,
+                    'order': req.body.race.order
+                }).then(race => {
+                    if (!race) { //if race does not exists
+                        try{
+                            Race.create({
+                                racename: req.body.race.racename,
+                                isMultisport: req.body.race.isMultisport,
+                                distanceName: req.body.race.distanceName,
+                                racedate: req.body.race.racedate,
+                                order: req.body.race.order,
+                                location: {
+                                    country: req.body.race.location.country,
+                                    state: req.body.race.location.state
+                                },
+                                racetype: req.body.race.racetype
+                            }).then(r => {          
+                                try{
+                                    Result.create({
+                                        race: r,
+                                        members: members,
+                                        time: req.body.time,
+                                        legs: req.body.legs,
+                                        ranking: req.body.ranking,
+                                        comments: req.body.comments,
+                                        resultlink: req.body.resultlink,
+                                        agegrade: agegrade,
+                                        is_accepted: false,
+                                        isRecordEligible: req.body.isRecordEligible,
+                                        customOptions: req.body.customOptions,
+                                        achievements: [],
+                                        done: false
+                                    }).then(async result =>{   
+                                        //update PBs
+                                        for (let m of result.members) {
+                                            let member = await Member.findById(m._id);    
+                                            await postResultsave(member);   
+                                        }                                               
+                                        res.json(result);                                                                        
+                                    });                                       
+                                }catch(resultCreateErr){                                  
+                                    res.send(resultCreateErr);  
+                                }                    
+                            });
+                        }catch(raceCreateErr){
+                            res.send(raceCreateErr);
+                        }
+                        
+                    } else { // race exists
+                        try{
+
+                            Result.create({
+                                race: race,
+                                members: members,
+                                time: req.body.time,
+                                legs: req.body.legs,
+                                ranking: req.body.ranking,
+                                comments: req.body.comments,
+                                resultlink: req.body.resultlink,
+                                agegrade: agegrade,
+                                is_accepted: false,
+                                isRecordEligible: req.body.isRecordEligible,
+                                customOptions: req.body.customOptions,
+                                achievements: [],
+                                done: false
+                            }).then(async result =>{      
+                                //update PBs
+                                for (let m of result.members) {
+                                    let member = await Member.findById(m._id);    
+                                    await postResultsave(member);   
+                                }                                   
+                                res.json(result);                                                                        
+                            }); 
+                        }catch(resultCreateErr){
+                            res.send(resultCreateErr);
+                        }
+                    }                
+                });
+            }catch(raceFindOneErr){                    
+                res.send(raceFindOneErr);
+            }                           
         }catch(ageGradingfindOneErr){
             console.log("error fetching agegrading")
         }
@@ -591,6 +591,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
     });
 
+   
 
 
     //update a result
@@ -608,11 +609,11 @@ module.exports = async function(app, qs, passport, async, _) {
         }
 
         try{
-            const ag = await AgeGrading.findOne({
-                sex: members[0].sex.toLowerCase(),
-                type: req.body.race.racetype.surface,
-                age: calculateAge(req.body.race.racedate, members[0].dateofbirth),
-            });            
+            const ag = await getAgeGrading(members[0].sex.toLowerCase(),
+                calculateAge(req.body.race.racedate, members[0].dateofbirth),
+                req.body.race.racetype.surface,
+                req.body.race.racedate);
+        
             let agegrade;            
             if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
@@ -1020,29 +1021,36 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
     let results = await query.exec();
         if (results) {
             let numberOfUpdates = 0;
-            async.forEachOf(results, function(res, key, callback) {
+            async.forEachOf(results, async function(res, key, callback) {
                 
                 //SYNC ISSUE
-                AgeGrading.findOne({
-                    sex: res.members[0].sex.toLowerCase(),
-                    type: res.race.racetype.surface,
-                    age: calculateAge(res.race.racedate, res.members[0].dateofbirth),
-                }).then(ag =>{                                              
+                const ag = await getAgeGrading(res.members[0].sex.toLowerCase(),
+                    calculateAge(res.race.racedate,res.members[0].dateofbirth),
+                    res.race.racetype.surface,
+                    res.race.racedate
+                );
+                                                                       
                     if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
-                        if (ag[res.race.racetype.name.toLowerCase()] !== undefined) {
-                            const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);
+                        if (ag[res.race.racetype.name.toLowerCase()] !== undefined) {                            
+                            const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);                                                        
                             res.agegrade = agegrade;
+                            numberOfUpdates++;                                                        
                             res.save().then(() => {                                    
-                                    numberOfUpdates++;
-                                    callback();
+                                numberOfUpdates++;                                   
                             });                                
                         } else {
-                            callback();
+                            if(res.agegrade !== undefined){
+                                //if the ag info doesn't exist and we used to have one, we remove it
+                                //Maybe this distance is not track since having a newer age grading data set. e.g. 2 miles track was tracked in the 2005 dataset but not anymore in the 2023.
+                                res.save().then(() => {                                    
+                                    numberOfUpdates++;                                   
+                                });  
+                            
+                            }                                                        
                         }
                     } else {
-                        callback();
+                       
                     }
-                });
             }, function(err) {
                 if (err) {
                     console.error(err.message);
@@ -2269,4 +2277,30 @@ function getSurfaceText(surface) {
         ['open water', 'openwater']
       ]);
       return surfaceMap.get(surface);
+}
+
+async function getAgeGrading(sex,age,raceSurface,raceDate) {        
+    if (raceSurface === "road") {
+        if (new Date(raceDate).getFullYear() < 2020) {
+            version = "2015";
+        }else{
+            version = "2020";
+        }
+    }
+    if (raceSurface === "track") {
+        if (new Date(raceDate).getFullYear() < 2023) {
+            version = "2005";
+        }else{                
+            version = "2023";
+        }
+    }
+
+    const ag = await AgeGrading.findOne({
+        sex: sex,
+        type: raceSurface,
+        age: age,
+        version: version
+    });  
+   
+    return ag;
 }

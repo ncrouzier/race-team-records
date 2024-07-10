@@ -489,7 +489,7 @@ module.exports = async function(app, qs, passport, async, _) {
           
 
             let agegrade;
-            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport && req.body.isRecordEligible) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
@@ -615,7 +615,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 req.body.race.racedate);
         
             let agegrade;            
-            if (ag && members.length === 1 && !req.body.race.isMultisport) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport  && req.body.isRecordEligible) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
@@ -1020,9 +1020,10 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
 
     let results = await query.exec();
         if (results) {
+            let diffrenceArray = [];
             let numberOfUpdates = 0;
             let maxDiff= 0;
-            async.forEachOf(results, async function(res, key, callback) {
+            for(let res of results){ 
                 
                 //SYNC ISSUE
                 const ag = await getAgeGrading(res.members[0].sex.toLowerCase(),
@@ -1031,41 +1032,54 @@ app.get('/updateAgeGrade', isAdminLoggedIn, async function(req, res) {
                     res.race.racedate
                 );
                                                                        
-                    if (ag && res.members.length === 1 && !res.race.isMultisport) { //do not deal with multiple racers
+                    if (ag && res.members.length === 1 && !res.race.isMultisport && res.isRecordEligible) { //do not deal with multiple racers
                         if (ag[res.race.racetype.name.toLowerCase()] !== undefined) {                            
                             const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);          
                              if (res.agegrade- agegrade > maxDiff){
                                 maxDiff = res.agegrade-agegrade;
                                 console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
-                             }                                              
+                             }
+                             if (res.agegrade - agegrade)
+                                {
+                                    diffrenceArray.push({
+                                        "runner":res.members[0].firstname + ' ' + res.members[0].lastname,
+                                        "racename":res.race.racename,
+                                        "date":res.race.racedate,
+                                        "old":res.agegrade,
+                                        "new": agegrade,
+                                        "diff": res.agegrade-agegrade});
+                                }                                    
                             res.agegrade = agegrade;
-                            numberOfUpdates++;                                                        
+                            // numberOfUpdates++;                                                        
                             res.save().then(() => {                                    
-                                numberOfUpdates++;                                   
-                            });                                
+                                 numberOfUpdates++;                                   
+                            });
                         } else {
                             if(res.agegrade !== undefined){
                                 //if the ag info doesn't exist and we used to have one, we remove it
                                 //Maybe this distance is not track since having a newer age grading data set. e.g. 2 miles track was tracked in the 2005 dataset but not anymore in the 2023.
+                                res.agegrade = undefined;
                                 res.save().then(() => {                                    
-                                    numberOfUpdates++;                                   
+                                     numberOfUpdates++;                                   
                                 });  
-                            
                             }                                                        
                         }
                     } else {
-                       
-                    }
-            }, function(err) {
-                if (err) {
-                    console.error(err.message);
-                }
-
+                        if(res.agegrade !== undefined){
+                            //if the ag info doesn't exist and we used to have one, we remove it
+                            //Maybe this distance is not track since having a newer age grading data set. e.g. 2 miles track was tracked in the 2005 dataset but not anymore in the 2023.
+                            res.agegrade = undefined;
+                            res.save().then(() => {                                    
+                                 numberOfUpdates++;                                     
+                            });  
+                        } 
+                    }                           
+            };
+            diffrenceArray.sort((a, b) => b.diff - a.diff);
                 res.json({ 'numberOfUpdates': numberOfUpdates,
-                    'maxDiff' : maxDiff
+                    'differences' : diffrenceArray
                 });
 
-            });
         }
 });
 

@@ -49,17 +49,10 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/results.html');
                 gtag('event', 'page_view');
             }
-        }).state('/resultsNoLoad', {            
-        })
-        // .state('/race', {
-        //     url: "/race",
-        //     templateUrl: "views/results.html",
-        //     controller: 'ResultsController',
-        //     onEnter: function() {
-        //         gtag('set', 'page_path', '/results.html');
-        //         gtag('event', 'page_view');
-        //     }
-        // })
+        }).state('/about', {  
+            url: '/about',
+            templateUrl: 'views/about.html',          
+        })        
         .state('/races', {
             url: '/races/:raceId',
             templateUrl: 'views/results.html',

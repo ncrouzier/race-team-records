@@ -11,8 +11,6 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         localStorageService.set('resultsPageSize', $scope.resultsTableProperties);
     });
 
-
-
     if (localStorageService.get('resultsPageSize')) {
         $scope.resultsTableProperties = localStorageService.get('resultsPageSize');
     } else {
@@ -20,10 +18,48 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.resultsTableProperties.pageSize = 10;
     }
 
-    $scope.resultSize = [5, 10, 25, 50, 100];
-   
 
-    
+    $scope.sortBy = function(criteria) {
+    if ($scope.sortCriteria === criteria) {
+      $scope.sortDirection = $scope.sortDirection === '' ? '-' : '';
+    } else {
+      $scope.sortCriteria = criteria;
+      $scope.sortDirection = '';
+    }
+    };
+
+    $scope.customSortFunction = function(result) {
+        if ($scope.sortCriteria === "race.racedate"){           
+                return result.race.racedate;                       
+        }
+        if ($scope.sortCriteria === "time"){            
+                return result.time;                   
+        }
+        if ($scope.sortCriteria === "pace"){        
+            if(result.race.isMultisport){
+                //"hide" undefined age grade at the end of the list when sorting by pace
+               if ($scope.sortDirection === '-'){
+                   return -999999;
+               }else{
+                   return 999999;
+               }    
+            }          
+            return result.time/result.race.racetype.miles;                   
+        }      
+        if ($scope.sortCriteria === "agegrade"){   
+            //"hide" undefined age grade at the end of the list
+            if(result.agegrade === undefined){
+                if ($scope.sortDirection === '-'){
+                    return -999999;
+                }else{
+                    return 999999;
+                }        
+            }
+            return result.agegrade;                  
+        }           
+      };
+
+    $scope.resultSize = [5, 10, 25, 50, 100];    
 
     // if($stateParams.reload !== "false"){
         $scope.resultsList = [];

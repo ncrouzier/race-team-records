@@ -7,6 +7,46 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // var members = Restangular.all('members');
 
 
+    $scope.sortBy = function(criteria) {
+    if ($scope.sortCriteria === criteria) {
+      $scope.sortDirection = $scope.sortDirection === '' ? '-' : '';
+    } else {
+      $scope.sortCriteria = criteria;
+      $scope.sortDirection = '';
+    }
+    };
+
+    $scope.customSortFunction = function(result) {
+        if ($scope.sortCriteria === "race.racedate"){           
+                return result.race.racedate;                       
+        }
+        if ($scope.sortCriteria === "time"){            
+                return result.time;                   
+        }
+        if ($scope.sortCriteria === "pace"){        
+            if(result.race.isMultisport){
+                //"hide" undefined age grade at the end of the list when sorting by pace
+               if ($scope.sortDirection === '-'){
+                   return -999999;
+               }else{
+                   return 999999;
+               }    
+            }          
+            return result.time/result.race.racetype.miles;                   
+        }      
+        if ($scope.sortCriteria === "agegrade"){   
+            //"hide" undefined age grade at the end of the list
+            if(result.agegrade === undefined){
+                if ($scope.sortDirection === '-'){
+                    return -999999;
+                }else{
+                    return 999999;
+                }        
+            }
+            return result.agegrade;                  
+        }           
+      };
+
 
     $scope.membersList = [];
     $scope.query = "";
@@ -81,6 +121,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.setMember = async function(member_light) { 
        if (member_light === undefined) return;
        
+       $scope.sortCriteria = "race.racedate";
+       $scope.sortDirection = '-';
+
        //reset page to 1
        $scope.pagination = {
             current: 1

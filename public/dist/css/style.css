@@ -7685,6 +7685,9 @@ footer {
 .ageregional {
   color: #E1BB71;
 }
+.agesort {
+  color: black;
+}
 .bold {
   font-weight: bold;
 }

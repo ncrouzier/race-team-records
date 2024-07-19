@@ -1776,7 +1776,25 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                       }
                     ]
                   }
-                }, {
+                },
+                {
+                    '$set': {
+                        "bestAgeGroup": {                      
+                              '$first': {
+                                '$sortArray': {
+                                  'input': "$results",
+                                  'sortBy': {            
+                                    "agegrade": -1,
+                                    "race.racedate": -1
+                                    
+                                  }
+                                }
+                              }
+                            }
+                      }
+                },
+                
+                {
                   '$replaceRoot': {
                     'newRoot': {                      
                       'firstname': '$firstname',
@@ -1785,21 +1803,9 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                       'dateofbirth': '$dateofbirth',
                       'numberofraces': {
                         '$size': '$results'
-                      }, 
-                      'max': {
-                        '$ifNull': [
-                          {
-                            '$max': '$results.agegrade'
-                          }, 'N/A'
-                        ]
                       },
-                      'maxsortvalue': {
-                        '$ifNull': [
-                          {
-                            '$max': '$results.agegrade'
-                          }, 0
-                        ]
-                      }
+                      "max": "$bestAgeGroup.agegrade",
+                      "maxRaceId": "$bestAgeGroup.race._id",
                     }
                   }
                 }, {
@@ -1807,8 +1813,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                     'numberofraces': -1, 
                     'maxsortvalue': -1
                   }
-                },
-                { $unset: "maxsortvalue" }
+                }
               ]);   
 
         try{

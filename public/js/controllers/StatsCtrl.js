@@ -241,6 +241,13 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         }
     };
 
+    $scope.showRaceFromRaceIdModal = function(raceId) {
+        if (raceId) {
+            ResultsService.showRaceFromRaceIdModal(raceId).then(function() {});
+        }
+    };
+
+    
 
     $scope.getRacesStats();
     $scope.getMiscStats();

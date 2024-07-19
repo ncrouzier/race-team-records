@@ -157,7 +157,7 @@
                             <td><a ui-sref="/members({ member: r.firstname+r.lastname }) ">{{r.firstname}} {{r.lastname}}</a></td>
                             <td>{{r | memberAgeFilter}}</td>
                             <td><span>{{r.numberofraces}}</span></td>
-                            <td><span>{{r.max}}<span ng-if="r.max<70">😬</span></span></td>
+                            <td><span class="hoverhandandunderline resultEvent"  ng-click="showRaceFromRaceIdModal(r.maxRaceId)" >{{r.max}}<span ng-if="r.max<70">😬</span></span></td>
                         </tr>
                     </table>
                 </div>

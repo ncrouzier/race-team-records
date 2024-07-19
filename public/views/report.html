@@ -25,6 +25,25 @@
         </div>
     </div>
     <div class="row">
+        <div class="col-md-12" ng-if="raceInfosList">
+        The team raced {{numberOfResults}} times in {{raceInfosList.length}} races!
+        <!-- <div ng-repeat="race in raceInfosList">
+            {{race.racename}}
+            <ul >
+                <li ng-repeat="result in race.results" ng-if="result.achievements.length != 0">
+                    
+                    <span ng-repeat="ach in result.achievements">{{ach.text}} <br></span>
+                </li>                
+            </ul>
+        </div>
+        
+        </div>
+    </div>
+    <br>
+    <br>
+    <br> -->
+    <br><br>
+    <div class="row">
         <div class="col-md-6">
             HTML
             <textarea class="form-control" style="height:200px;" name="message" ng-model="reportHTLM"></textarea>

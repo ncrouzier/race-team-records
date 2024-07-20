@@ -466,7 +466,7 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
 
-    // create result
+    // create a result
     app.post('/api/results', isAdminLoggedIn, async function(req, res) {
 
         let members = [];
@@ -540,8 +540,9 @@ module.exports = async function(app, qs, passport, async, _) {
                                         for (let m of result.members) {
                                             let member = await Member.findById(m._id);    
                                             await postResultsave(member);   
-                                        }                                               
-                                        res.json(result);                                                                        
+                                        }              
+                                        resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                                        res.json(resultWithPBsAndAchievements);                                                                        
                                     });                                       
                                 }catch(resultCreateErr){                                  
                                     res.send(resultCreateErr);  
@@ -574,7 +575,8 @@ module.exports = async function(app, qs, passport, async, _) {
                                     let member = await Member.findById(m._id);    
                                     await postResultsave(member);   
                                 }                                   
-                                res.json(result);                                                                        
+                                resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                                res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
                         }catch(resultCreateErr){
                             res.send(resultCreateErr);
@@ -676,8 +678,10 @@ module.exports = async function(app, qs, passport, async, _) {
                         for (let m of result.members) {
                             let member = await Member.findById(m._id);                                
                             postResultsave(member);   
-                        }                                                                                         
-                        res.json(result);
+                        }                       
+                        resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                        res.json(resultWithPBsAndAchievements);                                                                     
+                        
                                                     
             } else { // race exists       
                 result.race = race;                     
@@ -710,7 +714,8 @@ module.exports = async function(app, qs, passport, async, _) {
                     let member = await Member.findById(m._id);    
                     postResultsave(member);   
                 }
-                res.json(result);                                                                                                            
+                resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                res.json(resultWithPBsAndAchievements);                 
             }                    
                                          
         }catch(err){

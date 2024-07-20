@@ -65,7 +65,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         });
     };
 
-    //retrieve a result by id
+    //create a result by id
     factory.createResult = function(result) {
         return results.post(result).then(
             function(r) {

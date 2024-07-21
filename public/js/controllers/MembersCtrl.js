@@ -7,46 +7,89 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // var members = Restangular.all('members');
 
 
-    $scope.sortBy = function(criteria) {
-    if ($scope.sortCriteria === criteria) {
-      $scope.sortDirection = $scope.sortDirection === '' ? '-' : '';
-    } else {
-      $scope.sortCriteria = criteria;
-      $scope.sortDirection = '';
-    }
+    $scope.sortBy = function (criteria) {
+        if ($scope.sortCriteria === criteria) {
+            $scope.sortDirection = $scope.sortDirection === true ? false : true;
+        } else {
+            $scope.sortCriteria = criteria;
+            $scope.sortDirection = true;
+        }
+        //sortDirection true = asc, false = desc
+        $scope.currentMemberResultList.sort(customResultSort($scope.currentMemberResultList, $scope.sortCriteria, $scope.sortDirection));
     };
 
-    $scope.customSortFunction = function(result) {
-        if ($scope.sortCriteria === "race.racedate"){           
-                return result.race.racedate;                       
-        }
-        if ($scope.sortCriteria === "time"){            
-                return result.time;                   
-        }
-        if ($scope.sortCriteria === "pace"){        
-            if(result.race.isMultisport){
-                //"hide" undefined age grade at the end of the list when sorting by pace
-               if ($scope.sortDirection === '-'){
-                   return -999999;
-               }else{
-                   return 999999;
-               }    
-            }          
-            return result.time/result.race.racetype.miles;                   
-        }      
-        if ($scope.sortCriteria === "agegrade"){   
-            //"hide" undefined age grade at the end of the list
-            if(result.agegrade === undefined){
-                if ($scope.sortDirection === '-'){
-                    return -999999;
-                }else{
-                    return 999999;
-                }        
-            }
-            return result.agegrade;                  
-        }           
-      };
+    function customResultSort(arr, field, order) {
+        return (result1, result2) => {
+            if (field === 'race.racedate') {
+                if (result1.race.racedate < result2.race.racedate) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racedate > result2.race.racedate) {
+                    return order === true ? 1 : -1;
+                }
 
+                if (result1.race.order < result2.race.order) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.order > result2.race.order) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.race.racename < result2.race.racename) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racename > result2.race.racename) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+
+                return 0;
+            }
+
+            if (field === 'pace') {
+                //if result is multisport, put at the end
+                if (result1.race.isMultisport) {
+                    return 1;
+                }
+                if (result2.race.isMultisport) {
+                    return -1;
+                }
+                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'time') {
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'agegrade') {
+                //if result has no agegrade, put at the end    
+                if (result1.agegrade === undefined) {
+                    return 1;
+                }
+                if (result2.agegrade === undefined) {
+                    return -1;
+                }
+                if (result1.agegrade < result2.agegrade) {
+                    return order === true ? -1 : 1;
+                } else if (result1.agegrade > result2.agegrade) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+        };
+    }
 
     $scope.membersList = [];
     $scope.query = "";

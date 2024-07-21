@@ -22,10 +22,10 @@
                             <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
                         </div>
                         <div class="col-sm-2" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Pace">PACE</span>
+                            <span ng-click="sortBy('pace')" class="listheader hoverhand" title="Sort by pace">PACE</span> <i ng-if="raceinfo.results[0].agegrade" ng-click="sortBy('agegrade')" title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
                         </div>
                         <div class="col-sm-3" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Net Time">NET TIME</span>
+                            <span ng-click="sortBy('time')" class="listheader hoverhand" title="Sort by net time">NET TIME</span>
                         </div>
                     </div>
                 </li>

@@ -138,7 +138,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 backdrop: 'static',
                 resolve: {
                     editmode: true,
-                    result: function() {
+                    result: function() {                        
                         return result;
                     }
                 }

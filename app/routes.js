@@ -677,7 +677,7 @@ module.exports = async function(app, qs, passport, async, _) {
                         //update PBs
                         for (let m of result.members) {
                             let member = await Member.findById(m._id);                                
-                            postResultsave(member);   
+                            await postResultsave(member);   
                         }                       
                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                         res.json(resultWithPBsAndAchievements);                                                                     
@@ -712,9 +712,9 @@ module.exports = async function(app, qs, passport, async, _) {
                 //update PBs
                 for (let m of result.members) {
                     let member = await Member.findById(m._id);    
-                    postResultsave(member);   
+                    await postResultsave(member);   
                 }
-                resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                resultWithPBsAndAchievements = await Result.findById(result._id); 
                 res.json(resultWithPBsAndAchievements);                 
             }                    
                                          

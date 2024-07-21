@@ -17,7 +17,6 @@
 
     </div>
 
-
     <div id="member-list" class="row">
         <div class="col-md-12">
             <ul class="results-list list-group">
@@ -29,7 +28,7 @@
                         <div class="col-sm-10">
                             <div class="row">
                               <div class="col-sm-5">
-                                  <span ng-click="sortBy('race.racedate')" class="listheader hoverhand" title="Event and date">EVENT</span>
+                                  <span ng-click="sortBy('race.racedate')" class="listheader hoverhand" title="Sort by race date">EVENT</span>
                               </div>
                               <div class="col-sm-1" style="text-align: center;">
                                   <span class="listheader hoverhand" title="Age Group Ranking" >AGE</span>
@@ -41,10 +40,10 @@
                                   <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
                               </div>
                               <div class="col-sm-2" style="text-align: center;">
-                                  <span ng-click="sortBy('pace')" class="listheader hoverhand" title="Pace">PACE</span> <i ng-click="sortBy('agegrade')" title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
+                                  <span ng-click="sortBy('pace')" class="listheader hoverhand" title="Sort by pace">PACE</span> <i ng-click="sortBy('agegrade')" title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
                               </div>
                               <div ng-class="user.role == 'admin' ?'col-sm-1' :'col-sm-2'" style="text-align: center;">
-                                  <span ng-click="sortBy('time')" class="listheader hoverhand" title="Net Time">NET TIME</span>
+                                  <span ng-click="sortBy('time')" class="listheader hoverhand" title="Sort by net time  ">NET TIME</span>
                               </div>
 
                               <div class="col-sm-1" ng-show="user.role == 'admin'">
@@ -55,7 +54,7 @@
 
                     </div>
                 </li>
-                <li dir-paginate="result in resultsList | resultSuperFilter: searchQuery | orderBy:customSortFunction:sortDirection | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                <li dir-paginate="result in resultsList | resultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                     <div class="row" style="display: flex; align-items: center;">
                         <div class="col-sm-2" style="font-size: 16px;">
                             <result-members-names></result-members-names>

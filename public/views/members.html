@@ -236,7 +236,7 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li dir-paginate="result in currentMemberResultList | resultSuperFilter: searchQuery:paramModel.racetype  | orderBy:customSortFunction:sortDirection | itemsPerPage: 10" current-page="pagination.current" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <li dir-paginate="result in currentMemberResultList | resultSuperFilter: searchQuery:paramModel.racetype  | itemsPerPage: 10" current-page="pagination.current" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                         <div class="row">
                                             <div class="col-sm-5" style="line-height: 1.1;">
                                                 <span class="hoverhandandunderline resultEvent" uib-tooltip="{{result | membersNamesWithAgeFilter}}" title="view race results" ng-click="showRaceModal(result.race)">{{ result.race.racename}}</span> <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>

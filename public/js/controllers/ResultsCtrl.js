@@ -19,68 +19,110 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     }
 
 
-    $scope.sortBy = function(criteria) {
-    if ($scope.sortCriteria === criteria) {
-      $scope.sortDirection = $scope.sortDirection === '' ? '-' : '';
-    } else {
-      $scope.sortCriteria = criteria;
-      $scope.sortDirection = '';
-    }
+    $scope.sortBy = function (criteria) {
+        if ($scope.sortCriteria === criteria) {
+            $scope.sortDirection = $scope.sortDirection === true ? false : true;
+        } else {
+            $scope.sortCriteria = criteria;
+            $scope.sortDirection = true;
+        }
+        //sortDirection true = asc, false = desc
+        $scope.resultsList.sort(customResultSort($scope.resultsList, $scope.sortCriteria, $scope.sortDirection));
     };
 
-    $scope.customSortFunction = function(result) {
-        if ($scope.sortCriteria === "race.racedate"){           
-                return result.race.racedate;                       
-        }
-        if ($scope.sortCriteria === "time"){            
-                return result.time;                   
-        }
-        if ($scope.sortCriteria === "pace"){        
-            if(result.race.isMultisport){
-                //"hide" undefined age grade at the end of the list when sorting by pace
-               if ($scope.sortDirection === '-'){
-                   return -999999;
-               }else{
-                   return 999999;
-               }    
-            }          
-            return result.time/result.race.racetype.miles;                   
-        }      
-        if ($scope.sortCriteria === "agegrade"){   
-            //"hide" undefined age grade at the end of the list
-            if(result.agegrade === undefined){
-                if ($scope.sortDirection === '-'){
-                    return -999999;
-                }else{
-                    return 999999;
-                }        
+    function customResultSort(arr, field, order) {
+        return (result1, result2) => {
+            if (field === 'race.racedate') {
+                if (result1.race.racedate < result2.race.racedate) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racedate > result2.race.racedate) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.race.order < result2.race.order) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.order > result2.race.order) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.race.racename < result2.race.racename) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racename > result2.race.racename) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+                
+                return 0;
             }
-            return result.agegrade;                  
-        }           
-      };
+
+            if (field === 'pace') {
+                //if result is multisport, put at the end
+                if (result1.race.isMultisport) {
+                    return 1;
+                }
+                if (result2.race.isMultisport) {
+                    return -1;
+                }
+                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'time') {
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'agegrade') {
+                //if result has no agegrade, put at the end    
+                if (result1.agegrade === undefined) {
+                    return 1;
+                }
+                if (result2.agegrade === undefined) {
+                    return -1;
+                }
+                if (result1.agegrade < result2.agegrade) {
+                    return order === true ? -1 : 1;
+                } else if (result1.agegrade > result2.agegrade) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+        };
+    }
 
     $scope.resultSize = [5, 10, 25, 50, 100];    
 
-    // if($stateParams.reload !== "false"){
-        $scope.resultsList = [];
-        ResultsService.getResultsWithCacheSupport({
-            "sort": '-race.racedate -race.order race.racename time members.firstname',
-            "limit": 200,
-            "preload":true
-        }).then(function(results) {
-            $scope.resultsList = results;
-            //now load the whole thing unless the initial call return the cache version (>200 res)
-            if (results.length == 200){
-                ResultsService.getResultsWithCacheSupport({
-                    "sort": '-race.racedate -race.order race.racename time members.firstname',
-                    "preload":false
-                }).then(function(results) {
-                    $scope.resultsList = results;
-                });
-            }    
-            
-        }); 
-    // }
+    $scope.resultsList = [];
+    ResultsService.getResultsWithCacheSupport({
+        "sort": '-race.racedate -race.order race.racename time members.firstname',
+        "limit": 200,
+        "preload":true
+    }).then(function(results) {
+        $scope.resultsList = results;
+        //now load the whole thing unless the initial call return the cache version (>200 res)
+        if (results.length == 200){
+            ResultsService.getResultsWithCacheSupport({
+                "sort": '-race.racedate -race.order race.racename time members.firstname',
+                "preload":false
+            }).then(function(results) {
+                $scope.resultsList = results;
+            });
+        }    
+        
+    }); 
     
 
     $scope.showAddResultModal = function(resultSource) {
@@ -91,9 +133,17 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function() {});
     };
 
-    $scope.retrieveResultForEdit = function(result) {
-        ResultsService.retrieveResultForEdit(result).then(function() {});
+    $scope.retrieveResultForEdit =  function(resultSource) {
+        ResultsService.retrieveResultForEdit(resultSource).then(function(result) {
+            if (result !== null) {
+                $scope.resultsList[$scope.findResultIndexById(resultSource._id)] = result;
+            }
+        });            
     };
+
+    $scope.findResultIndexById = (id) => $scope.resultsList.findIndex(result => result._id === id);
+
+
 
     $scope.removeResult = function(result) {
         var dlg = dialogs.confirm("Remove Result?", "Are you sure you want to remove this result?");
@@ -577,6 +627,89 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
 
    
     
+    $scope.sortBy = function (criteria) {
+        if ($scope.sortCriteria === criteria) {
+            $scope.sortDirection = $scope.sortDirection === true ? false : true;
+        } else {
+            $scope.sortCriteria = criteria;
+            $scope.sortDirection = true;
+        }
+        //sortDirection true = asc, false = desc
+        $scope.raceinfo.results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
+    };
+
+    function customResultSort(arr, field, order) {
+        return (result1, result2) => {
+            if (field === 'race.racedate') {
+                if (result1.race.racedate < result2.race.racedate) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racedate > result2.race.racedate) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.race.order < result2.race.order) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.order > result2.race.order) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.race.racename < result2.race.racename) {
+                    return order === true ? -1 : 1;
+                } else if (result1.race.racename > result2.race.racename) {
+                    return order === true ? 1 : -1;
+                }
+
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+
+                return 0;
+            }
+
+            if (field === 'pace') {
+                //if result is multisport, put at the end
+                if (result1.race.isMultisport) {
+                    return 1;
+                }
+                if (result2.race.isMultisport) {
+                    return -1;
+                }
+                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'time') {
+                if (result1.time < result2.time) {
+                    return order === true ? -1 : 1;
+                } else if (result1.time > result2.time) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+
+            if (field === 'agegrade') {
+                //if result has no agegrade, put at the end    
+                if (result1.agegrade === undefined) {
+                    return 1;
+                }
+                if (result2.agegrade === undefined) {
+                    return -1;
+                }
+                if (result1.agegrade < result2.agegrade) {
+                    return order === true ? -1 : 1;
+                } else if (result1.agegrade > result2.agegrade) {
+                    return order === true ? 1 : -1;
+                }
+                return 0;
+            }
+        };
+    }
 
 
 

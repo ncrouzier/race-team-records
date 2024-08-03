@@ -482,6 +482,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
         try{  
+
             const ag = await getAgeGrading(members[0].sex.toLowerCase(),
                 calculateAge(req.body.race.racedate,members[0].dateofbirth),
                 req.body.race.racetype.surface,
@@ -2228,14 +2229,17 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                 version = "2023";
             }
         }
-    
-        const ag = await AgeGrading.findOne({
-            sex: sex,
-            type: raceSurface,
-            age: age,
-            version: version
-        });  
-       
+        try{  
+            const ag = await AgeGrading.findOne({
+                sex: sex,
+                type: raceSurface,
+                age: age,
+                version: version
+            });  
+        }catch(err){
+           //no age grading
+            return null;
+        }
         return ag;
     }
 

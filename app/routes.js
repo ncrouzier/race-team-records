@@ -486,7 +486,6 @@ module.exports = async function(app, qs, passport, async, _) {
                 calculateAge(req.body.race.racedate,members[0].dateofbirth),
                 req.body.race.racetype.surface,
                 req.body.race.racedate);
-          
 
             let agegrade;
             if (ag && members.length === 1 && !req.body.race.isMultisport && req.body.isRecordEligible) { //do not deal with multiple racers
@@ -587,7 +586,8 @@ module.exports = async function(app, qs, passport, async, _) {
                 res.send(raceFindOneErr);
             }                           
         }catch(ageGradingfindOneErr){
-            console.log("error fetching agegrading")
+
+            console.log(ageGradingfindOneErr,"error fetching agegrading")
         }
         
 
@@ -2228,15 +2228,19 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
                 version = "2023";
             }
         }
-    
-        const ag = await AgeGrading.findOne({
-            sex: sex,
-            type: raceSurface,
-            age: age,
-            version: version
-        });  
-       
-        return ag;
+        try{  
+            const ag = await AgeGrading.findOne({
+                sex: sex,
+                type: raceSurface,
+                age: age,
+                version: version
+            });  
+            return ag;
+        }catch(err){
+           //no age grading
+            return null;
+        }
+        
     }
 
 };

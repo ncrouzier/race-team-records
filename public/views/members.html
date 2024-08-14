@@ -199,7 +199,7 @@
                         </div>
                         <div id="member-list" class="row">
                             <div class="col-md-12">
-                                <h3 style="margin-top:10px">{{currentMember.firstname}}'s Results:</h3>
+                                <h3 style="margin-top:10px">{{currentMember.firstname}}'s Results ({{currentMemberResultList.length}}):</h3>
                                 <div class="btn-group" style="padding-bottom: 4px;">
                                     <span><input ng-model="searchQuery" class="form-control" type="text" placeholder="Filter results" style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{searchQuery}}" autofocus><span class="searchclear fa fa-times-circle" ng-show="searchQuery" ng-click="searchQuery=''"></span>                                    
                                     <ui-select ng-model="paramModel.racetype"  theme="select2" style="min-width: 300px; bottom: 2px;">                                        

@@ -384,6 +384,11 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.formData = {};
         $scope.formData.memberStatus = 'current';
         $scope.formData.dateofbirth = new Date($filter('date')(new Date().setHours(0,0,0,0), 'yyyy-MM-dd', 'UTC'));
+        $scope.formData.membershipDates = [];
+        $scope.formData.membershipDates.push({
+            start: new Date($filter('date')(new Date().setHours(0,0,0,0), "yyyy-MM-dd", 'UTC')),
+            end: undefined
+        });
         $scope.editmode = false;
     }
 

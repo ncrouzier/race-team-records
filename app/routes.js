@@ -272,10 +272,10 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
     // create member
-    app.post('/api/members', isAdminLoggedIn, function(req, res) {
+    app.post('/api/members', isAdminLoggedIn, async function(req, res) {
         res.setHeader("Content-Type", "application/json");
-        // create a member, information comes from AJAX request from Angular
-        Member.create({
+        try{ 
+        const member = await Member.create({
             firstname: req.body.firstname,
             lastname: req.body.lastname,
             dateofbirth: req.body.dateofbirth,
@@ -285,14 +285,12 @@ module.exports = async function(app, qs, passport, async, _) {
             memberStatus: req.body.memberStatus,
             membershipDates: req.body.membershipDates,
             done: false
-        }, function(err, member) {
-            if (err) {
-                res.send(err);
-            } else {
-                res.end('{"success" : "Member created successfully", "status" : 200}');
-            }
-
         });
+        }catch(err){
+            res.send(err);
+        }    
+        res.end('{"success" : "Member created successfully", "status" : 200}');
+    
     });
 
     

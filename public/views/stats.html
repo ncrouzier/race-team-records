@@ -155,7 +155,7 @@
                         </tr>
                         <tr ng-class="r.memberStatus === 'past' ?'red':'' " ng-repeat="r in participationStats |sortMembers:fieldParticipation:reverseSortParticipation track by $index">
                             <td>{{$index+1}}</td>
-                            <td><a ui-sref="/members({ member: r.firstname+r.lastname }) ">{{r.firstname}} {{r.lastname}}</a></td>
+                            <td><a ui-sref="/members({ member: r.firstname+r.lastname }) " class="{{r.memberStatus === 'past' ?'red':'' }}">{{r.firstname}} {{r.lastname}}</a></td>
                             <td>{{r | memberAgeFilter}}</td>
                             <td><span>{{r.numberofraces}}</span></td>
                             <td><span class="hoverhandandunderline resultEvent"  ng-click="showRaceFromRaceIdModal(r.maxRaceId)" >{{r.max}}<span ng-if="r.max<70">😬</span></span></td>

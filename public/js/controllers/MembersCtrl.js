@@ -157,30 +157,37 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     };
 
     $scope.filterRaceType = function() {
-        console.log("call");
+        // console.log("call");
     };
 
     // set the current member to the display panel
-    $scope.setMember = async function(member_light) { 
-       if (member_light === undefined) return;
+    $scope.setMember = async function(member_param) { 
+       if (member_param === undefined) return;
        
        $scope.sortCriteria = "race.racedate";
        $scope.sortDirection = '-';
 
-       //reset page to 1
+       //reset resultpage to 1
        $scope.pagination = {
             current: 1
        };  
 
-       // get the member details
-       await MembersService.getMember(member_light._id).then(function(fullMember) {
-            $scope.currentMember = fullMember;
-            $scope.activeTab = 1;
-        });        
+        // get the member details if this is just a "light member object"
+        let fullMember;
+        if (member_param.bio === undefined) {
+            fullMember = await MembersService.getMember(member_param._id);
+            // .then(function(fullMember) {
+                // $scope.currentMember = fullMember;
+                // $scope.activeTab = 1;
+            // });     
+        }else{
+            fullMember = member_param;
+        }
+           
 
         ResultsService.getResults({
             sort: '-race.racedate -race.order',
-            member: {_id :member_light._id}
+            member: {_id :fullMember._id}
         }).then(function(results) {
             $scope.currentMemberResultList = results; 
 
@@ -193,24 +200,30 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 return racetypes;
             }, {})).sort((a, b) => a.meters - b.meters);
             // console.log($scope.racetypesList);
+            $scope.currentMember = fullMember;
+            $scope.activeTab = 1;
 
+            $state.current.reloadOnSearch = false;
+            $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
+            $timeout(function () {
+             $state.current.reloadOnSearch = undefined;
+            });
+
+            $analytics.eventTrack('viewMember', {
+                category: 'Member',
+                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
+            });
         });
         
 
-        // MembersService.getMemberPbs($scope.currentMember).then(function(results) {
-        //     $scope.currentMemberPbsList = results;
+        // $state.current.reloadOnSearch = false;
+        // $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
+        // $timeout(function () {
+        //   $state.current.reloadOnSearch = undefined;
         // });
 
-        $state.current.reloadOnSearch = false;
-        $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
-        $timeout(function () {
-          $state.current.reloadOnSearch = undefined;
-        });
         // $scope.activeTab = 1;
-        $analytics.eventTrack('viewMember', {
-            category: 'Member',
-            label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
-        });
+        
     };
 
     function getCatergory(dob){
@@ -307,7 +320,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     // get all members if we have a member in the url
     if($stateParams.member){
-        $scope.paramModel.memberStatus = 'all';
+        // $scope.paramModel.memberStatus = 'all';
     }
 
     var defaultParams = {
@@ -324,11 +337,11 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         await $scope.getMembers(defaultParams);
 
         if($stateParams.member){
-            for (i = 0; i < $scope.membersList.length; i++) {                
-                if (($scope.membersList[i].firstname+$scope.membersList[i].lastname).toUpperCase() === ($stateParams.member).toUpperCase()){
-                    $scope.setMember($scope.membersList[i]);     
+            MembersService.getMembers({"filters[name]": $stateParams.member}).then(function(members) {                
+                if (members[0]){
+                    $scope.setMember(members[0]);     
                 }
-            }
+            });
         }
     }
 

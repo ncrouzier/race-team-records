@@ -135,7 +135,7 @@ module.exports = async function(app, qs, passport, async, _) {
    
   
 
-    // get a member
+    // get a system info
     app.get('/api/systeminfos/:name', async function(req, res) {
         try{
             SystemInfo.findOne({
@@ -164,6 +164,18 @@ module.exports = async function(app, qs, passport, async, _) {
 
         let query = Member.find();
         if (filters) { 
+            if (filters.name) {
+                console.log(filters.name)
+                query = query.where({$expr: {
+                    $eq: [{ $toLower: { $concat: ['$firstname', '$lastname'] } }, filters.name.toLowerCase()]
+                  }});
+            }
+            if (filters.firstname) {
+                query.where('firstname').equals(filters.firstname);
+            }
+            if(filters.lastname) {
+                query.where('lastname').equals(filters.lastname);
+            }
             if (filters.category) {
                 const datetobemaster = getAddDateToDate(new Date(), -40, 0, 0);
                 if (filters.category === 'Open') {

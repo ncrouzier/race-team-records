@@ -53,7 +53,7 @@
                         </tr>   
                     </thead>
                     <tbody>         
-                        <tr style="font-size:15px; line-height: 33px;" ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
+                        <tr style="font-size:15px; " ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
                             {{memberListcolumns[0][$index]}}
                             <td ng-if="memberListcolumns[0][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[0][$index])"><span>{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span></td><td ng-if="!memberListcolumns[0][$index]"></td>
                             <td ng-if="memberListcolumns[1][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[1][$index])"><span>{{memberListcolumns[1][$index].firstname}} {{memberListcolumns[1][$index].lastname}}</span></td><td ng-if="!memberListcolumns[1][$index]"></td>

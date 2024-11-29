@@ -55,11 +55,19 @@ app.directive('usaMap', ['$timeout', '$window', 'UtilsService','$state', functio
               },
               highlightBorderColor: 'red',
               popupTemplate: function(geo, data) {
-                return ['<div class="hoverinfo"><strong>',
-                  data.count + ' races ran in ' + geo.properties.name,
-                  '',
-                  '</strong></div>'
-                ].join('');
+                if(data.count > 1){
+                  return ['<div class="hoverinfo"><strong>',
+                    data.count + ' races ran in ' + geo.properties.name,
+                    '',
+                    '</strong></div>'
+                  ].join('');
+                }else{
+                  return ['<div class="hoverinfo"><strong>',
+                    data.count + ' race ran in ' + geo.properties.name,
+                    '',
+                    '</strong></div>'
+                  ].join('');
+                }        
               }
             },
             done: function(datamap) {
@@ -137,11 +145,19 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService','$state', funct
               },
               highlightBorderColor: 'red',
               popupTemplate: function(geo, data) {
-                return ['<div class="hoverinfo"><strong>',
-                  data.count + ' races ran in ' + geo.properties.name,
-                  '',
-                  '</strong></div>'
-                ].join('');
+                if(data.count > 1){
+                  return ['<div class="hoverinfo"><strong>',
+                    data.count + ' races ran in ' + geo.properties.name,
+                    '',
+                    '</strong></div>'
+                  ].join('');
+                }else{
+                  return ['<div class="hoverinfo"><strong>',
+                    data.count + ' race ran in ' + geo.properties.name,
+                    '',
+                    '</strong></div>'
+                  ].join('');
+                }        
               }
             },
             done: function(datamap) {

@@ -85,7 +85,7 @@
 					<!-- <li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li> -->
 					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-				        <%= user.email %> <span class="caret"></span>
+				        <%= user.username %> <span class="caret"></span>
 				      </a>
 				      <ul class="dropdown-menu" uib-dropdown-menu>
 				        <li><a ui-sref="/profile">Profile</a></li>
@@ -93,6 +93,26 @@
 				      </ul>
 				    </li>
 				</ul>
+			<%}else if (user && user.role === 'user') { %>
+				<ul class="nav navbar-nav">
+					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
+					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
+					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
+					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
+          			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>								
+				</ul>
+				<ul class="nav navbar-nav nav-submit-admin">
+					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
+				        <%= user.username %> <span class="caret"></span>
+				      </a>
+				      <ul class="dropdown-menu" uib-dropdown-menu>
+				        <li><a href="/logout">Logout</a></li>
+				      </ul>
+				    </li>
+				</ul>
+
 			<%}else{ %>
 				<ul class="nav navbar-nav" >
 					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
@@ -111,7 +131,7 @@
 		</nav>
 
 		<div ui-view></div>
-		<footer><div class="row"><div class="col-sm-5 text-left">Site created by <a class="hoverhand" ui-sref="/members({ member: 'NicolasCrouzier'})">Nicolas Crouzier</a>. <span class="">Want to support the site and its creator? <a class="bold red" href="https://www.paypal.com/donate/?business=KN2D558FKKYQQ&no_recurring=1&item_name=Support+the+maintenance+of+the+team+result+site+by+buying+me+a+coffee+or+helping+me+pay+Strava+premium+membership!+Thank+you!&currency_code=USD">Buy me a coffee!</a></span></div><div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">admin login</a></div><div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a title="Montgomery County Road Runners Club" href="http://www.mcrrc.org" target="_blank">MCRRC</a></div></div></footer>
+		<footer><div class="row"><div class="col-sm-5 text-left">Site created by <a class="hoverhand" ui-sref="/members({ member: 'NicolasCrouzier'})">Nicolas Crouzier</a>. <span class="">Want to support the site and its creator? <a class="bold red" href="https://www.paypal.com/donate/?business=KN2D558FKKYQQ&no_recurring=1&item_name=Support+the+maintenance+of+the+team+result+site+by+buying+me+a+coffee+or+helping+me+pay+Strava+premium+membership!+Thank+you!&currency_code=USD">Buy me a coffee!</a></span></div><div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">login</a></div><div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a title="Montgomery County Road Runners Club" href="http://www.mcrrc.org" target="_blank">MCRRC</a></div></div></footer>
 	</div>
 </body>
 

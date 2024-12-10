@@ -62,18 +62,21 @@ module.exports = function(passport) {
                     return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
                 } else {
     
+                    
+
                     // if there is no user with that email
                     // create the user
                     var newUser = new User();
                     // set the user's local credentials
                     newUser.email = email;
                     newUser.password = newUser.generateHash(password);
-    
+                    newUser.username = req.body.username;
                     // if we let users decide a role at signup
-                    if (req.body.role){
-                        newUser.role = req.body.role;   
-                    }
-                    
+                    // if (req.body.role){
+                    //     newUser.role = req.body.role;   
+                    // }
+                    //default to user 
+                    newUser.role = "user";
     
                     // save the user
                     try{

@@ -48,13 +48,12 @@ module.exports = async function(app, qs, passport, async, _) {
     // SIGNUP ==============================
     // =====================================
     // show the signup form
-    // app.get('/api/signup', function(req, res) {
-    //     console.log("caca");
-    //     // render the page and pass in any flash data if it exists
-    //     res.send({
-    //         message: req.flash('signupMessage')
-    //     });
-    // });
+    app.get('/api/signup', function(req, res) {
+        // render the page and pass in any flash data if it exists
+        res.send({
+            message: req.flash('signupMessage')
+        });
+    });
 
     app.post('/api/signup', function(req, res, next) {
         passport.authenticate('local-signup', function(err, user, info) {
@@ -2275,6 +2274,14 @@ function isAdminLoggedIn(req, res, next) {
     res.status(401).send("insufficient privileges");
 }
 
+function isUserLoggedIn(req, res, next) {
+    // if user is authenticated in the session and has an admin role, carry on
+    if (req.isAuthenticated() && ( req.user.role === 'user' || req.user.role === 'admin') ) {
+        return next();
+    }
+    // if they aren't redirect them to the home page
+    res.status(401).send("insufficient privileges");
+}
 
 function getAddDateToDate(date, years, months, days) {
     const resDate = new Date(date);

@@ -1698,7 +1698,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', isAdminLoggedIn, async function
 
 
      // get participation stats
-     app.get('/api/stats/participation', function(req, res) {
+     app.get('/api/stats/participation', isUserLoggedIn, function(req, res) {
         const startdateReq = parseInt(req.query.startdate);
         const enddateReq = parseInt(req.query.enddate);
         // let memberStatusReq = req.query.memberstatus;

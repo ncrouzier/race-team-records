@@ -23,6 +23,11 @@ var memberSchema = mongoose.Schema({
         time: Number,
         source: String
     }],
+    teamRequirementStats:{
+        year: Number,
+        raceCount: Number,
+        maxAgeGrade: mongoose.Schema.Types.Mixed
+    },
     createdAt: Date,
     updatedAt: Date
 });

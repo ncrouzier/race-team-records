@@ -330,7 +330,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         select: '-bio -personalBests',
         sort: 'firstname',
         limit: $scope.paramModel.limit
-    };
+        };
 
     async function initialLoad(member){
         // wait for async call to finish       

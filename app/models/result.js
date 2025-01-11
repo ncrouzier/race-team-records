@@ -59,46 +59,6 @@ const resultSchema = mongoose.Schema({
 
 });
 
-// var resultSchema = mongoose.Schema({
-//     race:{
-//         _id: mongoose.Schema.ObjectId,
-//         racename: String,
-//         racetype: {
-//             _id: mongoose.Schema.ObjectId,
-//             name: String,
-//             surface: String,
-//             meters: Number,
-//             miles: Number,
-//             isVariable: Boolean
-//         },
-//         racedate: Date
-//     },
-//     time: Number,
-//     ranking: {
-//         agerank: Number,
-//         agetotal: Number,
-//         genderrank: Number,
-//         gendertotal: Number,
-//         overallrank: Number,
-//         overalltotal: Number
-//     },
-//     members: [{
-//         _id: mongoose.Schema.ObjectId,
-//         firstname: String,
-//         lastname: String,
-//         sex: String,
-//         dateofbirth: Date
-//     }],
-//     category: String,
-//     comments: String,
-//     resultlink: String,
-//     agegrade: Number,
-//     is_accepted: Boolean,
-//     createdAt: Date,
-//     updatedAt: Date
-
-// });
-
 // keep track of when results are updated and created
 resultSchema.pre('save', function( next) {
     var date = Date.now();

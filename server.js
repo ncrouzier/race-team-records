@@ -31,6 +31,9 @@ var _ = require('underscore');
 
 var qs = require('querystring');
 
+const service = require('./app/service.js'); 
+const schedule = require('node-schedule');
+
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
 app.use(sslRedirect());
@@ -87,11 +90,26 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 // routes ======================================================================
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 
+
+
 // launch ======================================================================
 // app.listen(port);
 // app.listen(osport, osipaddress, function() {
 //     console.log('The magic happens on port ' + port);
 // });
+
+//update at startup and every day
+service.updateTeamRequirementStatsForAllMembers();
+const rule = new schedule.RecurrenceRule();
+rule.hour = 0;
+rule.minute = 1;
+rule.tz = 'Etc/GMT+5';
+const job = schedule.scheduleJob(rule, function(){
+    console.log("team requirement stats updated");
+    service.updateTeamRequirementStatsForAllMembers();    
+  });
+
+
 var server = app.listen(port, function() {
   console.log('Node app is running on port', port);
 });

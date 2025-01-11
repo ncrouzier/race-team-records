@@ -102,6 +102,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.paramModel.category = '.*';
     $scope.paramModel.limit = '';
     $scope.paramModel.memberStatus = 'current';
+    $scope.paramModel.showTeamRequirementProgress = false;
 
     // =====================================
     // ADMIN CONFIG ==================

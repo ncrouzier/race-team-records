@@ -41,6 +41,18 @@
                     </div>
                 </div>        
             </div>
+            <div ng-if="user.role == 'admin'" class="row btn-row">
+                <small>
+                <div class="col-md-3 col-sm-3 btn-col-member">
+                    <span>Show team requirements progress:</span>              
+                    <div class="btn-group">
+                        <button style="font-size: 12px; padding: 0px;" type="button" class="btn btn-primary" ng-model="paramModel.showTeamRequirementProgress" uib-btn-checkbox btn-checkbox-true="true" btn-checkbox-false="false">
+                            {{paramModel.showTeamRequirementProgress? "ON" :"OFF"}}
+                        </button>
+                    </div>
+                </div>  
+            </small>      
+            </div>
             <div class="row">
                 <div class="col-sm-12">
                 <table class = "memberListTable">
@@ -55,10 +67,10 @@
                     <tbody>         
                         <tr style="font-size:15px; " ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
                             {{memberListcolumns[0][$index]}}
-                            <td ng-if="memberListcolumns[0][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[0][$index])"><span>{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span><team-requirements ng-if="memberListcolumns[0][$index].teamRequirementStats" member="memberListcolumns[0][$index]"></team-requirements></td><td ng-if="!memberListcolumns[0][$index]"></td>
-                            <td ng-if="memberListcolumns[1][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[1][$index])"><span>{{memberListcolumns[1][$index].firstname}} {{memberListcolumns[1][$index].lastname}}</span><team-requirements ng-if="memberListcolumns[1][$index].teamRequirementStats" member="memberListcolumns[1][$index]"></team-requirements></td><td ng-if="!memberListcolumns[1][$index]"></td>
-                            <td ng-if="memberListcolumns[2][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[2][$index])"><span>{{memberListcolumns[2][$index].firstname}} {{memberListcolumns[2][$index].lastname}}</span><team-requirements ng-if="memberListcolumns[2][$index].teamRequirementStats" member="memberListcolumns[2][$index]"></team-requirements></td><td ng-if="!memberListcolumns[2][$index]"></td>
-                            <td ng-if="memberListcolumns[3][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[3][$index])"><span>{{memberListcolumns[3][$index].firstname}} {{memberListcolumns[3][$index].lastname}}</span><team-requirements ng-if="memberListcolumns[3][$index].teamRequirementStats" member="memberListcolumns[3][$index]"></team-requirements></td><td ng-if="!memberListcolumns[3][$index]"></td>              
+                            <td ng-if="memberListcolumns[0][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[0][$index])"><span>{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats" member="memberListcolumns[0][$index]"></team-requirements></td><td ng-if="!memberListcolumns[0][$index]"></td>
+                            <td ng-if="memberListcolumns[1][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[1][$index])"><span>{{memberListcolumns[1][$index].firstname}} {{memberListcolumns[1][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats" member="memberListcolumns[1][$index]"></team-requirements></td><td ng-if="!memberListcolumns[1][$index]"></td>
+                            <td ng-if="memberListcolumns[2][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[2][$index])"><span>{{memberListcolumns[2][$index].firstname}} {{memberListcolumns[2][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats" member="memberListcolumns[2][$index]"></team-requirements></td><td ng-if="!memberListcolumns[2][$index]"></td>
+                            <td ng-if="memberListcolumns[3][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[3][$index])"><span>{{memberListcolumns[3][$index].firstname}} {{memberListcolumns[3][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[3][$index].teamRequirementStats" member="memberListcolumns[3][$index]"></team-requirements></td><td ng-if="!memberListcolumns[3][$index]"></td>              
                           </tr>                    
                         </tbody>
                     </table>

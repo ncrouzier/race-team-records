@@ -102,6 +102,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.paramModel.category = '.*';
     $scope.paramModel.limit = '';
     $scope.paramModel.memberStatus = 'current';
+    $scope.paramModel.showTeamRequirementProgress = false;
 
     // =====================================
     // ADMIN CONFIG ==================
@@ -330,7 +331,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         select: '-bio -personalBests',
         sort: 'firstname',
         limit: $scope.paramModel.limit
-    };
+        };
 
     async function initialLoad(member){
         // wait for async call to finish       

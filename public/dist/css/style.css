@@ -7356,11 +7356,11 @@ footer {
 }
 @media (min-width: 768px) {
   .navbar-collapse.collapse {
-    display: block!important;
-    visibility: visible!important;
-    height: auto!important;
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
     padding-bottom: 0;
-    overflow: visible!important;
+    overflow: visible !important;
     padding-right: 0px;
     padding-left: 0px;
   }
@@ -7676,6 +7676,9 @@ footer {
   background: -ms-linear-gradient(left, #E1BB71 0%, #F7FBFC 55);
   background: linear-gradient(to right, #E1BB71 0%, #F7FBFC 55);
 }
+.notAchieved {
+  color: grey;
+}
 .ageworld {
   color: #F3DA1D;
 }
@@ -7944,5 +7947,34 @@ footer {
 .nav-tabs > li.active > a:hover {
   background-color: #006687;
   color: white;
+}
+.progress-bar {
+  width: 100%;
+  height: 15px;
+  background-color: #ccc;
+  overflow: hidden;
+  position: relative;
+}
+.progress-bar i {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.progress-bar .ageGradedRequirementMetStar {
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: black;
+}
+.progress-bar-fill {
+  height: 100%;
+}
+.progress-bar-fill.full {
+  background-color: #caf5ad;
+}
+.progress-bar-fill.full.complete {
+  background-color: #66FF00;
+}
+.progress-bar-fill.filling {
+  background-color: #595959;
 }
 

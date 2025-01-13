@@ -1,4 +1,5 @@
 @import "variables.less";
+
 body {
     padding-top: 5px;
     color: @gray;
@@ -16,13 +17,15 @@ footer {
     margin-left: 350px;
     margin-right: 0px;
     padding-left: 15px;
+
     >span {
         font-size: 25px;
         margin-top: 10px;
         font-family: BebasNeueRegular, Arial;
     }
-    >span >a,
-    >span >a:hover {
+
+    >span>a,
+    >span>a:hover {
         text-decoration: none;
         color: #2d5185;
     }
@@ -34,21 +37,23 @@ footer {
     margin-left: 350px;
     margin-right: 0px;
     padding-left: 15px;
+
     >span {
         font-size: 57px;
         margin-top: 10px;
         font-family: BebasNeueRegular, Arial;
     }
-    >span >a,
-    >span >a:hover {
+
+    >span>a,
+    >span>a:hover {
         text-decoration: none;
         color: #2d5185;
     }
 }
 
-.navimgbis{
+.navimgbis {
     height: 150px;
-    background-color: #fff;//#008cba;
+    background-color: #fff; //#008cba;
     margin-left: 0px;
     margin-right: 0px;
 }
@@ -57,9 +62,11 @@ footer {
     @media (min-width: @screen-md-min) {
         height: 250px;
     }
+
     @media (min-width: @screen-lg-min) {
         height: 250px;
     }
+
     height: 200px;
     display: flex;
     flex-direction: column;
@@ -68,56 +75,66 @@ footer {
     text-align: center;
     color: @brand-primary-dark;
     font-weight: 800;
-    
-    .titleBox{
+
+    .titleBox {
+
         // background-image: linear-gradient(to right, rgba(255,0,0,0), rgba(255,0,0,1));
         // padding: 10px;
         // background-color: white;
-        .titleTop{
+        .titleTop {
             font-size: 40px;
-            
+
         }
-        .titleBottom{
+
+        .titleBottom {
             font-size: 60px;
         }
     }
-    
+
 }
 
 .navimg {
-    &-1{
+    &-1 {
         // background: url('../../images/topcover.jpg') left top no-repeat;
         background-image: linear-gradient(to right, transparent, white 75%), url(../../images/topcover.jpg);
         // background-size: contain;
-      }
-    &-2{
-      background: url('../../images/topcover2.jpg') left top no-repeat;
-      background-size: contain;
     }
-    &-3{
-      background: url('../../images/topcover3.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-2 {
+        background: url('../../images/topcover2.jpg') left top no-repeat;
+        background-size: contain;
     }
-    &-4{
-      background: url('../../images/topcover4.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-3 {
+        background: url('../../images/topcover3.jpg') left top no-repeat;
+        background-size: contain;
     }
-    &-5{
-      background: url('../../images/topcover5.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-4 {
+        background: url('../../images/topcover4.jpg') left top no-repeat;
+        background-size: contain;
     }
-    &-6{
-      background: url('../../images/topcover6.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-5 {
+        background: url('../../images/topcover5.jpg') left top no-repeat;
+        background-size: contain;
     }
-    &-7{
-      background: url('../../images/topcover7.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-6 {
+        background: url('../../images/topcover6.jpg') left top no-repeat;
+        background-size: contain;
     }
-    &-8{
-      background: url('../../images/topcover8.jpg') left top no-repeat;
-      background-size: contain;
+
+    &-7 {
+        background: url('../../images/topcover7.jpg') left top no-repeat;
+        background-size: contain;
     }
+
+    &-8 {
+        background: url('../../images/topcover8.jpg') left top no-repeat;
+        background-size: contain;
+    }
+
     margin-left: 0px;
     margin-right: 0px;
 
@@ -125,27 +142,33 @@ footer {
         height: 250px;
         width: 100%;
     }
+
     @media (min-width: @screen-lg-min) {
         height: 250px;
         width: 100%;
     }
+
     height: 200px;
+
     .logo-stats {
         padding-top: 10px;
         padding-right: 20px;
-        color:#2d5185;
+        color: #2d5185;
         position: absolute;
         right: 0;
         top: 0;
         z-index: 1;
+
         a {
             color: #2d5185;
+
             &:hover {
                 text-decoration: none;
                 color: #2d5185;
             }
         }
     }
+
     .copyrightrow {
         margin-left: 0px;
         margin-right: 0px;
@@ -157,15 +180,20 @@ footer {
         right: 0;
         bottom: 0;
         font-size: 12px;
+
         @media (min-width: @screen-sm-min) {
             padding-top: 150px;
         }
+
         @media (min-width: @screen-md-min) {
             padding-top: 275px;
         }
+
         padding-top: 100px;
+
         a {
             color: #2d5185;
+
             &:hover {
                 text-decoration: none;
                 color: #2d5185;
@@ -188,13 +216,16 @@ footer {
         @media (min-width: @screen-sm-min) {
             padding-top: 165px;
         }
+
         @media (min-width: @screen-md-min) {
             padding-top: 215px;
         }
+
         @media (min-width: @screen-lg-min) {
             padding-top: 215px;
         }
     }
+
     // a {
     //     color: #FFFFFF;
     //     &:hover {
@@ -206,11 +237,11 @@ footer {
 
 .navbar-collapse.collapse {
     @media (min-width: 768px) {
-        display: block!important;
-        visibility: visible!important;
-        height: auto!important;
+        display: block !important;
+        visibility: visible !important;
+        height: auto !important;
         padding-bottom: 0;
-        overflow: visible!important;
+        overflow: visible !important;
         padding-right: 0px;
         padding-left: 0px;
     }
@@ -228,15 +259,17 @@ footer {
     @media (min-width: 768px) {
         float: right;
     }
+
     @media (max-width: 768px) {
         float: left;
     }
 }
 
-.navbar-inverse .navbar-nav >li >a {
+.navbar-inverse .navbar-nav>li>a {
     @media (max-width: @screen-md-min) {
         padding: 12.5px 10px;
     }
+
     &.submitmenu {
         font-size: 20px;
         font-weight: 700;
@@ -247,6 +280,7 @@ footer {
 .container {
     min-width: 992px; // just give up on mobile few for this version...
     min-height: 800px;
+
     .jumbotron {
         min-height: 730px;
         color: @brand-primary;
@@ -258,6 +292,7 @@ footer {
         padding-top: 15px;
         padding-left: 20px;
         padding-right: 20px;
+
         p {
             margin-bottom: 10px;
         }
@@ -278,6 +313,7 @@ footer {
 .results-list {
     font-size: 14px;
     color: @gray;
+
     .resultlistheader {
         font-size: 12px;
         border-bottom: thick solid;
@@ -285,32 +321,39 @@ footer {
         color: @blue-dark;
         text-align: left;
     }
+
     .resultlistrow {
         padding-top: 3px;
         padding-bottom: 3px;
+
         .timediff {
             color: @red;
         }
-        .resultEvent{
-          text-align: left;
-          font-size: 16px;
-          font-weight: normal;
-          word-wrap: break-word;
+
+        .resultEvent {
+            text-align: left;
+            font-size: 16px;
+            font-weight: normal;
+            word-wrap: break-word;
         }
-        .resultPace{
-          text-align: center;
-          font-size: 14px;
-          font-weight: bold;
+
+        .resultPace {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
         }
-        .resultTime{
-          text-align: center;
-          font-size: 20px;
-          font-weight: bold;
+
+        .resultTime {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
         }
-        .resultPaceTxt{
-          color:#808080;
-          font-size: 70%;
+
+        .resultPaceTxt {
+            color: #808080;
+            font-size: 70%;
         }
+
         // :hover{
         //   background-color: @brand-primary-very-light;
         // }
@@ -326,6 +369,7 @@ footer {
         font-weight: bold;
         color: @blue-dark;
     }
+
     .pblistrow {
         padding-top: 1px;
         padding-bottom: 1px;
@@ -333,19 +377,22 @@ footer {
     }
 }
 
-.member-picture { 
+.member-picture {
     @media (min-width: @screen-sm-min) {
         max-width: 347px;
         // max-width: 227.5px;
     }
+
     @media (min-width: @screen-md-min) {
         // max-width: 310px;
         max-width: 347px;
     }
+
     @media (min-width: @screen-lg-min) {
         // max-width: 385px;
         max-width: 421px;
     }
+
     // max-height:500px;
 }
 
@@ -353,6 +400,7 @@ footer {
     @media (max-width: @screen-md-min) {
         min-width: 150px;
     }
+
     @media (min-width: @screen-md-min) {
         min-width: 200px;
     }
@@ -362,9 +410,11 @@ footer {
     @media (max-width: @screen-lg-min) {
         padding: 6px 8px;
     }
+
     @media (max-width: @screen-md-min) {
         padding: 6px 4px;
     }
+
     padding: 6px 8px;
 }
 
@@ -372,6 +422,7 @@ footer {
     @media (max-width: @screen-lg-min) {
         padding: 6px 8px;
     }
+
     padding: 6px 8px;
 }
 
@@ -391,6 +442,7 @@ footer {
         height: 35px;
         line-height: 33px;
     }
+
     height: 36px;
     line-height: 33px;
 }
@@ -409,12 +461,15 @@ footer {
 
 .member-list {
     font-size: 14px;
+
     >.list-group {
         &-item {
             color: #606568;
+
             &-male {
                 background-color: @male-bg;
                 color: @male-color;
+
                 &.selected-class-name,
                 &:hover.selected-class-name {
                     border-width: 2px;
@@ -424,15 +479,18 @@ footer {
                     font-size: 18px;
                     color: #FFF;
                 }
+
                 &:hover:not(.selected-class-name) {
                     background-color: darken(@male-bg, 58%);
                     font-size: 16px;
                     color: #FFF;
                 }
             }
+
             &-female {
                 background-color: @female-bg;
                 color: @female-color;
+
                 &.selected-class-name,
                 &:hover.selected-class-name {
                     border-width: 2px;
@@ -442,6 +500,7 @@ footer {
                     font-size: 18px;
                     color: #FFF;
                 }
+
                 &:hover:not(.selected-class-name) {
                     background-color: darken(@female-bg, 58%);
                     font-size: 16px;
@@ -560,6 +619,10 @@ footer {
     background: linear-gradient(to right, @bronze 0%, @brand-primary-very-light 55);
 }
 
+.notAchieved {
+    color: grey;
+}
+
 .ageworld {
     color: @gold;
 }
@@ -580,8 +643,8 @@ footer {
     font-weight: bold;
 }
 
-.italic{
-  font-style: italic;
+.italic {
+    font-style: italic;
 }
 
 .black {
@@ -634,17 +697,17 @@ footer {
 }
 
 .searchclear {
-    cursor:pointer;
-    color:#ccc;
-    position:relative;
-    right:21px;
+    cursor: pointer;
+    color: #ccc;
+    position: relative;
+    right: 21px;
 }
 
-.raceTypeClear{
-    cursor:pointer;
-    color:#ccc;
-    position:relative;
-    right:42px;
+.raceTypeClear {
+    cursor: pointer;
+    color: #ccc;
+    position: relative;
+    right: 42px;
 }
 
 .ranking-tooltip {
@@ -652,10 +715,12 @@ footer {
         font-size: 1.3em;
         font-weight: bold;
     }
+
     &-rank {
         font-size: 1.3em;
         color: #FF8300;
-        > .ordinal_suffix {
+
+        >.ordinal_suffix {
             font-style: italic;
             vertical-align: super;
             font-size: 0.6em;
@@ -667,6 +732,7 @@ footer {
     &-right-margin {
         margin-right: 0px;
     }
+
     &-left-margin {
         margin-left: 0px;
     }
@@ -686,9 +752,11 @@ footer {
     vertical-align: middle;
     padding-top: 5px;
     padding-bottom: 5px;
+
     &:first-child {
         padding-left: 5px;
     }
+
     p {
         margin-bottom: 0px !important;
     }
@@ -706,6 +774,7 @@ footer {
 
 .bulkforms {
     padding-top: 20px;
+
     .bulktable {
         width: 100%;
         font-size: 10px;
@@ -716,41 +785,47 @@ footer {
     background-color: @red-bg;
 }
 
-.daterangecol{
-  padding-right: 0px;
-}
-.daterangeoptioncol{
-  padding-left: 5px;
-  padding-right: 5px;
-}
-.daterangeoptionbutton{
-  padding-left: 5px;
-  padding-right: 5px;
+.daterangecol {
+    padding-right: 0px;
 }
 
-.recordsoptionbutton{
-  padding-left: 5px;
-  padding-right: 5px;
-  &-1{
-    @media (min-width: @screen-lg-min) {
-        max-width: 225px;
+.daterangeoptioncol {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.daterangeoptionbutton {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.recordsoptionbutton {
+    padding-left: 5px;
+    padding-right: 5px;
+
+    &-1 {
+        @media (min-width: @screen-lg-min) {
+            max-width: 225px;
+        }
     }
-  }
-  &-2{
-    @media (min-width: @screen-lg-min) {
-        max-width: 120px;
+
+    &-2 {
+        @media (min-width: @screen-lg-min) {
+            max-width: 120px;
+        }
     }
-  }
-  &-3{
-    @media (min-width: @screen-lg-min) {
-        min-width: 125px;
+
+    &-3 {
+        @media (min-width: @screen-lg-min) {
+            min-width: 125px;
+        }
     }
-  }
-  &-4{
-    @media (min-width: @screen-lg-min) {
-        min-width: 195px;
+
+    &-4 {
+        @media (min-width: @screen-lg-min) {
+            min-width: 195px;
+        }
     }
-  }
 
 
 }
@@ -779,25 +854,25 @@ footer {
     background-color: @gray-lighter;
 }
 
-.resultIcons{
-  margin-right: 5px;
+.resultIcons {
+    margin-right: 5px;
 }
 
-.past-member{
+.past-member {
     color: rgb(167, 58, 58);
 }
 
 
-.memberListTable{
+.memberListTable {
     background-color: white;
-    table-layout:fixed;
-    width: 100%; 
+    table-layout: fixed;
+    width: 100%;
     border: rgb(221, 221, 221);
     border-width: 1px;
     border-collapse: collapse;
 }
 
-.memberListHeader{
+.memberListHeader {
     padding: 0.5em;
     color: @blue-dark;
     border: 1px;
@@ -805,31 +880,32 @@ footer {
     border-color: rgb(221, 221, 221);
     border-bottom-color: @blue-dark;
     border-style: solid;
-    
+
 }
 
-.memberListCell{
+.memberListCell {
     padding: 0.5em;
     border: 1px;
     border-style: solid;
     border-color: rgb(221, 221, 221);
     font-size: 16px;
     font-weight: 300;
-    &:hover{
-        
+
+    &:hover {
+
         background-color: @brand-primary-dark;
         font-size: 18;
         color: #FFF;
         font-weight: bold;
     }
-    
+
 }
 
 .memberListCell:empty {
     background-color: red
 }
 
-.raceCountBox{
+.raceCountBox {
     display: inline-block;
     border: 1px solid @brand-primary-dark;
     border-radius: 10%;
@@ -841,13 +917,13 @@ footer {
     margin-right: 2px;
 }
 
-.pbBox{
+.pbBox {
     display: inline-block;
     margin-right: 2px;
 }
 
 
-.showMoreButton{
+.showMoreButton {
     display: inline-block;
     border: 1px solid @brand-primary-dark;
     padding: 1px;
@@ -857,22 +933,23 @@ footer {
     background-color: @brand-primary-dark;
     margin: 2px;
     cursor: pointer;
-    font-size: 10px; 
-    float:right;
+    font-size: 10px;
+    float: right;
 }
 
-.activePbTab .nav >li >a {
+.activePbTab .nav>li>a {
     padding: 5px 5px;
     // color: white;
     // background-color: @brand-primary-dark;
 }
 
- .nav-tabs {
-    >li > a{
+.nav-tabs {
+    >li>a {
         margin-bottom: 0px;
         margin-right: 1px;
+
         // border-radius: 5% 5% 0 0;
-        &:hover{
+        &:hover {
             margin-bottom: 0px;
             // border-radius: 5% 5% 0 0;
             border: 1px solid @brand-primary-dark;
@@ -880,16 +957,18 @@ footer {
             background-color: @brand-primary-very-light;
         }
     }
-    >li.active > a:focus{
+
+    >li.active>a:focus {
         background-color: @brand-primary-dark;
         color: white;
         margin-bottom: 0px;
     }
-    
-    > li.active > a{
+
+    >li.active>a {
         color: white;
         background-color: @brand-primary-dark;
-        &:hover{
+
+        &:hover {
             background-color: @brand-primary-dark;
             color: white;
         }
@@ -897,5 +976,38 @@ footer {
 }
 
 
+.progress-bar {
+    width: 100%;
+    height: 15px;
+    background-color: #ccc;
+    overflow: hidden;
+    position: relative;
 
+    i {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
 
+    .ageGradedRequirementMetStar {
+        -webkit-text-stroke-width: 1px;
+        -webkit-text-stroke-color: black;
+    }
+}
+
+.progress-bar-fill {
+    height: 100%;
+
+    &.full {
+        background-color: #caf5ad;
+
+        &.complete {
+            background-color: #66FF00
+        }
+    }
+
+    &.filling {
+        background-color: @gray-darkish;
+    }
+}

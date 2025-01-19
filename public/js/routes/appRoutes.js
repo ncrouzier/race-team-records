@@ -90,6 +90,14 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/stats.html');
                 gtag('event', 'page_view');
             }
+        }).state('/tools', {
+            url: "/tools",
+            templateUrl: "views/tools.html",
+            controller: 'ToolsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/tools.html');
+                gtag('event', 'page_view');
+            }
         }).state('/report', {
             url: "/report",
             templateUrl: "views/report.html",

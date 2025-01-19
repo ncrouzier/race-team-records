@@ -1,0 +1,74 @@
+<div class="jumbotron">
+    <form name="myForm" ng-submit="submitForm()">
+        <div class="row btn-row">
+            <div class="col-md-12 col-sm-12 btn-col-member">
+                <span>Select age and gender:</span>
+            </div>
+        </div>
+        <div class="row btn-row" style="display: flex;">
+
+            <div class="col-md-12 col-sm-2 " style="display: inline-flex;">
+                <div style="margin-right: 10px;">
+                    <span>Age:</span>
+                    <br>
+                    <input class="agegradeAgeInput form-control" type="number" id="age" name="age"
+                        ng-model="formData.age" min="5" max="110" required>
+                    
+                </div>
+
+                <div style="margin-right: 10px; min-width: 140px;">
+                    <span>Gender:</span>
+                    <br>
+                    <div class="btn-group">
+                        <label class="btn-ag-gender btn btn-primary" ng-model="formData.sex" ng-change="getMembers()"
+                            uib-btn-radio="'Male'">Men</label>
+                        <label class="btn-ag-gender btn btn-primary" ng-model="formData.sex" ng-change="getMembers()"
+                            uib-btn-radio="'Female'">Women</label>
+                    </div>
+                </div>
+                <div style="margin-right: 10px;">
+                    <br>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> Lookup </button>
+                </div>
+                <div ng-show="hasOtherType()" style="margin-right: 10px;">
+                    <br>
+                    <button  type="button" class="btn btn-primary" ng-click="switchType()">See {{currentType === 'Road' ? 'track' :
+                        'road'}} distances</button>
+                </div>
+            </div>
+            
+        </div>
+        <div class="row btn-row">
+            <div class="col-md-12 col-sm-2 " style="display: inline-flex;">
+            <small>
+                <span ng-show="myForm.age.$error.min">Age must be at least 5</span>
+                <span ng-show="myForm.age.$error.max">Age must be no more than 110</span>
+            </small>
+            </div>
+        </div>
+    </form>
+    <div ng-if="roadTableData || trackTableData">
+        <table class="agegradeTable">
+            <thead>
+                <th class="agegradeHeader">Distances ({{currentType === 'Road' ? 'road' : 'track'}})</th>
+                <th colspan="2" class="agegradeHeader">70% Time and Pace <i class="ageregional fa fa-star"></i></th>
+                <th colspan="2" class="agegradeHeader">80% Time and Pace <i class="agenational fa fa-star"></i></th>
+                <th colspan="2" class="agegradeHeader">90% Time and Pace <i class="ageworld fa fa-star"></i></th>
+            </thead>
+            <tbody>
+                <tr class="agegradeRow distanceName" ng-repeat="(key, value) in getDistances()">
+                    <td class="agegradeCell">{{(key | racenameToDistance).name}}</td>
+                    <td class="agegradeCell time">{{value*100/.70 | secondsToTimeString}} </td>
+                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
+                        milesToPaceforAgegrade:value*100/.70}} <small class="resultPaceTxt">min/mi</small></td>
+                    <td class="agegradeCell time">{{value*100/.80 | secondsToTimeString}}</td>
+                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
+                        milesToPaceforAgegrade:value*100/.80}} <small class="resultPaceTxt">min/mi</small></td>
+                    <td class="agegradeCell time">{{value*100/.90 | secondsToTimeString}}</td>
+                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
+                        milesToPaceforAgegrade:value*100/.90}} <small class="resultPaceTxt">min/mi</small></td>
+
+                </tr>
+        </table>
+    </div>
+</div>

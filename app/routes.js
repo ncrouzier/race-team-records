@@ -1314,7 +1314,27 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         
     });
 
-    
+    app.get('/api/agegrade', async function (req, res) {
+        try {
+            const sex = req.query.sex.toLowerCase();
+            const age = req.query.age;
+            const road = await service.getAgeGrading(sex,
+                age,
+                "road",
+                new Date()
+            );
+            const track = await service.getAgeGrading(sex,
+                age,
+                "track",
+                new Date()
+            );
+
+            res.json([road,track]);
+        } catch (err) {
+            res.send(err);
+        }
+
+    });
 
    
 

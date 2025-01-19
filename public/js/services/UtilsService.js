@@ -23,6 +23,13 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular', function(Resta
             });
     };
 
+    factory.getAgeGrade = function(params){
+        return Restangular.one('agegrade').get(params).then(function(agegrade) {
+            return agegrade;
+        });
+       
+    };
+
     factory.getLocationInfo = function(params) {
       return Restangular.one('locations').get(params).then(function(results) {
           return results;

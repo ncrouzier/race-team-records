@@ -1011,3 +1011,68 @@ footer {
         background-color: @gray-darkish;
     }
 }
+
+
+.agegradeAgeInput{
+    -webkit-appearance: none;
+    margin: 0;
+    -moz-appearance: textfield;
+    width: 70px;
+    display: inline;
+}
+
+.agegradeGenderInput{
+    .select2-container .select2-choice {   
+        height: 39px;
+        line-height: 33px;
+    }
+}
+.agegradeTable {
+    background-color: white;
+    table-layout: fixed;
+    width: 100%;
+    border: rgb(221, 221, 221);
+    border-width: 1px;
+    border-collapse: collapse;
+}
+
+.agegradeHeader {
+    padding: 0.5em;
+    color: @blue-dark;
+    border: 1px;
+    border-bottom: 5px;
+    border-color: rgb(221, 221, 221);
+    border-bottom-color: @blue-dark;
+    border-style: solid;
+
+}
+
+.agegradeCell {
+    padding: 0.5em;
+    border: 1px;
+    border-style: solid;
+    border-color: rgb(221, 221, 221);
+    font-size: 16px;
+    font-weight: 300;    
+
+    &.distanceName{     
+     
+    }
+    &.time{
+        color:black;
+        border-right: 0px;
+    }
+    &.pace{
+        color:black;
+        border-left: 0px;
+        text-align: center;
+    }
+}
+
+.agegradeRow {
+    &:hover {
+        background-color: @brand-primary-dark;
+        font-size: 18;
+        color: #FFF;
+    }
+}

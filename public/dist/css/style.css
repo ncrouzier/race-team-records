@@ -8000,6 +8000,14 @@ footer {
   padding: 0.5em;
   color: #006687;
   border: 1px;
+}
+.agegradeHeader.top {
+  border-bottom: 1px;
+  border-color: #dddddd;
+  border-bottom-color: #006687;
+  border-style: solid;
+}
+.agegradeHeader.bottom {
   border-bottom: 5px;
   border-color: #dddddd;
   border-bottom-color: #006687;
@@ -8022,7 +8030,7 @@ footer {
   border-left: 0px;
   text-align: center;
 }
-.agegradeRow:hover {
+.agegradeRow:hover td {
   background-color: #006687;
   font-size: 18;
   color: #FFF;

@@ -38,6 +38,7 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
             }else{
                 $scope.currentType = 'Road';
             }
+            $scope.currentAge = $scope.formData.age;
         });
     };
    

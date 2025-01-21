@@ -1040,10 +1040,20 @@ footer {
     padding: 0.5em;
     color: @blue-dark;
     border: 1px;
-    border-bottom: 5px;
-    border-color: rgb(221, 221, 221);
-    border-bottom-color: @blue-dark;
-    border-style: solid;
+
+    &.top {
+        border-bottom: 1px;
+        border-color: rgb(221, 221, 221);
+        border-bottom-color: @blue-dark;
+        border-style: solid;
+    }
+
+    &.bottom {
+        border-bottom: 5px;
+        border-color: rgb(221, 221, 221);
+        border-bottom-color: @blue-dark;
+        border-style: solid;
+    }
 
 }
 
@@ -1070,7 +1080,7 @@ footer {
 }
 
 .agegradeRow {
-    &:hover {
+    &:hover td {
         background-color: @brand-primary-dark;
         font-size: 18;
         color: #FFF;

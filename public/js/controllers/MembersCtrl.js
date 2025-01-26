@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -97,12 +97,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // =====================================
     // FILTER PARAMS CONFIG ================
     // =====================================
-    $scope.paramModel = {};
-    $scope.paramModel.sex = '.*';
-    $scope.paramModel.category = '.*';
-    $scope.paramModel.limit = '';
-    $scope.paramModel.memberStatus = 'current';
-    $scope.paramModel.showTeamRequirementProgress = false;
+
+    if (localStorageService.get('members.options')){
+        $scope.paramModel = localStorageService.get('members.options');
+    }else{
+        $scope.paramModel = {};
+        $scope.paramModel.sex = '.*';
+        $scope.paramModel.category = '.*';
+        // $scope.paramModel.limit = '';
+        $scope.paramModel.memberStatus = 'current';
+    }
 
     // =====================================
     // ADMIN CONFIG ==================
@@ -252,8 +256,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 "filters[sex]": $scope.paramModel.sex,
                 "filters[category]": $scope.paramModel.category,
                 "filters[memberStatus]": $scope.paramModel.memberStatus,
-                sort: 'firstname',
-                limit: $scope.paramModel.limit
+                sort: 'firstname'
+                // limit: $scope.paramModel.limit
             };
         } else {
             params = params_;
@@ -270,6 +274,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 $scope.memberListcolumns[columnIndex].push(person);
               });              
         });
+
+        localStorageService.set('members.options', $scope.paramModel);
     };
 
     $scope.getMaxColumnSize = function() {
@@ -324,18 +330,18 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         // $scope.paramModel.memberStatus = 'all';
     }
 
-    var defaultParams = {
-        "filters[sex]": $scope.paramModel.sex,
-        "filters[category]": $scope.paramModel.category,
-        "filters[memberStatus]": $scope.paramModel.memberStatus,
-        select: '-bio -personalBests',
-        sort: 'firstname',
-        limit: $scope.paramModel.limit
-        };
+    // var defaultParams = {
+    //     "filters[sex]": $scope.paramModel.sex,
+    //     "filters[category]": $scope.paramModel.category,
+    //     "filters[memberStatus]": $scope.paramModel.memberStatus,
+    //     select: '-bio -personalBests',
+    //     sort: 'firstname',
+    //     limit: $scope.paramModel.limit
+    //     };
 
-    async function initialLoad(member){
+    async function initialLoad(){
         // wait for async call to finish       
-        await $scope.getMembers(defaultParams);
+        await $scope.getMembers( $scope.paramModel);
 
         if($stateParams.member){
             MembersService.getMembers({"filters[name]": $stateParams.member}).then(function(members) {                

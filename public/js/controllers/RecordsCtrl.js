@@ -28,7 +28,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         }
 
         //save selection in storage
-        localStorageService.set('recordsParams', $scope.paramModel);
+        localStorageService.set('records.options', $scope.paramModel);
 
         $analytics.eventTrack('viewRecords', {
             category: 'Records',
@@ -70,8 +70,8 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     $scope.resultSize = [3, 5, 10, 20];
     $scope.paramModel = {};
     //load storage params and records if existing, if not set defaults
-    if (localStorageService.get('recordsParams')){
-        $scope.paramModel = localStorageService.get('recordsParams');
+    if (localStorageService.get('records.options')){
+        $scope.paramModel = localStorageService.get('records.options');
         $scope.getResults();
     }else{
         $scope.paramModel.sex = '.*';
@@ -89,8 +89,6 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     }).then(function(racetypes) {
         $scope.racetypesList =racetypes;
     });
-
-
 
 
 

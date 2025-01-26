@@ -167,6 +167,16 @@ app.filter('milesToPaceforAgegrade', function () {
     };
 });
 
+app.filter('timeToAgeGrade', function () {
+    return function (time,timeStandard) {
+        //round up!
+        var timeInSeconds =  (time.hours ? time.hours*3600 :  0) + (time.minutes ? time.minutes*60 : 0) + (time.seconds ? time.seconds : 0);        
+        if (timeInSeconds === 0) return "";
+        return (timeStandard/timeInSeconds * 100).toFixed(2)+"%";
+       
+    };
+});
+
 app.filter('legToSwimPace', function () {
     return function (leg) {
         //round up!

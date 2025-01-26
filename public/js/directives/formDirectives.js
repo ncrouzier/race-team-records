@@ -76,6 +76,30 @@ app.directive('onlyDigits', function() {
     };
 });
 
+app.directive('onlyDigitsAgeGradeTime', function() {
+    return {
+        require: 'ngModel',
+        restrict: 'A',
+        link: function(scope, element, attr, ctrl) {
+            function inputValue(val) {
+                if (val || val === "") {
+                    if (val === "") {
+                        return 0;
+                    }
+                    var digits = val.replace(/[^0-9]/g, '');
+                    if (digits !== val) {
+                        ctrl.$setViewValue(digits);
+                        ctrl.$render();
+                    }
+                    return parseInt(digits, 10);
+                }
+                return undefined;
+            }
+            ctrl.$parsers.push(inputValue);
+        }
+    };
+});
+
 app.directive('onlyDecimals', function() {
     return {
         require: 'ngModel',

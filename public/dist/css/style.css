@@ -8018,14 +8018,21 @@ footer {
   border: 1px;
   border-style: solid;
   border-color: #dddddd;
-  font-size: 16px;
-  font-weight: 300;
+}
+.agegradeCell.customtime {
+  text-align: left;
+  font-size: 12px;
+  color: black;
 }
 .agegradeCell.time {
+  font-size: 16px;
+  font-weight: 300;
   color: black;
   border-right: 0px;
 }
 .agegradeCell.pace {
+  font-size: 16px;
+  font-weight: 300;
   color: black;
   border-left: 0px;
   text-align: center;

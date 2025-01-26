@@ -18,7 +18,9 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
         };
     }
 
-    
+    $scope.getAgeGrade = function (time,ref) {
+        return $filter('timeToAgeGrade')(time, ref,false);
+    };
    
 
     $scope.getYears = function () {

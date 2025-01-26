@@ -8042,4 +8042,7 @@ footer {
   font-size: 18;
   color: #FFF;
 }
+.agegradeRow:hover td input {
+  color: black;
+}
 

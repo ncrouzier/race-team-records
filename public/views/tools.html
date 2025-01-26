@@ -76,10 +76,10 @@
                         <input type="text" style="width: 29px;" ng-model="time.hours" only-digits class=" text-left" placeholder="0">:<input
                             type="text" style="width: 29px;" ng-model="time.minutes" only-digits-for-min-sec class=" text-left"
                             placeholder="0">:<input type="text" style="width: 29px;" ng-model="time.seconds" only-digits-for-min-sec
-                            class="  text-left" placeholder="0">
+                            class="text-left" placeholder="0">
                         <span ng-if="time" class="resultPaceTxt">{{time| timeToAgeGrade:value:true}}</span>
-                        <i ng-if="getAgeGrade(time, value,false) >=70 && getAgeGrade(time, value,false) <80" class="ageregional fa fa-star"></i>
-                        <i ng-if="getAgeGrade(time, value,false) >=80 && getAgeGrade(time, value,false) <90"class="agenational fa fa-star"></i>
+                        <i ng-if="getAgeGrade(time, value,false) >=70 && getAgeGrade(time, value,false)<80" class="ageregional fa fa-star"></i>
+                        <i ng-if="getAgeGrade(time, value,false) >=80 && getAgeGrade(time, value,false)<90"class="agenational fa fa-star"></i>
                         <i ng-if="getAgeGrade(time, value,false) >=90"class="ageworld fa fa-star"></i>
                     </td>
                     </tr>

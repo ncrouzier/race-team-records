@@ -260,7 +260,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 // limit: $scope.paramModel.limit
             };
         } else {
-            params = params_;
+            params = {
+                "filters[sex]": params_.sex,
+                "filters[category]": params_.category,
+                "filters[memberStatus]": params_.memberStatus,
+                sort: 'firstname'
+            };
         }
 
         await MembersService.getMembers(params).then(function(members) {

@@ -15,6 +15,18 @@ app.directive('selectOnClick', function($window) {
   };
 });
 
+app.directive('imageonload', function() {
+  return {
+      restrict: 'A',
+      link: function(scope, element, attrs) {
+          element.bind('load', function() {
+              //call the function that was passed
+              scope.$apply(attrs.imageonload);
+          });
+      }
+  };
+});
+
 app.directive('usaMap', ['$timeout', '$window', 'UtilsService','$state', function($timeout, $window, UtilsService,$state) {
   return {
     restrict: 'EA',

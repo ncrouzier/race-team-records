@@ -165,10 +165,17 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         // console.log("call");
     };
 
+    $scope.imageLoaded = function() {
+        $scope.imageLoading = false;
+      };
+
     // set the current member to the display panel
     $scope.setMember = async function(member_param) { 
        if (member_param === undefined) return;
-       
+
+       $scope.currentMember = null;
+       $scope.imageLoading = true;
+
        $scope.sortCriteria = "race.racedate";
        $scope.sortDirection = '-';
 
@@ -216,14 +223,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             });
         });
         
-
-        // $state.current.reloadOnSearch = false;
-        // $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
-        // $timeout(function () {
-        //   $state.current.reloadOnSearch = undefined;
-        // });
-
-        // $scope.activeTab = 1;
+       
         
     };
 

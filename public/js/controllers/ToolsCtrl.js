@@ -5,6 +5,8 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
         $scope.user = user;
     });
 
+    $scope.currentType = 'Road';
+
     $scope.$watch('formData.age', function (user) {
         if ($scope.formData.age >= 5 && $scope.formData.age <= 110 && $scope.formData.sex) {
             $scope.submitForm();
@@ -18,7 +20,7 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
         };
     }
 
-    $scope.getAgeGrade = function (time,ref) {
+    $scope.getAgeGrades = function (time,ref) {
         return $filter('timeToAgeGrade')(time, ref,false);
     };
    
@@ -51,7 +53,7 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
                 $scope.trackTableData = agegrade[1];
                 if (!$scope.roadTableData) {
                     $scope.currentType = 'Track';
-                } else {
+                }else if (!$scope.trackTableData) {
                     $scope.currentType = 'Road';
                 }
                 $scope.currentAge = $scope.formData.age;

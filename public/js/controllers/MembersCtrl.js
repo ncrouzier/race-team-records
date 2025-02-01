@@ -180,11 +180,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         // get the member details if this is just a "light member object"
         let fullMember;
         if (member_param.bio === undefined) {
-            fullMember = await MembersService.getMember(member_param._id);
-            // .then(function(fullMember) {
-                // $scope.currentMember = fullMember;
-                // $scope.activeTab = 1;
-            // });     
+            fullMember = await MembersService.getMember(member_param._id); 
         }else{
             fullMember = member_param;
         }
@@ -256,6 +252,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 "filters[sex]": $scope.paramModel.sex,
                 "filters[category]": $scope.paramModel.category,
                 "filters[memberStatus]": $scope.paramModel.memberStatus,
+                select: '-bio -personalBests',
                 sort: 'firstname'
                 // limit: $scope.paramModel.limit
             };
@@ -264,6 +261,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 "filters[sex]": params_.sex,
                 "filters[category]": params_.category,
                 "filters[memberStatus]": params_.memberStatus,
+                select: '-bio -personalBests',
                 sort: 'firstname'
             };
         }

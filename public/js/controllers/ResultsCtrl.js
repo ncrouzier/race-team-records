@@ -197,7 +197,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
     $scope.autoconvert = true;
     MembersService.getMembers({
-        sort: 'memberStatus firstname'
+        sort: 'memberStatus firstname',
+        select: '-bio -personalBests -teamRequirementStats'
     }).then(function(members) {
         $scope.membersList = members;
 

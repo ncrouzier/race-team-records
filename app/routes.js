@@ -456,6 +456,8 @@ module.exports = async function(app, qs, passport, async, _) {
             query = query.where('members._id').equals(member._id);
         }
 
+        query = query.select("-createdAt -updatedAt");
+
         try{
             query.exec().then(results =>{       
                 let filteredResult = results;

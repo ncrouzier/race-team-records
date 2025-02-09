@@ -895,6 +895,7 @@ function racenameToDistance(name) {
         '8k': {name: '8K', meters: 8000, miles: 4.97097},
         '5 miles': {name: '5 miles', meters: 8046.7, miles: 5 },
         '10k': {name: '10K', meters: 10000, miles: 6.214 },
+        '7 miles': {name: '7 miles', meters:  12093.4, miles: 7 },
         '10000m': {name: '10,000m', meters: 10000, miles: 6.214 },
         '10 miles': {name: '10 miles', meters: 16093.4, miles: 10 },
         '12k': {name: '12K', meters: 12000, miles: 7.457 },

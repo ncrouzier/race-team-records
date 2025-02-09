@@ -4,8 +4,11 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
     });
-    // var members = Restangular.all('members');
 
+    $scope.$watch('paramModel', function (user) {
+        console.log('dd');
+        localStorageService.set('members.options', $scope.paramModel);
+    },true);
 
     $scope.sortBy = function (criteria) {
         if ($scope.sortCriteria === criteria) {
@@ -278,7 +281,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
               });              
         });
 
-        localStorageService.set('members.options', $scope.paramModel);
+        
     };
 
     $scope.getMaxColumnSize = function() {

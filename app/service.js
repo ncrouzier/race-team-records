@@ -439,8 +439,10 @@ module.exports = {
         if (raceSurface === "road") {
             if (new Date(raceDate).getFullYear() < 2020) {
                 version = "2015";
-            } else {
+            } else if (new Date(raceDate).getFullYear() < 2025){
                 version = "2020";
+            }else{ 
+                version = "2025";
             }
         }
         if (raceSurface === "track") {

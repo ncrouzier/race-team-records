@@ -486,8 +486,10 @@ module.exports = {
         if (member) {
             //only update team requirement stats for current members
             if(member.memberStatus === 'past'){
-                member.teamRequirementStats = undefined;
-                await member.save();
+                if ( member.teamRequirementStats != undefined){
+                    member.teamRequirementStats = undefined;
+                    await member.save();
+                }                
                 return null;
             }
             const currentYear = new Date().getFullYear();

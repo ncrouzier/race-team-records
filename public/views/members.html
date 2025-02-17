@@ -217,13 +217,13 @@
                                 <h3 style="margin-top:10px">{{currentMember.firstname}}'s Results ({{currentMemberResultList.length}}):</h3>
                                 <div class="btn-group" style="padding-bottom: 4px;">
                                     <span><input ng-model="searchQuery" class="form-control" type="text" placeholder="Filter results" style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{searchQuery}}"><span class="searchclear fa fa-times-circle" ng-show="searchQuery" ng-click="searchQuery=''"></span>                                    
-                                    <ui-select ng-model="paramModel.racetype"  theme="select2" style="min-width: 300px; bottom: 2px;">                                        
+                                    <ui-select ng-model="paramModelMember.racetype"  theme="select2" style="min-width: 300px; bottom: 2px;">                                        
                                         <ui-select-match  placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>                                        
                                         <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                                             <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
                                         </ui-select-choices>
                                     </ui-select>
-                                    <span class="raceTypeClear fa fa-times-circle" ng-show="paramModel.racetype" ng-click="paramModel.racetype=''"></span> 
+                                    <span class="raceTypeClear fa fa-times-circle" ng-show="paramModelMember.racetype" ng-click="paramModelMember.racetype=''"></span> 
                                 </div>
                                 <ul class="results-list list-group">
                                     <li class="list-group-item text-left resultlistheader" ng-show="currentMemberResultList.length >0">
@@ -251,7 +251,8 @@
                                             </div>
                                         </div>
                                     </li>
-                                    <li dir-paginate="result in currentMemberResultList | resultSuperFilter: searchQuery:paramModel.racetype  | itemsPerPage: 10" current-page="pagination.current" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    
+                                    <li dir-paginate="result in currentMemberResultList | resultSuperFilter: searchQuery:paramModelMember.racetype  | itemsPerPage: 10" current-page="pagination.current" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                         <div class="row">
                                             <div class="col-sm-5" style="line-height: 1.1;">
                                                 <span class="hoverhandandunderline resultEvent" uib-tooltip="{{result | membersNamesWithAgeFilter}}" title="view race results" ng-click="showRaceModal(result.race)">{{ result.race.racename}}</span> <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>

@@ -6,7 +6,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     });
 
     $scope.$watch('paramModel', function (user) {
-        console.log('dd');
         localStorageService.set('members.options', $scope.paramModel);
     },true);
 
@@ -100,7 +99,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // =====================================
     // FILTER PARAMS CONFIG ================
     // =====================================
-
+   
     if (localStorageService.get('members.options')){
         $scope.paramModel = localStorageService.get('members.options');
     }else{
@@ -186,6 +185,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
        $scope.pagination = {
             current: 1
        };  
+       //reset race type selection
+       $scope.paramModelMember = {};
 
         // get the member details if this is just a "light member object"
         let fullMember;

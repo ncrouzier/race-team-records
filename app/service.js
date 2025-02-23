@@ -12,7 +12,7 @@ const AgeGrading = require('./models/agegrading');
 module.exports = {
 
 
-    postResultSave: async function (member) {
+    updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
         await this.updateTeamRequirementStats(member);
 

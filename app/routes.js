@@ -337,7 +337,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 member.memberStatus = req.body.memberStatus;
                 member.membershipDates = req.body.membershipDates;
                 try{
-                    member.save().then(() => {       
+                    member.save().then(async () => {       
                         try{
                             Result.find({'members._id': member._id}).then(results => {                                
                                 for (const resultElement of results) {
@@ -363,7 +363,9 @@ module.exports = async function(app, qs, passport, async, _) {
                         }catch(ResultFindErr){
                             console.log(ResultFindErr);
                             res.send(ResultFindErr);
-                        }                                                  
+                        }      
+                        //update member stats after edit (in case status changes or age etc)
+                        await service.updateMemberStats(member);                                             
                     });
                 }catch(memberSaveErr){
                     console.log(memberSaveErr);
@@ -567,7 +569,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                         //update PBs
                                         for (let m of result.members) {
                                             let member = await Member.findById(m._id);    
-                                            await service.postResultSave(member);   
+                                            await service.updateMemberStats(member);   
                                         }              
                                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                         res.json(resultWithPBsAndAchievements);                                                                        
@@ -601,7 +603,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                 //update PBs
                                 for (let m of result.members) {
                                     let member = await Member.findById(m._id);    
-                                    await service.postResultSave(member);   
+                                    await service.updateMemberStats(member);   
                                 }                                   
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                 res.json(resultWithPBsAndAchievements);                                                                      
@@ -706,7 +708,7 @@ module.exports = async function(app, qs, passport, async, _) {
                         //update PBs
                         for (let m of result.members) {
                             let member = await Member.findById(m._id);                                
-                            await service.postResultSave(member);   
+                            await service.updateMemberStats(member);   
                         }                       
                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                         res.json(resultWithPBsAndAchievements);                                                                     
@@ -741,7 +743,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 //update PBs
                 for (let m of result.members) {
                     let member = await Member.findById(m._id);    
-                    await service.postResultSave(member);   
+                    await service.updateMemberStats(member);   
                 }
                 resultWithPBsAndAchievements = await Result.findById(result._id); 
                 res.json(resultWithPBsAndAchievements);                 
@@ -790,7 +792,7 @@ module.exports = async function(app, qs, passport, async, _) {
                             console.log('updating after delete');
                             for (let m of members) {
                                 let member = await Member.findById(m._id);    
-                                service.postResultSave(member);   
+                                service.updateMemberStats(member);   
                             }                                               
                             res.end('{"success" : "Result deleted successfully", "status" : 200}');
                         

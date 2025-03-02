@@ -301,7 +301,25 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     };
 
 
-    
+    $scope.hasTeamRequirementFulfilled = function(member){
+        if (member.teamRequirementStats.raceCount >= 8 && member.teamRequirementStats.maxAgeGrade >= 70) {
+            return true;
+        } else {
+           return false;
+        }
+    };
+
+    $scope.getListOfMembersWithRequirementFulfilled = function(list){
+        if(list){
+            return list.filter(member => $scope.hasTeamRequirementFulfilled(member));
+        }
+    };
+
+    $scope.getMemberHeaderTooltip = function(list){
+        if(list){
+          return  ""+list.filter(member => $scope.hasTeamRequirementFulfilled(member))/ list.length +"%" + " have all of team requirements fulfilled";
+        }
+    };
 
 
     $scope.removeResult = function(result) {

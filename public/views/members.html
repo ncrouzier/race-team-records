@@ -58,15 +58,14 @@
                 <table class = "memberListTable">
                     <thead>
                         <tr style="font-size:15px; font-weight: bold; line-height: 33px;">
-                        <th class="memberListHeader" title="Under 40">Open Men</th>
-                        <th class="memberListHeader" title="Under 40">Open Women</th>
-                        <th class="memberListHeader" title="40 and over">Masters Men</th>
-                        <th class="memberListHeader" title="40 and over">Masters Women</th>
+                        <th class="memberListHeader"><span title="Under 40">Open Men </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[0]) | unsafe" ng-if="paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[0]).length}}/{{memberListcolumns[0].length}})</span></th>
+                        <th class="memberListHeader"> <span title="Under 40">Open Women </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[1]) | unsafe" ng-if="paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[1]).length}}/{{memberListcolumns[1].length}})</span></th>
+                        <th class="memberListHeader"> <span title="40 and over">Masters Men </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[2]) | unsafe" ng-if="paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[2]).length}}/{{memberListcolumns[2].length}})</span></th>
+                        <th class="memberListHeader"> <span title="40 and over">Masters Women </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[3]) | unsafe" ng-if="paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[3]).length}}/{{memberListcolumns[3].length}})</span></th>
                         </tr>   
                     </thead>
                     <tbody>         
-                        <tr style="font-size:15px; " ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
-                            {{memberListcolumns[0][$index]}}
+                        <tr style="font-size:15px; " ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">                       
                             <td ng-if="memberListcolumns[0][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[0][$index])"><span>{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats" member="memberListcolumns[0][$index]"></team-requirements></td><td ng-if="!memberListcolumns[0][$index]"></td>
                             <td ng-if="memberListcolumns[1][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[1][$index])"><span>{{memberListcolumns[1][$index].firstname}} {{memberListcolumns[1][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats" member="memberListcolumns[1][$index]"></team-requirements></td><td ng-if="!memberListcolumns[1][$index]"></td>
                             <td ng-if="memberListcolumns[2][$index]" class="memberListCell hoverhand" ng-click="setMember(memberListcolumns[2][$index])"><span>{{memberListcolumns[2][$index].firstname}} {{memberListcolumns[2][$index].lastname}}</span><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats" member="memberListcolumns[2][$index]"></team-requirements></td><td ng-if="!memberListcolumns[2][$index]"></td>

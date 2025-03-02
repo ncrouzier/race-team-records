@@ -317,7 +317,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     $scope.getMemberHeaderTooltip = function(list){
         if(list){
-          return  ""+list.filter(member => $scope.hasTeamRequirementFulfilled(member))/ list.length +"%" + " have all of team requirements fulfilled";
+          return  (list.filter(member => $scope.hasTeamRequirementFulfilled(member)).length/ list.length).toFixed(2) +"%" + " have all of team requirements fulfilled";
         }
     };
 

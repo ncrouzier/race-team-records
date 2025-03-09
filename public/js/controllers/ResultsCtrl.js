@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
     
-    // console.log("params",$stateParams);
+    //  console.log("params",$stateParams);
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -155,9 +155,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }, function(btn) {});
     };
 
-    $scope.showRaceModal = function(race) {
+    $scope.showRaceModal = function(race,fromStateParams) {
         if(race){
-            ResultsService.showRaceFromResultModal(race._id).then(function(result) {                
+            ResultsService.showRaceFromResultModal(race._id,fromStateParams).then(function(result) {                
             });
         }
     };
@@ -172,7 +172,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     // };
 
     if($stateParams.raceId){
-        $scope.showRaceModal({_id:$stateParams.raceId});
+        $scope.showRaceModal({_id:$stateParams.raceId},true);
     }
 
     if($stateParams.search){
@@ -597,9 +597,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo', 'MembersService', 'ResultsService', 'localStorageService','$state', function($scope, $uibModalInstance, $filter, raceinfo, MembersService, ResultsService, localStorageService,$state) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','notify', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,notify) {
 
     $scope.raceinfo = raceinfo;
+    $scope.fromStateParams = fromStateParams;
+
     var sum = 0;
     var count = 0;
     for (i = 0; i < $scope.raceinfo.results.length; i++) {
@@ -613,7 +615,10 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
     }
 
     $scope.cancel = function() {
-        $uibModalInstance.dismiss('cancel');
+        if($scope.fromStateParams){         
+            $state.go('/results');
+        }        
+        $uibModalInstance.dismiss('cancel');        
     };
 
     $scope.getRaceTypeClass = function(s) {
@@ -711,6 +716,22 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
             }
         };
     }
+
+    $scope.copyRaceLinkToClipboard = function() {
+        navigator.clipboard.writeText(window.location.origin+'/races/' + $scope.raceinfo._id)
+          .then(() => {
+            var messageTemplate = '<div style="text-align: left; font-size: 12px;">Text copied to clipboard successfully! <BR>'+window.location.origin+'/races/' + $scope.raceinfo._id+'</div>';
+            notify({ messageTemplate: messageTemplate, classes: 'notify-message', position:'right', duration: 2000}); // Simple success notification
+
+          
+            // Optionally, provide visual feedback to the user
+            // (e.g., change button text, show a tooltip, etc.)
+          })
+          .catch(err => {
+            console.error('Failed to copy text: ', err);
+            // Handle the error appropriately, maybe alert the user
+          });
+      };
 
 
 

@@ -20,7 +20,7 @@ angular.module('mcrrcApp.tools').controller('ToolsController', ['$scope', '$loca
         };
     }
 
-    $scope.getAgeGrades = function (time,ref) {
+    $scope.getAgeGrade = function (time,ref) {
         return $filter('timeToAgeGrade')(time, ref,false);
     };
    

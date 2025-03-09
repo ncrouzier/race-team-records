@@ -196,7 +196,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
-    factory.showRaceFromResultModal = function(raceId) {
+    factory.showRaceFromResultModal = function(raceId,fromStateParams) {
         return Restangular.one('raceinfos').get({
             limit: 1,
             raceId: raceId
@@ -208,14 +208,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                         controller: 'RaceModalInstanceController',
                         size: 'lg',
                         resolve: {
-                            raceinfo: races[0]
+                            raceinfo: races[0],
+                            fromStateParams: fromStateParams
                         }
                     });
                     modalInstance.result.then(function() {
                     }, function() {
-                         if ($state.current.url === '/races/:raceId'){
-                            $state.go('^');
-                         }
+                        //  if ($state.current.url === '/races/:raceId'){
+                        //     $state.go('^');
+                        //  }
                         
                     });
                 }

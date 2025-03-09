@@ -7160,6 +7160,10 @@ input[type="checkbox"] {
 .modal .close {
   color: #222222;
 }
+.modal .modal-race-footer {
+  padding: 15px;
+  border-top: 1px solid #e5e5e5;
+}
 
 body {
   padding-top: 5px;
@@ -8013,6 +8017,9 @@ footer {
   border-bottom-color: #006687;
   border-style: solid;
 }
+.nowrap {
+  white-space: nowrap;
+}
 .agegradeCell {
   padding: 0.5em;
   border: 1px;
@@ -8023,6 +8030,21 @@ footer {
   text-align: left;
   font-size: 12px;
   color: black;
+  border-right: 0px;
+}
+.agegradeCell.custompace {
+  color: black;
+  border-left: 0px;
+}
+@media (min-width: 2px) {
+  .agegradeCell.distanceName {
+    font-size: 13px;
+  }
+}
+@media (min-width: 992px) {
+  .agegradeCell.distanceName {
+    font-size: 16px;
+  }
 }
 .agegradeCell.time {
   font-size: 16px;
@@ -8044,5 +8066,24 @@ footer {
 }
 .agegradeRow:hover td input {
   color: black;
+}
+.notify-message {
+  position: fixed;
+  top: 0px;
+  z-index: 9999;
+  max-width: 400px;
+  text-align: center;
+  background-color: #43ac6a;
+  color: white;
+  border: 1px solid #43ac6a;
+  padding: 15px;
+  border-radius: 4px;
+  -webkit-transition: top 0.5s ease-out, opacity 0.2s ease-out;
+  -moz-transition: top 0.5s ease-out, opacity 0.2s ease-out;
+  -o-transition: top 0.5s ease-out, opacity 0.2s ease-out;
+  transition: top 0.5s ease-out, opacity 0.2s ease-out;
+  visibility: hidden;
+  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
 }
 

@@ -27,6 +27,7 @@ module.exports = function(grunt) {
                         'public/dist/js/app.min.js': [
                         'public/libs/jquery/dist/jquery.js',
                         'public/libs/angular/angular.js',
+                        'public/libs/angular-notify/dist/angular-notify.js',
                         // 'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
                         'public/libs/angular-loading-bar/build/loading-bar.js',
                         'public/libs/angular-sanitize/angular-sanitize.js',
@@ -57,6 +58,7 @@ module.exports = function(grunt) {
             dist: {
                 src: ['public/libs/jquery/dist/jquery.js',
                 'public/libs/angular/angular.js',
+                'public/libs/angular-notify/dist/angular-notify.js',
                 'public/libs/angular-loading-bar/build/loading-bar.js',
                 'public/libs/angular-sanitize/angular-sanitize.js',
                 'public/libs/angular-ui-router/release/angular-ui-router.js',
@@ -71,7 +73,7 @@ module.exports = function(grunt) {
                 'public/libs/jspdf/dist/jspdf.min.js',
                 'public/libs/async/dist/async.min.js',
                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
-                'public/libs/moment/min/moment.min.js',
+                'public/libs/moment/min/moment.min.js',                
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
@@ -107,6 +109,7 @@ module.exports = function(grunt) {
                             'public/libs/angular-loading-bar/build/loading-bar.css',
                             'public/libs/angular-ui-select/dist/select.css',
                             'public/libs/angular-dialog-service/dist/dialogs.min.css',
+                            'public/libs/angular-notify/dist/angular-notify.css',
                             'public/dist/css/style.css'
                         ]
                 }

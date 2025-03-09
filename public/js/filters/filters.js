@@ -153,7 +153,6 @@ app.filter('milesToPaceforAgegrade', function () {
         var seconds = Math.floor(time / 100);
         var distance = miles;
 
-
         var m = Math.floor((seconds / 60) / distance);
 
         var s = Math.round(((((seconds / 60) / distance) % 1) * 60));
@@ -173,6 +172,27 @@ app.filter('timeToAgeGrade', function () {
         var timeInSeconds =  (time.hours ? time.hours*3600 :  0) + (time.minutes ? time.minutes*60 : 0) + (time.seconds ? time.seconds : 0);        
         if (timeInSeconds === 0) return "";
         return (timeStandard/timeInSeconds * 100).toFixed(2)+ (percentage ===true ? "%": "");
+       
+    };
+});
+
+app.filter('milesAndTimeToPace', function () {
+    return function (miles,time) {
+        //round up!
+        var timeInSeconds =  (time.hours ? time.hours*3600 :  0) + (time.minutes ? time.minutes*60 : 0) + (time.seconds ? time.seconds : 0);    
+
+        var distance = miles;
+        
+        var m = Math.floor((timeInSeconds / 60) / distance);
+
+        var s = Math.round(((((timeInSeconds / 60) / distance) % 1) * 60));
+        if (s === 60) {
+            m = m + 1;
+            s = 0;
+        }
+
+        if (s < 10) s = "0" + s;
+        return m + ":" + s;
        
     };
 });

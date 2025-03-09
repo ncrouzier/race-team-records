@@ -53,12 +53,11 @@
                 <th colspan="2" class="agegradeHeader bottom">70% Time and Pace <i class="ageregional fa fa-star"></i></th>
                 <th colspan="2" class="agegradeHeader bottom">80% Time and Pace <i class="agenational fa fa-star"></i></th>
                 <th colspan="2" class="agegradeHeader bottom">90% Time and Pace <i class="ageworld fa fa-star"></i></th>              
-                <th colspan="2" class="agegradeHeader bottom">Calculate your age-grade %
-                </th>    
+                <th colspan="2" class="agegradeHeader bottom">Calculate your age-grade %</th>    
             </thead>
             <tbody>
-                <tr class="agegradeRow distanceName" ng-repeat="(key, value) in getDistances()">
-                    <td class="agegradeCell">{{(key | racenameToDistance).name}}</td>
+                <tr class="agegradeRow" ng-repeat="(key, value) in getDistances()">
+                    <td class="agegradeCell distanceName nowrap">{{(key | racenameToDistance).name}}</td>
                     <td class="agegradeCell time">{{value*100/.70 | secondsToTimeString}} </td>
                     <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
                         milesToPaceforAgegrade:value*100/.70}} <small class="resultPaceTxt">min/mi</small></td>
@@ -68,16 +67,22 @@
                     <td class="agegradeCell time">{{value*100/.90 | secondsToTimeString}}</td>
                     <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
                         milesToPaceforAgegrade:value*100/.90}} <small class="resultPaceTxt">min/mi</small></td>            
-                    <td colspan="2" class=" agegradeCell customtime">
+                    <td  class=" agegradeCell customtime nowrap">
                         <input type="text" style="width: 29px;" ng-model="time.hours" only-digits class=" text-left" placeholder="0">:<input
                             type="text" style="width: 29px;" ng-model="time.minutes" only-digits-for-min-sec class=" text-left"
                             placeholder="0">:<input type="text" style="width: 29px;" ng-model="time.seconds" only-digits-for-min-sec
                             class="text-left" placeholder="0">
-                        <span ng-if="time" class="resultPaceTxt">{{time| timeToAgeGrade:value:true}}</span>
+                        </td>
+                        <td class="agegradeCell custompace ">
+                            <div ng-if="time && (time.seconds != undefined || time.minutes != undefined || time.hours != undefined)" class="resultPaceTxt">
+                        {{time| timeToAgeGrade:value:true}}
                         <i ng-if="getAgeGrade(time, value,false) >=70 && getAgeGrade(time, value,false)<80" class="ageregional fa fa-star"></i>
-                        <i ng-if="getAgeGrade(time, value,false) >=80 && getAgeGrade(time, value,false)<90"class="agenational fa fa-star"></i>
-                        <i ng-if="getAgeGrade(time, value,false) >=90"class="ageworld fa fa-star"></i>
+                        <i ng-if="getAgeGrade(time, value,false) >=80 && getAgeGrade(time, value,false)<90" class="agenational fa fa-star"></i>
+                        <i ng-if="getAgeGrade(time, value,false) >=90" class="ageworld fa fa-star"></i>
+                        <span > <div>{{(key | racenameToDistance).miles| milesAndTimeToPace:time}} <small class="resultPaceTxt">min/mi</small></div></span>
+                    </div>
                     </td>
+                             
                     </tr>
         </table>
     </div>

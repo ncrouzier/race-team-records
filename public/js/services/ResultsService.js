@@ -226,7 +226,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
-    factory.showRaceFromRaceIdModal = function(raceId) {
+    factory.showRaceFromRaceIdModal = function(raceId,fromStateParams) {
         return Restangular.one('raceinfos').get({
             limit: 1,
             raceId: raceId
@@ -238,7 +238,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                         controller: 'RaceModalInstanceController',
                         size: 'lg',
                         resolve: {
-                            raceinfo: races[0]
+                            raceinfo: races[0],
+                            fromStateParams: fromStateParams
                         }
                     });
                     modalInstance.result.then(function() {
@@ -251,13 +252,14 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
 
-    factory.showRaceModal = function(raceinfo) {
+    factory.showRaceModal = function(raceinfo,fromStateParams) {
             modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/raceModal.html',
                 controller: 'RaceModalInstanceController',
                 size: 'lg',
                 resolve: {
-                    raceinfo: raceinfo
+                    raceinfo: raceinfo,
+                    fromStateParams: fromStateParams
                 }
             });
             

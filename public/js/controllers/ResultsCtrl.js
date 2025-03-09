@@ -600,7 +600,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','notify', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,notify) {
 
     $scope.raceinfo = raceinfo;
-    $scope.fromStateParams = fromStateParams;
+    if (fromStateParams){
+        $scope.fromStateParams = fromStateParams;
+    }else{
+        //default
+        $scope.fromStateParams = false;
+    }
+   
 
     var sum = 0;
     var count = 0;

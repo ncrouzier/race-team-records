@@ -7164,6 +7164,11 @@ input[type="checkbox"] {
   padding: 15px;
   border-top: 1px solid #e5e5e5;
 }
+.modal .modal-result-footer {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  border-top: 1px solid #e5e5e5;
+}
 
 body {
   padding-top: 5px;
@@ -8073,9 +8078,6 @@ footer {
   z-index: 9999;
   max-width: 400px;
   text-align: center;
-  background-color: #43ac6a;
-  color: white;
-  border: 1px solid #43ac6a;
   padding: 15px;
   border-radius: 4px;
   -webkit-transition: top 0.5s ease-out, opacity 0.2s ease-out;
@@ -8085,5 +8087,15 @@ footer {
   visibility: hidden;
   -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+}
+.notify-message-failure {
+  background-color: #F04124;
+  color: white;
+  border: 1px solid #F04124;
+}
+.notify-message-success {
+  background-color: #43ac6a;
+  color: white;
+  border: 1px solid #43ac6a;
 }
 

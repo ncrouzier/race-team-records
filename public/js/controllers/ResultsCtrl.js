@@ -126,7 +126,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     
 
     $scope.showAddResultModal = function(resultSource) {
-        ResultsService.showAddResultModal(resultSource).then(function(result) {
+        ResultsService.showAddResultModal(resultSource,$scope.resultsList).then(function(result) {
             if (result !== null) {
                 $scope.resultsList.unshift(result);
             }
@@ -181,7 +181,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout','resultsList', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout,resultsList) {
 
     
     var deleteIdFromSubdocs = function (obj, isRoot) {
@@ -363,7 +363,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
 
-    $scope.addResult = function() {
+    $scope.addResult = async function(addAnother) {
         if ($scope.time.hours === null || $scope.time.hours === undefined || $scope.time.hours === "") $scope.time.hours = 0;
         if ($scope.time.minutes === null || $scope.time.minutes === undefined || $scope.time.minutes === "") $scope.time.minutes = 0;
         if ($scope.time.seconds === null || $scope.time.seconds === undefined || $scope.time.seconds === "") $scope.time.seconds = 0;
@@ -417,7 +417,21 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.customOptionsString !== undefined){
           $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
         }
-        $uibModalInstance.close($scope.formData);
+        if (addAnother) {
+            //save
+            await ResultsService.createResult($scope.formData,resultsList);
+            //clear some field for new result after it was created
+            $scope.formData.members = [{}];
+            $scope.time = {};
+            $scope.formData.ranking.agerank = null;
+            $scope.formData.ranking.genderrank = null;
+            $scope.formData.ranking.overallrank = null;
+            $scope.formData.comments = null;                    
+        }else{
+            //close and save
+            $uibModalInstance.close($scope.formData);
+        }
+        
     };
 
     $scope.clearForm = function() {
@@ -727,15 +741,10 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         navigator.clipboard.writeText(window.location.origin+'/races/' + $scope.raceinfo._id)
           .then(() => {
             var messageTemplate = '<div style="text-align: left; font-size: 12px;">Text copied to clipboard successfully! <BR>'+window.location.origin+'/races/' + $scope.raceinfo._id+'</div>';
-            notify({ messageTemplate: messageTemplate, classes: 'notify-message', position:'right', duration: 2000}); // Simple success notification
-
-          
-            // Optionally, provide visual feedback to the user
-            // (e.g., change button text, show a tooltip, etc.)
+            notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); 
           })
           .catch(err => {
             console.error('Failed to copy text: ', err);
-            // Handle the error appropriately, maybe alert the user
           });
       };
 

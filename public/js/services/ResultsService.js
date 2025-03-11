@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state','notify', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state,notify) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -65,10 +65,24 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         });
     };
 
-    //create a result by id
-    factory.createResult = function(result) {
+    /**
+     * Create a result by id
+     * @param {Object} result - the result to create
+     * @param {Array} resultsList - the list of results to add the new result to
+     * @return {Promise} - the promise of the created result
+     */
+    factory.createResult = async function(result,resultsList) {
+        //post the result to the database
         return results.post(result).then(
             function(r) {
+                //simple success notification
+                var messageTemplate = '<div style="text-align: left; font-size: 12px;">Result created successfully! </div>';
+                //if the list of results is provided, add the new result to the beginning of the list
+                notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); 
+                if(resultsList){
+                    resultsList.unshift(r);
+                }
+                //return the created result
                 return r;
             },
             function(res) {
@@ -81,7 +95,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     factory.editResult = function(result) {
         return result.save().then(
             function(r) {
-                return r;
+                var messageTemplate = '<div style="text-align: left; font-size: 12px;">Result edited successfully! </div>';
+                notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); // Simple success notification
+                return r;                
             },
             function(res) {
                 console.log('Error: ' + res.status);
@@ -102,7 +118,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function(result) {
+    factory.showAddResultModal = function(result,resultsList) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/resultModal.html',
             controller: 'ResultModalInstanceController',
@@ -110,6 +126,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             backdrop: 'static',
             resolve: {
                 editmode: false,
+                resultsList: function() {
+                    return resultsList;
+                },
                 result: function() {
                     return result;
                 }
@@ -138,6 +157,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 backdrop: 'static',
                 resolve: {
                     editmode: true,
+                    resultsList: function() {
+                        return null;
+                    },
                     result: function() {                        
                         return result;
                     }

@@ -4,7 +4,9 @@
 </div>
 <div class="modal-body">
   <form name="formresult">
+ 
     <div class="row">
+      {{formData._id}}
       <div class="col-md-4">
         <div class="form-group" ng-class="{ 'has-error' : formresult.race.raceename.$invalid && !formresult.race.raceename.$pristine}">
           <label class="text-left">Race name:</label>
@@ -296,12 +298,14 @@
           <textarea class="form-control" rows="3" name="customOptions" ng-model="customOptionsString"></textarea>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-result-footer">
         <!-- <span class="modal-title">Exclude from records: -->
 
-        <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
-        <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult()" ng-disabled="formresult.$invalid || !checkMembers()">Add Result</button>
         <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+        <button style="float: right; margin-right: 10px" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers()">Save Result and Close</button>      
+        <button style="float: right; margin-right: 10px;" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers()">Save Result add another</button>
+        <button style="float: right;" ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
+
       </div>
   </form>
   </div>

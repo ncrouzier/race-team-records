@@ -39,7 +39,7 @@ app.factory('MyCachingRestService', function(Restangular) {
 });
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService', function($scope, AuthService, $state, ResultsService,MembersService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', function($scope, AuthService, $state, ResultsService,MembersService,localStorageService) {
     $scope.$state = $state;
 
     var navBackGround = ["navimg-2", "navimg-3","navimg-4","navimg-5","navimg-6","navimg-7","navimg-8" ];
@@ -81,7 +81,6 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
         });
 
 
-
     //load result in cache
     ResultsService.getResultsWithCacheSupport({
         "sort": '-race.racedate -race.order race.racename time members.firstname',
@@ -90,5 +89,10 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
         // console.log('return res in app.js', results);
     });
 
+    $scope.logout = function() {
+        $http.get("/api/logout").success(function() {
+        }).error(function(data) {
+        });
+    };
 
 }]);

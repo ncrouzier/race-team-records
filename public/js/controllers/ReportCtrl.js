@@ -7,7 +7,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$s
         $scope.user = user;
     });
 
-    $scope.datefrom = new Date().setDate((new Date()).getDate() - 30);
+    $scope.datefrom = new Date().setDate((new Date()).getDate() - 6);
     $scope.dateto = new Date();
     $scope.showhtml = false;
 

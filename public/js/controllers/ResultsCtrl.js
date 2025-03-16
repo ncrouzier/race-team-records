@@ -426,7 +426,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.ranking.agerank = null;
             $scope.formData.ranking.genderrank = null;
             $scope.formData.ranking.overallrank = null;
-            $scope.formData.comments = null;                    
+            $scope.formData.comments = undefined;                    
         }else{
             //close and save
             $uibModalInstance.close($scope.formData);

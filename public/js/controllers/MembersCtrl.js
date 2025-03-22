@@ -302,7 +302,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
     $scope.hasTeamRequirementFulfilled = function(member){
-        if (member.teamRequirementStats.raceCount >= 8 && member.teamRequirementStats.maxAgeGrade >= 70) {
+        if (member.teamRequirementStats && member.teamRequirementStats.raceCount >= 8 && member.teamRequirementStats.maxAgeGrade >= 70) {
             return true;
         } else {
            return false;

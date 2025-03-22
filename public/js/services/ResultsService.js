@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state','notify', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state,notify) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state','NotificationService', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state,NotificationService) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -76,9 +76,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         return results.post(result).then(
             function(r) {
                 //simple success notification
-                var messageTemplate = '<div style="text-align: left; font-size: 12px;">Result created successfully! </div>';
+                NotificationService.showNotifiction(true,"Result created successfully!");
                 //if the list of results is provided, add the new result to the beginning of the list
-                notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); 
                 if(resultsList){
                     resultsList.unshift(r);
                 }
@@ -86,6 +85,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 return r;
             },
             function(res) {
+                NotificationService.showNotifiction(false,"Error while creating result.");
                 console.log('Error: ' + res.status);
             }
         );
@@ -95,21 +95,24 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     factory.editResult = function(result) {
         return result.save().then(
             function(r) {
-                var messageTemplate = '<div style="text-align: left; font-size: 12px;">Result edited successfully! </div>';
-                notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); // Simple success notification
+                NotificationService.showNotifiction(true,"Result edited successfully!");                
                 return r;                
             },
             function(res) {
+                NotificationService.showNotifiction(false,"Error while editing result.");
                 console.log('Error: ' + res.status);
             }
         );
     };
 
-    ///delete a member
+    ///delete a result
     factory.deleteResult = function(result) {
         return result.remove().then(
-            function() {},
+            function() {
+                NotificationService.showNotifiction(true,"Result deleted successfully!");
+            },
             function(res) {
+                NotificationService.showNotifiction(false,"Result while deleting result!");
                 console.log('Error: ' + res.status);
             });
     };

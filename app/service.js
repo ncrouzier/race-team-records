@@ -507,7 +507,7 @@ module.exports = {
             //get highest agregrade attribute in the results array
             let highestAg = "N/A";
             if (results.length !== 0) {
-                highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined).map(obj => obj.agegrade));
+                highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined && obj.agegrade !== null).map(obj => obj.agegrade));
             }
             //console.log([results.length,highestAg]);
             member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg };

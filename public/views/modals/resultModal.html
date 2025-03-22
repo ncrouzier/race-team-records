@@ -300,10 +300,9 @@
       </div>
       <div class="modal-result-footer">
         <!-- <span class="modal-title">Exclude from records: -->
-
         <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
         <button style="float: right; margin-right: 10px" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers()">Save Result and close</button>      
-        <button style="float: right; margin-right: 10px;" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers()">Save Result and add another</button>
+        <button style="float: right; margin-right: 10px;" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">Save Result and add another</button>
         <button style="float: right;" ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
 
       </div>

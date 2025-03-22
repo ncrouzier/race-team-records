@@ -519,7 +519,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 req.body.race.racedate);
 
             let agegrade;
-            if (ag && members.length === 1 && !req.body.race.isMultisport && req.body.isRecordEligible) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport && req.body.isRecordEligible && req.body.time !== 0) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }
@@ -648,7 +648,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 req.body.race.racedate);
         
             let agegrade;            
-            if (ag && members.length === 1 && !req.body.race.isMultisport  && req.body.isRecordEligible) { //do not deal with multiple racers
+            if (ag && members.length === 1 && !req.body.race.isMultisport && req.body.isRecordEligible && req.body.time !== 0) { //do not deal with multiple racers
                 if (ag[req.body.race.racetype.name.toLowerCase()] !== undefined) {
                     agegrade = (ag[req.body.race.racetype.name.toLowerCase()] / (req.body.time / 100) * 100).toFixed(2);
                 }

@@ -419,7 +419,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
         if (addAnother) {
             //save
+            $scope.isSaving = true;
             await ResultsService.createResult($scope.formData,resultsList);
+            $scope.isSaving = false;
             //clear some field for new result after it was created
             $scope.formData.members = [{}];
             $scope.time = {};
@@ -611,7 +613,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','notify', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,notify) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService) {
 
     $scope.raceinfo = raceinfo;
     if (fromStateParams){
@@ -740,10 +742,10 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
     $scope.copyRaceLinkToClipboard = function() {
         navigator.clipboard.writeText(window.location.origin+'/races/' + $scope.raceinfo._id)
           .then(() => {
-            var messageTemplate = '<div style="text-align: left; font-size: 12px;">Text copied to clipboard successfully! <BR>'+window.location.origin+'/races/' + $scope.raceinfo._id+'</div>';
-            notify({ messageTemplate: messageTemplate, classes: 'notify-message-success', position:'right', duration: 2000}); 
+            NotificationService.clipboardCopyNotifiction(true,window.location.origin+'/races/' + $scope.raceinfo._id);            
           })
           .catch(err => {
+            NotificationService.clipboardCopyNotifiction(false,window.location.origin+'/races/' + $scope.raceinfo._id);     
             console.error('Failed to copy text: ', err);
           });
       };

@@ -184,6 +184,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout','resultsList', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout,resultsList) {
 
     
+    $scope.isOlderDateCheck = function(date){       
+        if (date !== undefined && date !== null){
+            var today = new Date();
+            var oldDate = new Date().setDate(today.getDate() - 30); 
+            var raceDate = new Date(date);
+            return raceDate < oldDate;
+        }
+    };
+
     var deleteIdFromSubdocs = function (obj, isRoot) {
       for (var key in obj) {
           if (isRoot === false && key === "_id") {

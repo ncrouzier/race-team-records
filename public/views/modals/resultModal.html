@@ -6,7 +6,6 @@
   <form name="formresult">
  
     <div class="row">
-      {{formData._id}}
       <div class="col-md-4">
         <div class="form-group" ng-class="{ 'has-error' : formresult.race.raceename.$invalid && !formresult.race.raceename.$pristine}">
           <label class="text-left">Race name:</label>
@@ -16,8 +15,8 @@
       <div class="col-md-3">
         <div class="form-group" ng-class="{ 'has-error' : formresult.race.racedate.$invalid && !formresult.race.racedate.$pristine}">
           <label class="text-left">Race date:</label>
-          <p class="input-group">
-            <input type="text"  name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'"
+          <p class="input-group" >
+            <input type="text" ng-class="{'redbg': isOlderDateCheck(formData.race.racedate),  '' : !isOlderDateCheck(formData.race.racedate)}" name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'"
               required close-text="Close" />
             <span class="input-group-btn">
                             <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>

@@ -83,7 +83,7 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
 
     //load result in cache
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time members.firstname',
+        "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
         "preload":false
     }).then(function(results) {
         // console.log('return res in app.js', results);

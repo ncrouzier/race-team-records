@@ -7987,11 +7987,14 @@ footer {
   background-color: #595959;
 }
 .agegradeAgeInput {
-  -webkit-appearance: none;
-  margin: 0;
   -moz-appearance: textfield;
   width: 70px;
   display: inline;
+}
+.agegradeAgeInput::-webkit-outer-spin-button,
+.agegradeAgeInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .agegradeGenderInput .select2-container .select2-choice {
   height: 39px;
@@ -8025,6 +8028,14 @@ footer {
 .nowrap {
   white-space: nowrap;
 }
+.time-entry input[type="number"]::-webkit-outer-spin-button,
+.time-entry input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.time-entry input[type="number"] {
+  -moz-appearance: textfield;
+}
 .agegradeCell {
   padding: 0.5em;
   border: 1px;
@@ -8036,6 +8047,14 @@ footer {
   font-size: 12px;
   color: black;
   border-right: 0px;
+}
+.agegradeCell.customtime input[type="number"]::-webkit-outer-spin-button,
+.agegradeCell.customtime input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.agegradeCell.customtime input[type="number"] {
+  -moz-appearance: textfield;
 }
 .agegradeCell.custompace {
   color: black;

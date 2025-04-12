@@ -12,8 +12,7 @@
                     <span>Age:</span>
                     <br>
                     <input class="agegradeAgeInput form-control" type="number" id="age" name="age"
-                        ng-model="formData.age" min="5" max="110" required>
-                    
+                        ng-model="formData.age" only-digits dir-max="110" min="5" max="110" required>                    
                 </div>
 
                 <div style="margin-right: 10px; min-width: 140px;">
@@ -68,9 +67,9 @@
                     <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
                         milesToPaceforAgegrade:value*100/.90}} <small class="resultPaceTxt">min/mi</small></td>            
                     <td  class=" agegradeCell customtime nowrap">
-                        <input type="text" style="width: 29px;" ng-model="time.hours" only-digits class=" text-left" placeholder="0">:<input
-                            type="text" style="width: 29px;" ng-model="time.minutes" only-digits-for-min-sec class=" text-left"
-                            placeholder="0">:<input type="text" style="width: 29px;" ng-model="time.seconds" only-digits-for-min-sec
+                        <input type="number" min="0" style="width: 29px;" ng-model="time.hours" only-digits class=" text-left" placeholder="0">:<input
+                        type="number" min="0" style="width: 29px;" ng-model="time.minutes" only-digits-for-min-sec class="text-left"
+                            placeholder="0">:<input type="number" min="0"  style="width: 29px;" ng-model="time.seconds" only-digits-for-min-sec
                             class="text-left" placeholder="0">
                         </td>
                         <td class="agegradeCell custompace ">

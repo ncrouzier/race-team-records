@@ -16,7 +16,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             controller: 'HomeController',
             onEnter: function() {
                 gtag('set', 'page_path', '/home.html');
-                gtag('event', 'page_view');
+                gtag('event', 'page_view');  
             }
         }).state('/members', {
             url: "/members?member",

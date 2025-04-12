@@ -286,13 +286,13 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     };
 
     $scope.getMaxColumnSize = function() {
-        var maxColumnSize = 0;
+        var maxColumnSize = 0;   
       
         $scope.memberListcolumns.forEach(function(column) {
           if (column.length > maxColumnSize) {
             maxColumnSize = column.length;
           }
-        });      
+        }); 
         return maxColumnSize;
       };
 

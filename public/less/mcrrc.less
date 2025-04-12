@@ -1013,12 +1013,16 @@ footer {
 }
 
 
+
+
 .agegradeAgeInput{
-    -webkit-appearance: none;
-    margin: 0;
     -moz-appearance: textfield;
     width: 70px;
     display: inline;
+    &::-webkit-outer-spin-button, &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 }
 
 .agegradeGenderInput{
@@ -1061,6 +1065,17 @@ footer {
     white-space: nowrap;
 }
 
+.time-entry {
+    input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+        
+    }
+    input[type="number"]{
+        -moz-appearance: textfield;
+    }
+}
+
 .agegradeCell {
     padding: 0.5em;
     border: 1px;
@@ -1072,6 +1087,14 @@ footer {
         font-size: 12px;
         color:black;
         border-right: 0px;
+        input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+            
+        }
+        input[type="number"]{
+            -moz-appearance: textfield;
+        }
     }
 
     &.custompace{

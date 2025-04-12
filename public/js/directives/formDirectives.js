@@ -5,7 +5,32 @@ app.directive('onlyDigitsForMinSec', function() {
         require: 'ngModel',
         restrict: 'A',
         link: function(scope, element, attr, ctrl) {
+            //deal with ff allowing non numbers in number inputs...
+            element.on('keydown', function(event) {
+                const charCode = (event.which) ? event.which : event.keyCode;
+                // const inputValue = element[0].value;
+                // const selectionStart = element[0].selectionStart;
+                   
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+                  (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 88 && (event.ctrlKey || event.metaKey))) {
+                  return; // Allow
+                }    
+                // Prevent default for other key presses
+                if (!((charCode >= 48 && charCode <= 57)  // Digits 0-9
+                    // || (charCode === 190 && inputValue.indexOf('.') === -1 && !(selectionStart === 0 && text === '.')) || // Dot (.) - Allow only once and not at the beginning if empty
+                    // (charCode === 189 && selectionStart === 0 && inputValue.indexOf('-') === -1)
+                )) { // Minus (-) - Allow only at the beginning and only once
+                  event.preventDefault();
+                }                
+              });
             function inputValue(val) {
+                if (typeof val === 'number') {
+                    val = val.toString();
+                }
                 if (val || val === "") {
                     if (val === "") { //accept nothing
                         return null;
@@ -31,7 +56,32 @@ app.directive('onlyDigitsForCentisec', function() {
         require: 'ngModel',
         restrict: 'A',
         link: function(scope, element, attr, ctrl) {
+            //deal with ff allowing non numbers in number inputs...
+            element.on('keydown', function(event) {
+                const charCode = (event.which) ? event.which : event.keyCode;
+                // const inputValue = element[0].value;
+                // const selectionStart = element[0].selectionStart;
+                   
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+                  (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 88 && (event.ctrlKey || event.metaKey))) {
+                  return; // Allow
+                }    
+                // Prevent default for other key presses
+                if (!((charCode >= 48 && charCode <= 57)  // Digits 0-9
+                    // || (charCode === 190 && inputValue.indexOf('.') === -1 && !(selectionStart === 0 && text === '.')) || // Dot (.) - Allow only once and not at the beginning if empty
+                    // (charCode === 189 && selectionStart === 0 && inputValue.indexOf('-') === -1)
+                )) { // Minus (-) - Allow only at the beginning and only once
+                  event.preventDefault();
+                }                
+              });
             function inputValue(val) {
+                if (typeof val === 'number') {
+                    val = val.toString();
+                }
                 if (val || val === "") {
                     if (val === "") { //accept nothing
                         return null;
@@ -56,13 +106,48 @@ app.directive('onlyDigits', function() {
     return {
         require: 'ngModel',
         restrict: 'A',
+        scope: {
+            dirMin: '@?', 
+            dirMax: '@?' 
+          },
         link: function(scope, element, attr, ctrl) {
+            //deal with ff allowing non numbers in number inputs...
+            element.on('keydown', function(event) {
+                const charCode = (event.which) ? event.which : event.keyCode;
+                // const inputValue = element[0].value;
+                // const selectionStart = element[0].selectionStart;
+                   
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+                  (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 88 && (event.ctrlKey || event.metaKey))) {
+                  return; // Allow
+                }    
+                // Prevent default for other key presses
+                if (!((charCode >= 48 && charCode <= 57)  // Digits 0-9
+                    // || (charCode === 190 && inputValue.indexOf('.') === -1 && !(selectionStart === 0 && text === '.')) || // Dot (.) - Allow only once and not at the beginning if empty
+                    // (charCode === 189 && selectionStart === 0 && inputValue.indexOf('-') === -1)
+                )) { // Minus (-) - Allow only at the beginning and only once
+                  event.preventDefault();
+                }                
+              });
             function inputValue(val) {
+                var min, max;
+                if (typeof val === 'number') {
+                    val = val.toString();            
+                }
                 if (val || val === "") {
                     if (val === "") {
                         return null;
                     }
                     var digits = val.replace(/[^0-9]/g, '');
+                    digits = parseInt(digits, 10);
+                    if (attr.dirMin) min = parseInt(attr.dirMin, 10);
+                    if (attr.dirMax) max = parseInt(attr.dirMax, 10);             
+                    if (min && digits < min) digits = min;
+                    if (max && digits > max) digits = max;
                     if (digits !== val) {
                         ctrl.$setViewValue(digits);
                         ctrl.$render();
@@ -76,12 +161,38 @@ app.directive('onlyDigits', function() {
     };
 });
 
+
 app.directive('onlyDigitsAgeGradeTime', function() {
     return {
         require: 'ngModel',
         restrict: 'A',
         link: function(scope, element, attr, ctrl) {
+            //deal with ff allowing non numbers in number inputs...
+            element.on('keydown', function(event) {
+                const charCode = (event.which) ? event.which : event.keyCode;
+                // const inputValue = element[0].value;
+                // const selectionStart = element[0].selectionStart;
+                   
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+                  (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 88 && (event.ctrlKey || event.metaKey))) {
+                  return; // Allow
+                }    
+                // Prevent default for other key presses
+                if (!((charCode >= 48 && charCode <= 57)  // Digits 0-9
+                    // || (charCode === 190 && inputValue.indexOf('.') === -1 && !(selectionStart === 0 && text === '.')) || // Dot (.) - Allow only once and not at the beginning if empty
+                    // (charCode === 189 && selectionStart === 0 && inputValue.indexOf('-') === -1)
+                )) { // Minus (-) - Allow only at the beginning and only once
+                  event.preventDefault();
+                }                
+              });
             function inputValue(val) {
+                if (typeof val === 'number') {
+                    val = val.toString();
+                }
                 if (val || val === "") {
                     if (val === "") {
                         return 0;
@@ -100,26 +211,31 @@ app.directive('onlyDigitsAgeGradeTime', function() {
     };
 });
 
-app.directive('onlyDecimals', function() {
-    return {
-        require: 'ngModel',
-        restrict: 'A',
-        link: function(scope, element, attr, ctrl) {
-            function inputValue(val) {
-                if (val) {
-                    var digits = val.replace(/[^0-9.]/g, '');
-                    if (digits !== val) {
-                        ctrl.$setViewValue(digits);
-                        ctrl.$render();
-                    }
-                    return parseInt(digits, 10);
-                }
-                return undefined;
-            }
-            ctrl.$parsers.push(inputValue);
-        }
-    };
-});
+// app.directive('onlyDecimals', function() {
+//     return {
+//         require: 'ngModel',
+//         restrict: 'A',
+//         link: function(scope, element, attr, ctrl) {
+//             function inputValue(val) {
+//                 if (typeof val === 'number') {
+//                     val = val.toString();
+//                 }
+//                 if (val) {
+//                     var digits = val.replace(/[^0-9.]/g, '');
+//                     if (digits !== val) {
+//                         ctrl.$setViewValue(digits);
+//                         ctrl.$render();
+//                     }
+//                     return parseInt(digits, 10);
+//                 }
+//                 return undefined;
+//             }
+//             ctrl.$parsers.push(inputValue);
+//         }
+//     };
+// });
+
+
 
 
 //fix for datePicker format bug

@@ -55,6 +55,7 @@ module.exports = function(grunt) {
             options: {
                 stripBanners: true
             },
+           
             dist: {
                 src: ['public/libs/jquery/dist/jquery.js',
                 'public/libs/angular/angular.js',

@@ -107,15 +107,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.resultsList = [];
     ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time members.firstname',
+        "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
         "limit": 200,
         "preload":true
     }).then(function(results) {
         $scope.resultsList = results;
-        //now load the whole thing unless the initial call return the cache version (>200 res)
+        //now load the whole thing unless the initial call return the cache version (>200 res).
         if (results.length == 200){
             ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate -race.order race.racename time members.firstname',
+                "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
                 "preload":false
             }).then(function(results) {
                 $scope.resultsList = results;

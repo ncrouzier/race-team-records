@@ -15,6 +15,7 @@ app.directive('onlyDigitsForMinSec', function() {
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -66,6 +67,7 @@ app.directive('onlyDigitsForCentisec', function() {
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -121,6 +123,7 @@ app.directive('onlyDigits', function() {
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -177,6 +180,7 @@ app.directive('onlyDigitsAgeGradeTime', function() {
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow

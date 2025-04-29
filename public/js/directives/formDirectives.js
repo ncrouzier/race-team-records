@@ -11,11 +11,12 @@ app.directive('onlyDigitsForMinSec', function() {
                 // const inputValue = element[0].value;
                 // const selectionStart = element[0].selectionStart;
                    
-                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+L, Ctrl+R, Ctrl+X
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 76 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -63,11 +64,12 @@ app.directive('onlyDigitsForCentisec', function() {
                 // const inputValue = element[0].value;
                 // const selectionStart = element[0].selectionStart;
                    
-                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+L, Ctrl+R, Ctrl+X
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 76 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -119,11 +121,12 @@ app.directive('onlyDigits', function() {
                 // const inputValue = element[0].value;
                 // const selectionStart = element[0].selectionStart;
                    
-                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+L, Ctrl+R, Ctrl+X
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 76 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow
@@ -176,11 +179,12 @@ app.directive('onlyDigitsAgeGradeTime', function() {
                 // const inputValue = element[0].value;
                 // const selectionStart = element[0].selectionStart;
                    
-                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+R, Ctrl+X
+                // Allow: backspace, delete, tab, escape, enter, home, end, left, right, up, down, Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+L, Ctrl+R, Ctrl+X
                 if ([46, 8, 9, 27, 13, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
                   (charCode === 65 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 67 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 86 && (event.ctrlKey || event.metaKey)) ||
+                  (charCode === 76 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 82 && (event.ctrlKey || event.metaKey)) ||
                   (charCode === 88 && (event.ctrlKey || event.metaKey))) {
                   return; // Allow

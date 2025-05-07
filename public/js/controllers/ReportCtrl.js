@@ -151,7 +151,7 @@ angular.module('mcrrcApp.results').controller('TableReportController', ['$scope'
             $scope.reportHTLM = '<table style="width:400px;border:1px;border-collapse: collapse;color:#646464;">';
 
             var lastEvent = "";
-            var lastDate = ""; 
+            var lastDate = "";
             results.forEach(function(result) {
                 var members = '';
                 result.members.forEach(function(m) {

@@ -30,7 +30,7 @@ app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Res
         $scope.message = data[0];
         $state.go('/login');
     });
-}]);
+}]); 
 
 app.factory('MyCachingRestService', function(Restangular) {
     return Restangular.withConfig(function(RestangularConfigurer) {

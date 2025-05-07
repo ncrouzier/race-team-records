@@ -92,10 +92,21 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             }
         }).state('/tools', {
             url: "/tools",
-            templateUrl: "views/tools.html",
-            controller: 'ToolsController',
+            redirectTo: '/tools/agegrade'
+        }).state('/tools/agegrade', {
+            url: "/tools/agegrade",
+            templateUrl: "views/agegrade.html",
+            controller: 'AgeGradeController',
             onEnter: function() {
-                gtag('set', 'page_path', '/tools.html');
+                gtag('set', 'page_path', '/agegrade.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/tools/paceAdjustment', {
+            url: "/tools/paceAdjustment",
+            templateUrl: "views/tempAdjustment.html",
+            controller: 'TempAdjustmentController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/tempAdjustment.html');
                 gtag('event', 'page_view');
             }
         }).state('/report', {

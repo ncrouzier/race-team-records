@@ -1,0 +1,303 @@
+<style>
+    /* Unified highlight background (more subtle blue) */
+    /* .temp-adjustment-tool .highlight-row td,
+    .temp-adjustment-tool .highlight-row th,
+    .temp-adjustment-tool .highlight-col */
+    .temp-adjustment-tool .highlight-cell {
+        box-shadow: inset 0 0 0 2px rgba(0, 140, 186, 1);
+    }
+
+    .temp-adjustment-tool .highlight-cell {
+        font-weight: bold;
+        /* box-shadow: 0 0 0 2px #0275d8; */
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Cells with no value */
+    .temp-adjustment-tool td:not(.highlight-cell):not(.highlight-row):not(.highlight-col):not([class*="adj-"]) {
+        background-color: white !important;
+    }
+
+    /* Header row and column */
+    .temp-adjustment-tool th {
+        /* border: 1px solid #dee2e6; */
+        border: none !important;
+        background-color: #f8f9fa;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        vertical-align: middle;
+        padding: 10px;
+        white-space: nowrap;
+    }
+
+    .temp-adjustment-tool table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 5px solid #dee2e6;
+    }
+
+    .temp-adjustment-tool td:first-child {
+        border-left: none;
+    }
+
+    /* Remove inner borders between data cells */
+    .temp-adjustment-tool td {
+        border: none !important;
+    }
+
+    /* Optional: add bottom border to row for visual separation */
+    .temp-adjustment-tool tr td:last-child {
+        border-right: none;
+    }
+
+    /* Table cell borders */
+
+
+    /* Adjustment background colors */
+    .temp-adjustment-tool .adj-impossible {
+        background-color: white;
+    }
+
+    .temp-adjustment-tool .adj-safe {
+        background-color: #d4edda;
+    }
+
+    .temp-adjustment-tool .adj-moderate {
+        background-color: #fff3cd;
+    }
+
+    .temp-adjustment-tool .adj-high {
+        background-color: #f8d7da;
+    }
+
+    .temp-adjustment-tool .adj-extreme {
+        background-color: #d6d8db;
+        color: #6c757d;
+    }
+
+    /* Hovered cell border and weight remains */
+    .temp-adjustment-tool .highlight-cell {
+        font-weight: bold;
+        font-size: 14px;
+        /* box-shadow: 0 0 0 2px #0275d8; */
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Hover behavior */
+
+
+    .temp-adjustment-tool .highlight-row td,
+    .temp-adjustment-tool .highlight-row th {
+        /* outline: 1px solid rgba(0, 123, 255, 0.3); */
+        border-top: 1px solid rgba(0, 123, 255, 0.5) !important;
+        border-bottom:  1px solid rgba(0, 123, 255, 0.5) !important;
+        /* margin-top: -1px  !important;
+        margin-bottom: -1px  !important; */
+    }
+
+    .temp-adjustment-tool .highlight-col {
+        border-left: 1px solid rgba(0, 123, 255, 0.5) !important;
+        border-right: 1px solid rgba(0, 123, 255, 0.5) !important;
+        /* margin-left: -1px  !important;
+        margin-right: -1px  !important; */
+    }
+
+    /* Active input highlight */
+    .temp-adjustment-tool .active-row td,
+    .temp-adjustment-tool .active-row th {
+        background-color: #eaf6f8;
+    }
+
+    .temp-adjustment-tool .active-col {
+        background-color: #fff8e0;
+    }
+
+    /* Hand cursor on hover */
+    .temp-adjustment-tool td:hover {
+        cursor: pointer;
+    }
+
+    /* Optional: Table and inputs spacing */
+    .temp-adjustment-tool input.form-control {
+        margin-bottom: 8px;
+    }
+
+    .temp-adjustment-tool .temp-adjustment-heading {
+        font-size: 1.35rem;
+        /* Smaller than default h2 */
+        font-weight: 600;
+        /* Semi-bold but not overpowering */
+        color: #343a40;
+        /* Dark gray for clarity */
+        margin-bottom: 1.25rem;
+        padding-left: 0.25rem;
+        border-left: 4px solid #0275d8;
+        background-color: #f8f9fa;
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
+    }
+
+    .temp-adjustment-tool .temp-adjustment-explainer {
+        margin-top: 1rem;
+        font-size: 1.65rem;        
+        /* slightly darker than text-muted */
+        background-color: #f8f9fa;
+        border-left: 4px solid #0275d8;
+        padding: 1rem;
+        border-radius: 4px;
+    }
+
+    .temp-adjustment-tool .temp-adjustment-source-note {
+        margin-top: 2rem;
+        font-size: 1.25rem;
+        /* equivalent to Bootstrap's .small */
+        color: #6c757d;
+        /* Bootstrap's text-muted */
+        text-align: left;
+    }
+
+    .temp-adjustment-tool .temp-adjustment-input-panel {
+        background-color: #f8f9fa;
+        border-left: 4px solid #0275d8;
+        padding: 1.25rem;
+        border-radius: 4px;
+        margin-bottom: 2rem;
+    }
+
+    .temp-adjustment-tool .temp-adjustment-input-panel h2 {
+        margin-top: 0;
+        font-size: 2.85rem;
+    }
+
+    .temp-adjustment-tool .pace-cell-tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.temp-adjustment-tool .pace-cell-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: -90%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.15s ease-in-out;
+}
+
+.temp-adjustment-tool .pace-cell-tooltip-wrapper:hover .pace-cell-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+</style>
+<div class="temp-adjustment-tool jumbotron">
+
+    <div class="temp-adjustment-input-panel">
+        <h2 class="mb-4">Pace Adjustment Calculator:</h2>
+
+        <form class="form-inline mb-3">
+            <div class="form-group mr-3">
+                <label for="tempInput" class="mr-2">Temperature (°F)</label>
+                <input id="tempInput" type="number" class="form-control" ng-model="inputTemp" style="width: 100px;">
+            </div>
+
+            <div class="form-group mr-3">
+                <label for="dewInput" class="mr-2">Dew Point (°F)</label>
+                <input id="dewInput" type="number" class="form-control" ng-model="inputDew" ng-disabled="!isTempValid()"
+                    title="Enter a valid temperature first" style="width: 100px;">
+            </div>
+
+            <div class="form-group">
+                <label for="paceInput" class="mr-2">Pace (min:sec)</label>
+                <input id="paceInput" type="text" class="form-control" ng-model="pace" style="width: 120px;"
+                    placeholder="e.g., 7:30" ng-keydown="adjustPace($event)">
+            </div>
+        </form>
+
+        <div class="mt-3 p-3 border rounded bg-light">
+            <h5 class="mb-0">
+                Adjusted Pace: <strong>{{ adjustedPace }}</strong>
+                <span ng-if="adjustedPace !== null" class="ml-2" style="font-size: 1.5rem;">{{ paceEmoji }}</span>
+            </h5>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table text-center">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width: 120px;">Dew ↓ / Temp →</th> <!-- This is the offset -->
+                    <th ng-repeat="colTemp in temperatures" ng-class="{
+                        'highlight-col': 
+                            (hoveredTemp === colTemp && hoveredDew <= hoveredTemp) 
+                        }">
+                        {{ colTemp }}°
+                    </th>
+
+                </tr>
+            </thead>
+
+
+            <tr ng-repeat="rowDew in dews" ng-class="{
+              'highlight-row': 
+                (hoveredDew === rowDew && hoveredDew <= hoveredTemp)
+            }">
+                <th ng-class="{
+              'highlight-row': 
+                (hoveredDew === rowDew && hoveredDew <= hoveredTemp) 
+            }">
+                    {{ rowDew }}°
+                </th>
+                <td ng-repeat="colTemp in temperatures" ng-mouseenter="setHoveredCell(colTemp, rowDew)"
+                    ng-mouseleave="clearHoveredCell()" ng-click="setInputsFromCell(colTemp, rowDew)" ng-class="[
+                  (rowDew <= colTemp) ? getAdjustmentClass(colTemp + rowDew) : 'adj-impossible',
+                  {
+                    'highlight-cell': 
+                      (hoveredTemp === colTemp && hoveredDew === rowDew && hoveredDew <= hoveredTemp) ||
+                      (inputTemp == colTemp && inputDew == rowDew && inputDew <= inputTemp),
+                    'highlight-row': 
+                      (hoveredDew === rowDew && hoveredDew <= hoveredTemp) ,
+                    'highlight-col': 
+                      (hoveredTemp === colTemp && hoveredDew <= hoveredTemp) 
+                  }
+                ]"
+                uib-tooltip-html="rowDew <= colTemp ? getPaceTooltipHtml(colTemp,rowDew) : null"
+                tooltip-placement="right"
+                tooltip-append-to-body="true">
+
+                <span ng-if="rowDew <= colTemp">
+                {{ getAdjustment(colTemp, rowDew) }}
+                </span>
+                </td>
+            </tr>
+
+
+
+        </table>
+    </div>
+
+    <div class="temp-adjustment-explainer">
+            The above are the pace adjustment percentages to use for continuous runs.
+            For repeat workouts such as 400’s, 800’s, or mile repeats,
+            use half of the continuous run adjustment, as the body has a chance to cool somewhat during the recovery
+            between repeats.
+    </div>
+
+    <p class="temp-adjustment-source-note">
+        Pace adjustment guidance adapted from
+        <a href="https://maximumperformancerunning.blogspot.com/2013/07/temperature-dew-point.html" target="_blank"
+            rel="noopener">
+            Maximum Performance Running: Temperature & Dew Point
+        </a>.
+    </p>
+</div>

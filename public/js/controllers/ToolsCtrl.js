@@ -95,7 +95,9 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
 
 }]);
 
-angular.module('mcrrcApp.tools').controller('TempAdjustmentController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'UtilsService', 'localStorageService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, UtilsService, localStorageService) {
+angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
+    '$scope', '$analytics', 'AuthService', 'localStorageService',
+    function ($scope, $analytics, AuthService, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -125,8 +127,7 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', ['$scope
     };
 
 
-    const BASE_VALUES = [];
-    for (let i = 50; i <= 100; i += 5) BASE_VALUES.push(i);
+    const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);
 
     $scope.temperatures = BASE_VALUES.slice();
     $scope.dews = BASE_VALUES.slice();
@@ -147,24 +148,41 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', ['$scope
 
     function parsePace(paceStr) {
         if (typeof paceStr !== 'string' || !paceStr.trim()) return null;
-
+      
         const trimmed = paceStr.trim();
-
-        // Allow "7" as "7:00"
+      
+        // "7" => 7:00
         if (/^\d+$/.test(trimmed)) {
-            return parseInt(trimmed, 10) * 60;
+          return parseInt(trimmed, 10) * 60;
         }
-
+      
+        // "7:" => 7:00
+        if (/^\d+:$/.test(trimmed)) {
+          return parseInt(trimmed, 10) * 60;
+        }
+      
         const parts = trimmed.split(':');
         if (parts.length !== 2) return null;
-
+      
         const min = parseInt(parts[0], 10);
-        const sec = parseInt(parts[1], 10);
-
-        if (isNaN(min) || isNaN(sec) || sec < 0 || sec >= 60) return null;
-
+        let secRaw = parts[1].trim();
+      
+        if (isNaN(min)) return null;
+      
+        // If seconds are empty, default to 0
+        if (secRaw === '') return min * 60;
+      
+        let sec = parseInt(secRaw, 10);
+      
+        // If single-digit, assume tens place (e.g., 2 → 20)
+        if (secRaw.length === 1 && !isNaN(sec)) {
+          sec *= 10;
+        }
+      
+        if (isNaN(sec) || sec < 0 || sec >= 60) return null;
+      
         return min * 60 + sec;
-    }
+      }
 
 
     $scope.adjustPace = function (event) {

@@ -311,8 +311,8 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
             removeCustomValues();
             return;
         }
-
-        if (paceSec !== null){
+        //save if pace is valid or empty
+        if (paceSec !== null || paceStr === ""){
             localStorageService.set('ageAdjustment.pace',paceStr);
         }
 
@@ -340,11 +340,11 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
             previousCustomDew = null;
         }
 
-        if (!isNaN(temp) && !isNaN(dew) && dew <= temp && paceSec !== null) {
+        if (!isNaN(temp) && !isNaN(dew) && dew <= temp) {
             let sum = temp + dew;
             let adj = getAdjustmentPercent(sum);
             if (adj !== null) {
-                $scope.adjustedPace = $scope.getAdjustment(temp, dew);
+                $scope.adjustedPace = $scope.getAdjustment(temp, dew, paceSec === null );
                 $scope.paceEmoji = getPaceFeelingEmoji(sum);
             } else {
                 $scope.adjustedPace = "Not recommended to run hard.";

@@ -65,12 +65,12 @@
 					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
 					</a>
 					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li><a  ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
+						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
+						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
 					</ul>
 					</li>
           			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
@@ -108,12 +108,12 @@
 					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
 					</a>
 					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li><a  ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
+						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
+						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
 					</ul>
 					</li>
           			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>								
@@ -136,12 +136,12 @@
 					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
 					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
+					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
 						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
 					</a>
 					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li><a  ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
+						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
+						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
 					</ul>
 					</li>
          			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>

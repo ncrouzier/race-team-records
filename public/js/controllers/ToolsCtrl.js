@@ -99,42 +99,30 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
     '$scope', '$analytics', 'AuthService', 'localStorageService',
     function ($scope, $analytics, AuthService, localStorageService) {
 
-    $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function (user) {
-        $scope.user = user;
-    });
+    // Cache DOM elements and constants
+    const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);
+    let previousCustomTemp = null;
+    let previousCustomDew = null;
 
+    // Initialize scope variables
+    $scope.authService = AuthService;
+    $scope.temperatures = BASE_VALUES.slice();
+    $scope.dews = BASE_VALUES.slice();
+    $scope.inputError = null;
+    $scope.hoveredTemp = null;
+    $scope.hoveredDew = null;
+
+    // Load saved pace from localStorage
     if(localStorageService.get('ageAdjustment.pace')){
         $scope.pace = localStorageService.get('ageAdjustment.pace');
     }
 
-    $scope.hoveredTemp = null;
-    $scope.hoveredDew = null;
+    // Watch for auth changes
+    $scope.$watch('authService.isLoggedIn()', function (user) {
+        $scope.user = user;
+    });
 
-    $scope.setHoveredCell = function (temp, dew) {
-        if (dew <= temp) {
-            $scope.hoveredTemp = temp;
-            $scope.hoveredDew = dew;
-        } else {
-            $scope.hoveredTemp = null;
-            $scope.hoveredDew = null;
-        }
-    };
-
-    $scope.clearHoveredCell = function () {
-        $scope.hoveredTemp = null;
-        $scope.hoveredDew = null;
-    };
-
-
-    const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);
-
-    $scope.temperatures = BASE_VALUES.slice();
-    $scope.dews = BASE_VALUES.slice();
-
-    let previousCustomTemp = null;
-    let previousCustomDew = null;
-
+    // Optimized helper functions
     function insertSorted(arr, value) {
         if (arr.includes(value)) return;
         arr.push(value);
@@ -146,6 +134,18 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
         if (index > -1) arr.splice(index, 1);
     }
 
+    function removeCustomValues() {
+        if (previousCustomTemp) {
+            removeValue($scope.temperatures, previousCustomTemp);
+            previousCustomTemp = null;
+        }
+        if (previousCustomDew) {
+            removeValue($scope.dews, previousCustomDew);
+            previousCustomDew = null;
+        }
+    }
+
+    // Optimized pace parsing
     function parsePace(paceStr) {
         if (typeof paceStr !== 'string' || !paceStr.trim()) return null;
       
@@ -153,12 +153,12 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
       
         // "7" => 7:00
         if (/^\d+$/.test(trimmed)) {
-          return parseInt(trimmed, 10) * 60;
+            return parseInt(trimmed, 10) * 60;
         }
       
         // "7:" => 7:00
         if (/^\d+:$/.test(trimmed)) {
-          return parseInt(trimmed, 10) * 60;
+            return parseInt(trimmed, 10) * 60;
         }
       
         const parts = trimmed.split(':');
@@ -176,18 +176,87 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
       
         // If single-digit, assume tens place (e.g., 2 → 20)
         if (secRaw.length === 1 && !isNaN(sec)) {
-          sec *= 10;
+            sec *= 10;
         }
       
         if (isNaN(sec) || sec < 0 || sec >= 60) return null;
       
         return min * 60 + sec;
-      }
+    }
 
+    // Optimized pace formatting
+    function formatPace(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.round(seconds % 60);
+        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    // Optimized adjustment calculation
+    function getAdjustmentPercent(sum) {
+        if (sum <= 100) return 0;
+        if (sum <= 110) return {'low': 0, 'high': 0.005};
+        if (sum <= 120) return {'low': 0.005, 'high': 0.01};
+        if (sum <= 130) return {'low': 0.01, 'high': 0.02};
+        if (sum <= 140) return {'low': 0.02, 'high': 0.03};
+        if (sum <= 150) return {'low': 0.03, 'high': 0.045};
+        if (sum <= 160) return {'low': 0.045, 'high': 0.06};
+        if (sum <= 170) return {'low': 0.06, 'high': 0.08};
+        if (sum <= 180) return {'low': 0.08, 'high': 0.10};
+        return null;
+    }
+
+    // Optimized validation functions
+    $scope.isTempValid = function () {
+        const temp = parseInt($scope.inputTemp);
+        if (isNaN(temp) && $scope.inputDew  && $scope.inputTemp) {
+            $scope.inputError = 'Please enter a valid temperature';
+            return false;
+        }
+        $scope.inputError = null;
+        return true;
+    };
+
+    $scope.isDewValid = function() {
+        const dew = parseInt($scope.inputDew);
+        const temp = parseInt($scope.inputTemp);
+        
+        if (isNaN(dew) && $scope.inputTemp && $scope.inputDew) {
+            $scope.inputError = 'Please enter a valid dew point';
+            return false;
+        }
+        if (!isNaN(dew) && !isNaN(temp) && dew > temp) {
+            $scope.inputError = 'Dew point cannot be higher than temperature';
+            return false;
+        }
+        $scope.inputError = null;
+        return true;
+    };
+
+    // Optimized event handlers
+    $scope.setHoveredCell = function (temp, dew) {
+        if (dew <= temp) {
+            $scope.hoveredTemp = temp;
+            $scope.hoveredDew = dew;
+        } else {
+            $scope.hoveredTemp = null;
+            $scope.hoveredDew = null;
+        }
+    };
+
+    $scope.clearHoveredCell = function () {
+        $scope.hoveredTemp = null;
+        $scope.hoveredDew = null;
+    };
+
+    $scope.setInputsFromCell = function(temp, dew) {
+        if (dew <= temp) {
+            $scope.inputTemp = temp;
+            $scope.inputDew = dew;
+        }
+    };
 
     $scope.adjustPace = function (event) {
         const paceSec = parsePace($scope.pace);
-
         if (paceSec === null) return;
 
         if (event.key === 'ArrowUp') {
@@ -201,143 +270,52 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
         }
     };
 
-    // const API_KEY = '';
-
-    // function fetchWeatherByLocation(lat, lon) {
-    //     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=imperial`;
-
-    //     fetch(url)
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             if (data.main && data.main.temp && data.main.humidity) {
-    //                 const tempF = data.main.temp;
-    //                 const humidity = data.main.humidity;
-
-    //                 // Estimate dew point using Magnus formula (approximation)
-    //                 const b = 17.62;
-    //                 const c = 243.12;
-    //                 const gamma = Math.log(humidity / 100) + (b * tempF) / (c + tempF);
-    //                 const dewPointF = (c * gamma) / (b - gamma);
-
-    //                 $scope.$apply(() => {
-    //                     $scope.inputTemp = Math.round(tempF);
-    //                     $scope.inputDew = Math.round(dewPointF);
-    //                 });
-    //             }
-    //         })
-    //         .catch(err => {
-    //             console.error("Weather fetch error:", err);
-    //         });
-    // }
-
-    // function getUserLocation() {
-    //     if (navigator.geolocation) {
-    //         navigator.geolocation.getCurrentPosition(
-    //             pos => fetchWeatherByLocation(pos.coords.latitude, pos.coords.longitude),
-    //             err => console.warn('Geolocation error:', err)
-    //         );
-    //     } else {
-    //         console.warn('Geolocation not supported by this browser.');
-    //     }
-    // }
-    //   getUserLocation();
-
-    function formatPace(seconds) {
-        let min = Math.floor(seconds / 60);
-        let sec = Math.round(seconds % 60);
-        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-    }
-
-    function getAdjustmentPercent(sum) {
-        if (sum <= 100) return 0;
-        else if (sum <= 110) return {'low': 0, 'high': 0.005};
-        else if (sum <= 120) return {'low': 0.005, 'high': 0.01}; // return 0.01;
-        else if (sum <= 130) return {'low': 0.01, 'high': 0.02}; // return 0.02;
-        else if (sum <= 140) return {'low': 0.02, 'high': 0.03}; // return 0.03;
-        else if (sum <= 150) return {'low': 0.03, 'high': 0.045}; // return 0.045;
-        else if (sum <= 160) return {'low': 0.045, 'high': 0.06}; // return 0.06;
-        else if (sum <= 170) return {'low': 0.06, 'high': 0.08}; // return 0.08;
-        else if (sum <= 180) return {'low': 0.08, 'high': 0.10}; // return 0.10;
-        else return null;
-    }
-
-    $scope.getAdjustment = function (temp, dew,showPercentage) {
-        if (dew > temp) return '';
-
-        let sum = temp + dew;
-        let paceSec = parsePace($scope.pace);
-
-        if (paceSec !== null && !showPercentage) {
-            let adj = getAdjustmentPercent(sum);
-            if (adj === null) return 'Not rec.';
-            if (adj === 0) return formatPace(paceSec);
-            let newLowPace = paceSec * (1 + adj.low);
-            let newHighPace = paceSec * (1 + adj.high);
-            return formatPace(newLowPace) + '–' + formatPace(newHighPace);
-        } else {
-            // No valid base pace — show adjustment %
-            if (sum <= 100) return 'No adj.';
-            else if (sum <= 110) return '0–0.5%';
-            else if (sum <= 120) return '0.5–1%';
-            else if (sum <= 130) return '1–2%';
-            else if (sum <= 140) return '2–3%';
-            else if (sum <= 150) return '3–4.5%';
-            else if (sum <= 160) return '4.5–6%';
-            else if (sum <= 170) return '6–8%';
-            else if (sum <= 180) return '8–10%';
-            else return 'Not rec.';
-        }
-    };
-
-    $scope.getAdjustmentClass = function (sum) {
-        if (sum <= 110) return 'adj-safe';
-        else if (sum <= 130) return 'adj-moderate';
-        else if (sum <= 170) return 'adj-high';
-        else return 'adj-extreme';
-    };
-
-    $scope.isTempValid = function () {
-        const temp = parseInt($scope.inputTemp);
-        return !isNaN(temp);
-    };
-    $scope.setInputsFromCell = function(temp, dew) {
-        if (dew <= temp) {
-          $scope.inputTemp = temp;
-          $scope.inputDew = dew;
-        }
-      };
-
-    $scope.isDewValid = function() {
-        const dew = parseInt($scope.inputDew);
-        const temp = parseInt($scope.inputTemp);
-        return !isNaN(dew) && !isNaN(temp) && dew <= temp;
-      };
-
-    $scope.$watchGroup(['inputTemp', 'inputDew'], function ([temp, dew]) {
-        temp = parseInt(temp);
-        dew = parseInt(dew);
-        if (!isNaN(temp) && !isNaN(dew) && dew > temp) {
-            $scope.inputDew = temp; // clamp dew to temperature
-        }
-    });
+    // Optimized watchers
     $scope.$watch('inputTemp', function(newVal) {
         const temp = parseInt(newVal);      
-        if (isNaN(temp)) {
-          $scope.inputDew = null;
+        if (isNaN(temp) || !$scope.inputDew) {
+            $scope.inputDew = null;
+            $scope.inputError = null;
+            removeCustomValues();
+        } else {
+            $scope.isTempValid();
         }
-      });
+    });
 
+    $scope.$watch('inputDew', function(newVal) {
+        if (newVal !== null) {
+            $scope.isDewValid();
+            if ($scope.inputError) {
+                removeCustomValues();
+            }
+        } else {
+            $scope.inputError = null;
+            // Remove custom temperature when dew point is cleared
+            if (previousCustomTemp) {
+                removeValue($scope.temperatures, previousCustomTemp);
+                previousCustomTemp = null;
+            }
+        }
+    });
+
+    // Optimized main watch group
     $scope.$watchGroup(['inputTemp', 'inputDew', 'pace'], function () {
         let temp = parseInt($scope.inputTemp);
         let dew = parseInt($scope.inputDew);
         let paceStr = $scope.pace;
         let paceSec = parsePace(paceStr);
+
+        if (!$scope.isTempValid() || !$scope.isDewValid()) {
+            $scope.adjustedPace = null;
+            $scope.paceEmoji = '';
+            removeCustomValues();
+            return;
+        }
+
         if (paceSec !== null){
             localStorageService.set('ageAdjustment.pace',paceStr);
         }
 
-
-        // ----- Handle Temperature Input -----
         const bothValid = !isNaN(temp) && !isNaN(dew);
 
         if (bothValid && !BASE_VALUES.includes(temp)) {
@@ -361,18 +339,12 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
             removeValue($scope.dews, previousCustomDew);
             previousCustomDew = null;
         }
-        if (!isNaN(temp) && isNaN(dew)) {
-            removeValue($scope.temperatures, previousCustomTemp);
-        }
-        
 
-        // ----- Pace Adjustment -----
         if (!isNaN(temp) && !isNaN(dew) && dew <= temp && paceSec !== null) {
             let sum = temp + dew;
             let adj = getAdjustmentPercent(sum);
             if (adj !== null) {
-                let newPace = paceSec * (1 + adj);
-                $scope.adjustedPace = $scope.getAdjustment(temp,dew);
+                $scope.adjustedPace = $scope.getAdjustment(temp, dew);
                 $scope.paceEmoji = getPaceFeelingEmoji(sum);
             } else {
                 $scope.adjustedPace = "Not recommended to run hard.";
@@ -382,11 +354,9 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
             $scope.adjustedPace = null;
             $scope.paceEmoji = '';
         }
-
-
     });
 
-
+    // Optimized utility functions
     function getPaceFeelingEmoji(sum) {
         if (sum <= 110) return '😎';    
         if (sum <= 120) return '🙂';      
@@ -397,18 +367,47 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
         return '💀';                      
     }
 
-    $scope.getPaceTooltipHtml = function(temp,dew) {
+    $scope.getAdjustment = function (temp, dew, showPercentage) {
+        if (dew > temp) return '';
+
+        let sum = temp + dew;
+        let paceSec = parsePace($scope.pace);
+
+        if (paceSec !== null && !showPercentage) {
+            let adj = getAdjustmentPercent(sum);
+            if (adj === null) return 'Not rec.';
+            if (adj === 0) return formatPace(paceSec);
+            let newLowPace = paceSec * (1 + adj.low);
+            let newHighPace = paceSec * (1 + adj.high);
+            return formatPace(newLowPace) + '–' + formatPace(newHighPace);
+        } else {
+            if (sum <= 100) return 'No adj.';
+            if (sum <= 110) return '0–0.5%';
+            if (sum <= 120) return '0.5–1%';
+            if (sum <= 130) return '1–2%';
+            if (sum <= 140) return '2–3%';
+            if (sum <= 150) return '3–4.5%';
+            if (sum <= 160) return '4.5–6%';
+            if (sum <= 170) return '6–8%';
+            if (sum <= 180) return '8–10%';
+            return 'Not rec.';
+        }
+    };
+
+    $scope.getAdjustmentClass = function (sum) {
+        if (sum <= 110) return 'adj-safe';
+        if (sum <= 130) return 'adj-moderate';
+        if (sum <= 170) return 'adj-high';
+        return 'adj-extreme';
+    };
+
+    $scope.getPaceTooltipHtml = function(temp, dew) {
         return `
-          <div class="text-left">
-            <div>Pace adjustment: ${$scope.getAdjustment(temp,dew,true)} ${getPaceFeelingEmoji(temp+dew)} </div>
-          </div>
+            <div class="text-left">
+                <div>Pace adjustment: ${$scope.getAdjustment(temp, dew, true)} ${getPaceFeelingEmoji(temp+dew)} </div>
+            </div>
         `;
-      };
-
-   
-
-
-
+    };
 }]);
 
 

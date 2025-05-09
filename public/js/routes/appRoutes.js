@@ -109,6 +109,9 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/tempAdjustment.html');
                 gtag('event', 'page_view');
             }
+        }).state('/moist', {
+            url: "/moist",
+            redirectTo: '/tools/paceAdjustment'
         }).state('/report', {
             url: "/report",
             templateUrl: "views/report.html",

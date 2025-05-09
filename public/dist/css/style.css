@@ -6892,6 +6892,12 @@ button.close {
   font-size: 13px;
   font-weight: 300;
 }
+.navbar .dropdown-menu > .active > a,
+.navbar .dropdown-menu > .active > a:hover,
+.navbar .dropdown-menu > .active > a:focus {
+  color: #fff;
+  background-color: #008cba;
+}
 .navbar .dropdown-header {
   color: rgba(255, 255, 255, 0.5);
 }

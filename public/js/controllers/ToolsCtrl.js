@@ -344,7 +344,7 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
             let sum = temp + dew;
             let adj = getAdjustmentPercent(sum);
             if (adj !== null) {
-                $scope.adjustedPace = $scope.getAdjustment(temp, dew, paceSec === null );
+                $scope.adjustedPace = $scope.getAdjustment(temp, dew, paceSec === null ).long;
                 $scope.paceEmoji = getPaceFeelingEmoji(sum);
             } else {
                 $scope.adjustedPace = "Not recommended to run hard.";
@@ -356,8 +356,8 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
         }
     });
 
-    // Optimized utility functions
     function getPaceFeelingEmoji(sum) {
+        if (sum <= 100) return '🤩';  
         if (sum <= 110) return '😎';    
         if (sum <= 120) return '🙂';      
         if (sum <= 130) return '😅';     
@@ -375,22 +375,22 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
 
         if (paceSec !== null && !showPercentage) {
             let adj = getAdjustmentPercent(sum);
-            if (adj === null) return 'Not rec.';
-            if (adj === 0) return formatPace(paceSec);
+            if (adj === null) return {short:'Not rec.', long:'Not recommended to run hard.'};
+            if (adj === 0) return {short:formatPace(paceSec), long:formatPace(paceSec)};
             let newLowPace = paceSec * (1 + adj.low);
             let newHighPace = paceSec * (1 + adj.high);
-            return formatPace(newLowPace) + '–' + formatPace(newHighPace);
+            return {short:formatPace(newLowPace) + '–' + formatPace(newHighPace), long:formatPace(newLowPace) + '–' + formatPace(newHighPace)};
         } else {
-            if (sum <= 100) return 'No adj.';
-            if (sum <= 110) return '0–0.5%';
-            if (sum <= 120) return '0.5–1%';
-            if (sum <= 130) return '1–2%';
-            if (sum <= 140) return '2–3%';
-            if (sum <= 150) return '3–4.5%';
-            if (sum <= 160) return '4.5–6%';
-            if (sum <= 170) return '6–8%';
-            if (sum <= 180) return '8–10%';
-            return 'Not rec.';
+            if (sum <= 100) return {short:'No adj.', long:'No adjustment needed'};
+            if (sum <= 110) return {short:'0–0.5%', long:'0–0.5% slower'};
+            if (sum <= 120) return {short:'0.5–1%', long:'0.5–1% slower'};
+            if (sum <= 130) return {short:'1–2%', long:'1–2% slower'};
+            if (sum <= 140) return {short:'2–3%', long:'2–3% slower'};
+            if (sum <= 150) return {short:'3–4.5%', long:'3–4.5% slower'};
+            if (sum <= 160) return {short:'4.5–6%', long:'4.5–6% slower'};
+            if (sum <= 170) return {short:'6–8%', long:'6–8% slower'};
+            if (sum <= 180) return {short:'8–10%', long:'8–10% slower'};
+            return {short:'Not rec.', long:'Not recommended to run hard.'};
         }
     };
 
@@ -404,7 +404,7 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
     $scope.getPaceTooltipHtml = function(temp, dew) {
         return `
             <div class="text-left">
-                <div>Pace adjustment: ${$scope.getAdjustment(temp, dew, true)} ${getPaceFeelingEmoji(temp+dew)} </div>
+                <div>${$scope.getAdjustment(temp, dew, true).long} ${getPaceFeelingEmoji(temp+dew)} </div>
             </div>
         `;
     };

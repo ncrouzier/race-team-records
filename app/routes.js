@@ -1854,8 +1854,10 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 let headers = [];
                 let data = [];
 
-                // Try each selector until we find a working one
+                // Parkrun specific table selectors
                 const tableSelectors = [
+                    'table.Results-table',  // Parkrun specific class
+                    'table.Results',        // Another Parkrun specific class
                     'table.results-table',  // Common for results tables
                     'table.table',          // Bootstrap tables
                     'table.dataTable',      // DataTables
@@ -1866,16 +1868,21 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                     'div.results'           // Some sites use div for results
                 ];
 
+                // Log the HTML for debugging
+                console.log('Parkrun HTML content:', response.data);
+
                 // Try each selector until we find a working one
                 for (const selector of tableSelectors) {
                     const element = $(selector).first();
                     if (element.length) {
+                        console.log('Found element with selector:', selector);
                         // Try to extract headers - be more strict about what constitutes a header
                         const potentialHeaders = [];
                         const headerRow = element.find('thead tr, tr:first-child').first();
                         
                         // Only process if we found a header row
                         if (headerRow.length) {
+                            console.log('Found header row:', headerRow.html());
                             // Check if this looks like a header row (all cells should be th elements)
                             const allCellsAreTh = headerRow.find('td').length === 0;
                             
@@ -1892,6 +1899,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
                         // If we found valid headers, try to extract data
                         if (potentialHeaders.length > 0) {
+                            console.log('Found headers:', potentialHeaders);
                             const potentialData = [];
                             // Skip the header row when getting data
                             element.find('tbody tr, tr:not(:first-child)').each(function() {
@@ -1908,6 +1916,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
                             // If we found both headers and data, use this table
                             if (potentialData.length > 0) {
+                                console.log('Found data rows:', potentialData.length);
                                 table = element;
                                 headers = potentialHeaders;
                                 data = potentialData;
@@ -1918,6 +1927,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 }
 
                 if (!table || headers.length === 0 || data.length === 0) {
+                    console.log('No table found with any selector');
                     return res.status(400).json({ 
                         success: false, 
                         error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 

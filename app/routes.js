@@ -1837,57 +1837,77 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 const pageTitle = `${resultsHeader} #${eventNumber}`;
 
                 // Try different table selectors
-                let table = $('table.results-table').first();
-                if (!table.length) {
-                    table = $('table.table').first();
-                }
-                if (!table.length) {
-                    table = $('table').first();
-                }
-                if (!table.length) {
-                    return res.status(400).json({ success: false, error: 'No results table found on the page' });
-                }
+                let table = null;
+                let headers = [];
+                let data = [];
 
-
-                // Define Parkrun headers
-                const headers = [
-                    'Position', 'Parkrunner', 'Gender', 'Gender Rank', 'Age Group', 'Club', 'Time'
+                // Try each selector until we find a working one
+                const tableSelectors = [
+                    'table.results-table',  // Common for results tables
+                    'table.table',          // Bootstrap tables
+                    'table.dataTable',      // DataTables
+                    'table.sortable',       // Sortable tables
+                    'table.grid',           // Grid tables
+                    'table',                // Any table as last resort
+                    'div.table',            // Some sites use div with table class
+                    'div.results'           // Some sites use div for results
                 ];
 
-                const data = [];
-                table.find('tr').each(function() {
-                    const cells = $(this).find('td');
-                    if (cells.length >= 6) {
-                        // Get the full gender text including ranking and clean it up
-                        const genderText = $(cells[2]).text()
-                            .replace(/\n/g, ' ')  // Replace newlines with spaces
-                            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-                            .trim();
+                // Try each selector until we find a working one
+                for (const selector of tableSelectors) {
+                    const element = $(selector).first();
+                    if (element.length) {
+                        // Try to extract headers - be more strict about what constitutes a header
+                        const potentialHeaders = [];
+                        const headerRow = element.find('thead tr, tr:first-child').first();
                         
-                        // Extract gender and ranking
-                        const genderMatch = genderText.match(/^(\w+)\s+(\d+)$/);
-                        const gender = genderMatch ? genderMatch[1] : genderText;
-                        const genderRank = genderMatch ? genderMatch[2] : '';
-                    
-                        const row = {
-                            'Position': $(cells[0]).text().trim(),
-                            'Parkrunner': $(cells[1]).text().trim(),
-                            'Gender': gender,
-                            'Gender Rank': genderRank,
-                            'Age Group': $(cells[3]).text().trim(),
-                            'Club': $(cells[4]).text().trim(),
-                            'Time': $(cells[5]).text().trim()
-                        };
-                         
-                      
-                        data.push(row);
-                    }
-                });
+                        // Only process if we found a header row
+                        if (headerRow.length) {
+                            // Check if this looks like a header row (all cells should be th elements)
+                            const allCellsAreTh = headerRow.find('td').length === 0;
+                            
+                            if (allCellsAreTh) {
+                                headerRow.find('th').each(function() {
+                                    const headerText = $(this).text().trim();
+                                    // Only add if it looks like a header (not empty and not a number)
+                                    if (headerText && !/^\d+$/.test(headerText)) {
+                                        potentialHeaders.push(headerText);
+                                    }
+                                });
+                            }
+                        }
 
-                if (data.length === 0) {
+                        // If we found valid headers, try to extract data
+                        if (potentialHeaders.length > 0) {
+                            const potentialData = [];
+                            // Skip the header row when getting data
+                            element.find('tbody tr, tr:not(:first-child)').each(function() {
+                                const row = {};
+                                $(this).find('td').each(function(index) {
+                                    if (potentialHeaders[index]) {
+                                        row[potentialHeaders[index]] = $(this).text().trim();
+                                    }
+                                });
+                                if (Object.keys(row).length > 0) {
+                                    potentialData.push(row);
+                                }
+                            });
+
+                            // If we found both headers and data, use this table
+                            if (potentialData.length > 0) {
+                                table = element;
+                                headers = potentialHeaders;
+                                data = potentialData;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!table || headers.length === 0 || data.length === 0) {
                     return res.status(400).json({ 
                         success: false, 
-                        error: 'No results found in the table' 
+                        error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 
                     });
                 }
 
@@ -2074,36 +2094,77 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 // Extract page title
                 const pageTitle = $('title').text().trim();
 
-                const table = $('table').first();
-                if (!table.length) {
-                    return res.status(400).json({ success: false, error: 'No table found on the page' });
+                // Try different table selectors in sequence
+                const tableSelectors = [
+                    'table.results-table',  // Common for results tables
+                    'table.table',          // Bootstrap tables
+                    'table.dataTable',      // DataTables
+                    'table.sortable',       // Sortable tables
+                    'table.grid',           // Grid tables
+                    'table',                // Any table as last resort
+                    'div.table',            // Some sites use div with table class
+                    'div.results'           // Some sites use div for results
+                ];
+
+                let table = null;
+                let headers = [];
+                let data = [];
+
+                // Try each selector until we find a working one
+                for (const selector of tableSelectors) {
+                    const element = $(selector).first();
+                    if (element.length) {
+                        // Try to extract headers - be more strict about what constitutes a header
+                        const potentialHeaders = [];
+                        const headerRow = element.find('thead tr, tr:first-child').first();
+                        
+                        // Only process if we found a header row
+                        if (headerRow.length) {
+                            // Check if this looks like a header row (all cells should be th elements)
+                            const allCellsAreTh = headerRow.find('td').length === 0;
+                            
+                            if (allCellsAreTh) {
+                                headerRow.find('th').each(function() {
+                                    const headerText = $(this).text().trim();
+                                    // Only add if it looks like a header (not empty and not a number)
+                                    if (headerText && !/^\d+$/.test(headerText)) {
+                                        potentialHeaders.push(headerText);
+                                    }
+                                });
+                            }
+                        }
+
+                        // If we found valid headers, try to extract data
+                        if (potentialHeaders.length > 0) {
+                            const potentialData = [];
+                            // Skip the header row when getting data
+                            element.find('tbody tr, tr:not(:first-child)').each(function() {
+                                const row = {};
+                                $(this).find('td').each(function(index) {
+                                    if (potentialHeaders[index]) {
+                                        row[potentialHeaders[index]] = $(this).text().trim();
+                                    }
+                                });
+                                if (Object.keys(row).length > 0) {
+                                    potentialData.push(row);
+                                }
+                            });
+
+                            // If we found both headers and data, use this table
+                            if (potentialData.length > 0) {
+                                table = element;
+                                headers = potentialHeaders;
+                                data = potentialData;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                const headers = [];
-                const data = [];
-
-                // Extract headers
-                table.find('thead th, tr:first-child th').each(function() {
-                    headers.push($(this).text().trim());
-                });
-
-                // Extract rows
-                table.find('tbody tr, tr:not(:first-child)').each(function() {
-                    const row = {};
-                    $(this).find('td, th').each(function(index) {
-                        if (headers[index]) {
-                            row[headers[index]] = $(this).text().trim();
-                        }
-                    });
-                    if (Object.keys(row).length > 0) {
-                        data.push(row);
-                    }
-                });
-
-                if (headers.length === 0 || data.length === 0) {
+                if (!table || headers.length === 0 || data.length === 0) {
                     return res.status(400).json({ 
                         success: false, 
-                        error: 'No data found in the table' 
+                        error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 
                     });
                 }
 

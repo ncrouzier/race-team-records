@@ -29,12 +29,12 @@
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">
                         <tr>
-                            <th ng-repeat="header in tableHeaders" class="header text-center align-middle" ng-hide="isColumnHidden(header)" ng-click="hideColumn(header)" >
+                            <th ng-repeat="header in tableHeaders track by $index" class="header text-center align-middle" ng-hide="isColumnHidden(header)" ng-click="hideColumn(header)" >
                                 {{header}}
                             </th>
                         </tr>
                         <tr>
-                            <th ng-repeat="header in tableHeaders" class="text-center" ng-hide="isColumnHidden(header)">
+                            <th ng-repeat="header in tableHeaders track by $index" class="text-center" ng-hide="isColumnHidden(header)">
                                 <select class="form-control form-control-sm" ng-model="columnMapping[header]">
                                     <option value="">??</option>
                                     <option ng-repeat="field in mappableFields" value="{{field.value}}">
@@ -46,7 +46,7 @@
                     </thead>
                     <tbody>
                         <tr ng-repeat="row in tableData.slice(0, 5)" class="align-middle" ng-class="{'bg-white': $even, 'bg-light': $odd}">
-                            <td ng-repeat="header in tableHeaders" class="text-center" ng-class="{'bg-white': $parent.$even, 'bg-light': $parent.$odd}" ng-hide="isColumnHidden(header)">
+                            <td ng-repeat="header in tableHeaders track by $index" class="text-center" ng-class="{'bg-white': $parent.$even, 'bg-light': $parent.$odd}" ng-hide="isColumnHidden(header)">
                                 {{row[header]}}
                             </td>
                         </tr>

@@ -69,10 +69,12 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             { value: 'place', label: 'Overall Ranking' },
             { value: 'genderRank', label: 'Gender Ranking' },
             { value: 'ageRank', label: 'Age Ranking' },
-            { value: 'name', label: 'Name' },
+            { value: 'name', label: 'Full Name' },
+            { value: 'firstname', label: 'First Name' },
+            { value: 'lastname', label: 'Last Name' },
             { value: 'time', label: 'Time' } ,
             { value: 'gender', label: 'Gender/Sex' },
-            { value: 'ageGroup', label: 'Age/Division Group' }
+            { value: 'ageGroup', label: 'Age/Division Group' }           
         ];
 
         // Get available options for a specific header
@@ -89,6 +91,13 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         return false;
                     }
                 }
+                // // Special handling for name fields
+                // if (field.value === 'name' && (hasFirstName || hasLastName)) {
+                //     return false; // Can't map name if firstname or lastname is already mapped
+                // }
+                // if ((field.value === 'firstname' || field.value === 'lastname') && hasName) {
+                //     return false; // Can't map firstname or lastname if name is already mapped
+                // }
                 return true;
             });
         };
@@ -258,20 +267,30 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         };
 
         $scope.hasRequiredFields = function() {
-            // Check if any column is mapped to 'name' and 'time'
+            // Check if we have either a name column or both firstname and lastname columns
             var hasName = false;
+            var hasFirstName = false;
+            var hasLastName = false;
             var hasTime = false;
             
             for (var header in $scope.columnMapping) {
                 if ($scope.columnMapping[header] === 'name') {
                     hasName = true;
                 }
+                if ($scope.columnMapping[header] === 'firstname') {
+                    hasFirstName = true;
+                }
+                if ($scope.columnMapping[header] === 'lastname') {
+                    hasLastName = true;
+                }
                 if ($scope.columnMapping[header] === 'time') {
                     hasTime = true;
                 }
             }
             
-            return hasName && hasTime;
+            // We need either name or both firstname and lastname
+            var hasValidNameMapping = hasName || (hasFirstName && hasLastName);
+            return hasValidNameMapping && hasTime;
         };
 
         $scope.getRaceTypeClass = function(s) {
@@ -391,6 +410,9 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 
                     // Find the column header that was mapped to 'name'
                     var nameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'name');
+                    var firstNameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'firstname');
+                    var lastNameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'lastname');
+
                     if (nameColumn && row[nameColumn]) {
                         var nameParts = row[nameColumn].trim().split(/\s+/);
                         if (nameParts.length >= 2) {
@@ -399,6 +421,9 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         } else {
                             return null;
                         }
+                    } else if (firstNameColumn && lastNameColumn && row[firstNameColumn] && row[lastNameColumn]) {
+                        result.member.firstname = row[firstNameColumn].trim();
+                        result.member.lastname = row[lastNameColumn].trim();
                     } else {
                         return null;
                     }

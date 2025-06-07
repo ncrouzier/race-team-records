@@ -1,0 +1,288 @@
+<div class="result-extractor-tool jumbotron">
+    <h2 class="mb-4">Result Extractor</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form ng-submit="loadTable()">
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label for="urlInput">URL of Results Page</label>
+                            <input type="url" class="form-control" id="urlInput" ng-model="url"
+                                placeholder="Enter URL of the results page" required>
+                        </div>
+
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" ng-disabled="!url">
+                    Load Table
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="fetched-data card" ng-if="tableData">
+        <div class="card-body">
+            <h4 class="card-title mb-3">Map Table Columns {{tableData.length}}</h4>
+
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th ng-repeat="header in tableHeaders" class="header text-center align-middle" ng-hide="isColumnHidden(header)" ng-click="hideColumn(header)" >
+                                {{header}}
+                            </th>
+                        </tr>
+                        <tr>
+                            <th ng-repeat="header in tableHeaders" class="text-center" ng-hide="isColumnHidden(header)">
+                                <select class="form-control form-control-sm" ng-model="columnMapping[header]">
+                                    <option value="">??</option>
+                                    <option ng-repeat="field in mappableFields" value="{{field.value}}">
+                                        {{field.label}}
+                                    </option>
+                                </select>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="row in tableData.slice(0, 5)" class="align-middle" ng-class="{'bg-white': $even, 'bg-light': $odd}">
+                            <td ng-repeat="header in tableHeaders" class="text-center" ng-class="{'bg-white': $parent.$even, 'bg-light': $parent.$odd}" ng-hide="isColumnHidden(header)">
+                                {{row[header]}}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-group">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Race Name:</label>
+                        <input type="text" class="form-control" ng-model="formData.raceName" required>
+                    </div>
+                    <div class="col-md-6">
+                    <label>Race Date:</label>                  
+                        <p class="input-group" >
+                          <input type="text" ng-class="{'redbg': isOlderDateCheck(formData.racedate),  '' : !isOlderDateCheck(formData.racedate)}" name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.raceDate" ng-model-options="{timezone: 'utc'}" is-open="formData.opened" min-date="'2013-01-01'" max-date="'3015-06-22'"
+                            required close-text="Close" />
+                          <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                            </span>
+                        </p>
+                      </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Race Type:</label><br>
+            <ui-select ng-model="formData.raceType" theme="select2" style="min-width: 280px;"
+                on-select="onRaceTypeSelect($item)">
+                <ui-select-match placeholder="Select a race type">
+                    <div
+                        ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')">
+                    </div>
+                </ui-select-match>
+                <ui-select-choices
+                    repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+                    <div
+                        ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                        <div
+                            ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search">
+                        </div>
+                        <span ng-show="!racetype.isVariable">
+                            <small>length in meters: {{racetype.meters | number}} m</small>
+                            <br>
+                            <small>length in miles: {{racetype.miles | number}} miles</small>
+                        </span>
+                        <span ng-show="racetype.isVariable">
+                            <small>Specify distance for each race result</small>
+                        </span>
+                    </div>
+                </ui-select-choices>
+            </ui-select>
+        </div>
+        <div class="form-group" ng-show="formData.raceType.isVariable && formData.raceType.surface !== 'multiple'">
+            <div class="row">
+                <div class="col-md-4">
+                    <label>Distance Display Name: {{formData.distanceName}}</label>
+                    <input type="text" class="form-control" ng-model="formData.distanceName"
+                        ng-required="formData.raceType.isVariable && formData.raceType.surface !== 'multiple'">
+                </div>
+                <div class="col-md-4">
+                    <label>Distance in meters:</label>
+                    <input type="text" class="form-control" ng-model="formData.meters"
+                        ng-required="formData.raceType.isVariable && formData.raceType.surface !== 'multiple'"
+                        ng-change="onMetersChange()">
+                </div>
+                <div class="col-md-4">
+                    <label>Distance in miles:</label>
+                    <input type="text" class="form-control" ng-model="formData.miles"
+                        ng-required="formData.raceType.isVariable && formData.raceType.surface !== 'multiple'"
+                        ng-change="onMilesChange()">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-5">
+                    <label>Country:</label><br>
+                    <ui-select ng-model="formData.location.country" theme="select2" style="min-width: 280px;">
+                        <ui-select-match placeholder="Select a country">
+                            <div ng-bind-html="$select.selected.name"></div>
+                        </ui-select-match>
+                        <ui-select-choices
+                            repeat="country.code as country in countries | propsFilter: {name: $select.search, code: $select.search}">
+                            <div
+                                ng-bind-html="(country.name + ' (' + country.code+')')| highlightignorespan: $select.search">
+                            </div>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+                <div class="col-md-3">
+                    <label>State:</label><br>
+                    <ui-select ng-disabled="formData.location.country !== 'USA'" ng-model="formData.location.state"
+                        theme="select2" style="min-width: 250px;">
+                        <ui-select-match placeholder="Select a state">
+                            <div ng-bind-html="$select.selected.name"></div>
+                        </ui-select-match>
+                        <ui-select-choices
+                            repeat="state.code as state in states | propsFilter: {name: $select.search, code: $select.search}">
+                            <div
+                                ng-bind-html="(state.name + ' (' + state.code+')')| highlightignorespan: $select.search">
+                            </div>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+                <div class="col-md-4">
+                    <label>Shortcuts:</label>
+                    <br>
+                    <button class="btn btn-primary"
+                        ng-click="formData.location.country='USA'; formData.location.state='MD'">MD</button>
+                    <button class="btn btn-primary"
+                        ng-click="formData.location.country='USA'; formData.location.state='DC'">DC</button>
+                    <button class="btn btn-primary"
+                        ng-click="formData.location.country='USA'; formData.location.state='VA'">VA</button>
+                    <button class="btn btn-primary"
+                        ng-click="formData.location.country='USA'; formData.location.state='PA'">PA</button>
+                    <button class="btn btn-primary"
+                        ng-click="formData.location.country='USA'; formData.location.state='DE'">DE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="row">
+                <div class="col-md-8">
+                    <label>Result web link:</label>
+                    <input type="text" ng-model="formData.resultlink" class="form-control input-md text-left">
+                </div>
+                <div class="col-md-4">
+                    <label>&nbsp;</label>
+                    <div class="checkbox" style="margin-top: 8px;">
+                        <label>
+                            <input type="checkbox" ng-model="formData.isRecordEligible"> Record Eligible
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info" ng-if="!canProcess().canProcess" ng-bind-html="canProcess().message">
+        </div>
+        <button class="btn btn-success" ng-click="processResults()"
+            ng-disabled="!canProcess().canProcess">
+            Process Results  <span ng-show="processedResults.length >0">- {{processedResults.length}}</span>
+        </button>
+    </div>
+
+
+    <div class="fetched-data card mt-4" ng-if="processedResults.length > 0">
+        <div class="card-body">
+            <h4 class="card-title mb-3">Processed Results</h4>
+    
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Name</th>
+                            <th>Time</th>
+                            <th>Time Details</th>
+                            <th>Overall</th>
+                            <th>Gender</th>
+                            <th>Age</th>
+                            <th>Debug</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="result in processedResults">
+                            <td>
+                                <input type="checkbox" ng-model="result.selected" ng-checked="result.selected">
+                            </td>
+                            <td>{{result.members[0].firstname}} {{result.members[0].lastname}}</td>
+                            <td><span class="resultTime">{{result.time | secondsToTimeString}}</span></td>
+                            <td class="agegradeCell customtime nowrap">
+                                <div class="input-group input-group-sm" style="width: 100px;">
+                                    <input type="number" min="0" style="width: 29px;" ng-model="result.timeExp.hours"
+                                        only-digits class=" text-left" ng-change="updateTime(result)"
+                                        placeholder="0">:<input type="number" min="0" style="width: 29px;"
+                                        ng-model="result.timeExp.minutes" only-digits-for-min-sec class="text-left"
+                                        ng-change="updateTime(result)" placeholder="0">:<input type="number" min="0"
+                                        style="width: 29px;" ng-model="result.timeExp.seconds" only-digits-for-min-sec
+                                        class="text-left" ng-change="updateTime(result)" placeholder="0">.<input
+                                        type="number" min="0" style="width: 29px;" ng-model="result.timeExp.centiseconds"
+                                        only-digits-for-min-sec class="text-left" ng-change="updateTime(result)"
+                                        placeholder="0">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <input type="text" ng-model="result.ranking.overallrank" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                    <span>/</span>
+                                    <input type="text" ng-model="result.ranking.overalltotal" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <input type="text" ng-model="result.ranking.genderrank" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                    <span>/</span>
+                                    <input type="text" ng-model="result.ranking.gendertotal" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm" style="width: 120px;">
+                                    <input type="text" ng-model="result.ranking.agerank" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                    <span>/</span>
+                                    <input type="text" ng-model="result.ranking.agetotal" only-digits
+                                        class="form-inline input-md text-left" style="width: 50px;">
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" ng-click="debugResult(result)">
+                                    <i class="fa fa-code"></i> Debug
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+    
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <button class="btn btn-default" ng-click="selectAll()">Select All</button>
+                    <button class="btn btn-default" ng-click="deselectAll()">Deselect All</button>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="saving || !hasSelectedResults()">
+                        {{saving ? 'Saving...' : 'Save Selected Results'}}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

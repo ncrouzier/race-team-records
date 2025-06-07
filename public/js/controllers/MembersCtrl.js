@@ -491,5 +491,25 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         $scope.openedMembershipEndDatePickers[index] = true;
     };
 
+    $scope.newAlternateName = '';
+
+    $scope.addAlternateName = function () {
+        if ($scope.newAlternateName && $scope.newAlternateName.trim()) {
+            if (!$scope.formData.alternateFullNames) {
+                $scope.formData.alternateFullNames = [];
+            }
+            $scope.formData.alternateFullNames.push($scope.newAlternateName.trim());
+            $scope.newAlternateName = '';
+        }
+    };
+
+    $scope.removeAlternateName = function (index) {
+        $scope.formData.alternateFullNames.splice(index, 1);
+    };
+
+    // Initialize alternateFullNames array if it doesn't exist
+    if (!$scope.formData.alternateFullNames) {
+        $scope.formData.alternateFullNames = [];
+    } 
 
 }]);

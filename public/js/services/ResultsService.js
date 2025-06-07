@@ -91,6 +91,43 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         );
     };
 
+    /**
+     * Save multiple results at once
+     * @param {Array} resultsToSave - Array of results to save
+     * @return {Promise} - Promise that resolves when all results are saved
+     */
+    factory.saveResults = function(resultsToSave) {
+        // Helper function to save results sequentially
+        function saveSequentially(resultsToSave, index = 0, savedResults = []) {
+            if (index >= resultsToSave.length) {
+                return $q.resolve(savedResults);
+            }
+
+            return results.post(resultsToSave[index]).then(
+                function(r) {
+                    savedResults.push(r);
+                    return saveSequentially(resultsToSave, index + 1, savedResults);
+                },
+                function(error) {
+                    console.error('Error saving result:', error);
+                    return $q.reject(error);
+                }
+            );
+        }
+
+        // Start sequential saving
+        return saveSequentially(resultsToSave).then(
+            function(savedResults) {
+                NotificationService.showNotifiction(true, savedResults.length + " results saved successfully!");
+                return savedResults;
+            },
+            function(error) {
+                NotificationService.showNotifiction(false, "Error while saving results.");
+                throw error;
+            }
+        );
+    };
+
     //edit a result
     factory.editResult = function(result) {
         return result.save().then(

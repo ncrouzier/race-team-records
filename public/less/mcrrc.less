@@ -1171,3 +1171,79 @@ footer {
     -webkit-box-shadow: 0 6px 12px rgba(0,0,0,.175);
     box-shadow: 0 6px 12px rgba(0,0,0,.175);
 }
+
+.bubble-input {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.bubble-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 5px;
+    min-height: 38px;
+    border: none;
+    background-color: #fff;
+}
+
+.bubble {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background-color: #e9ecef;
+    border-radius: 16px;
+    font-size: 14px;
+    margin: 2px;
+}
+
+.remove-bubble {
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #666;
+}
+
+.remove-bubble:hover {
+    color: #dc3545;
+}
+
+.bubble-input input {
+    padding: 5px;
+    flex-grow: 1;
+    min-width: 120px;
+}
+
+.bubble-input input:focus {
+    box-shadow: none;
+} 
+
+// Result Extractor Table Styles
+.fetched-data {
+    .table {
+        border: 2px solid #adb5bd;
+        
+        th, td {
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f8f9fa;
+           
+
+            &.header {
+                &:hover {
+                    background-color: #e98893;
+                    cursor: pointer;
+                }
+            }
+        }
+
+        .form-control-sm {
+            padding: 0;
+            text-align: center;
+            text-align-last: center;
+        }
+    }
+} 

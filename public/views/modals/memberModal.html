@@ -19,6 +19,25 @@
             </div>
         </div>
         <div class="row">
+            <div class="col-sm-12">
+                <div class="form-group">
+                    <label class="text-left">Alternate Full Names:</label>
+                    <div class="bubble-input">
+                        <div class="bubble-container" ng-show="formData.alternateFullNames.length >0">
+                            <div class="bubble" ng-repeat="name in formData.alternateFullNames track by $index">
+                                {{name}}
+                                <span class="remove-bubble" ng-click="removeAlternateName($index)">&times;</span>
+                            </div>
+                        </div>
+                        <input type="text" class="form-control" 
+                               ng-model="newAlternateName" 
+                               ng-keypress="$event.keyCode === 13 && addAlternateName()"
+                               placeholder="Type name and press Enter">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
             <div class="col-sm-6">
                 <label class="text-left">Date of Birth:</label>
                 <div class="row">

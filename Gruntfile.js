@@ -18,38 +18,38 @@ module.exports = function(grunt) {
         },
 
         // take all the js files and minify them into app.min.js
-        terser: {
-            options: {
-                mangle: false                
-            },
-            build: {
-                files: {
-                        'public/dist/js/app.min.js': [
-                        'public/libs/jquery/dist/jquery.js',
-                        'public/libs/angular/angular.js',
-                        'public/libs/angular-notify/dist/angular-notify.js',
-                        // 'public/libs/angular-bootstrap/ui-bootstrap-tpls.js',
-                        'public/libs/angular-loading-bar/build/loading-bar.js',
-                        'public/libs/angular-sanitize/angular-sanitize.js',
-                        'public/libs/angular-ui-router/release/angular-ui-router.js',
-                        'public/libs/angular-ui-select/dist/select.js',
-                        'public/libs/lodash/dist/lodash.js',
-                        'public/libs/restangular/dist/restangular.js',
-                        'public/libs/angular-utils-pagination/dirPagination.js',
-                        'public/libs/angular-dialog-service/dist/dialogs.min.js',
-                        'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-                        'public/libs/angulartics/dist/angulartics.min.js',
-                        'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
-                        'public/libs/jspdf/dist/jspdf.min.js',
-                        'public/libs/async/dist/async.min.js',
-                        'public/libs/datamaps/dist/datamaps.all.hires.min.js',
-                        'public/libs/moment/min/moment.min.js',
-                        'public/js/**/*.js',
-                        'public/js/*.js'
-                    ]
-                }
-            }
-        },
+        // terser: {
+        //     options: {
+        //         mangle: false                
+        //     },
+        //     build: {
+        //         files: {
+        //                 'public/dist/js/app.min.js': [
+        //                 'public/libs/jquery/dist/jquery.js',
+        //                 'public/libs/angular/angular.js',
+        //                 'public/libs/angular-notify/dist/angular-notify.js',
+        //                 // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
+        //                 'public/libs/angular-loading-bar/build/loading-bar.js',
+        //                 'public/libs/angular-sanitize/angular-sanitize.js',
+        //                 'public/libs/angular-ui-router/release/angular-ui-router.js',
+        //                 'public/libs/angular-ui-select/dist/select.js',
+        //                 'public/libs/lodash/dist/lodash.js',
+        //                 'public/libs/restangular/dist/restangular.js',
+        //                 'public/libs/angular-utils-pagination/dirPagination.js',
+        //                 'public/libs/angular-dialog-service/dist/dialogs.min.js',
+        //                 'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
+        //                 'public/libs/angulartics/dist/angulartics.min.js',
+        //                 'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
+        //                 'public/libs/jspdf/dist/jspdf.min.js',
+        //                 'public/libs/async/dist/async.min.js',
+        //                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
+        //                 'public/libs/moment/min/moment.min.js',
+        //                 'public/js/**/*.js',
+        //                 'public/js/*.js'
+        //             ]
+        //         }
+        //     }
+        // },
 
         concat: {
             options: {
@@ -60,6 +60,7 @@ module.exports = function(grunt) {
                 src: ['public/libs/jquery/dist/jquery.js',
                 'public/libs/angular/angular.js',
                 'public/libs/angular-notify/dist/angular-notify.js',
+                // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
                 'public/libs/angular-loading-bar/build/loading-bar.js',
                 'public/libs/angular-sanitize/angular-sanitize.js',
                 'public/libs/angular-ui-router/release/angular-ui-router.js',
@@ -74,7 +75,7 @@ module.exports = function(grunt) {
                 'public/libs/jspdf/dist/jspdf.min.js',
                 'public/libs/async/dist/async.min.js',
                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
-                'public/libs/moment/min/moment.min.js',                
+                'public/libs/moment/min/moment.min.js',
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
@@ -156,7 +157,7 @@ module.exports = function(grunt) {
             },
             js: {
                 files: ['public/js/**/*.js', 'public/js/*.js'],
-                tasks: ['jshint', 'terser']
+                tasks: ['jshint', 'concat']
             }
         },
 
@@ -180,7 +181,7 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-terser');
+    // grunt.loadNpmTasks('grunt-terser');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-contrib-watch');

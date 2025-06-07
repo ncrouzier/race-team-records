@@ -3,6 +3,8 @@ const member = require('./models/member');
 const { query } = require('express');
 const path = require("path");
 const service = require('./service');
+const cheerio = require('cheerio');
+const axios = require('axios');
 
 module.exports = async function(app, qs, passport, async, _) {
 
@@ -305,6 +307,7 @@ module.exports = async function(app, qs, passport, async, _) {
         const member = await Member.create({
             firstname: req.body.firstname,
             lastname: req.body.lastname,
+            alternateFullNames: req.body.alternateFullNames,
             dateofbirth: req.body.dateofbirth,
             sex: req.body.sex,
             bio: req.body.bio,
@@ -330,6 +333,7 @@ module.exports = async function(app, qs, passport, async, _) {
             Member.findById(req.params.member_id).then(member=> {
                 member.firstname = req.body.firstname;
                 member.lastname = req.body.lastname;
+                member.alternateFullNames = req.body.alternateFullNames;
                 member.dateofbirth = req.body.dateofbirth;
                 member.sex = req.body.sex;
                 member.bio = req.body.bio;
@@ -501,14 +505,10 @@ module.exports = async function(app, qs, passport, async, _) {
     app.post('/api/results', service.isAdminLoggedIn, async function(req, res) {
 
         let members = [];
-        for (const member of req.body.members) {
-            members.push({
-                _id: member._id,
-                firstname: member.firstname,
-                lastname: member.lastname,
-                sex: member.sex,
-                dateofbirth: member.dateofbirth
-            });
+        for (const m of req.body.members) {
+            let member = await Member.findById(m._id);   
+
+            members.push(member);
         }
 
 
@@ -1713,6 +1713,415 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         });
     });
 
+    // Add this with other route definitions
+    app.post('/api/extract-table', service.isAdminLoggedIn, async function(req, res) {
+        try {
+            const { url } = req.body;
+            if (!url) {
+                return res.status(400).json({ success: false, error: 'URL is required' });
+            }
+
+            if (url.includes('runsignup.com')) {
+                // Extract race ID and resultSetId from the URL
+                const raceIdMatch = url.match(/\/Results\/(\d+)/);
+                const resultSetMatch = url.match(/resultSetId-(\d+)/);
+                
+                if (!raceIdMatch) {
+                    return res.status(400).json({ success: false, error: 'Could not find race ID in URL' });
+                }
+                
+                const raceId = raceIdMatch[1];
+                const resultSetId = resultSetMatch ? resultSetMatch[1] : null;
+                
+                // Get the page data and cookies
+                const pageData = await axios.get(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive'
+                    }
+                });
+
+                const cookies = pageData.headers['set-cookie'];
+                
+                // Extract title from the HTML page title and remove "results" at the end if present
+                const $ = cheerio.load(pageData.data);
+                const pageTitle = $('title').text().trim().replace(/\s*results\s*$/i, '') || 'RunSignUp Race';
+                
+                // Now make the API call with the cookies for Json
+                const apiUrljson = `https://runsignup.com/Race/Results/${raceId}/?format=json&resultSetId=${resultSetId}&page=1&num=5000&search=`;
+                const response = await axios.get(apiUrljson, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'application/json',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive',
+                        'Cookie': cookies ? cookies.join('; ') : ''
+                    }
+                });
+
+           
+                
+                const raceData = response.data;
+                if (!raceData.resultSet || !raceData.resultSet.results || !raceData.resultSet.results.length) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'No results found in the JSON data' 
+                    });
+                }
+
+                // Get visible headers from RunSignUp data
+                const visibleHeadings = raceData.headings.filter(h => !h.hidden);
+                const headers = visibleHeadings.map(h => h.name.replace('\n', ' '));
+          
+                
+                // Transform RunSignUp data using array indices, only including visible columns
+                const data = raceData.resultSet.results.map(result => {
+                    const row = {};
+                    // Only process the visible columns using their array indices
+                    visibleHeadings.forEach((heading, visibleIndex) => {
+                        // Find the original index of this heading in the full headings array
+                        const originalIndex = raceData.headings.findIndex(h => h.name === heading.name);
+                        if (originalIndex !== -1) {
+                            row[heading.name.replace('\n', ' ')] = result[originalIndex]?.toString() || '';
+                        }
+                    });
+                    return row;
+                });
+
+                res.json({
+                    success: true,
+                    headers: headers,
+                    data: data,
+                    pageTitle: pageTitle
+                });
+            } else if (url.includes('parkrun.')) {
+                // First, get the page to accept cookies
+                const cookieResponse = await axios.get(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive'
+                    }
+                });
+
+                // Get cookies from the response
+                const cookies = cookieResponse.headers['set-cookie'];
+
+                // Now fetch the page with cookies
+                const response = await axios.get(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive',
+                        'Cookie': cookies ? cookies.join('; ') : ''
+                    }
+                });
+
+                const $ = cheerio.load(response.data);
+                
+                // Extract page title from Results-header
+                const resultsHeader = $('.Results-header h1').text().trim();
+                
+                // Parse event number and date from h3 spans
+                const dateText = $('.Results-header h3 .format-date').text().trim();
+                const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+                
+                // Convert date from DD/MM/YYYY to Date object
+                const [day, month, year] = dateText.split('/');
+                const raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                
+                const pageTitle = `${resultsHeader} #${eventNumber}`;
+
+                // Try different table selectors
+                let table = $('table.results-table').first();
+                if (!table.length) {
+                    table = $('table.table').first();
+                }
+                if (!table.length) {
+                    table = $('table').first();
+                }
+                if (!table.length) {
+                    return res.status(400).json({ success: false, error: 'No results table found on the page' });
+                }
+
+
+                // Define Parkrun headers
+                const headers = [
+                    'Position', 'Parkrunner', 'Gender', 'Gender Rank', 'Age Group', 'Club', 'Time'
+                ];
+
+                const data = [];
+                table.find('tr').each(function() {
+                    const cells = $(this).find('td');
+                    if (cells.length >= 6) {
+                        // Get the full gender text including ranking and clean it up
+                        const genderText = $(cells[2]).text()
+                            .replace(/\n/g, ' ')  // Replace newlines with spaces
+                            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                            .trim();
+                        
+                        // Extract gender and ranking
+                        const genderMatch = genderText.match(/^(\w+)\s+(\d+)$/);
+                        const gender = genderMatch ? genderMatch[1] : genderText;
+                        const genderRank = genderMatch ? genderMatch[2] : '';
+                    
+                        const row = {
+                            'Position': $(cells[0]).text().trim(),
+                            'Parkrunner': $(cells[1]).text().trim(),
+                            'Gender': gender,
+                            'Gender Rank': genderRank,
+                            'Age Group': $(cells[3]).text().trim(),
+                            'Club': $(cells[4]).text().trim(),
+                            'Time': $(cells[5]).text().trim()
+                        };
+                         
+                      
+                        data.push(row);
+                    }
+                });
+
+                if (data.length === 0) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'No results found in the table' 
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    headers: headers,
+                    data: data,
+                    pageTitle: pageTitle,
+                    raceDate: raceDate
+                });
+            } else if (url.includes('athlinks.com')) {
+                // Extract event ID and race ID from the URL
+                // Look for event ID after 'Event/' in the URL
+                const eventMatch = url.match(/\/Event\/(\d+)/);
+                const raceIdMatch = url.match(/\/Course\/(\d+)/);
+                
+                if (!eventMatch || !raceIdMatch) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'Could not find event ID or race ID in URL' 
+                    });
+                }
+
+                const eventId = eventMatch[1];
+                const raceId = raceIdMatch[1];
+
+                // Make multiple requests to Athlinks API to get all results
+                let allResults = [];
+                let from = 0;
+                const limit = 250; // Increased limit per request for efficiency
+                let hasMoreResults = true;
+                let firstResponse = null;
+                
+
+                while (hasMoreResults) {
+                    try {
+                        const response = await axios.get(`https://reignite-api.athlinks.com/event/${eventId}/race/${raceId}/results?from=${from}&limit=${limit}`, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                                'Accept': 'application/json',
+                                'Accept-Language': 'en-US,en;q=0.5',
+                                'Connection': 'keep-alive'
+                            }
+                        });
+
+                        // Store first response for race info
+                        if (!firstResponse) {
+                            firstResponse = response;
+                        }
+
+                        const raceData = response.data;
+                        if (!raceData) {
+                            return res.status(400).json({ 
+                                success: false, 
+                                error: 'No results found in the API response' + from + " " +limit 
+                            });
+                        }
+                        if (raceData.intervals && raceData.intervals[0] && raceData.intervals[0].results){
+                            const results = raceData.intervals[0].results;
+                            if (results.length === 0) {
+                                hasMoreResults = false;
+                            } else {
+                                allResults = allResults.concat(results);
+                                // console.log(allResults.length);
+                                from += limit;
+                            }
+                        }else{
+                            hasMoreResults = false;
+                        }
+                       
+                    } catch (error) {
+                        console.error('Error fetching results:', error);
+                        return res.status(500).json({
+                            success: false,
+                            error: 'Failed to fetch results: ' + error.message
+                        });
+                    }
+                }
+
+                if (allResults.length === 0) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'No results found in the API response' 
+                    });
+                }
+
+                // Extract race info from the first response
+                const raceInfo = firstResponse.data.intervals[0];
+                const pageTitle = firstResponse.data.race.name;
+                const raceDate = new Date(allResults[0].startTimeInMillis);
+                const totalAthletes = firstResponse.data.division.totalAthletes;
+
+                // Transform the accumulated results data
+                const data = await Promise.all(allResults.map(async result => {
+                    // Convert milliseconds to HH:MM:SS format
+                    const timeInSeconds = result.chipTimeInMillis / 1000;
+                    const hours = Math.floor(timeInSeconds / 3600);
+                    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+                    const seconds = Math.ceil(timeInSeconds % 60);
+                    const time = hours > 0 
+                        ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                        : `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                    // If this is a club member, fetch their individual result
+                    // let additionalInfo = {};
+                    // if (result.displayName === "Nicolas Crouzier" && result.id) {
+                    //     try {
+                    //         console.log(`https://reignite-api.athlinks.com/azp/ctlive/event/${eventId}/entry/${result.id}`);
+                    //         const individualResponse = await axios.get(`https://reignite-api.athlinks.com/azp/ctlive/event/${eventId}/entry/${result.id}`, {
+                    //             headers: {
+                    //                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    //                 'Accept': 'application/json',
+                    //                 'Accept-Language': 'en-US,en;q=0.5',
+                    //                 'Connection': 'keep-alive'
+                    //             }
+                    //         });
+                            
+                    //         if (individualResponse.data) {
+                    //             additionalInfo = {
+                    //                 'Division Total': individualResponse.data.divisions[2] || '',
+                    //             };
+                    //             console.log(individualResponse.data);
+                    //         }
+                    //     } catch (error) {
+                    //         console.error('Error fetching individual result:', error);
+                    //     }
+                    // }
+
+                    return {
+                        'Place': result.rankings.overall,
+                        'Name': result.displayName,
+                        'Gender': result.gender,
+                        'Age': result.age,
+                        'Bib': result.bib,
+                        'Time': time,
+                        'Gender Place': result.rankings.gender,
+                        'Division Place': result.rankings.primary
+                        // ...additionalInfo
+                    };
+                }));
+
+                // Update headers to include any additional fields we found
+                const headers = [
+                    'Place', 'Name', 'Gender', 'Age', 'Bib', 'Time', 'Gender Place', 'Division Place', 'Division Total'
+                ];
+                
+                // Add any additional headers we found in the data
+                if (data.length > 0) {
+                    Object.keys(data[0]).forEach(key => {
+                        if (!headers.includes(key)) {
+                            headers.push(key);
+                        }
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    headers: headers,
+                    data: data,
+                    pageTitle: pageTitle,
+                    raceDate: raceDate,
+                    raceInfo: {
+                        name: firstResponse.data.race.name,
+                        distance: {
+                            meters: raceInfo.distance.meters,
+                            units: raceInfo.distance.units
+                        },
+                        totalAthletes: totalAthletes
+                    }
+                });
+            } else {
+                // Original MCRRC parsing logic or any other compatible (unlikely)
+                const response = await axios.get(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1'
+                    }
+                });
+                const $ = cheerio.load(response.data);
+                
+                // Extract page title
+                const pageTitle = $('title').text().trim();
+
+                const table = $('table').first();
+                if (!table.length) {
+                    return res.status(400).json({ success: false, error: 'No table found on the page' });
+                }
+
+                const headers = [];
+                const data = [];
+
+                // Extract headers
+                table.find('thead th, tr:first-child th').each(function() {
+                    headers.push($(this).text().trim());
+                });
+
+                // Extract rows
+                table.find('tbody tr, tr:not(:first-child)').each(function() {
+                    const row = {};
+                    $(this).find('td, th').each(function(index) {
+                        if (headers[index]) {
+                            row[headers[index]] = $(this).text().trim();
+                        }
+                    });
+                    if (Object.keys(row).length > 0) {
+                        data.push(row);
+                    }
+                });
+
+                if (headers.length === 0 || data.length === 0) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        error: 'No data found in the table' 
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    headers: headers,
+                    data: data,
+                    pageTitle: pageTitle
+                });
+            }
+        } catch (error) {
+            console.error('Error extracting table:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to extract table data: ' + error.message
+            });
+        }
+    });
 
     app.get('*', function(req, res) {
         res.render('index.ejs', {

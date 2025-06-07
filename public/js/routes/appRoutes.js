@@ -109,6 +109,19 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/tempAdjustment.html');
                 gtag('event', 'page_view');
             }
+        }).state('/tools/resultExtractor', {
+            url: "/tools/result-extractor",
+            templateUrl: "views/resultExtractor.html",
+            controller: 'ResultExtractorController',
+            resolve: {
+                auth: function(AuthService) {
+                    return AuthService.isLoggedIn();
+                }
+            },
+            onEnter: function() {
+                gtag('set', 'page_path', '/resultExtractor.html');
+                gtag('event', 'page_view');
+            }
         }).state('/moist', {
             url: "/moist",
             redirectTo: '/tools/paceAdjustment'

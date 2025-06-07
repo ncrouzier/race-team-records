@@ -62,9 +62,9 @@
                         <div class="col-sm-10" >
                             <div class="row" style="display: flex; align-items: center;">
                               <div class="col-sm-5" style="line-height: 1.1;">
-                                  <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result.race)">{{ result.race.racename}}</span> <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>
+                                  <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result.race)">{{::result.race.racename}}</span> <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i><span ng-bind-html="result | resultSportIcons | unsafe"></span><result-icon result="result"></result-icon>
                                   <br>
-                                  <small>{{result.race.racedate | date:'longDate':'UTC' }} <span ng-if="result.race.location.state !== null" ng-bind-html="'-- ' + result.race.location.state"></span><span ng-if="result.race.location.state === null" ng-bind-html="'-- ' + result.race.location.country"></span></small>
+                                  <small>{{::result.race.racedate | date:'longDate':'UTC' }} <span ng-if="result.race.location.state !== null" ng-bind-html="'-- ' + result.race.location.state"></span><span ng-if="result.race.location.state === null" ng-bind-html="'-- ' + result.race.location.country"></span></small>
                               </div>
                               <div class="col-sm-1" style="text-align: center;">
                                 <span ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')" class="hoverhand" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
@@ -82,7 +82,7 @@
                                   <span class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result)" >View details</span>
                               </div>
                               <div ng-class="user.role == 'admin' ?'col-sm-1' :'col-sm-2'" style="text-align: center;">
-                                  <span class="resultTime">{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a>
+                                  <span class="resultTime">{{::result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a>
                               </div>
                               <div class="col-sm-1" ng-show="user.role == 'admin'">
                                   <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-clone" ng-show="user.role == 'admin'" ng-click="showAddResultModal(result)" title="Duplicate a result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result" ></i> </span >

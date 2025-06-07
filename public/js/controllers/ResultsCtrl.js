@@ -605,10 +605,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
     $scope.open = function($event) {
+        console.log("cououc");
         $event.preventDefault();
         $event.stopPropagation();
 
-        $scope.opened = true;
+        $scope.formData.opened = true;
     };
 
     //focus on racer if racename is already populated.

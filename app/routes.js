@@ -1998,7 +1998,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 // Make multiple requests to Athlinks API to get all results
                 let allResults = [];
                 let from = 0;
-                const limit = 250; // Increased limit per request for efficiency
+                const limit = 100; // Increased limit per request for efficiency
                 let hasMoreResults = true;
                 let firstResponse = null;
                 

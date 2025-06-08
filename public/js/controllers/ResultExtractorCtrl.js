@@ -494,17 +494,29 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         }
                     } else if (genderColumn && row[genderColumn]) {
                         // If we only have gender info, calculate rank based on position within gender group
-                        var currentGender2 = row[genderColumn].toString().trim();
+                        var currentGender2,genderTotal;
+                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
+                            
+                             currentGender2 = row[genderColumn].toString().replace(/[0-9]/g, '').trim();
+                            //  console.log(currentGender2);
+                            // Count total participants of the same gender
+                            genderTotal = $scope.tableData.filter(r => {
+                                var otherGender = r[genderColumn].toString().replace(/[0-9]/g, '').trim();
+                                return otherGender === currentGender2;
+                            }).length;
+                        }else{
+                            currentGender2 = row[genderColumn].toString().trim();
                         
-                        // Count total participants of the same gender
-                        var genderTotal = $scope.tableData.filter(r => {
-                            var otherGender = r[genderColumn].toString().trim();
-                            return otherGender === currentGender2;
-                        }).length;
+                            // Count total participants of the same gender
+                            genderTotal = $scope.tableData.filter(r => {
+                                var otherGender = r[genderColumn].toString().trim();
+                                return otherGender === currentGender2;
+                            }).length;
+                        }
                         
                         // Calculate gender rank based on position in the filtered array
                         var genderRank = $scope.tableData
-                            .filter(r => r[genderColumn].toString().trim() === currentGender2)
+                            .filter(r => r[genderColumn].toString().replace(/[0-9]/g, '').trim() === currentGender2)
                             .findIndex(r => r === row) + 1;
                         
                         if (genderRank > 0) {

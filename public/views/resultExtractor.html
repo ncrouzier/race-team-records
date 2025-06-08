@@ -6,15 +6,20 @@
             <form ng-submit="loadTable()">
                 <div class="form-group">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label for="urlInput">URL of Results Page</label>
                             <input type="url" class="form-control" id="urlInput" ng-model="url"
-                                placeholder="Enter URL of the results page" required>
+                                placeholder="Enter URL of the results page" ng-disabled="htmlSource">
                         </div>
-
+                        <div class="col-md-6">
+                            <label for="htmlSourceInput">Parkrun HTML Source Code</label>
+                            <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource" 
+                                placeholder="Paste Parkrun HTML source code here" rows="5" ng-disabled="url"></textarea>
+                        </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary" ng-disabled="!url">
+                
+                <button type="submit" class="btn btn-primary" ng-disabled="!url && !htmlSource">
                     Load Table
                 </button>
             </form>

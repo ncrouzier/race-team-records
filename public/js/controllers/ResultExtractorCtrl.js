@@ -17,6 +17,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         $scope.isLoading = false;
         $scope.formData.raceDate  = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0)); // Set today's date
         $scope.url = '';   
+        $scope.htmlSource = '';  // Add htmlSource variable
         $scope.raceType = null;        
         $scope.formData.location = {
             country: 'USA',
@@ -120,7 +121,17 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 
         $scope.loadTable = function() {
             $scope.isLoading = true;
-            $http.post('/api/extract-table', { url: $scope.url })
+            
+            // Determine which endpoint to use based on input
+            let endpoint = '/api/extract-table';
+            let data = { url: $scope.url };
+            
+            if ($scope.htmlSource) {
+                endpoint = '/api/extract-parkrun';
+                data = { htmlSource: $scope.htmlSource };
+            }
+
+            $http.post(endpoint, data)
                 .then(function(response) {
                     if (response.data.success) {
                         $scope.formData.raceType = null;
@@ -135,7 +146,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         }
 
                         // Set race type to road 5K for Parkrun
-                        if ($scope.url.includes('parkrun.')) {
+                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
                             $scope.racetypesList.forEach(function(racetype) {
                                 if (racetype.name === '5k' && racetype.surface === 'road') {
                                     $scope.raceType = racetype;
@@ -182,7 +193,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                                     $scope.columnMapping[header] = 'ageRank';
                                 }
                             });
-                        } else if ($scope.url.includes('parkrun.')) {
+                        } else if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
                             // Parkrun specific column mapping
                             $scope.tableHeaders.forEach(function(header) {
                                 var headerLower = header.toLowerCase();
@@ -433,7 +444,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     if (timeColumn && row[timeColumn]) {
                         var timeStr = row[timeColumn].toString().trim();
                         // For Parkrun results, extract only the finish time (before any PB info)
-                        if ($scope.url.includes('parkrun.')) {
+                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
                             timeStr = timeStr.split('PB')[0].trim();
                         }
                         result.time = $scope.cleanTime(timeStr);

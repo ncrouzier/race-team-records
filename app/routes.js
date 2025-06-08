@@ -2155,7 +2155,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 // Extract page title
                 const pageTitle = $('title').text().trim();
 
-                // Try different table selectors in sequence
+                // Common table selectors
                 const tableSelectors = [
                     'table.results-table',  // Common for results tables
                     'table.table',          // Bootstrap tables
@@ -2225,7 +2225,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 if (!table || headers.length === 0 || data.length === 0) {
                     return res.status(400).json({ 
                         success: false, 
-                        error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 
+                        error: 'No valid results table found on the page'
                     });
                 }
 
@@ -2249,6 +2249,127 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         res.render('index.ejs', {
             user: req.user
         }); // load the index.ejs file
+    });
+
+    app.post('/api/extract-parkrun', service.isAdminLoggedIn, async function(req, res) {
+        try {
+            const { htmlSource } = req.body;
+            
+            if (!htmlSource) {
+                return res.status(400).json({ success: false, error: 'HTML source is required' });
+            }
+
+            // Process the HTML source directly
+            const $ = cheerio.load(htmlSource);
+            
+            // Extract page title from Results-header
+            const resultsHeader = $('.Results-header h1').text().trim();
+            
+            // Parse event number and date from h3 spans
+            const dateText = $('.Results-header h3 .format-date').text().trim();
+            const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+            
+            // Convert date from DD/MM/YYYY to Date object
+            let raceDate;
+            if (dateText) {
+                const [day, month, year] = dateText.split('/');
+                raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            }
+            
+            const pageTitle = `${resultsHeader} #${eventNumber}`;
+
+            // Try different table selectors
+            let table = null;
+            let headers = [];
+            let data = [];
+
+            // Parkrun specific table selectors
+            const tableSelectors = [
+                'table.Results-table',  // Parkrun specific class
+                'table.Results',        // Another Parkrun specific class
+                'table.results-table',  // Common for results tables
+                'table.table',          // Bootstrap tables
+                'table.dataTable',      // DataTables
+                'table.sortable',       // Sortable tables
+                'table.grid',           // Grid tables
+                'table',                // Any table as last resort
+                'div.table',            // Some sites use div with table class
+                'div.results'           // Some sites use div for results
+            ];
+
+            // Try each selector until we find a working one
+            for (const selector of tableSelectors) {
+                const element = $(selector).first();
+                if (element.length) {
+                    // Try to extract headers - be more strict about what constitutes a header
+                    const potentialHeaders = [];
+                    const headerRow = element.find('thead tr, tr:first-child').first();
+                    
+                    // Only process if we found a header row
+                    if (headerRow.length) {
+                        // Check if this looks like a header row (all cells should be th elements)
+                        const allCellsAreTh = headerRow.find('td').length === 0;
+                        
+                        if (allCellsAreTh) {
+                            headerRow.find('th').each(function() {
+                                const headerText = $(this).text().trim();
+                                // Only add if it looks like a header (not empty and not a number)
+                                if (headerText && !/^\d+$/.test(headerText)) {
+                                    potentialHeaders.push(headerText);
+                                }
+                            });
+                        }
+                    }
+
+                    // If we found valid headers, try to extract data
+                    if (potentialHeaders.length > 0) {
+                        const potentialData = [];
+                        // Skip the header row when getting data
+                        element.find('tbody tr, tr:not(:first-child)').each(function() {
+                            const row = {};
+                            $(this).find('td').each(function(index) {
+                                if (potentialHeaders[index]) {
+                                    row[potentialHeaders[index]] = $(this).text().trim();
+                                }
+                            });
+                            if (Object.keys(row).length > 0) {
+                                potentialData.push(row);
+                            }
+                        });
+
+                        // If we found both headers and data, use this table
+                        if (potentialData.length > 0) {
+                            table = element;
+                            headers = potentialHeaders;
+                            data = potentialData;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!table || headers.length === 0 || data.length === 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'No valid results table found in the provided content. Tried selectors: ' + tableSelectors.join(', ') 
+                });
+            }
+
+            res.json({
+                success: true,
+                headers: headers,
+                data: data,
+                pageTitle: pageTitle,
+                raceDate: raceDate
+            });
+
+        } catch (error) {
+            console.error('Error extracting Parkrun table:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to extract table data: ' + error.message
+            });
+        }
     });
 
 

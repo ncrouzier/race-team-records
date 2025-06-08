@@ -1814,16 +1814,22 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'none',
                         'Sec-Fetch-User': '?1',
-                        'Upgrade-Insecure-Requests': '1'
+                        'Upgrade-Insecure-Requests': '1',
+                        'DNT': '1',
+                        'Referer': 'https://www.parkrun.com/'
                     },
                     maxRedirects: 5,
                     validateStatus: function (status) {
                         return status >= 200 && status < 500;
-                    }
+                    },
+                    timeout: 10000 // 10 second timeout
                 });
 
                 // Get cookies from the response
                 const cookies = cookieResponse.headers['set-cookie'];
+
+                // Add a small delay to mimic human behavior
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 // Now fetch the page with cookies
                 const response = await axios.get(url, {
@@ -1836,7 +1842,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                         'Cache-Control': 'no-cache',
                         'Pragma': 'no-cache',
                         'Cookie': cookies ? cookies.join('; ') : '',
-                        'Referer': url,
+                        'Referer': 'https://www.parkrun.com/',
                         'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
                         'Sec-Ch-Ua-Mobile': '?0',
                         'Sec-Ch-Ua-Platform': '"macOS"',
@@ -1844,20 +1850,25 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'same-origin',
                         'Sec-Fetch-User': '?1',
-                        'Upgrade-Insecure-Requests': '1'
+                        'Upgrade-Insecure-Requests': '1',
+                        'DNT': '1'
                     },
                     maxRedirects: 5,
                     validateStatus: function (status) {
                         return status >= 200 && status < 500;
-                    }
+                    },
+                    timeout: 10000 // 10 second timeout
                 });
 
-                // Check if we got a CAPTCHA page
-                if (response.data.includes('JavaScript is disabled') || response.data.includes('CAPTCHA')) {
-                    console.log('Received CAPTCHA page from Parkrun');
+                // Check if we got a CAPTCHA page or any other error page
+                if (response.data.includes('JavaScript is disabled') || 
+                    response.data.includes('CAPTCHA') || 
+                    response.data.includes('Access Denied') ||
+                    response.data.includes('Please try again later')) {
+                    console.log('Received restricted access page from Parkrun');
                     return res.status(403).json({
                         success: false,
-                        error: 'Parkrun is requiring CAPTCHA verification. Please try again later or use a different results source.'
+                        error: 'Parkrun is restricting access. This could be due to CAPTCHA, rate limiting, or IP restrictions. Please try again later or use a different results source.'
                     });
                 }
 

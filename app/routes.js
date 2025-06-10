@@ -2181,25 +2181,29 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                         
                         // Only process if we found a header row
                         if (headerRow.length) {
-                            // Check if this looks like a header row (all cells should be th elements)
-                            const allCellsAreTh = headerRow.find('td').length === 0;
-                            
-                            if (allCellsAreTh) {
-                                headerRow.find('th').each(function() {
-                                    const headerText = $(this).text().trim();
-                                    // Only add if it looks like a header (not empty and not a number)
-                                    if (headerText && !/^\d+$/.test(headerText)) {
-                                        potentialHeaders.push(headerText);
-                                    }
-                                });
-                            }
+                            // Get all cells from the header row, whether they are th or td
+                            headerRow.find('th, td').each(function() {
+                                const headerText = $(this).text().trim();
+                                // Only add if it looks like a header (not empty and not a number)
+                                if (headerText && !/^\d+$/.test(headerText)) {
+                                    potentialHeaders.push(headerText);
+                                }
+                            });
                         }
 
                         // If we found valid headers, try to extract data
                         if (potentialHeaders.length > 0) {
                             const potentialData = [];
+                            // Check if header row uses td elements
+                            const headerUsesTd = headerRow.find('td').length > 0;
+                            
                             // Skip the header row when getting data
                             element.find('tbody tr, tr:not(:first-child)').each(function() {
+                                // If header uses td, skip the first row of data as it's the header
+                                if (headerUsesTd && $(this).is(':first-child')) {
+                                    return;
+                                }
+                                
                                 const row = {};
                                 $(this).find('td').each(function(index) {
                                     if (potentialHeaders[index]) {
@@ -2307,18 +2311,14 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                     
                     // Only process if we found a header row
                     if (headerRow.length) {
-                        // Check if this looks like a header row (all cells should be th elements)
-                        const allCellsAreTh = headerRow.find('td').length === 0;
-                        
-                        if (allCellsAreTh) {
-                            headerRow.find('th').each(function() {
-                                const headerText = $(this).text().trim();
-                                // Only add if it looks like a header (not empty and not a number)
-                                if (headerText && !/^\d+$/.test(headerText)) {
-                                    potentialHeaders.push(headerText);
-                                }
-                            });
-                        }
+                        // Get all cells from the header row, whether they are th or td
+                        headerRow.find('th, td').each(function() {
+                            const headerText = $(this).text().trim();
+                            // Only add if it looks like a header (not empty and not a number)
+                            if (headerText && !/^\d+$/.test(headerText)) {
+                                potentialHeaders.push(headerText);
+                            }
+                        });
                     }
 
                     // If we found valid headers, try to extract data

@@ -313,6 +313,7 @@ footer {
 .results-list {
     font-size: 14px;
     color: @gray;
+ 
 
     .resultlistheader {
         font-size: 12px;
@@ -332,11 +333,17 @@ footer {
 
         .resultEvent {
             text-align: left;
-            font-size: 16px;
-            font-weight: normal;
+            font-size: 16px;            
             word-wrap: break-word;
+               
         }
-
+        .fa
+        {
+            &.expanded{
+                color: white;
+                font-weight: bold;            
+            }
+        }
         .resultPace {
             text-align: center;
             font-size: 14px;
@@ -353,6 +360,17 @@ footer {
             color: #808080;
             font-size: 70%;
         }
+
+        &.expanded{
+            background-color: #006687;
+            color: white;
+            font-weight: bold;      
+            border: 1px solid white;      
+        }
+        &.collapsed{
+            font-weight: normal;
+        }
+        
 
         // :hover{
         //   background-color: @brand-primary-very-light;
@@ -1244,6 +1262,80 @@ footer {
             padding: 0;
             text-align: center;
             text-align-last: center;
+        }
+    }
+} 
+
+// Race List Styles
+.race-list {
+    &-item {
+        padding-right: 0;
+        padding-left: 0;
+        padding-bottom: 0;
+        cursor: pointer;
+
+        &.expanded {
+            background-color: #f8f9fa;
+        }
+
+        &.collapsed {
+            background-color: white;
+        }
+    }
+
+    &-content {
+        cursor: pointer;
+        padding-left: 15px;
+    }
+
+    &-name {
+        line-height: 2;
+    }
+
+    &-icon {
+        margin-right: 5px;
+    }
+
+    &-link {
+        margin-left: 5px;
+    }
+}
+
+// Results Section Styles
+.results-section {
+    margin-top: 0;
+    background-color: #006687;
+    border-radius: 0;
+    padding: 15px;
+
+    &-list {
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    &-header {
+        background-color: #e9ecef;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        padding: 12px 15px;
+        font-size: 0.9em;
+        color: #495057;
+    }
+
+    &-row {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        background-color: white;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: #f0f7fa;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            font-size: 0.95em;
         }
     }
 } 

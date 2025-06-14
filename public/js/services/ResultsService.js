@@ -14,7 +14,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
 
     async function getCurrent(db) {
-        var  results = await db.results.get("current");            
+        var  results = await db.get("current");            
         return results;
       }
 
@@ -31,7 +31,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         var date = new Date(sysinfo.resultUpdate);
 
         await db.open();
-        var currentCache = await getCurrent(db);
+        var currentCache = await getCurrent(db.results);
         // console.log("current database", currentCache);
         if (currentCache === undefined || date > new Date(currentCache.date)) {
             // console.log("cache is undefined or out of date so we retrieve from the database",params);
@@ -257,6 +257,44 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 console.log('Error: ' + res.status);
             });
     };
+
+    factory.getRaceResultsWithCacheSupport = async function (params) {
+        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+            return sysinfo;
+        });
+
+        var db = new Dexie("mcrrcAppDatabase");
+        db.version(1).stores({
+            races: 'instance,date,data'
+        });
+        var date = new Date(sysinfo.resultUpdate);
+
+        await db.open();
+        var currentCache = await getCurrent(db.races);
+        // console.log("current database", currentCache);
+        if (currentCache === undefined || date > new Date(currentCache.date)) {
+            // console.log("cache is undefined or out of date so we retrieve from the database",params);
+            return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
+                if (!params.preload) {
+                    // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
+                    db.races.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
+                        // console.log("Done inserting data in cache");        
+                    });
+                }
+                // console.log("done retrieved function");  
+                return resultsFromDatabase;
+            });
+        } else {
+            // console.log("using cache");                        
+            var res = $q(function (resolve, reject) {
+                resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'races', true));
+                // console.log("done restangularizeCollection");
+            });
+            // console.log("done retrieve cache");
+            return res;
+        }
+    };
+
 
     factory.showRaceFromResultModal = function(raceId,fromStateParams) {
         return Restangular.one('raceinfos').get({

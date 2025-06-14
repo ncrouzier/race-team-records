@@ -7556,8 +7556,11 @@ footer {
 .results-list .resultlistrow .resultEvent {
   text-align: left;
   font-size: 16px;
-  font-weight: normal;
   word-wrap: break-word;
+}
+.results-list .resultlistrow .fa.expanded {
+  color: white;
+  font-weight: bold;
 }
 .results-list .resultlistrow .resultPace {
   text-align: center;
@@ -7572,6 +7575,15 @@ footer {
 .results-list .resultlistrow .resultPaceTxt {
   color: #808080;
   font-size: 70%;
+}
+.results-list .resultlistrow.expanded {
+  background-color: #006687;
+  color: white;
+  font-weight: bold;
+  border: 1px solid white;
+}
+.results-list .resultlistrow.collapsed {
+  font-weight: normal;
 }
 .pb-list .pblistheader {
   padding-top: 1px;
@@ -8282,6 +8294,63 @@ footer {
   padding: 0;
   text-align: center;
   text-align-last: center;
+}
+.race-list-item {
+  padding-right: 0;
+  padding-left: 0;
+  padding-bottom: 0;
+  cursor: pointer;
+}
+.race-list-item.expanded {
+  background-color: #f8f9fa;
+}
+.race-list-item.collapsed {
+  background-color: white;
+}
+.race-list-content {
+  cursor: pointer;
+  padding-left: 15px;
+}
+.race-list-name {
+  line-height: 2;
+}
+.race-list-icon {
+  margin-right: 5px;
+}
+.race-list-link {
+  margin-left: 5px;
+}
+.results-section {
+  margin-top: 0;
+  background-color: #006687;
+  border-radius: 0;
+  padding: 15px;
+}
+.results-section-list {
+  padding-left: 0;
+  margin-bottom: 0;
+}
+.results-section-header {
+  background-color: #e9ecef;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  padding: 12px 15px;
+  font-size: 0.9em;
+  color: #495057;
+}
+.results-section-row {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+  background-color: white;
+  transition: background-color 0.2s ease;
+}
+.results-section-row:hover {
+  background-color: #f0f7fa;
+}
+.results-section-row .row {
+  display: flex;
+  align-items: center;
+  font-size: 0.95em;
 }
 
 .temp-adjustment-tool table {

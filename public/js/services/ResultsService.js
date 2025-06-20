@@ -6,54 +6,80 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     var races = Restangular.all('races');
     var systeminfos = Restangular.all('systeminfos');
 
-    var cachedResults;
-    var cachedResultsDate;
+    function isRestangularized(obj) {
+        return obj && typeof obj.getRestangularUrl === 'function';
+    }
+
+
+
     // =====================================
     // RESULTS API CALLS ===================
     // =====================================
 
+    /**
+     * Retrieve a single result by its ID
+     * @param {string} resultId - The ID of the result to retrieve
+     * @return {Promise} - Promise that resolves with the result object
+     */
+    factory.getResultById = function(resultId) {
+        if (resultId){
+            return Restangular.one("results",resultId).get().then(
+                function(result) {
+                    return result;
+                },
+                function(res) {
+                    NotificationService.showNotifiction(false, "Error while retrieving result.");
+                    console.log('Error: ' + res.status);
+                    return null;
+                }
+            );
+        }else{
+            return null;
+        }
+        
+    };
 
-    async function getCurrent(db) {
-        var  results = await db.get("current");            
+    async function getKey(db,key) {
+        var  results = await db.get(key);            
         return results;
-      }
+    }
 
     //retrieve results
     factory.getResultsWithCacheSupport = async function (params) {
-        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
-            return sysinfo;
-        });
+        // var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+        //     return sysinfo;
+        // });
 
-        var db = new Dexie("mcrrcAppDatabase");
-        db.version(1).stores({
-            results: 'instance,date,data'
-        });
-        var date = new Date(sysinfo.resultUpdate);
+        // var db = new Dexie("mcrrcAppDatabase");
+        // db.version(1).stores({
+        //     results: 'instance,date,data'
+        // });
+        // var date = new Date(sysinfo.resultUpdate);
 
-        await db.open();
-        var currentCache = await getCurrent(db.results);
-        // console.log("current database", currentCache);
-        if (currentCache === undefined || date > new Date(currentCache.date)) {
-            // console.log("cache is undefined or out of date so we retrieve from the database",params);
-            return results.getList(params).then(function (resultsFromDatabase) {
-                if (!params.preload) {
-                    // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
-                    db.results.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
-                        // console.log("Done inserting data in cache");        
-                    });
-                }
-                // console.log("done retrieved function");  
-                return resultsFromDatabase;
-            });
-        } else {
-            // console.log("using cache");                        
-            var res = $q(function (resolve, reject) {
-                resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'results', true));
-                // console.log("done restangularizeCollection");
-            });
-            // console.log("done retrieve cache");
-            return res;
-        }
+        // await db.open();
+        // var currentCache = await getCurrent(db.results);
+        // // console.log("current database", currentCache);
+        // if (currentCache === undefined || date > new Date(currentCache.date)) {
+        //     // console.log("cache is undefined or out of date so we retrieve from the database",params);
+        //     return results.getList(params).then(function (resultsFromDatabase) {
+        //         if (!params.preload) {
+        //             // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
+        //             db.results.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
+        //                 // console.log("Done inserting data in cache");        
+        //             });
+        //         }
+        //         // console.log("done retrieved function");  
+        //         return resultsFromDatabase;
+        //     });
+        // } else {
+        //     // console.log("using cache");                        
+        //     var res = $q(function (resolve, reject) {
+        //         resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'results', true));
+        //         // console.log("done restangularizeCollection");
+        //     });
+        //     // console.log("done retrieve cache");
+        //     return res;
+        // }
     };
 
 
@@ -71,16 +97,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
      * @param {Array} resultsList - the list of results to add the new result to
      * @return {Promise} - the promise of the created result
      */
-    factory.createResult = async function(result,resultsList) {
+    factory.createResult = async function(result) {
         //post the result to the database
         return results.post(result).then(
             function(r) {
                 //simple success notification
                 NotificationService.showNotifiction(true,"Result created successfully!");
-                //if the list of results is provided, add the new result to the beginning of the list
-                if(resultsList){
-                    resultsList.unshift(r);
-                }
+           
                 //return the created result
                 return r;
             },
@@ -144,12 +167,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     ///delete a result
     factory.deleteResult = function(result) {
+        if (!isRestangularized(result)){
+            result = Restangular.restangularizeElement(null, result, 'results');
+        }
         return result.remove().then(
             function() {
                 NotificationService.showNotifiction(true,"Result deleted successfully!");
             },
             function(res) {
-                NotificationService.showNotifiction(false,"Result while deleting result!");
+                NotificationService.showNotifiction(false,"Error while deleting result!");
                 console.log('Error: ' + res.status);
             });
     };
@@ -158,23 +184,38 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function(result,resultsList) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/modals/resultModal.html',
-            controller: 'ResultModalInstanceController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                editmode: false,
-                resultsList: function() {
-                    return resultsList;
-                },
-                result: function() {
-                    return result;
+    factory.showAddResultModal = function(resultParam) {
+        if (resultParam && resultParam._id){
+            return factory.getResultById(resultParam._id).then(
+                function(result) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/modals/resultModal.html',
+                    controller: 'ResultModalInstanceController',
+                    size: 'lg',
+                    backdrop: 'static',
+                    resolve: {
+                        editmode: false,
+                        result: function() {
+                            return result;
+                        }
+                    }
+                });
+                        
+            });
+        }else{
+            modalInstance = $uibModal.open({
+                templateUrl: 'views/modals/resultModal.html',
+                controller: 'ResultModalInstanceController',
+                size: 'lg',
+                backdrop: 'static',
+                resolve: {
+                    editmode: false,
+                    result: function() {
+                        return null;
+                    }
                 }
-            }
-        });
-
+            });
+        }
         return modalInstance.result.then(function(result) {
             return factory.createResult(result).then(
                 function(r) {
@@ -186,10 +227,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         }, function() {
             return null;
         });
+        
     };
 
-    factory.retrieveResultForEdit = function(result) {
-        if (result) {
+    factory.retrieveResultForEdit = function(resultParam) {
+        return factory.getResultById(resultParam._id).then(
+            function(result) {
             var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
@@ -200,7 +243,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                     resultsList: function() {
                         return null;
                     },
-                    result: function() {                        
+                    result: function() {                                             
                         return result;
                     }
                 }
@@ -217,7 +260,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             }, function() {
                 return null;
             });
-        }
+        });
     };
 
     factory.showResultDetailsModal = function(result,race) {
@@ -258,6 +301,17 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
+    factory.deleteRace = function(raceinfo) {
+        return Restangular.one('raceinfos',raceinfo._id).remove().then(
+            function() {
+                NotificationService.showNotifiction(true,"Race deleted successfully!");
+            },
+            function(res) {
+                NotificationService.showNotifiction(false,"Error while deleting race!");
+                console.log('Error: ' + res.status);
+            });
+    };
+
     factory.getRaceResultsWithCacheSupport = async function (params) {
         var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
             return sysinfo;
@@ -270,27 +324,31 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
         var date = new Date(sysinfo.resultUpdate);
 
         await db.open();
-        var currentCache = await getCurrent(db.races);
-        // console.log("current database", currentCache);
-        if (currentCache === undefined || date > new Date(currentCache.date)) {
-            // console.log("cache is undefined or out of date so we retrieve from the database",params);
+        var cache, key;
+        if (params.type === "last30"){
+            key = "last30";
+        }else{
+            key = "current";
+        }
+        cache = await getKey(db.races,key);            
+        
+        if (cache === undefined || date > new Date(cache.date)) {
+            // console.log("loading " + params.filters);
             return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
                 if (!params.preload) {
-                    // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
-                    db.races.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
-                        // console.log("Done inserting data in cache");        
+                    // console.log("saving cache",key);
+                    db.races.put({ instance: key, date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
                     });
+                }else{
+                    // console.log("not saving cache",key);
                 }
-                // console.log("done retrieved function");  
                 return resultsFromDatabase;
             });
         } else {
-            // console.log("using cache");                        
+            // console.log("using cache", key);
             var res = $q(function (resolve, reject) {
-                resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'races', true));
-                // console.log("done restangularizeCollection");
+                resolve(Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true));
             });
-            // console.log("done retrieve cache");
             return res;
         }
     };
@@ -323,7 +381,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             },
             function(res) {
                 console.log('Error: ' + res.status);
-            });
+            }
+        );
     };
 
     factory.showRaceFromRaceIdModal = function(raceId,fromStateParams) {

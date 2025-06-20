@@ -268,7 +268,7 @@
                                               <span ng-show="(result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" class="hoverhand" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></span>
                                             </div>
                                             <div class="col-sm-2" ng-show="!result.race.isMultisport" style="text-align: center;">
-                                                <result-pace></result-pace>
+                                                <result-pace  result="result" race="raceinfo"></result-pace>
                                             </div>
                                             <div class="col-sm-2" ng-show="result.race.isMultisport" style="text-align: center;">
                                                 <span  class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result)" >View details</span>

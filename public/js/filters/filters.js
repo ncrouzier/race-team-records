@@ -106,10 +106,14 @@ app.filter('secondsToTimeDiff', function () {
 });
 
 
-function resultToPace(result) {
+function resultToPace(result,race) {
     //round up!
     var seconds = Math.ceil(result.time / 100);
-    var distance = result.race.racetype.miles;
+    if (!race) {
+        distance = result.race.racetype.miles;
+    } else {
+        distance = race.racetype.miles;
+    }
 
     var m = Math.floor((seconds / 60) / distance);
 
@@ -505,8 +509,14 @@ app.filter('memberFilter', function () {
     };
 });
 app.filter('resultSuperFilter', function () {
-    return function (results, query, racetype) {
+    return function (results, query, racetype, race) {
         if (query || racetype) {
+            var raceData;
+            if (!results.race || race){
+                raceData = race;
+            }else{
+                raceData = results.race;
+            }
             let filtered = [];
             let jsonQuery;
             if (isJson(query)) {
@@ -514,13 +524,13 @@ app.filter('resultSuperFilter', function () {
             }
             angular.forEach(results, function (result) {
                 let raceTypeFound = false;
-                if (racetype && result.race.racetype._id !== racetype._id) {
+                if (racetype && raceData.racetype._id !== racetype._id) {
                     return;
                 }
                 if (jsonQuery) {
-                    if (jsonQuery.country && result.race.location.country && jsonQuery.country.toLowerCase() === result.race.location.country.toLowerCase()) {
+                    if (jsonQuery.country && raceData.location.country && jsonQuery.country.toLowerCase() === raceData.location.country.toLowerCase()) {
                         if (jsonQuery.state) {
-                            if (result.race.location.state && jsonQuery.state.toLowerCase() === result.race.location.state.toLowerCase())
+                            if (raceData.location.state && jsonQuery.state.toLowerCase() === raceData.location.state.toLowerCase())
                                 filtered.push(result);
                             return;
                         } else {
@@ -533,18 +543,18 @@ app.filter('resultSuperFilter', function () {
                 if (query) {
 
                     //race name
-                    if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
                     //racetype
-                    if (result.race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
 
                     //racetype surface
-                    if (result.race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
@@ -569,13 +579,13 @@ app.filter('resultSuperFilter', function () {
                     }
 
                     //pace
-                    var pace = resultToPace(result);
+                    var pace = resultToPace(result,raceData);
                     if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
                 } else {
-                    if (racetype && result.race.racetype._id === racetype._id) {
+                    if (racetype && raceData.racetype._id === racetype._id) {
                         filtered.push(result);
                         return;
                     }
@@ -584,6 +594,95 @@ app.filter('resultSuperFilter', function () {
             return filtered;
         } else {
             return results;
+        }
+    };
+});
+
+app.filter('raceResultSuperFilter', function () {
+    return function (raceinfos, query, racetype) {
+        if (query || racetype) {
+            let filtered = [];
+            let jsonQuery;
+            if (isJson(query)) {
+                jsonQuery = JSON.parse(query);
+            }
+            angular.forEach(raceinfos, function (race) {
+                let raceTypeFound = false;
+                if (racetype && race.racetype._id !== racetype._id) {
+                    return;
+                }
+                if (jsonQuery) {
+                    if (jsonQuery.country && race.location.country && jsonQuery.country.toLowerCase() === race.location.country.toLowerCase()) {
+                        if (jsonQuery.state) {
+                            if (race.location.state && jsonQuery.state.toLowerCase() === race.location.state.toLowerCase())
+                                filtered.push(race);
+                            return;
+                        } else {
+                            filtered.push(race);
+                            return;
+                        }
+                    }
+                }
+
+                if (query) {
+
+                    //race name
+                    if (race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+                    //racetype
+                    if (race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+
+                    //racetype surface
+                    if (race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+                    //member name
+                    var foundname = false;
+                    race.results.forEach(function (result) {
+                        result.members.forEach(function (member) {
+                            let name = member.firstname + ' ' + member.lastname + ', ';
+                            if (!foundname && name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                                filtered.push(race);
+                                foundname = true;
+                                return;
+                            }
+                        });
+                        if (foundname) return;
+
+                        //time
+                        var time = secondsToTimeString(result.time);
+                        if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                            filtered.push(race);
+                            return;
+                        }
+
+                        //pace
+                        var pace = resultToPace(result,race);
+                        if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                            filtered.push(race);
+                            return;
+                        }
+                    });
+                    
+
+
+                    
+                } else {
+                    if (racetype && race.racetype._id === racetype._id) {
+                        filtered.push(race);
+                        return;
+                    }
+                }
+            });
+            return filtered;
+        } else {
+            return raceinfos;
         }
     };
 });
@@ -941,5 +1040,25 @@ app.filter('racenameToDistance', function () {
     return function (name) {
         return racenameToDistance(name) || 0;
 
+    };
+});
+
+
+app.filter('addOrdinalSuffix', function () {
+    return function (number) {
+    if (number % 100 >= 11 && number % 100 <= 13) {
+        return number + "th";
+    }
+
+    switch (number % 10) {
+        case 1:
+            return number + "st";
+        case 2:
+            return number + "nd";
+        case 3:
+            return number + "rd";
+        default:
+            return number + "th";
+    }
     };
 });

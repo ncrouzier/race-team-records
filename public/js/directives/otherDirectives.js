@@ -203,3 +203,71 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService','$state', funct
     }
   };
 }]);
+
+// Race Achievements Directive
+angular.module('mcrrcApp').directive('raceAchievements', function() {
+    return {
+        restrict: 'E',
+        scope: {
+            race: '='
+        },
+        template: '<span>' +
+            '<span ng-repeat="ach in achievements" ng-if="ach.emoji" ng-attr-uib-tooltip="{{ach.tooltip}}">{{ach.emoji}}</span>' +
+            '<i ng-repeat="ach in achievements" ng-if="ach.icon" ng-class="ach.icon" ng-attr-uib-tooltip="{{ach.tooltip}}"></i>' +
+        '</span>',
+        controller: function($scope) {
+            $scope.achievements = [];
+            
+            $scope.$watch('race', function(newRace) {
+                if (newRace && newRace.results) {
+                    $scope.achievements = $scope.getAchievements(newRace);
+                }
+            }, true);
+            
+            $scope.getAchievements = function (race) {
+                if (!race.results || race.results.length === 0) {
+                    return [];
+                }
+                var achievements = [];
+                // Trophy for overall or gender win
+                var overallWins = race.results.filter(function (result) {
+                    return result.ranking && (result.ranking.overallrank === 1 || result.ranking.genderrank === 1);
+                });
+                if (overallWins.length > 0) {
+                    achievements.push({type: 'trophy', emoji: '🏆', tooltip: 'Race winner!'});
+                }
+                // Silver for 2nd place
+                var secondPlace = race.results.filter(function (result) {
+                    return result.ranking && (result.ranking.overallrank === 2 || result.ranking.genderrank === 2);
+                });
+                if (secondPlace.length > 0) {
+                    achievements.push({type: 'second', emoji: '🥈', tooltip: '2nd Place'});
+                }
+                // Bronze for 3rd place
+                var thirdPlace = race.results.filter(function (result) {
+                    return result.ranking && (result.ranking.overallrank === 3 || result.ranking.genderrank === 3);
+                });
+                if (thirdPlace.length > 0) {
+                    achievements.push({type: 'third', emoji: '🥉', tooltip: '3rd Place'});
+                }
+                // Personal bests
+                var personalBests = race.results.filter(function (result) {
+                    return Array.isArray(result.achievements) && result.achievements.some(function(a) {
+                        return a.name && a.name.toLowerCase() === 'pb';
+                    });
+                });
+                if (personalBests.length > 0) {
+                    achievements.push({type: 'pb', emoji: '🧨', tooltip: 'Personal Best on the team'});
+                }
+                // National class (agegrade >= 90)
+                var excellentAgeGrades = race.results.filter(function (result) {
+                    return result.agegrade && result.agegrade >= 90;
+                });
+                if (excellentAgeGrades.length > 0) {
+                    achievements.push({type: 'nationalClass', icon: 'ageworld fa fa-star', tooltip: 'National Class age grade performance'});
+                }
+                return achievements;
+            };
+        }
+    };
+});

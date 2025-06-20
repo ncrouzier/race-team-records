@@ -18,8 +18,14 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.resultsTableProperties.pageSize = 10;
     }
 
+    // Initialize current page
 
-    $scope.sortBy = function (criteria) {
+    // Watch for page changes and clear expanded races
+    $scope.pageChange = function (newPageNumber) {
+            $scope.expandedRaces = {};
+    };
+
+    $scope.sortRaceBy = function (criteria) {
         if ($scope.sortCriteria === criteria) {
             $scope.sortDirection = $scope.sortDirection === true ? false : true;
         } else {
@@ -27,75 +33,54 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             $scope.sortDirection = true;
         }
         //sortDirection true = asc, false = desc
-        $scope.resultsList.sort(customResultSort($scope.resultsList, $scope.sortCriteria, $scope.sortDirection));
+        $scope.racesList.sort(customRaceSort($scope.racesList, $scope.sortCriteria, $scope.sortDirection));
     };
 
-    function customResultSort(arr, field, order) {
-        return (result1, result2) => {
-            if (field === 'race.racedate') {
-                if (result1.race.racedate < result2.race.racedate) {
+    function customRaceSort(arr, field, order) {
+        return (race1, race2) => {
+           
+
+            if (field === 'racedate') {
+                if (race1.racedate < race2.racedate) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.racedate > result2.race.racedate) {
+                } else if (race1.racedate > race2.racedate) {
                     return order === true ? 1 : -1;
                 }
 
-                if (result1.race.order < result2.race.order) {
+                if (race1.order < race2.order) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.order > result2.race.order) {
+                } else if (race1.order > race2.order) {
                     return order === true ? 1 : -1;
                 }
 
-                if (result1.race.racename < result2.race.racename) {
+                if (race1.racename < race2.racename) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.racename > result2.race.racename) {
+                } else if (race1.racename > race2.racename) {
                     return order === true ? 1 : -1;
-                }
-
-                if (result1.time < result2.time) {
-                    return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-                
+                }                                
                 return 0;
             }
 
-            if (field === 'pace') {
-                //if result is multisport, put at the end
-                if (result1.race.isMultisport) {
+            if (field === 'distance') {
+                // Always put multisport races at the end
+                if (race1.isMultisport && race1.isMultisport === true) {
                     return 1;
                 }
-                if (result2.race.isMultisport) {
+                if (race2.isMultisport && race2.isMultisport === true) {
                     return -1;
                 }
-                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
+                if (race1.racetype.miles > race2.racetype.miles) {
                     return order === true ? -1 : 1;
-                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
+                } else if (race1.racetype.miles < race2.racetype.miles) {
                     return order === true ? 1 : -1;
                 }
                 return 0;
             }
 
-            if (field === 'time') {
-                if (result1.time < result2.time) {
+            if (field === 'participation') {
+                if (race1.results.length > race2.results.length) {
                     return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-                return 0;
-            }
-
-            if (field === 'agegrade') {
-                //if result has no agegrade, put at the end    
-                if (result1.agegrade === undefined) {
-                    return 1;
-                }
-                if (result2.agegrade === undefined) {
-                    return -1;
-                }
-                if (result1.agegrade < result2.agegrade) {
-                    return order === true ? -1 : 1;
-                } else if (result1.agegrade > result2.agegrade) {
+                } else if (race1.results.length < race2.results.length) {
                     return order === true ? 1 : -1;
                 }
                 return 0;
@@ -105,25 +90,85 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.resultSize = [5, 10, 25, 50, 100];    
 
-    $scope.resultsList = [];
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
-        "limit": 200,
+    // $scope.resultsList = [];
+    // ResultsService.getResultsWithCacheSupport({
+    //     "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+    //     "limit": 200,
+    //     "preload":true
+    // }).then(function(results) {
+    //     $scope.resultsList = results;
+    //     //now load the whole thing unless the initial call return the cache version (>200 res).
+    //     if (results.length == 200){
+    //         ResultsService.getResultsWithCacheSupport({
+    //             "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+    //             "preload":false
+    //         }).then(function(results) {
+    //             $scope.resultsList = results;
+    //         });
+    //     }            
+    // }); 
+
+    $scope.racesList = [];
+    $scope.expandedRaces = {}; 
+
+    ResultsService.getRaceResultsWithCacheSupport({
+        "limit": 100,
+        "sort": '-racedate -order racename',
         "preload":true
-    }).then(function(results) {
-        $scope.resultsList = results;
+    }).then(function(races) {
+        $scope.racesList = races;        
         //now load the whole thing unless the initial call return the cache version (>200 res).
-        if (results.length == 200){
-            ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+        if (races.length < 200){
+            ResultsService.getRaceResultsWithCacheSupport({
+                "sort": '-racedate -order racename',
                 "preload":false
-            }).then(function(results) {
-                $scope.resultsList = results;
+            }).then(function(races) {
+                $scope.racesList = races;
             });
-        }    
-        
-    }); 
-    
+        }
+    });
+
+    // ResultsService.getRaceResultsWithCacheSupport({
+    //     "sort": '-racedate -order racename'
+    // }).then(function(races) {
+    //     $scope.racesList = races;
+    // });
+
+    $scope.expand = function(raceinfo) {
+        if (raceinfo) {
+            // Toggle the expanded state for this race
+            $scope.expandedRaces[raceinfo._id] = !$scope.expandedRaces[raceinfo._id];
+        }
+    };
+
+    $scope.isRaceExpanded = function(raceId) {
+        return $scope.expandedRaces[raceId] === true;
+    };
+
+    $scope.expandAll = function() {
+        $scope.racesList.forEach(function(race) {
+            $scope.expandedRaces[race._id] = true;
+        });
+    };
+
+    $scope.collapseAll = function() {
+        $scope.expandedRaces = {};
+    };
+
+    $scope.removeRace = function(race) {
+        var dlg = dialogs.confirm("Delete Race", "Are you sure you want to delete this race and all its results? This action cannot be undone.");
+        dlg.result.then(function(btn) {
+            ResultsService.deleteRace(race._id).then(function() {
+                // Remove the race from the list
+                var index = $scope.racesList.findIndex(function(r) {
+                    return r._id === race._id;
+                });
+                if (index > -1) {
+                    $scope.racesList.splice(index, 1);
+                }
+            });
+        });
+    };
 
     $scope.showAddResultModal = function(resultSource) {
         ResultsService.showAddResultModal(resultSource,$scope.resultsList).then(function(result) {
@@ -163,8 +208,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     };
 
 
-    $scope.showResultDetailsModal = function(result) {
-        ResultsService.showResultDetailsModal(result).then(function(result) {});
+    $scope.showResultDetailsModal = function(result,race) {
+        ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
 
     // $scope.getResultIcon = function(result){
@@ -181,7 +226,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout','resultsList', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout,resultsList) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout) {
 
     
     $scope.isOlderDateCheck = function(date){       
@@ -429,7 +474,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if (addAnother) {
             //save
             $scope.isSaving = true;
-            await ResultsService.createResult($scope.formData,resultsList);
+            await ResultsService.createResult($scope.formData);
             $scope.isSaving = false;
             //clear some field for new result after it was created
             $scope.formData.members = [{}];
@@ -674,6 +719,17 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         }
         //sortDirection true = asc, false = desc
         $scope.raceinfo.results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
+    };
+
+    $scope.sortResultsBy = function (results,criteria) {
+        if ($scope.sortCriteria === criteria) {
+            $scope.sortDirection = $scope.sortDirection === true ? false : true;
+        } else {
+            $scope.sortCriteria = criteria;
+            $scope.sortDirection = true;
+        }
+        //sortDirection true = asc, false = desc
+        results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
     };
 
     function customResultSort(arr, field, order) {

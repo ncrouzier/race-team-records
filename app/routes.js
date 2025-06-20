@@ -60,7 +60,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
     app.post('/api/signup', function(req, res, next) {
         passport.authenticate('local-signup', function(err, user, info) {
-            console.log(err);
+            // console.log(err);
             if (err) {
                 return next(err);
             }
@@ -494,7 +494,7 @@ module.exports = async function(app, qs, passport, async, _) {
     // get a result
     app.get('/api/results/:result_id',  async function(req, res) {
         try{
-            res.json(await Result.findOne(req.params.result_id));
+            res.json(await Result.findOne(new mongoose.Types.ObjectId(req.params.result_id)));
         }catch(err){
             res.send(err);
         }
@@ -690,7 +690,8 @@ module.exports = async function(app, qs, passport, async, _) {
                         result.agegrade = agegrade;
                         result.is_accepted = req.body.is_accepted;
                         result.isRecordEligible = req.body.isRecordEligible;
-                        result.customOptions = req.body.customOptions;       
+                        result.customOptions = req.body.customOptions;     
+                        result.achievements=[];   //reset achievements
                         //not dealing with achievements because not editable by user (yet?)                    
                         await result.save();
                         // check if previous race entry is not a zombie now.
@@ -726,6 +727,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 result.is_accepted = req.body.is_accepted;
                 result.isRecordEligible = req.body.isRecordEligible;
                 result.customOptions = req.body.customOptions;
+                result.achievements=[];   //reset achievements
                 //not dealing with achievements because not editable by user (yet?)                
                 await result.save();                                                                  
                 // check if previous race entry is not a zombie now.
@@ -745,6 +747,7 @@ module.exports = async function(app, qs, passport, async, _) {
                     let member = await Member.findById(m._id);    
                     await service.updateMemberStats(member);   
                 }
+                
                 resultWithPBsAndAchievements = await Result.findById(result._id); 
                 res.json(resultWithPBsAndAchievements);                 
             }                    
@@ -864,14 +867,33 @@ module.exports = async function(app, qs, passport, async, _) {
 
         
         let query = Race.aggregate([
-            
-              
+                          
               {
                 $lookup: {
                   from: 'results',
                   localField: '_id',
                   foreignField: 'race._id',
                   as: 'results'
+                }
+              },
+              {
+                $set: {
+                  results: {
+                    $map: {
+                      input: "$results",
+                      as: "result",
+                      in: {
+                        $mergeObjects: [
+                          "$$result",
+                          {
+                            race: {
+                              _id: "$$result.race._id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -919,6 +941,33 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
 
+    app.delete('/api/raceinfos/:race_id', service.isAdminLoggedIn, async function (req, res) {
+        //remove all results then the race itself
+        try {
+            const raceId = req.params.race_id;
+            let query = Result.find().where('race._id').equals(raceId);
+            let results = await query.exec();
+            for (let res of results) {
+                await Result.deleteOne({
+                    _id: res._id
+                });
+                for (let m of res.members) {
+                    let member = await Member.findById(m._id);
+                    await service.updateMemberStats(member);
+                }
+            }
+            await Race.deleteOne({
+                _id: raceId
+            }).then(raceD => {
+                res.end('{"success" : "Result deleted successfully", "status" : 200}');
+            });
+        }catch (err) {
+            res.send(err);
+        }
+    });
+
+
+
 
     // =====================================
     // ACHIEVEMENTS ========================
@@ -953,7 +1002,7 @@ app.get('/updateAgeGrade', service.isAdminLoggedIn, async function(req, res) {
                             const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);          
                              if (res.agegrade- agegrade > maxDiff){
                                 maxDiff = res.agegrade-agegrade;
-                                console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
+                                // console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
                              }
                              if (res.agegrade - agegrade)
                                 {
@@ -1865,7 +1914,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                     response.data.includes('CAPTCHA') || 
                     response.data.includes('Access Denied') ||
                     response.data.includes('Please try again later')) {
-                    console.log('Received restricted access page from Parkrun');
+                    // console.log('Received restricted access page from Parkrun');
                     return res.status(403).json({
                         success: false,
                         error: 'Parkrun is restricting access. This could be due to CAPTCHA, rate limiting, or IP restrictions. Please try again later or use a different results source.'
@@ -1907,20 +1956,20 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 ];
 
                 // Log the HTML for debugging
-                console.log('Parkrun HTML content:', response.data);
+                // console.log('Parkrun HTML content:', response.data);
 
                 // Try each selector until we find a working one
                 for (const selector of tableSelectors) {
                     const element = $(selector).first();
                     if (element.length) {
-                        console.log('Found element with selector:', selector);
+                        // console.log('Found element with selector:', selector);
                         // Try to extract headers - be more strict about what constitutes a header
                         const potentialHeaders = [];
                         const headerRow = element.find('thead tr, tr:first-child').first();
                         
                         // Only process if we found a header row
                         if (headerRow.length) {
-                            console.log('Found header row:', headerRow.html());
+                            // console.log('Found header row:', headerRow.html());
                             // Check if this looks like a header row (all cells should be th elements)
                             const allCellsAreTh = headerRow.find('td').length === 0;
                             
@@ -1937,7 +1986,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
                         // If we found valid headers, try to extract data
                         if (potentialHeaders.length > 0) {
-                            console.log('Found headers:', potentialHeaders);
+                            // console.log('Found headers:', potentialHeaders);
                             const potentialData = [];
                             // Skip the header row when getting data
                             element.find('tbody tr, tr:not(:first-child)').each(function() {
@@ -1954,7 +2003,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
                             // If we found both headers and data, use this table
                             if (potentialData.length > 0) {
-                                console.log('Found data rows:', potentialData.length);
+                                // console.log('Found data rows:', potentialData.length);
                                 table = element;
                                 headers = potentialHeaders;
                                 data = potentialData;
@@ -1965,7 +2014,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 }
 
                 if (!table || headers.length === 0 || data.length === 0) {
-                    console.log('No table found with any selector');
+                    // console.log('No table found with any selector');
                     return res.status(400).json({ 
                         success: false, 
                         error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 

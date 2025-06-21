@@ -53,7 +53,7 @@
                     <b><a ui-sref="/members({ member: change.member.firstname+change.member.lastname })">{{change.member.firstname}} {{change.member.lastname}}</a></b>
                     <span ng-if="change.type === 'entry'">joined</span>
                     <span ng-if="change.type === 'exit'">left</span>
-                    <span>the team on {{change.date | date:'mediumDate'}}</span>
+                    <span>the team on {{change.date | date:'mediumDate':'UTC'}}</span>
                 </li>
             </ul>
         </div>

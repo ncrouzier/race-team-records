@@ -184,11 +184,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function(resultParam) {
+    factory.showAddResultModal = function(resultParam, onResultCreatedCallback) {
+        var modalPromise;
         if (resultParam && resultParam._id){
-            return factory.getResultById(resultParam._id).then(
-                function(result) {
-                var modalInstance = $uibModal.open({
+            // This is for duplicating. It gets a result first.
+            modalPromise = factory.getResultById(resultParam._id).then(function(result) {
+                return $uibModal.open({
                     templateUrl: 'views/modals/resultModal.html',
                     controller: 'ResultModalInstanceController',
                     size: 'lg',
@@ -197,13 +198,16 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                         editmode: false,
                         result: function() {
                             return result;
+                        },
+                        onResultCreated: function() {
+                            return onResultCreatedCallback;
                         }
                     }
-                });
-                        
+                }).result; // .result is the promise we want
             });
         }else{
-            modalInstance = $uibModal.open({
+             // This is for a new result.
+            modalPromise = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
                 size: 'lg',
@@ -212,54 +216,34 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                     editmode: false,
                     result: function() {
                         return null;
+                    },
+                    onResultCreated: function() {
+                        return onResultCreatedCallback;
                     }
                 }
-            });
+            }).result;
         }
-        return modalInstance.result.then(function(result) {
-            return factory.createResult(result).then(
-                function(r) {
-                    return r;
-                }, function() {
-                    return null;
-                }
-            );
-        }, function() {
-            return null;
-        });
-        
+        return modalPromise;
     };
 
     factory.retrieveResultForEdit = function(resultParam) {
         return factory.getResultById(resultParam._id).then(
             function(result) {
-            var modalInstance = $uibModal.open({
-                templateUrl: 'views/modals/resultModal.html',
-                controller: 'ResultModalInstanceController',
-                size: 'lg',
-                backdrop: 'static',
-                resolve: {
-                    editmode: true,
-                    resultsList: function() {
-                        return null;
-                    },
-                    result: function() {                                             
-                        return result;
+                return $uibModal.open({
+                    templateUrl: 'views/modals/resultModal.html',
+                    controller: 'ResultModalInstanceController',
+                    size: 'lg',
+                    backdrop: 'static',
+                    resolve: {
+                        editmode: true,
+                        result: function() {
+                            return result;
+                        },
+                        onResultCreated: function() {
+                            return null;
+                        }
                     }
-                }
-            });
-
-            return modalInstance.result.then(function(result) {
-                return factory.editResult(result).then(
-                    function(r) {
-                        return r;
-                    }, function() {
-                        return null;
-                    }
-                );
-            }, function() {
-                return null;
-            });
+                }).result;
         });
     };
 
@@ -550,3 +534,4 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     return factory;
 
 }]);
+

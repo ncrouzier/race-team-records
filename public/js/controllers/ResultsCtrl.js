@@ -170,20 +170,53 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         });
     };
 
-    $scope.showAddResultModal = function(resultSource) {
-        ResultsService.showAddResultModal(resultSource,$scope.resultsList).then(function(result) {
+    $scope.showAddResultModal = function() {
+        var onResultCreated = function(result) {
             if (result !== null) {
-                $scope.resultsList.unshift(result);
+                var existingRaceIndex = $scope.racesList.findIndex(function(race) {
+                    return race._id === result.race._id;
+                });
+
+                if (existingRaceIndex === -1) {
+                    var newRace = JSON.parse(JSON.stringify(result.race));
+                    newRace.results = [result];
+                    $scope.racesList.unshift(newRace);
+                } else {
+                    $scope.racesList[existingRaceIndex].results.unshift(result);
+                }
             }
-        }, function() {});
+        };
+
+        ResultsService.showAddResultModal(null, onResultCreated).then(function(result) {
+            // This will only be called when the modal is finally closed with the "Save and Close" button
+            onResultCreated(result);
+        }, 
+        // 2. Rejection Callback (for .dismiss())
+        function() {});
     };
 
     $scope.retrieveResultForEdit =  function(resultSource) {
-        ResultsService.retrieveResultForEdit(resultSource).then(function(result) {
-            if (result !== null) {
-                $scope.resultsList[$scope.findResultIndexById(resultSource._id)] = result;
+        ResultsService.retrieveResultForEdit(resultSource).then(function(editedResult) {
+            if (editedResult) {
+                // Find the race in the main list
+                var raceIndex = $scope.racesList.findIndex(function(race) {
+                    return race._id === editedResult.race._id;
+                });
+
+                if (raceIndex > -1) {
+                    // Find the result within that race's results array
+                    var resultIndex = $scope.racesList[raceIndex].results.findIndex(function(res) {
+                        return res._id === editedResult._id;
+                    });
+
+                    if (resultIndex > -1) {
+                        // Replace the old result with the edited one
+                        $scope.racesList[raceIndex].results[resultIndex] = editedResult;
+                    }
+                }
+
             }
-        });            
+        });
     };
 
     $scope.findResultIndexById = (id) => $scope.resultsList.findIndex(result => result._id === id);
@@ -226,7 +259,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated) {
 
     
     $scope.isOlderDateCheck = function(date){       
@@ -417,7 +450,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
 
-    $scope.addResult = async function(addAnother) {
+    $scope.addResult = function(addAnother) {
         if ($scope.time.hours === null || $scope.time.hours === undefined || $scope.time.hours === "") $scope.time.hours = 0;
         if ($scope.time.minutes === null || $scope.time.minutes === undefined || $scope.time.minutes === "") $scope.time.minutes = 0;
         if ($scope.time.seconds === null || $scope.time.seconds === undefined || $scope.time.seconds === "") $scope.time.seconds = 0;
@@ -471,23 +504,28 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.customOptionsString !== undefined){
           $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
         }
-        if (addAnother) {
-            //save
-            $scope.isSaving = true;
-            await ResultsService.createResult($scope.formData);
+
+        $scope.isSaving = true;
+        ResultsService.createResult($scope.formData).then(function(savedResult) {
+            if (!savedResult) return; // Or handle error
+
+            if (addAnother) {
+                if (onResultCreated) {
+                    onResultCreated(savedResult);
+                }
+                // Clear form for next entry
+                $scope.formData.members = [{}];
+                $scope.time = {};
+                $scope.formData.ranking.agerank = null;
+                $scope.formData.ranking.genderrank = null;
+                $scope.formData.ranking.overallrank = null;
+                $scope.formData.comments = undefined;
+            } else {
+                $uibModalInstance.close(savedResult);
+            }
+        }).finally(function() {
             $scope.isSaving = false;
-            //clear some field for new result after it was created
-            $scope.formData.members = [{}];
-            $scope.time = {};
-            $scope.formData.ranking.agerank = null;
-            $scope.formData.ranking.genderrank = null;
-            $scope.formData.ranking.overallrank = null;
-            $scope.formData.comments = undefined;                    
-        }else{
-            //close and save
-            $uibModalInstance.close($scope.formData);
-        }
-        
+        });
     };
 
     $scope.clearForm = function() {
@@ -540,7 +578,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.customOptionsString !== undefined){
           $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
         }
-        $uibModalInstance.close($scope.formData);
+
+        $scope.isSaving = true;
+        ResultsService.editResult($scope.formData).then(function(savedResult) {
+            $uibModalInstance.close(savedResult);
+        }).finally(function() {
+            $scope.isSaving = false;
+        });
     };
 
     $scope.cancel = function() {
@@ -650,7 +694,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
     $scope.open = function($event) {
-        console.log("cououc");
         $event.preventDefault();
         $event.stopPropagation();
 

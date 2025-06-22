@@ -253,7 +253,7 @@ app.filter('resultToBikePace', function () {
         var hours = result.time / 360000;
         var distance;
         if (raceinfo) {
-            distance = raceinfo.race.racetype.miles;
+            distance = raceinfo.racetype.miles;
         } else {
             distance = result.race.racetype.miles;
         }
@@ -268,7 +268,7 @@ app.filter('resultToSwimPace', function () {
         var seconds = Math.ceil(result.time / 100);
         var distance;
         if (raceinfo) {
-            distance = raceinfo.race.racetype.meters;
+            distance = raceinfo.racetype.meters;
         } else {
             distance = result.race.racetype.meters;
         }
@@ -288,7 +288,7 @@ app.filter('resultToSwimPace', function () {
 });
 
 app.filter('resultSportIcons', function () {
-    return function (result) {
+    return function (result,race) {
         var res = " ";
         if (result.race.isMultisport) {
             result.legs.forEach(function (leg) {
@@ -301,11 +301,20 @@ app.filter('resultSportIcons', function () {
                 }
             });
         } else {
-            if (result.race.racetype.name === 'Swim') {
-                res += '<span class="hoverhand" title="swim">🏊</span>';
-            } else if (result.race.racetype.name === 'Cycling') {
-                res += '<span class="hoverhand" title="bike">🚴</span>';
+            if(result.race){
+                if (result.race.racetype.name === 'Swim') {
+                    res += '<span class="hoverhand" title="swim">🏊</span>';
+                } else if (result.race.racetype.name === 'Cycling') {
+                    res += '<span class="hoverhand" title="bike">🚴</span>';
+                }
+            }else if (race){
+                if (race.racetype.name === 'Swim') {
+                    res += '<span class="hoverhand" title="swim">🏊</span>';
+                } else if (race.racetype.name === 'Cycling') {
+                    res += '<span class="hoverhand" title="bike">🚴</span>';
+                }
             }
+            
         }
 
         return res;

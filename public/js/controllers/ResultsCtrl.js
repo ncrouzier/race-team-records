@@ -867,9 +867,12 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
 angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result','race', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, race, MembersService, ResultsService, localStorageService) {
 
     $scope.result = result;
-    if (race !== null && race !== undefined){
-        $scope.result.race = race;
-    }
+    $scope.race = race;
+    // if (race !== null && race !== undefined){
+    //     $scope.result.race = race;
+    // }else{
+    //     $scope.race = race;
+    // }
 
     $scope.cancel = function() {
         $uibModalInstance.dismiss('cancel');

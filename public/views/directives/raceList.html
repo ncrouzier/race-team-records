@@ -31,7 +31,7 @@
                 </div>
             </li>
             <li class="list-group-item text-left resultlistrow"
-                dir-paginate="raceInfo in racesList | raceResultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize"
+                dir-paginate="raceInfo in racesList | raceResultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize track by raceInfo._id"
                 ng-class="{hoverlistbg: hover,'expanded': isRaceExpanded(raceInfo._id), 'collapsed': !isRaceExpanded(raceInfo._id)}"
                 ng-mouseenter="hover = true" ng-mouseleave="hover = false"
                 style="padding-right: 0px; padding-left:0px; padding-bottom: 0px;">
@@ -46,7 +46,7 @@
                                 style="margin-left: 5px;" title="Open race details"></i>
 
                             <br>
-                            <small style="margin-left: 5px;">{{raceInfo.racedate | date:'longDate':'UTC' }} <span
+                            <small style="margin-left: 5px;">{{::raceInfo.racedate | date:'longDate':'UTC' }} <span
                                     ng-if="raceInfo.location.state !== null"
                                     ng-bind-html="'-- ' + raceInfo.location.state"></span><span
                                     ng-if="raceInfo.location.state === null"
@@ -117,7 +117,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <li ng-repeat="result in raceInfo.results | resultSuperFilter: searchQuery:raceInfo.racetype:raceInfo" 
+                                <li ng-repeat="result in raceInfo.results | resultSuperFilter: searchQuery:raceInfo.racetype:raceInfo track by result._id" 
                                     class="list-group-item text-left resultlistrow" 
                                     ng-class="{hoverlistbg: hover2}" 
                                     ng-mouseenter="hover2 = true" 

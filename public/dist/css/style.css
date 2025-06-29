@@ -7593,17 +7593,42 @@ footer {
   border-bottom: 1px solid #ddd;
 }
 .pb-list .pblistheader {
-  padding-top: 1px;
-  padding-bottom: 1px;
+  padding: 15px;
   border: 0px;
-  border-bottom: thick solid;
+  border-bottom: 2px solid #dee2e6;
   font-weight: bold;
-  color: #006687;
+  color: #008cba;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px 8px 0 0;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .pb-list .pblistrow {
-  padding-top: 1px;
-  padding-bottom: 1px;
+  padding: 12px 15px;
   border: 0px;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+.pb-list .pblistrow:hover {
+  background-color: #f8f9fa;
+  transform: translateX(2px);
+}
+.pb-list .pblistrow:last-child {
+  border-bottom: none;
+  border-radius: 0 0 8px 8px;
+}
+.pb-list .pblistrow .row {
+  align-items: center;
+}
+.pb-list .pblistrow .resultEvent {
+  font-weight: 600;
+  color: #008cba;
+  transition: color 0.2s ease;
+}
+.pb-list .pblistrow .resultEvent:hover {
+  color: #006687;
+  text-decoration: none;
 }
 @media (min-width: 2px) {
   .member-picture {
@@ -8358,6 +8383,206 @@ footer {
   display: flex;
   align-items: center;
   font-size: 0.95em;
+}
+.stat-box {
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.stat-box .stat-number {
+  font-size: 2.5em;
+  font-weight: bold;
+  color: #008cba;
+  margin-bottom: 5px;
+}
+.stat-box .stat-label {
+  font-size: 0.9em;
+  color: #6f6f6f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.race-type-stats .race-type-item {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+}
+.race-type-stats .race-type-item .race-type-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333333;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-1mile {
+  background-color: #007bff;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-5k {
+  background-color: #28a745;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-10k {
+  background-color: #ffc107;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-10mile {
+  background-color: #fd7e14;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-half {
+  background-color: #e83e8c;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-marathon {
+  background-color: #dc3545;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-ultra {
+  background-color: #6f42c1;
+}
+.race-type-stats .race-type-item .race-type-label .race-type-color.race-type-other {
+  background-color: #6c757d;
+}
+.race-type-stats .race-type-item .race-type-bar {
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.race-type-stats .race-type-item .race-type-bar .race-type-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #008cba 0%, #21c8ff 100%);
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+.race-type-stats .race-type-item .race-type-count {
+  font-size: 0.85em;
+  color: #6f6f6f;
+  text-align: right;
+}
+.pie-chart-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 0;
+}
+.pie-chart-container .pie-chart {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+.pie-chart-container .pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pie-chart-container .pie-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+}
+.pie-chart-container .pie-legend .legend-item .legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pie-chart-container .pie-legend .legend-item .legend-label {
+  font-weight: 600;
+  color: #333333;
+  min-width: 80px;
+}
+.pie-chart-container .pie-legend .legend-item .legend-count {
+  color: #6f6f6f;
+  font-size: 0.85em;
+}
+.location-stats .location-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+.location-stats .location-item:last-child {
+  border-bottom: none;
+}
+.location-stats .location-item .location-name {
+  font-weight: 600;
+  color: #333333;
+}
+.location-stats .location-item .location-count {
+  background-color: #008cba;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+.trend-stat {
+  text-align: center;
+  padding: 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  margin-bottom: 15px;
+}
+.trend-stat .trend-label {
+  font-size: 0.9em;
+  color: #6f6f6f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.trend-stat .trend-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: #008cba;
+  margin-bottom: 5px;
+}
+.trend-stat .trend-detail {
+  font-size: 0.8em;
+  color: #6f6f6f;
+  font-style: italic;
+}
+.panel {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  margin-bottom: 20px;
+}
+.panel .panel-heading {
+  background: linear-gradient(135deg, #008cba 0%, #006687 100%);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  border: none;
+  padding: 15px 20px;
+}
+.panel .panel-heading h4 {
+  margin: 0;
+  font-weight: 600;
+}
+.panel .panel-heading h4 i {
+  margin-right: 8px;
+}
+.panel .panel-body {
+  padding: 20px;
+  background-color: white;
+  border-radius: 0 0 8px 8px;
 }
 
 .temp-adjustment-tool table {

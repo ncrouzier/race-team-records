@@ -1,6 +1,6 @@
 <div class="jumbotron" >
     <uib-tabset>
-        <uib-tab index="0" heading="Best Turnouts" >
+        <!-- <uib-tab index="0" heading="Best Turnouts" >
             <div class="row text-left">
                 <div class="col-md-9" >
 
@@ -60,21 +60,8 @@
                     </ul>
                 </div>
             </div>
-        </uib-tab>
-        <uib-tab index="1" heading="US Races Map" title="States where team members have raced" select="displayTrig = true" deselect="displayTrig = false">
-          <div class="row text-left" >
-            <div usa-map ng-if="displayTrig" style="min-height:700px;">
-            </div>
-          </div>
-        </uib-tab>
-        <uib-tab index="2" heading="World Races Map" title="Countries where team members have raced" select="displayTrigW = true" deselect="displayTrigW = false">
-          <div class="row text-left" >
-            <div world-map ng-if="displayTrigW" style="min-height:700px;" >
-
-            </div>
-          </div>
-          </uib-tab>
-        <uib-tab index="3" heading="Misc." select="">
+        </uib-tab> -->
+        <uib-tab index="0" heading="Team stats" select="">
             <div class="row text-left">
                 <div class="col-md-9" >
 
@@ -89,13 +76,207 @@
                     </div>
                 </div>
             </div>
-        Number of results: {{miscStats.resultsCount}}<br>
+            
+            <!-- Loading spinner for Team stats -->
+            <div ng-if="loadingStates.miscStats" class="text-center" style="padding: 50px;">
+                <i class="fa fa-spinner fa-spin fa-3x"></i>
+                <p style="margin-top: 15px;">Loading team statistics...</p>
+            </div>
+            
+            <!-- Content when not loading -->
+            <div ng-if="!loadingStates.miscStats">
 
-        Miles raced: {{miscStats.milesRaced | number}}<br>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>General Stats</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>Number of results</strong>                               
+                                 </div>
+                                <div class="col-sm-4 text-right">
+                                    {{miscStats.resultsCount}}
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>Miles raced</strong>                               
+                                 </div>
+                                <div class="col-sm-4 text-right">
+                                    {{miscStats.milesRaced | number}}
+                                </div>
+                            </div>
+                        </li>   
+                        <li class="list-group-item">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>Number of wins by team members</strong>                               
+                                 </div>
+                                <div class="col-sm-4 text-right">
+                                    {{miscStats.raceWon | number}}
+                                </div>
+                            </div>
+                        </li>
+                        <li class="list-group-item">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>Most popular race distance</strong>                               
+                                 </div>
+                                <div class="col-sm-4 text-right">
+                                    {{miscStats.mostPopularRaceDistance}} ({{miscStats.mostPopularRaceCount}} races)
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Best Turnout</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="race in miscStats.bestTurnout track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent" ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{race.teamMembers}} members
+                                </div>
+                            </div>
+                            <small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'(' + race.location.state + ')'"></span><span ng-if="race.location.state === null" ng-bind-html="'(' + race.location.country + ')'"></span></small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Most Races Completed</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.mostRaces track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    <a ng-click="goToResultsWithQuery({racername: member.name})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races </a><span class="hoverhand"  uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
+                                </div>
+                            </div>
+                            <small> {{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years racing</small>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Most Traveled Runners</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.mostTraveled track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.uniqueLocations}} locations
+                                </div>
+                            </div>
+                            <small>{{member.uniqueCountries}} countries, {{member.uniqueStates}} states</small>
+                        </li>
+                    </ul>
+                </div>
+                
+              
+            </div>
 
-        Number of race won: {{miscStats.raceWon | number}}<br>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Most Miles Raced</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.mostMiles track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.miles}} miles
+                                </div>
+                            </div>
+                            <small>{{member.races}} races, {{member.avgMilesPerRace}} avg miles/race</small>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4>Most Wins</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.mostWins track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    <a ng-click="goToResultsWithQuery({racername: member.name, ranking: '1'})" class="hoverhandandunderline" title="View all wins for {{member.name}}"> {{member.wins}} wins</a>
+                                </div>
+                            </div>
+                            <small>{{member.races}} total races</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Best Age Grades</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.bestAgeGrades track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.bestAgeGrade}}%
+                                </div>
+                            </div>
+                            <small><span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span> (avg: {{member.avgAgeGrade}}%)</small>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4>Most Consistent Racers</h4>
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="member in miscStats.mostConsistent track by $index">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.avgRacesPerYear}}/year
+                                </div>
+                            </div>
+                            <small>{{member.races}} races over {{member.yearsRacing}} years</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+           
         
+            </div>
         </uib-tab>
+
+
+        <uib-tab index="1" heading="US Races Map" title="States where team members have raced" select="displayTrig = true" deselect="displayTrig = false">
+          <div class="row text-left" >
+            <div usa-map ng-if="displayTrig" style="min-height:700px;">
+            </div>
+          </div>
+        </uib-tab>
+        <uib-tab index="2" heading="World Races Map" title="Countries where team members have raced" select="displayTrigW = true" deselect="displayTrigW = false">
+          <div class="row text-left" >
+            <div world-map ng-if="displayTrigW" style="min-height:700px;" >
+
+            </div>
+          </div>
+          </uib-tab>
+       
 
         <uib-tab ng-if="user.role === 'admin' || user.role == 'user'" index="4" heading="Participation Stats" select="">
             <div class="row text-left">
@@ -143,6 +324,15 @@
                     </div> -->
                 </div>
             </div>
+            
+            <!-- Loading spinner for Participation Stats -->
+            <div ng-if="loadingStates.participationStats" class="text-center" style="padding: 50px;">
+                <i class="fa fa-spinner fa-spin fa-3x"></i>
+                <p style="margin-top: 15px;">Loading participation statistics...</p>
+            </div>
+            
+            <!-- Content when not loading -->
+            <div ng-if="!loadingStates.participationStats">
             <div class="row text-left">
                 <div class="col-md-12">
                     <table style="table-layout:fixed; width: 100%;">
@@ -163,63 +353,21 @@
                     </table>
                 </div>
             </div>
+            </div>
         
         
         </uib-tab>
 
-        <!-- <uib-tab ng-show="user.role == 'admin'" index="5" heading="Participation Stats" select="">
-            <div class="row text-left">
-                <div class="col-md-12" >
-                    <div style="float:left;">
-
-                        <div class="form-group">
-                        <ui-select ng-model="racetoadd" theme="select2" on-select="onSelectRace($item, $model)" style="min-width: 300px;" title="Choose a race">
-                            <ui-select-match placeholder="Select a race">{{$select.selected.racename}}</ui-select-match>
-                            <ui-select-choices repeat="race in attendanceRacesList | propsFilter: {racename: $select.search, racedate: $select.search}">
-                                <div ng-bind-html="race.racename | highlight: $select.search"></div>
-                                <small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}}</small>
-                                <br>
-                                <small>{{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'-- ' + race.location.state"></span><span ng-if="race.location.state === null" ng-bind-html="'-- ' + race.location.country"></span></small>
-                            </ui-select-choices>
-                    </ui-select>
-
-                    <ui-select ng-model="attendanceStats.year" ng-change="getAttendanceStatsByYear()" theme="select2" style="min-width: 60px;">{{yearsList}}
-                        <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
-                        <ui-select-choices repeat="year in yearsList">
-                            <div ng-bind="year"></div>
-                        </ui-select-choices>
-                    </ui-select>
-
-                </div>
-                    </div>
-                </div>
-            </div>
-            <table style="width:100%">
-            <tr>
-                <th style="width:100px;">Race</th>
-                <th style="text-align:center;" class="hoverhand" ng-repeat="m in membersList | filter:{memberStatus:'current'}  track by $index"><span ng-attr-title="{{m.firstname +' '+ m.lastname}}">{{m.firstname.charAt(0)}}{{m.lastname.charAt(0)}}</span></th>
-                <th></th>
-              </tr>
-              <tr ng-repeat="r in attendanceStats.selectedAttendanceRaces">
-              <td><span class="hoverhand" ng-attr-title="{{r[2]}} runners">{{r[0]}}</span></td>
-              <td style="text-align:center;" ng-repeat="res in r[1] track by $index"><span class="hoverhand bold green" ng-show="res.time" ng-attr-title="{{res.time| secondsToTimeString}}">{{res.text}}</span><span ng-hide="res.time">{{res.text}}</span></td>
-              <td><i class="fa fa-minus-circle hoverhand"   ng-click="removeRace($index)"></i></td>
-
-              </tr>
-            <tr>
-                <td>#Races ran
-                </td>
-                <td style="text-align:center;" class="bold" ng-repeat="m in membersList | filter:{memberStatus:'current'} track by $index">
-                  {{attendanceStats.racedRaces[$index]}}
-                </td>
-                <td>
-                </td>
-            </tr>
-            </table>
-
-
-        </uib-tab> -->
+       
         <uib-tab ng-if="user.role == 'admin' || user.role == 'user'" index="6" heading="Team Members Stats" select="">
+            <!-- Loading spinner for Team Members Stats -->
+            <div ng-if="loadingStates.attendanceStats" class="text-center" style="padding: 50px;">
+                <i class="fa fa-spinner fa-spin fa-3x"></i>
+                <p style="margin-top: 15px;">Loading team members statistics...</p>
+            </div>
+            
+            <!-- Content when not loading -->
+            <div ng-if="!loadingStates.attendanceStats">
             <div class="row text-left">
               <div class="col-md-12" >
                   <div>
@@ -254,6 +402,7 @@
 
                     </div>
                 </div>
+            </div>
             </div>
 
 

@@ -537,15 +537,94 @@ app.filter('resultSuperFilter', function () {
                     return;
                 }
                 if (jsonQuery) {
-                    if (jsonQuery.country && raceData.location.country && jsonQuery.country.toLowerCase() === raceData.location.country.toLowerCase()) {
-                        if (jsonQuery.state) {
-                            if (raceData.location.state && jsonQuery.state.toLowerCase() === raceData.location.state.toLowerCase())
-                                filtered.push(result);
-                            return;
-                        } else {
-                            filtered.push(result);
-                            return;
+                    let allConditionsMet = true;
+                    
+                    // Check country condition
+                    if (jsonQuery.country) {
+                        if (!raceData.location.country || jsonQuery.country.toLowerCase() !== raceData.location.country.toLowerCase()) {
+                            allConditionsMet = false;
                         }
+                    }
+                    
+                    // Check state condition
+                    if (jsonQuery.state && allConditionsMet) {
+                        if (!raceData.location.state || jsonQuery.state.toLowerCase() !== raceData.location.state.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racername condition (search in result members)
+                    if (jsonQuery.racername && allConditionsMet) {
+                        let memberFound = false;
+                        result.members.forEach(function (member) {
+                            let memberName = member.firstname + ' ' + member.lastname;
+                            if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                memberFound = true;
+                            }
+                        });
+                        if (!memberFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check year condition (race year)
+                    if (jsonQuery.year && allConditionsMet) {
+                        if (!raceData.racedate) {
+                            allConditionsMet = false;
+                        } else {
+                            const raceYear = new Date(raceData.racedate).getFullYear().toString();
+                            if (raceYear !== jsonQuery.year.toString()) {
+                                allConditionsMet = false;
+                            }
+                        }
+                    }
+                    
+                    // Check distance condition (racetype.name)
+                    if (jsonQuery.distance && allConditionsMet) {
+                        if (!raceData.racetype.name || raceData.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racename condition (race name)
+                    if (jsonQuery.racename && allConditionsMet) {
+                        if (!raceData.racename || raceData.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check ranking condition (overall or gender placement)
+                    if (jsonQuery.ranking && allConditionsMet) {
+                        let rankingFound = false;
+                        if(jsonQuery.racername ){
+                            result.members.forEach(function (member) {
+                                let memberName = member.firstname + ' ' + member.lastname;
+                                if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                    // Check if this racer has the specified ranking
+                                    if (result.ranking) {
+                                        if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                            rankingFound = true;
+                                        }
+                                    }
+                                }
+                            });
+                        }else{
+                            if (result.ranking) {
+                                if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                    rankingFound = true;
+                                }
+                            }
+                        }
+                       
+                        if (!rankingFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // If all conditions are met, add the result
+                    if (allConditionsMet) {
+                        filtered.push(result);
+                        return;
                     }
                 }
 
@@ -621,15 +700,99 @@ app.filter('raceResultSuperFilter', function () {
                     return;
                 }
                 if (jsonQuery) {
-                    if (jsonQuery.country && race.location.country && jsonQuery.country.toLowerCase() === race.location.country.toLowerCase()) {
-                        if (jsonQuery.state) {
-                            if (race.location.state && jsonQuery.state.toLowerCase() === race.location.state.toLowerCase())
-                                filtered.push(race);
-                            return;
-                        } else {
-                            filtered.push(race);
-                            return;
+                    let allConditionsMet = true;
+                    
+                    // Check country condition
+                    if (jsonQuery.country) {
+                        if (!race.location.country || jsonQuery.country.toLowerCase() !== race.location.country.toLowerCase()) {
+                            allConditionsMet = false;
                         }
+                    }
+                    
+                    // Check state condition
+                    if (jsonQuery.state && allConditionsMet) {
+                        if (!race.location.state || jsonQuery.state.toLowerCase() !== race.location.state.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check year condition (race year)
+                    if (jsonQuery.year && allConditionsMet) {
+                        if (!race.racedate) {
+                            allConditionsMet = false;
+                        } else {
+                            const raceYear = new Date(race.racedate).getFullYear().toString();
+                            if (raceYear !== jsonQuery.year.toString()) {
+                                allConditionsMet = false;
+                            }
+                        }
+                    }
+                    
+                    // Check distance condition (racetype.name)
+                    if (jsonQuery.distance && allConditionsMet) {
+                        if (!race.racetype.name || race.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racename condition (race name)
+                    if (jsonQuery.racename && allConditionsMet) {
+                        if (!race.racename || race.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racername condition (search in result members)
+                    if (jsonQuery.racername && allConditionsMet) {
+                        let memberFound = false;
+                        race.results.forEach(function (result) {
+                            result.members.forEach(function (member) {
+                                let memberName = member.firstname + ' ' + member.lastname;
+                                if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                    memberFound = true;
+                                }
+                            });
+                        });
+                        if (!memberFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check ranking condition (overall or gender placement)
+                    if (jsonQuery.ranking && allConditionsMet) {
+                        let rankingFound = false;
+                        race.results.forEach(function (result) {
+                            // If racername is specified, only check that racer's ranking
+                            if (jsonQuery.racername) {
+                                result.members.forEach(function (member) {
+                                    let memberName = member.firstname + ' ' + member.lastname;
+                                    if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                        // Check if this racer has the specified ranking
+                                        if (result.ranking) {
+                                            if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                                rankingFound = true;
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                // If no racername specified, check if any racer has the specified ranking
+                                if (result.ranking) {
+                                    if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                        rankingFound = true;
+                                    }
+                                }
+                            }
+                        });
+                        if (!rankingFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // If all conditions are met, add the race
+                    if (allConditionsMet) {
+                        filtered.push(race);
+                        return;
                     }
                 }
 

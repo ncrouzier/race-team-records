@@ -387,18 +387,48 @@ footer {
 
 .pb-list {
     .pblistheader {
-        padding-top: 1px;
-        padding-bottom: 1px;
+        padding: 15px;
         border: 0px;
-        border-bottom: thick solid;
+        border-bottom: 2px solid #dee2e6;
         font-weight: bold;
-        color: @blue-dark;
+        color: @brand-primary;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px 8px 0 0;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .pblistrow {
-        padding-top: 1px;
-        padding-bottom: 1px;
+        padding: 12px 15px;
         border: 0px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s ease;
+        
+        &:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+        
+        &:last-child {
+            border-bottom: none;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .row {
+            align-items: center;
+        }
+        
+        .resultEvent {
+            font-weight: 600;
+            color: @brand-primary;
+            transition: color 0.2s ease;
+            
+            &:hover {
+                color: @brand-primary-dark;
+                text-decoration: none;
+            }
+        }
     }
 }
 
@@ -1344,5 +1374,249 @@ footer {
             align-items: center;
             font-size: 0.95em;
         }
+    }
+} 
+
+// Member Statistics Styles
+.stat-box {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: @brand-primary;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: @gray;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+}
+
+.race-type-stats {
+    .race-type-item {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 6px;
+        background-color: #f8f9fa;
+
+        .race-type-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: @gray-dark;
+
+            .race-type-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 8px;
+                display: inline-block;
+
+                &.race-type-1mile {
+                    background-color: #007bff;
+                }
+
+                &.race-type-5k {
+                    background-color: #28a745;
+                }
+
+                &.race-type-10k {
+                    background-color: #ffc107;
+                }
+
+                &.race-type-10mile {
+                    background-color: #fd7e14;
+                }
+
+                &.race-type-half {
+                    background-color: #e83e8c;
+                }
+
+                &.race-type-marathon {
+                    background-color: #dc3545;
+                }
+
+                &.race-type-ultra {
+                    background-color: #6f42c1;
+                }
+
+                &.race-type-other {
+                    background-color: #6c757d;
+                }
+            }
+        }
+
+        .race-type-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 5px;
+
+            .race-type-fill {
+                height: 100%;
+                background: linear-gradient(90deg, @brand-primary 0%, lighten(@brand-primary, 20%) 100%);
+                border-radius: 4px;
+                transition: width 0.8s ease;
+            }
+        }
+
+        .race-type-count {
+            font-size: 0.85em;
+            color: @gray;
+            text-align: right;
+        }
+    }
+}
+
+.pie-chart-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px 0;
+
+    .pie-chart {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+
+    .pie-legend {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+
+            .legend-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .legend-label {
+                font-weight: 600;
+                color: @gray-dark;
+                min-width: 80px;
+            }
+
+            .legend-count {
+                color: @gray;
+                font-size: 0.85em;
+            }
+        }
+    }
+}
+
+.location-stats {
+    .location-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: @gray-dark;
+        }
+
+        .location-count {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+    }
+}
+
+.trend-stat {
+    text-align: center;
+    padding: 20px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    margin-bottom: 15px;
+
+    .trend-label {
+        font-size: 0.9em;
+        color: @gray;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .trend-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: @brand-primary;
+        margin-bottom: 5px;
+    }
+
+    .trend-detail {
+        font-size: 0.8em;
+        color: @gray;
+        font-style: italic;
+    }
+}
+
+// Panel enhancements for statistics
+.panel {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+
+    .panel-heading {
+        background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 10%) 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        border: none;
+        padding: 15px 20px;
+
+        h4 {
+            margin: 0;
+            font-weight: 600;
+
+            i {
+                margin-right: 8px;
+            }
+        }
+    }
+
+    .panel-body {
+        padding: 20px;
+        background-color: white;
+        border-radius: 0 0 8px 8px;
     }
 } 

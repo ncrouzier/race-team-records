@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -215,6 +215,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             $scope.currentMember = fullMember;
             $scope.activeTab = 1;
 
+            // Set default view to bio
+            $scope.activeMemberView = 'bio';
+
+            // Calculate member statistics
+            $scope.calculateMemberStats();
+
             $state.current.reloadOnSearch = false;
             $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
             $timeout(function () {
@@ -229,6 +235,201 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         
        
         
+    };
+
+    // Calculate comprehensive statistics for the current member
+    $scope.calculateMemberStats = function() {
+        if (!$scope.currentMember || !$scope.currentMemberResultList) {
+            return;
+        }
+
+        const results = $scope.currentMemberResultList;
+        const currentYear = new Date().getFullYear();
+        
+        // Initialize stats object
+        $scope.memberStats = {
+            totalRaces: results.length,
+            racesThisYear: 0,
+            yearsRacing: 0,
+            avgRacesPerYear: 0,
+            personalBests: $scope.currentMember.personalBests ? $scope.currentMember.personalBests.length : 0,
+            top3Finishes: 0,
+            wins: 0,
+            ageGroupWins: 0,
+            bestAgeGrade: 0,
+            bestAgeGradeRace: '',
+            avgAgeGrade: 0,
+            lastRaceDate: null,
+            lastRaceName: '',
+            raceTypeBreakdown: [],
+            locationBreakdown: []
+        };
+
+        // Track years and race types
+        const years = new Set();
+        const raceTypes = {};
+        const locations = {};
+        let totalAgeGrade = 0;
+        let ageGradeCount = 0;
+        let bestAgeGrade = 0;
+        let bestAgeGradeRace = '';
+
+        results.forEach(result => {
+            // Count races this year
+            const raceYear = new Date(result.race.racedate).getFullYear();
+            if (raceYear === currentYear) {
+                $scope.memberStats.racesThisYear++;
+            }
+            years.add(raceYear);
+
+            // Track race types by name
+            const raceType = result.race.racetype;
+            let category = 'other';
+            let name = 'Other';
+            
+            // Check if result has multiple members
+            if (result.members && result.members.length > 1) {
+                category = 'other';
+                name = 'Other';
+            }
+            // Categorize by race type name
+            else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {
+                // Check if race type is variable distance
+                if (raceType.isVariable) {
+                    category = 'other';
+                    name = 'Other';
+                } else {
+                    // Use the racetype name for categorization
+                    category = raceType.name;
+                    name = raceType.name;
+                }
+            } else {
+                // Non-running races (other surfaces, etc.)
+                category = 'other';
+                name = 'Other';
+            }
+            
+            const key = category + '|' + name;
+            raceTypes[key] = raceTypes[key] || { category: category, name: name, count: 0 };
+            raceTypes[key].count++;
+
+            // Track locations
+            const location = result.race.location.state || result.race.location.country;
+            if (location) {
+                if (!locations[location]) {
+                    var stateName = result.race.location.state ? UtilsService.getStateNameFromCode(result.race.location.state) : null;
+                    var countryName = result.race.location.country ? UtilsService.getCountryNameFromCode(result.race.location.country) : null;
+                    var stateFlag = result.race.location.state ? UtilsService.getStateFlag(result.race.location.state) : '';
+                    var countryFlag = result.race.location.country ? UtilsService.getCountryFlag(result.race.location.country) : '';
+                    
+                    locations[location] = {
+                        count: 0,
+                        state: result.race.location.state,
+                        country: result.race.location.country,
+                        stateName: stateName,
+                        countryName: countryName,
+                        stateFlag: stateFlag,
+                        countryFlag: countryFlag,
+                        displayName: stateName || countryName || location,
+                        displayFlag: stateFlag || countryFlag
+                    };
+                }
+                locations[location].count++;
+            }
+
+            // Track rankings
+            if (result.ranking) {
+                if (result.ranking.overallrank === 1 || result.ranking.genderrank === 1) {
+                    $scope.memberStats.wins++;
+                }
+                if (result.ranking.agerank === 1) {
+                    $scope.memberStats.ageGroupWins++;
+                }
+                if (result.ranking.overallrank <= 3 || result.ranking.genderrank  <=3) {
+                    $scope.memberStats.top3Finishes++;
+                }
+            }
+
+            // Track age grades
+            if (result.agegrade) {
+                totalAgeGrade += result.agegrade;
+                ageGradeCount++;
+                if (result.agegrade > bestAgeGrade) {
+                    bestAgeGrade = result.agegrade;
+                    bestAgeGradeRace = result.race.racename;
+                }
+            }
+
+            // Track most recent race
+            if (!$scope.memberStats.lastRaceDate || new Date(result.race.racedate) > new Date($scope.memberStats.lastRaceDate)) {
+                $scope.memberStats.lastRaceDate = result.race.racedate;
+                $scope.memberStats.lastRaceName = result.race.racename;
+            }
+        });
+
+        // Calculate derived stats
+        $scope.memberStats.yearsRacing = years.size;
+        $scope.memberStats.avgRacesPerYear = results.length / years.size;
+        $scope.memberStats.bestAgeGrade = bestAgeGrade;
+        $scope.memberStats.bestAgeGradeRace = bestAgeGradeRace;
+        $scope.memberStats.avgAgeGrade = ageGradeCount > 0 ? totalAgeGrade / ageGradeCount : 0;
+
+        // Create race type breakdown
+        $scope.memberStats.raceTypeBreakdown = Object.values(raceTypes).map(type => ({
+            category: type.category,
+            name: type.name,
+            count: type.count,
+            percentage: Math.round((type.count / results.length) * 100)
+        })).sort((a, b) => b.count - a.count);
+
+        // Calculate pie chart angles and add colors
+        let currentAngle = 0;
+        const colors = ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#e83e8c', '#dc3545', '#6f42c1', '#6c757d'];
+        
+        $scope.memberStats.raceTypeBreakdown.forEach((type, index) => {
+            const sliceAngle = (type.percentage / 100) * 360;
+            const endAngle = currentAngle + sliceAngle;
+            
+            // Calculate end coordinates for the slice
+            const endRadians = (endAngle * Math.PI) / 180;
+            const endX = 50 + 50 * Math.cos(endRadians);
+            const endY = 50 - 50 * Math.sin(endRadians);
+            
+            type.startAngle = currentAngle;
+            type.endAngle = endAngle;
+            type.endX = endX;
+            type.endY = endY;
+            type.color = colors[index % colors.length];
+            
+            currentAngle = endAngle;
+        });
+
+        // Generate conic-gradient CSS for pie chart
+        let gradientParts = [];
+        currentAngle = 0;
+        
+        $scope.memberStats.raceTypeBreakdown.forEach((type, index) => {
+            const sliceAngle = (type.percentage / 100) * 360;
+            const endAngle = currentAngle + sliceAngle;
+            
+            gradientParts.push(`${type.color} ${currentAngle}deg ${endAngle}deg`);
+            currentAngle = endAngle;
+        });
+        
+        $scope.memberStats.pieChartGradient = `conic-gradient(${gradientParts.join(', ')})`;
+
+        // Create location breakdown
+        $scope.memberStats.locationBreakdown = Object.values(locations).map(location => ({
+            state: location.state,
+            country: location.country,
+            stateName: location.stateName,
+            countryName: location.countryName,
+            stateFlag: location.stateFlag,
+            countryFlag: location.countryFlag,
+            displayName: location.displayName,
+            displayFlag: location.displayFlag,
+            count: location.count
+        })).sort((a, b) => b.count - a.count).slice(0, 10); // Top 10 locations
     };
 
     function getCatergory(dob){
@@ -388,7 +589,26 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         ResultsService.showResultDetailsModal(result).then(function(result) {});
     };
 
+    $scope.goToResultsWithQuery = function(queryParams) {
+        // Remove null, undefined, or empty string values
+        var cleanedParams = {};
+        Object.keys(queryParams).forEach(function(key) {
+            var value = queryParams[key];
+            if (value !== null && value !== undefined && value !== '') {
+                cleanedParams[key] = value;
+            }
+        });
+        
+        var searchQuery = JSON.stringify(cleanedParams);
+        $state.go('/results', { search: searchQuery });
+    };
+
     initialLoad();
+
+    // Switch between bio and statistics views
+    $scope.setActiveMemberView = function(view) {
+        $scope.activeMemberView = view;
+    };
 
 }]);
 

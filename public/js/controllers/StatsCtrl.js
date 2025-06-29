@@ -131,18 +131,6 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             fromDate = new Date(Date.UTC($scope.miscStats.year, 0, 1)).getTime();
             toDate = new Date(Date.UTC($scope.miscStats.year + 1, 0, 1)).getTime();
         }
-        
-        // Get basic stats
-        ResultsService.getMilesRaced({
-            "filters": {
-                "dateFrom": fromDate,
-                "dateTo": toDate-1
-            }
-        }).then(function(result) {
-            $scope.miscStats.milesRaced = parseFloat(result.milesRaced).toFixed(2);
-            $scope.miscStats.resultsCount = parseFloat(result.resultsCount);
-            $scope.miscStats.raceWon = parseInt(result.raceWon);
-        });
 
         // Get all race data with results (cached) and filter on client side
         ResultsService.getRaceResultsWithCacheSupport({
@@ -157,6 +145,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             
             $scope.calculateTeamMemberStats(filteredRaces);
             $scope.calculateGeneralStats(filteredRaces);
+            $scope.calculateBasicStats(filteredRaces);
             $scope.loadingStates.miscStats = false;
         }).catch(function(error) {
             $scope.loadingStates.miscStats = false;
@@ -367,6 +356,34 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         
         $scope.miscStats.mostPopularRaceDistance = mostPopularRaceType;
         $scope.miscStats.mostPopularRaceCount = maxCount;
+    };
+
+    $scope.calculateBasicStats = function(races) {
+        var totalMiles = 0;
+        var totalResults = 0;
+        var totalWins = 0;
+
+        races.forEach(function(race) {
+            if (race.results && race.results.length > 0) {
+                race.results.forEach(function(result) {
+                    totalResults++;
+                    
+                    // Count miles (for non-multisport races)
+                    if (!race.isMultisport && race.racetype && race.racetype.miles) {
+                        totalMiles += race.racetype.miles;
+                    }
+                    
+                    // Count wins
+                    if (result.ranking && (result.ranking.overallrank === 1 || result.ranking.genderrank === 1)) {
+                        totalWins++;
+                    }
+                });
+            }
+        });
+        
+        $scope.miscStats.milesRaced = parseFloat(totalMiles).toFixed(2);
+        $scope.miscStats.resultsCount = totalResults;
+        $scope.miscStats.raceWon = totalWins;
     };
 
     $scope.getAttendanceStats = function() {

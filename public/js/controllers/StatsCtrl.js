@@ -115,6 +115,15 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 "dateTo": toDate-1
             }
         }).then(function(races) {
+            // For consistency, also filter on client side using year-based logic
+            if ($scope.raceStats.year !== "All Time") {
+                races = races.filter(function(race) {
+                    var raceDate = new Date(race.racedate);
+                    var raceYear = raceDate.getUTCFullYear();
+                    return raceYear === parseInt($scope.raceStats.year);
+                });
+            }
+            
             $scope.racesList = races;
             $scope.loadingStates.raceStats = false;
         }).catch(function(error) {
@@ -137,11 +146,22 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             "sort": '-racedate -order racename',
             "preload": false
         }).then(function(races) {
+            
             // Filter races by date on client side since cache doesn't respect server filters
             var filteredRaces = races.filter(function(race) {
-                var raceDate = new Date(race.racedate).getTime();
-                return raceDate >= fromDate && raceDate < toDate;
+                if ($scope.miscStats.year === "All Time") {
+                    return true; // Include all races for "All Time"
+                }
+                
+                // Use UTC methods to avoid timezone conversion issues
+                var raceDate = new Date(race.racedate);
+                var raceYear = raceDate.getUTCFullYear();
+                var selectedYear = parseInt($scope.miscStats.year);
+                             
+                
+                return raceYear === selectedYear;
             });
+            
             
             $scope.calculateTeamMemberStats(filteredRaces);
             $scope.calculateGeneralStats(filteredRaces);
@@ -237,7 +257,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                         }
 
                         // Track years
-                        var raceYear = new Date(race.racedate).getFullYear();
+                        var raceYear = new Date(race.racedate).getFullUTCYear();
                         memberStats[memberId].years.add(raceYear);
                         memberYears[memberId] = (memberYears[memberId] || new Set()).add(raceYear);
 

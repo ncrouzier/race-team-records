@@ -276,7 +276,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         results.forEach(result => {
             // Count races this year
-            const raceYear = new Date(result.race.racedate).getFullYear();
+            const raceYear = new Date(result.race.racedate).getUTCFullYear();
             if (raceYear === currentYear) {
                 $scope.memberStats.racesThisYear++;
             }
@@ -291,6 +291,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             if (result.members && result.members.length > 1) {
                 category = 'other';
                 name = 'Other';
+            }else if      (raceType.isVariable) {
+                    category = 'other';
+                    name = 'Other';
+                
             }
             // Categorize by race type name
             else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {

@@ -582,9 +582,16 @@ app.filter('resultSuperFilter', function () {
                     // Check distance condition (racetype.name)
                     if (jsonQuery.distance && allConditionsMet) {
                         if (jsonQuery.distance.toLowerCase() === 'other'){
-                            if (raceData.racetype.isVariable || raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'cross country' && raceData.racetype.surface !== 'ultra') {
-                            
-                            }else{
+                            let isOther = false;
+                            // Check for multiple members in this result
+                            if (result.members && result.members.length > 1) {
+                                isOther = true;
+                            }
+                            // Check for variable distance or non-standard surface
+                            if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'cross country' && raceData.racetype.surface !== 'ultra')) {
+                                isOther = true;
+                            }
+                            if (!isOther) {
                                 allConditionsMet = false;
                             }
                         }else if (!raceData.racetype.name || raceData.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
@@ -737,20 +744,16 @@ app.filter('raceResultSuperFilter', function () {
                     // Check distance condition (racetype.name)
                     if (jsonQuery.distance && allConditionsMet) {
                         if (jsonQuery.distance.toLowerCase() === 'other'){
-                            // let multipleMembers = true;
-                            // for (let result of race.results) {
-                            //     if (result.members.length >1){
-                            //         multipleMembers = true;
-                            //     }
-                            //     if (!multipleMembers){
-                            //         allConditionsMet = false;
-                            //         break; 
-                            //     }
-                            // }
-
-                            if (race.racetype.isVariable || race.racetype.surface !== 'road' && race.racetype.surface !== 'track' && race.racetype.surface !== 'cross country' && race.racetype.surface !== 'ultra') {
-
-                            } else {
+                            let isOther = false;
+                            // Check for any result with multiple members
+                            if (race.results && race.results.some(function(result) { return result.members && result.members.length > 1; })) {
+                                isOther = true;
+                            }
+                            // Check for variable distance or non-standard surface
+                            if (race.racetype.isVariable || (race.racetype.surface !== 'road' && race.racetype.surface !== 'track' && race.racetype.surface !== 'cross country' && race.racetype.surface !== 'ultra')) {
+                                isOther = true;
+                            }
+                            if (!isOther) {
                                 allConditionsMet = false;
                             }
                         } else if (!race.racetype.name || race.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {

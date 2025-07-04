@@ -287,11 +287,13 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             let category = 'other';
             let name = 'Other';
             
+
+            //TODO FIX Other filtering
             // Check if result has multiple members
             if (result.members && result.members.length > 1) {
                 category = 'other';
                 name = 'Other';
-            }else if      (raceType.isVariable) {
+            }else if  (raceType.isVariable) {
                     category = 'other';
                     name = 'Other';
                 

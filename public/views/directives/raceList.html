@@ -42,6 +42,7 @@
                                 ng-class="{'fa-chevron-right': !isRaceExpanded(raceInfo._id), 'fa-chevron-down': isRaceExpanded(raceInfo._id)}"
                                 style="margin-right: 5px;"></i>
                             <span class="hoverhandandunderline resultEvent">{{::raceInfo.racename}}</span>
+                            <race-icon race="raceInfo"></race-icon>
                             <i ng-click="$event.stopPropagation();  showRaceModal(raceInfo)" class="fa fa-external-link hoverhand"
                                 style="margin-left: 5px;" title="Open race details"></i>
 
@@ -127,7 +128,7 @@
                                     <div class="row" style="display: flex; align-items: center; font-size: 0.95em;">
                                         <div class="col-sm-3">
                                             <result-members-names result="result" race="raceInfo"></result-members-names>
-                                            <result-icon result="result"></result-icon>
+                                            <result-icon result="result" race="raceInfo" race-display="true"></result-icon>
                                         </div>
                                         <div class="col-sm-1" style="text-align: center;">
                                             <span ng-if="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')" 

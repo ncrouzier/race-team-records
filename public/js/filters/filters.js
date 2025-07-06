@@ -520,18 +520,20 @@ app.filter('memberFilter', function () {
 app.filter('resultSuperFilter', function () {
     return function (results, query, racetype, race) {
         if (query || racetype) {
-            var raceData;
-            if (!results.race || race){
-                raceData = race;
-            }else{
-                raceData = results.race;
-            }
+                       
             let filtered = [];
             let jsonQuery;
             if (isJson(query)) {
                 jsonQuery = JSON.parse(query);
             }
             angular.forEach(results, function (result) {
+                var raceData;
+                if (!result.race || race){
+                    raceData = race;
+                }else{
+                    raceData = result.race;
+                } 
+
                 let raceTypeFound = false;
                 if (racetype && raceData.racetype._id !== racetype._id) {
                     return;

@@ -6,7 +6,7 @@ var bcrypt = require('bcrypt-nodejs');
 var memberSchema = mongoose.Schema({
     firstname: String,
     lastname: String,
-    username: { type: String },
+    username:  String ,
     alternateFullNames : [String],
     sex: String,
     dateofbirth: Date,
@@ -48,8 +48,13 @@ memberSchema.pre('save', function(next, done) {
     }
 
     // Set username if not defined
+    // console.log(this.username + "--"); 
     if (!this.username || this.username.trim() === "") {
-        this.username = ((this.firstname || "") + (this.lastname || "")).toLowerCase();
+        this.username = ((this.firstname || "") + (this.lastname || ""))
+            .toLowerCase()
+            .normalize('NFD')  // Decompose accented characters
+            .replace(/[\u0300-\u036f]/g, '')  // Remove diacritics (accents)
+            .replace(/[^a-z]/g, '');  // Remove all non-letter characters
     }
 
     if (this.isNew) {
@@ -59,17 +64,8 @@ memberSchema.pre('save', function(next, done) {
     next();
 });
 
-// Add a custom getter for username
-memberSchema.path('username').get(function(value) {
-    if (value && value.trim() !== "") {
-        return value;
-    }
-    return ((this.firstname || "") + (this.lastname || "")).toLowerCase();
-});
 
-// Ensure virtuals and getters are included in output
-memberSchema.set('toObject', { getters: true, virtuals: true });
-memberSchema.set('toJSON', { getters: true, virtuals: true });
+
 
 // create the model for users and expose it to our app
 module.exports = mongoose.model('Member', memberSchema);

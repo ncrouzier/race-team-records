@@ -334,6 +334,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 member.firstname = req.body.firstname;
                 member.lastname = req.body.lastname;
                 member.alternateFullNames = req.body.alternateFullNames;
+                member.username = req.body.username || member.username;
                 member.dateofbirth = req.body.dateofbirth;
                 member.sex = req.body.sex;
                 member.bio = req.body.bio;
@@ -349,6 +350,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                         if (memberElement._id.equals(req.body._id)) {
                                             memberElement.firstname = req.body.firstname;
                                             memberElement.lastname = req.body.lastname;
+                                            memberElement.username = req.body.username || member.username;
                                             memberElement.sex = req.body.sex;
                                             memberElement.dateofbirth = req.body.dateofbirth;
                                         }
@@ -1161,6 +1163,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         res.end('{"message" : "results not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
+
 
 
 

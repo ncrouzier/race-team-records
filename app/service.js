@@ -15,8 +15,9 @@ module.exports = {
     updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
         await this.updateTeamRequirementStats(member);
-
     },
+
+
 
     updatePBsandAchivements: async function (member, clear) {
         let returnRes = [];
@@ -232,6 +233,10 @@ module.exports = {
                     }
                 }
             }
+
+                                               
+            
+                
 
             if (resModification) {
                 await result.save();
@@ -509,18 +514,54 @@ module.exports = {
             if (results.length !== 0) {
                 highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined && obj.agegrade !== null).map(obj => obj.agegrade));
             }
-            //console.log([results.length,highestAg]);
+                    
             member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg };
             await member.save();
             return [results.length, highestAg];
         }
+        
     },
 
-    updateTeamRequirementStatsForAllMembers: async function () {
+    updateMembersInResults: async function (member) {
+        if (member) {
+            //update result member info
+            const resultsForMemberUpdate = await Result.find({
+                "members._id": member._id
+            });
+            for (const resultForMemberUpdate of resultsForMemberUpdate) {
+                for (const memberElement of resultForMemberUpdate.members) { //itirates members if relay race
+                    if (memberElement._id.equals(member._id)) {     
+                        if ( memberElement.firstname !== member.firstname || memberElement.lastname !== member.lastname
+                            || memberElement.username !== member.username || memberElement.sex !== member.sex || memberElement.dateofbirth.getTime() !== member.dateofbirth.getTime()
+                        ) {
+                            memberElement.firstname = member.firstname;
+                            memberElement.lastname = member.lastname;
+                            memberElement.username = member.username;
+                            memberElement.sex = member.sex;
+                            memberElement.dateofbirth = member.dateofbirth;
+                            await resultForMemberUpdate.save();
+                        }else{
+                        }
+                    }
+                }
+            }
+        }
+    },
+
+    updateAllMembersStatsAndResults: async function () {
+        const startTime = new Date();
+        console.log(`[${startTime.toISOString()}] Starting updateAllMembersStatsAndResults`);        
         const members = await Member.find();
+        console.log(`Processing ${members.length} members...`);
+                
         for (const member of members) {
             await this.updateTeamRequirementStats(member);
+            await this.updateMembersInResults(member);
         }
+        
+        const endTime = new Date();
+        const duration = endTime - startTime;
+        console.log(`[${endTime.toISOString()}] Completed updateAllMembersStatsAndResults in ${duration}ms`);
     },
 
 

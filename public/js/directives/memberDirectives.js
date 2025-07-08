@@ -7,7 +7,7 @@ app.directive('resultMembersNames', function () {
             result:'=result',
             race:'=race'
           },
-        template: ' <a class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter | cut:false:25:"..."}}</span></a>'
+        template: ' <a class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter | cut:false:25:"..."}}</span></a>'
     };    
 });
 
@@ -17,7 +17,7 @@ app.directive('resultMembersNamesFull', function () {
             result:'=result',
             race:'=race'
           },
-        template: ' <a class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter}}</span></a>'
+        template: ' <a class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter}}</span></a>'
     };
 });
 

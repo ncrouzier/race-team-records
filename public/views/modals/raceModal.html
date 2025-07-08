@@ -32,7 +32,7 @@
                 <li class="list-group-item text-left resultlistrow" ng-repeat="result in raceinfo.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                     <div class="row" style="display: flex; align-items: center;">
                         <div class="col-sm-4">                            
-                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members({ member: result.members[0].firstname+result.members[0].lastname })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}} </span></a><result-icon result="result" race="raceinfo" race-display="true"></result-icon>
+                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}} </span></a><result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                         </div>
                         <div class="col-sm-1" style="text-align: center;">
                             <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>

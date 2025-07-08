@@ -88,172 +88,219 @@
 
             <div class="row">
                 <div class="col-md-6">
-                    <h4>General Stats</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>Number of results</strong>                               
-                                 </div>
-                                <div class="col-sm-4 text-right">
-                                    {{miscStats.resultsCount}}
-                                </div>
-                            </div>
-                        </li>
-                        <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>Miles raced</strong>                               
-                                 </div>
-                                <div class="col-sm-4 text-right">
-                                    {{miscStats.milesRaced | number}}
-                                </div>
-                            </div>
-                        </li>   
-                        <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>Number of wins by team members</strong>                               
-                                 </div>
-                                <div class="col-sm-4 text-right">
-                                    {{miscStats.raceWon | number}}
-                                </div>
-                            </div>
-                        </li>
-                        <li class="list-group-item">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>Most popular race distance</strong>                               
-                                 </div>
-                                <div class="col-sm-4 text-right">
-                                    {{miscStats.mostPopularRaceDistance}} ({{miscStats.mostPopularRaceCount}} races)
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-bar-chart"></i> General Stats</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" style="border: none;">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>Number of results</strong>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{miscStats.resultsCount}}
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-left" style="border: none;">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>Miles raced</strong>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{miscStats.milesRaced | number}}
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-left" style="border: none;">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>Number of wins by team members</strong>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{miscStats.raceWon | number}}
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-left" style="border: none;">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>Most popular race distance</strong>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{miscStats.mostPopularRaceDistance}} ({{miscStats.mostPopularRaceCount}} races)
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <h4>Best Turnout</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="race in miscStats.bestTurnout track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent" ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>                                </div>
-                                <div class="col-sm-4 text-right">
-                                    {{race.teamMembers}} members
-                                </div>
-                            </div>
-                            <small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'(' + race.location.state + ')'"></span><span ng-if="race.location.state === null" ng-bind-html="'(' + race.location.country + ')'"></span></small>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-users"></i> Best Turnout</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="race in miscStats.bestTurnout track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent" ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>
+                                            <br><small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'(' + race.location.state + ')'"></span><span ng-if="race.location.state === null" ng-bind-html="'(' + race.location.country + ')'"></span></small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{race.teamMembers}} members
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6">
-                    <h4>Most Races Completed</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.mostRaces track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    <a ng-click="goToResultsWithQuery({racername: member.name})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races </a><span class="hoverhand"  uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
-                                </div>
-                            </div>
-                            <small> {{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years racing</small>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-flag-checkered"></i> Most Races Completed</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small>{{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years racing</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            <a ng-click="goToResultsWithQuery({racername: member.name})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races</a><span class="hoverhand" uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <h4>Most Traveled Runners</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.mostTraveled track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    {{member.uniqueLocations}} locations
-                                </div>
-                            </div>
-                            <small>{{member.uniqueCountries}} {{member.uniqueCountries === 1 ? 'country' : 'countries'}}, {{member.uniqueStates}} {{member.uniqueStates === 1 ? 'state' : 'states'}}</small>
-                        </li>
-                    </ul>
-                </div>
-                
-              
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>Most Miles Raced</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.mostMiles track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    {{member.miles}} miles
-                                </div>
-                            </div>
-                            <small>{{member.races}} races, {{member.avgMilesPerRace}} avg miles/race</small>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="col-md-6">
-                    <h4>Most Wins</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.mostWins track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    <a ng-click="goToResultsWithQuery({racername: member.name, ranking: '1'})" class="hoverhandandunderline" title="View all wins for {{member.name}}"> {{member.wins}} wins</a>
-                                </div>
-                            </div>
-                            <small>{{member.races}} total races</small>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-globe"></i> Most Traveled Runners</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.mostTraveled track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small>{{member.uniqueCountries}} {{member.uniqueCountries === 1 ? 'country' : 'countries'}}, {{member.uniqueStates}} {{member.uniqueStates === 1 ? 'state' : 'states'}}</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{member.uniqueLocations}} locations
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6">
-                    <h4>Best Age Grades</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.bestAgeGrades track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    {{member.bestAgeGrade}}%
-                                </div>
-                            </div>
-                            <small><span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span> (avg: {{member.avgAgeGrade}}%)</small>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-road"></i> Most Miles Raced</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.mostMiles track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small>{{member.races}} races, {{member.avgMilesPerRace}} avg miles/race</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{member.miles}} miles
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <h4>Most Consistent Racers</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-repeat="member in miscStats.mostConsistent track by $index">
-                            <div class="row">
-                                <div class="col-sm-8">
-                                    <strong>{{$index + 1}}. <a ui-sref="/members({ member: member.link })">{{member.name}}</a></strong>
-                                </div>
-                                <div class="col-sm-4 text-right">
-                                    {{member.avgRacesPerYear}}/year
-                                </div>
-                            </div>
-                            <small>{{member.races}} races over {{member.yearsRacing}} years</small>
-                        </li>
-                    </ul>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-trophy"></i> Most Wins</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.mostWins track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small>{{member.races}} total races</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            <a ng-click="goToResultsWithQuery({racername: member.name, ranking: '1'})" class="hoverhandandunderline" title="View all wins for {{member.name}}">{{member.wins}} wins</a>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-star"></i> Best Age Grades</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.bestAgeGrades track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small><span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span> (avg: {{member.avgAgeGrade}}%)</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{member.bestAgeGrade}}%
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-calendar"></i> Most Consistent Racers</h4>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <ul class="list-group" style="margin: 0; border: none;">
+                                <li class="list-group-item text-left" ng-repeat="member in miscStats.mostConsistent track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                    <div class="row">
+                                        <div class="col-sm-8">
+                                            <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                            <br><small>{{member.races}} races over {{member.yearsRacing}} years</small>
+                                        </div>
+                                        <div class="col-sm-4 text-right">
+                                            {{member.avgRacesPerYear}}/year
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
 

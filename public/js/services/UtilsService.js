@@ -54,21 +54,21 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular', function(Resta
 
     factory.getStateFlag = function(code) {
         if (!code) return '';
-        // US state flags - using state abbreviations as emoji flags
+        // US state flags - using SVG image files
         var stateFlags = {
-            'AL': '🏴󠁵󠁳󠁡󠁬󠁿', 'AK': '🏴󠁵󠁳󠁡󠁫󠁿', 'AZ': '🏴󠁵󠁳󠁡󠁺󠁿', 'AR': '🏴󠁵󠁳󠁡󠁲󠁿', 'CA': '🏴󠁵󠁳󠁣󠁡󠁿',
-            'CO': '🏴󠁵󠁳󠁣󠁯󠁿', 'CT': '🏴󠁵󠁳󠁣󠁴󠁿', 'DE': '🏴󠁵󠁳󠁤󠁥󠁿', 'FL': '🏴󠁵󠁳󠁦󠁬󠁿', 'GA': '🏴󠁵󠁳󠁧󠁡󠁿',
-            'HI': '🏴󠁵󠁳󠁨󠁩󠁿', 'ID': '🏴󠁵󠁳󠁩󠁤󠁿', 'IL': '🏴󠁵󠁳󠁩󠁬󠁿', 'IN': '🏴󠁵󠁳󠁩󠁮󠁿', 'IA': '🏴󠁵󠁳󠁩󠁡󠁿',
-            'KS': '🏴󠁵󠁳󠁫󠁳󠁿', 'KY': '🏴󠁵󠁳󠁫󠁹󠁿', 'LA': '🏴󠁵󠁳󠁡󠁲󠁿', 'ME': '🏴󠁵󠁳󠁭󠁥󠁿', 'MD': '🏴󠁵󠁳󠁭󠁤󠁿',
-            'MA': '🏴󠁵󠁳󠁭󠁡󠁿', 'MI': '🏴󠁵󠁳󠁭󠁩󠁿', 'MN': '🏴󠁵󠁳󠁭󠁮󠁿', 'MS': '🏴󠁵󠁳󠁭󠁳󠁿', 'MO': '🏴󠁵󠁳󠁭󠁯󠁿',
-            'MT': '🏴󠁵󠁳󠁭󠁴󠁿', 'NE': '🏴󠁵󠁳󠁮󠁥󠁿', 'NV': '🏴󠁵󠁳󠁮󠁶󠁿', 'NH': '🏴󠁵󠁳󠁮󠁨󠁿', 'NJ': '🏴󠁵󠁳󠁮󠁪󠁿',
-            'NM': '🏴󠁵󠁳󠁮󠁭󠁿', 'NY': '🏴󠁵󠁳󠁮󠁹󠁿', 'NC': '🏴󠁵󠁳󠁮󠁣󠁿', 'ND': '🏴󠁵󠁳󠁮󠁤󠁿', 'OH': '🏴󠁵󠁳󠁯󠁨󠁿',
-            'OK': '🏴󠁵󠁳󠁯󠁫󠁿', 'OR': '🏴󠁵󠁳󠁯󠁲󠁿', 'PA': '🏴󠁵󠁳󠁰󠁡󠁿', 'RI': '🏴󠁵󠁳󠁲󠁩󠁿', 'SC': '🏴󠁵󠁳󠁳󠁣󠁿',
-            'SD': '🏴󠁵󠁳󠁳󠁤󠁿', 'TN': '🏴󠁵󠁳󠁴󠁮󠁿', 'TX': '🏴󠁵󠁳󠁴󠁸󠁿', 'UT': '🏴󠁵󠁳󠁵󠁴󠁿', 'VT': '🏴󠁵󠁳󠁶󠁴󠁿',
-            'VA': '🏴󠁵󠁳󠁶󠁡󠁿', 'WA': '🏴󠁵󠁳󠁷󠁡󠁿', 'WV': '🏴󠁵󠁳󠁷󠁶󠁿', 'WI': '🏴󠁵󠁳󠁷󠁩󠁿', 'WY': '🏴󠁵󠁳󠁷󠁹󠁿',
-            'DC': '🏛️' // Special case for District of Columbia
+            'AL': 'images/us_state_flags/AL.svg', 'AK': 'images/us_state_flags/AK.svg', 'AZ': 'images/us_state_flags/AZ.svg', 'AR': 'images/us_state_flags/AR.svg', 'CA': 'images/us_state_flags/CA.svg',
+            'CO': 'images/us_state_flags/CO.svg', 'CT': 'images/us_state_flags/CT.svg', 'DE': 'images/us_state_flags/DE.svg', 'FL': 'images/us_state_flags/FL.svg', 'GA': 'images/us_state_flags/GA.svg',
+            'HI': 'images/us_state_flags/HI.svg', 'ID': 'images/us_state_flags/ID.svg', 'IL': 'images/us_state_flags/IL.svg', 'IN': 'images/us_state_flags/IN.svg', 'IA': 'images/us_state_flags/IA.svg',
+            'KS': 'images/us_state_flags/KS.svg', 'KY': 'images/us_state_flags/KY.svg', 'LA': 'images/us_state_flags/LA.svg', 'ME': 'images/us_state_flags/ME.svg', 'MD': 'images/us_state_flags/MD.svg',
+            'MA': 'images/us_state_flags/MA.svg', 'MI': 'images/us_state_flags/MI.svg', 'MN': 'images/us_state_flags/MN.svg', 'MS': 'images/us_state_flags/MS.svg', 'MO': 'images/us_state_flags/MO.svg',
+            'MT': 'images/us_state_flags/MT.svg', 'NE': 'images/us_state_flags/NE.svg', 'NV': 'images/us_state_flags/NV.svg', 'NH': 'images/us_state_flags/NH.svg', 'NJ': 'images/us_state_flags/NJ.svg',
+            'NM': 'images/us_state_flags/NM.svg', 'NY': 'images/us_state_flags/NY.svg', 'NC': 'images/us_state_flags/NC.svg', 'ND': 'images/us_state_flags/ND.svg', 'OH': 'images/us_state_flags/OH.svg',
+            'OK': 'images/us_state_flags/OK.svg', 'OR': 'images/us_state_flags/OR.svg', 'PA': 'images/us_state_flags/PA.svg', 'RI': 'images/us_state_flags/RI.svg', 'SC': 'images/us_state_flags/SC.svg',
+            'SD': 'images/us_state_flags/SD.svg', 'TN': 'images/us_state_flags/TN.svg', 'TX': 'images/us_state_flags/TX.svg', 'UT': 'images/us_state_flags/UT.svg', 'VT': 'images/us_state_flags/VT.svg',
+            'VA': 'images/us_state_flags/VA.svg', 'WA': 'images/us_state_flags/WA.svg', 'WV': 'images/us_state_flags/WV.svg', 'WI': 'images/us_state_flags/WI.svg', 'WY': 'images/us_state_flags/WY.svg',
+            'DC': 'images/us_state_flags/DC.svg' // District of Columbia
         };
-        return stateFlags[code.toUpperCase()] || '🏳️';
+        return stateFlags[code.toUpperCase()] || '';
     };
 
     factory.getCountryFlag = function(code) {

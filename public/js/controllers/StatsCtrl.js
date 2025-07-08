@@ -162,7 +162,6 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 return raceYear === selectedYear;
             });
             
-            
             $scope.calculateTeamMemberStats(filteredRaces);
             $scope.calculateGeneralStats(filteredRaces);
             $scope.calculateBasicStats(filteredRaces);
@@ -211,6 +210,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                             memberStats[memberId] = {
                                 firstname: member.firstname,
                                 lastname: member.lastname,
+                                username: member.username,
                                 races: 0,
                                 miles: 0,
                                 wins: 0,
@@ -257,7 +257,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                         }
 
                         // Track years
-                        var raceYear = new Date(race.racedate).getFullUTCYear();
+                        var raceYear = new Date(race.racedate).getUTCFullYear();
                         memberStats[memberId].years.add(raceYear);
                         memberYears[memberId] = (memberYears[memberId] || new Set()).add(raceYear);
 
@@ -282,7 +282,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             return {
                 id: memberId,
                 name: stats.firstname + ' ' + stats.lastname,
-                link: stats.firstname +stats.lastname,
+                username: stats.username,
                 races: stats.races,
                 miles: Math.round(stats.miles * 100) / 100,
                 wins: stats.wins,

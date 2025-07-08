@@ -19,11 +19,8 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('event', 'page_view');  
             }
         }).state('/members', {
-            url: "/members?member",
-            params: {
-                member: null,
-            },
-            templateUrl: "views/members.html",
+            url: "/members",
+            templateUrl: "views/memberList.html",
             controller: 'MembersController',
             onEnter: function() {
                 gtag('set', 'page_path', '/members.html');
@@ -35,10 +32,32 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             params: {
                 member: null,
             },
-            templateUrl: "views/members.html",
+            redirectTo: function(transition) {
+                var member = transition.params().member;
+                return transition.router.stateService.target('/members/member/bio', { member: member });
+            }
+        })
+        .state('/members/member/bio', {
+            url: "/members/:member/bio",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberDetail.html",
             controller: 'MembersController',
             onEnter: function() {
-                gtag('set', 'page_path', '/members.html');
+                gtag('set', 'page_path', '/memberDetail.html');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/members/member/stats', {
+            url: "/members/:member/stats",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberStats.html",
+            controller: 'MemberStatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/memberStats.html');
                 gtag('event', 'page_view');
             }
         }).state('/results', {

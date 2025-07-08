@@ -1,6 +1,5 @@
 angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
     
-    //  console.log("params",$stateParams);
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -257,6 +256,12 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.searchQuery = $stateParams.search;
     }
 
+    // Initialize searchQuery from URL parameter if present
+    if($stateParams.search){
+        $scope.searchQuery = $stateParams.search;
+    }
+
+   
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated) {

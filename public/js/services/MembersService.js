@@ -20,7 +20,6 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
     factory.getMember = function(id) {
         return Restangular.one('members', id).get().then(
             function(member) {
-                member.link= (member.firstname + member.lastname).replace(/\s+/g, '');
                 return member;
             },
             function(res) {

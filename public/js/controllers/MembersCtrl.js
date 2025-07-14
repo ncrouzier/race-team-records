@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -211,25 +211,75 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 }
                 return racetypes;
             }, {})).sort((a, b) => a.meters - b.meters);
-            // console.log($scope.racetypesList);
+            
             $scope.currentMember = fullMember;
-            $scope.activeTab = 1;
 
-            $state.current.reloadOnSearch = false;
-            $location.search('member', $scope.currentMember.firstname + $scope.currentMember.lastname);
-            $timeout(function () {
-             $state.current.reloadOnSearch = undefined;
-            });
+            // Navigate to member detail page (bio tab by default)
+            $state.go('/members/member/bio', { member: $scope.currentMember.username });
 
             $analytics.eventTrack('viewMember', {
                 category: 'Member',
                 label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
             });
         });
-        
-       
-        
     };
+
+    // Navigate back to member list
+    $scope.goToMemberList = function() {
+        $state.go('/members');
+    };
+
+    // Load member data without navigation (for direct URL access)
+    $scope.loadMemberData = async function(member_param) { 
+       if (member_param === undefined) return;
+
+       $scope.currentMember = null;
+       $scope.imageLoading = true;
+
+       $scope.sortCriteria = "race.racedate";
+       $scope.sortDirection = '-';
+
+       //reset resultpage to 1
+       $scope.pagination = {
+            current: 1
+       };  
+       //reset race type selection
+       $scope.paramModelMember = {};
+
+        // get the member details if this is just a "light member object"
+        let fullMember;
+        if (member_param.bio === undefined) {
+            fullMember = await MembersService.getMember(member_param._id); 
+        }else{
+            fullMember = member_param;
+        }
+           
+
+        ResultsService.getResults({
+            sort: '-race.racedate -race.order',
+            member: {_id :fullMember._id}
+        }).then(function(results) {
+            $scope.currentMemberResultList = results; 
+
+            // get racetypes from these results
+            $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
+                const { _id, race } = result;
+                if (!racetypes[race.racetype._id]) {
+                    racetypes[race.racetype._id] = race.racetype;
+                }
+                return racetypes;
+            }, {})).sort((a, b) => a.meters - b.meters);
+            
+            $scope.currentMember = fullMember;
+
+            $analytics.eventTrack('viewMember', {
+                category: 'Member',
+                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
+            });
+        });
+    };
+
+
 
     function getCatergory(dob){
         return $filter('categoryFilter')(dob);
@@ -350,9 +400,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // $scope.user = data.user;
     // when landing on the page, get all members and show them
 
-    // get all members if we have a member in the url
-    if($stateParams.member){
-        // $scope.paramModel.memberStatus = 'all';
+
+
+    // Set the active view based on the current route
+    if($state.current.name === '/members/member/bio') {
+        $scope.activeMemberView = 'bio';
+    } else if($state.current.name === '/members/member/stats') {
+        $scope.activeMemberView = 'stats';
+    } else {
+        $scope.activeMemberView = 'bio'; // default
     }
 
     // var defaultParams = {
@@ -368,12 +424,26 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         // wait for async call to finish       
         await $scope.getMembers( $scope.paramModel);
 
-        if($stateParams.member){
+        if($stateParams.member && $stateParams.member.trim() !== ''){
             MembersService.getMembers({"filters[name]": $stateParams.member}).then(function(members) {                
-                if (members[0]){
-                    $scope.setMember(members[0]);     
+                if (members && members.length > 0 && members[0]){
+                    // Load member data without navigating
+                    $scope.loadMemberData(members[0]);
+                    
+                    // Set the correct view based on the current route
+                    if($state.current.name === '/members/member/bio') {
+                        $scope.activeMemberView = 'bio';
+                    } else if($state.current.name === '/members/member/stats') {
+                        $scope.activeMemberView = 'stats';
+                    } else {
+                        $scope.activeMemberView = 'bio'; // default
+                    }
+                } else {
                 }
+            }).catch(function(error) {
+                console.error('Error loading member:', error);
             });
+        } else {
         }
     }
 
@@ -388,7 +458,39 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         ResultsService.showResultDetailsModal(result).then(function(result) {});
     };
 
+    $scope.goToResultsWithQuery = function(queryParams) {
+        // Remove null, undefined, or empty string values
+        var cleanedParams = {};
+        Object.keys(queryParams).forEach(function(key) {
+            var value = queryParams[key];
+            if (value !== null && value !== undefined && value !== '') {
+                cleanedParams[key] = value;
+            }
+        });
+        
+        // Only navigate if we have valid parameters
+        if (Object.keys(cleanedParams).length > 0) {
+            var searchQuery = JSON.stringify(cleanedParams);
+            $state.go('/results', { search: searchQuery });
+        }
+    };
+
+    $scope.goToResultsWithLocationQuery = function(racername, country, state) {
+        // Only navigate if we have at least a racername and either country or state
+        if (racername && (country || state)) {
+            var queryParams = { racername: racername };
+            if (country) queryParams.country = country;
+            if (state) queryParams.state = state;
+            $scope.goToResultsWithQuery(queryParams);
+        }
+    };
+
     initialLoad();
+
+    // Switch between bio and statistics views (for programmatic use)
+    $scope.setActiveMemberView = function(view) {
+        $scope.activeMemberView = view;
+    };
 
 }]);
 

@@ -1,0 +1,185 @@
+<div class="row">
+    <div class="col-md-12">
+        <ul class="results-list list-group">
+            <li class="list-group-item text-left resultlistheader" ng-if="racesList.length >0">
+                <div class="row">
+                    <div ng-class="user.role == 'admin' ?'col-sm-4' :'col-sm-5'">
+                        <div class="btn-group" style="margin-right: 10px;">
+                            <!-- <button class="btn btn-sm btn-default"> -->
+                                <i class="fa hoverhand"  ng-click="toggleExpandAll()" title="Expand/Collapse all races" ng-class="{'fa-expand': !allRacesExpanded(), 'fa-compress': allRacesExpanded()}"></i>
+                            <!-- </button> -->
+                        </div>
+                        <span ng-click="sortRaceBy('racedate')" class="listheader hoverhand" title="Event">EVENT</span>
+                    </div>
+                    <div class="col-sm-2" style="text-align: center;">
+                        <span ng-click="sortRaceBy('distance')" class="listheader hoverhand" title="Event Distance">
+                            DISTANCE</span>
+                    </div>
+                    <div class="col-sm-1" style="text-align: center;">
+                        <span ng-click="sortRaceBy('participation')" class="listheader hoverhand"
+                            title="Number of team members racing"># RACERS</span>
+                    </div>
+                    <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-2'" style="text-align: center;">
+                        <span class="listheader hoverhand" title="Pace">BEST TIME</span>
+                    </div>
+                    <div class="col-sm-2" style="text-align: center;">
+                        <span class="listheader hoverhand" title="Achievements">ACHIEVEMENTS</span>
+                    </div>
+                    <div ng-if="user.role == 'admin'" class="col-sm-1" style="text-align: center;">
+                        <span class="listheader hoverhand" title="Pace">EDIT</span>
+                    </div>
+                </div>
+            </li>
+            <li class="list-group-item text-left resultlistrow"
+                dir-paginate="raceInfo in racesList | raceResultSuperFilter: searchQuery | itemsPerPage: resultsTableProperties.pageSize track by raceInfo._id"
+                ng-class="{hoverlistbg: hover,'expanded': isRaceExpanded(raceInfo._id), 'collapsed': !isRaceExpanded(raceInfo._id)}"
+                ng-mouseenter="hover = true" ng-mouseleave="hover = false"
+                style="padding-right: 0px; padding-left:0px; padding-bottom: 0px;">
+                <div style="cursor: pointer;" ng-click="expand(raceInfo)">
+                    <div class="row">
+                        <div ng-class="user.role == 'admin' ?'col-sm-4' :'col-sm-5'" style="padding-left:30px">
+                            <i class="fa"
+                                ng-class="{'fa-chevron-right': !isRaceExpanded(raceInfo._id), 'fa-chevron-down': isRaceExpanded(raceInfo._id)}"
+                                style="margin-right: 5px;"></i>
+                            <span class="hoverhandandunderline resultEvent">{{::raceInfo.racename}}</span>
+                            <race-icon race="raceInfo"></race-icon>
+                            <i ng-click="$event.stopPropagation();  showRaceModal(raceInfo)" class="fa fa-external-link hoverhand"
+                                style="margin-left: 5px;" title="Open race details"></i>
+
+                            <br>
+                            <small style="margin-left: 5px;">{{::raceInfo.racedate | date:'longDate':'UTC' }} <span
+                                    ng-if="raceInfo.location.state !== null"
+                                    ng-bind-html="'-- ' + raceInfo.location.state"></span><span
+                                    ng-if="raceInfo.location.state === null"
+                                    ng-bind-html="'-- ' + raceInfo.location.country"></span></small>
+                        </div>
+                        <div class="col-sm-2" style="text-align: center;">
+                            <!-- Standard distance and event -->
+                            <div ng-if="!raceInfo.racetype.isVariable && raceInfo.racetype.name !== 'Multisport'">
+                                {{::raceInfo.racetype.name}}
+                            </div>
+                            <div ng-if="raceInfo.racetype.isVariable && raceInfo.racetype.name !== 'Multisport'">
+                                {{::raceInfo.distanceName}} 
+                            </div>                           
+                            <div ng-if="raceInfo.racetype.name === 'Multisport'">
+                                <span ng-bind-html="raceInfo | raceinfoSportIcons | unsafe"></span>
+                            </div>
+                        </div>
+                        <div class="col-sm-1" style="text-align: center;">
+                            {{::raceInfo.results.length}}
+                        </div>
+                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-2'" style="text-align: center;">
+                            <span class="resultTime">{{::raceInfo.results[0].time | secondsToTimeString}}</span>                            
+                        </div>
+                        <div class="col-sm-2" style="text-align: center;">
+                            <race-achievements race="raceInfo"></race-achievements>
+                        </div>
+                        <div ng-if="user.role == 'admin'" class="col-sm-1"  style="text-align: center;">
+                            <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
+                            ng-click="$event.stopPropagation(); removeRace(raceInfo)" title="Remove race"></i>
+                        <i class="hoverhand fa  fa-plus-square" ng-show="user.role == 'admin'"
+                            ng-click="$event.stopPropagation(); showAddResultModal(raceInfo)"
+                            title="Add a result for this race"></i>
+                          
+                        </div>
+
+                    </div>
+                </div>
+                <!-- Results Section -->
+                <div ng-if="isRaceExpanded(raceInfo._id)" class="results-section"
+                    style="margin-top: 0px; background-color: #006687; border-radius: 0px; padding: 15px;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <ul style="padding-left:0; margin-bottom: 0;" class="results-list list-group">
+                                <li class="list-group-item text-left resultlistheader" ng-show="raceInfo.results.length >0" style="background-color: #e9ecef; border: none; border-radius: 6px 6px 0 0; padding: 12px 15px;">
+                                    <div class="row" style="font-size: 0.9em; color: #495057;">
+                                        <div class="col-sm-3">
+                                            <span class="listheader" title="Racer's name">RACER</span>
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span class="listheader" title="Age Group Ranking">AGE</span>
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span class="listheader" title="Gender Ranking">GENDER</span>
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span class="listheader" title="Overall Ranking">OVERALL</span>
+                                        </div>
+                                        <div class="col-sm-2" style="text-align: center;">
+                                            <span ng-click="sortResultsBy(raceInfo, 'pace')" class="listheader hoverhand" title="Sort by pace">PACE</span>
+                                            <i ng-click="sortResultsBy(raceInfo, 'agegrade')" title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
+                                        </div>
+                                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-4'" style="text-align: center;">
+                                            <span ng-click="sortResultsBy(raceInfo, 'time')" class="listheader hoverhand" title="Sort by net time">NET TIME</span>
+                                        </div>
+                                        <div class="col-sm-2" ng-if="user.role == 'admin'" style="text-align: center;">
+                                            <span class="listheader" title="Edit">EDIT</span>
+                                            <i class="hoverhand fa" ng-class="getSelectedResults(raceInfo).length === raceInfo.results.length && raceInfo.results.length > 0 ? 'fa-check-square' : 'fa-square-o'" ng-click="toggleSelectAllResults(raceInfo)" title="Select/Unselect all" style="margin-left: 8px;"></i>
+                                            <i class="hoverhand fa fa-trash deleteselectedButton" ng-show="user.role == 'admin' && getSelectedResults(raceInfo).length > 0 "
+                                                ng-click="$event.stopPropagation();  deleteSelectedResults(raceInfo);"
+                                                title="Delete selected results"></i>  
+                                        </div>
+                                    </div>
+                                </li>
+                                <li ng-repeat="result in raceInfo.results  track by result._id" 
+                                    class="list-group-item text-left resultlistrow" 
+                                    ng-class="{hoverlistbg: hover2}" 
+                                    ng-mouseenter="hover2 = true" 
+                                    ng-mouseleave="hover2 = false"
+                                    style="border: none; border-bottom: 1px solid #e9ecef; background-color: white; transition: background-color 0.2s ease;"
+                                    ng-style="{'background-color': hover2 ? '#f0f7fa' : 'white'}">
+                                    <div class="row" style="display: flex; align-items: center; font-size: 0.95em;">
+                                        <div class="col-sm-3">
+                                            <result-members-names result="result" race="raceInfo"></result-members-names>
+                                            <result-icon result="result" race="raceInfo" race-display="true"></result-icon>
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span ng-if="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')" 
+                                                class="hoverhand" 
+                                                title="Age Group ranking" 
+                                                ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe" 
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span ng-if="(result.ranking.genderrank !== undefined && result.ranking.genderrank !== '')" 
+                                                class="hoverhand" 
+                                                title="Gender ranking" 
+                                                ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe" 
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
+                                        </div>
+                                        <div class="col-sm-1" style="text-align: center;">
+                                            <span ng-if="(result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" 
+                                                class="hoverhand" 
+                                                title="Overall ranking" 
+                                                ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe" 
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
+                                        </div>
+                                        <div class="col-sm-2" ng-if="!raceInfo.isMultisport" style="text-align: center;">
+                                            <result-pace result="result" race="raceInfo"></result-pace>
+                                        </div>
+                                        <div class="col-sm-2" ng-if="raceInfo.isMultisport" style="text-align: center;">
+                                            <span class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result, raceInfo)">View details</span>
+                                        </div>
+                                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-4'" style="text-align: center;">
+                                            <span class="resultTime">{{::result.time | secondsToTimeString}}</span>
+                                            <a ng-if="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank">
+                                                <i class="fa fa-link hoverhand" ng-if="result.resultlink !== ''" title="view result"></i>
+                                            </a>
+                                        </div>
+                                        <div class="col-sm-2" ng-if="user.role == 'admin'" style="text-align: center;">
+                                            <span >
+                                                <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(raceInfo,result)" title="edit result"></i>
+                                                <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'" ng-click="removeResult(raceInfo, result)" title="remove result"></i>
+                                                <input type="checkbox" ng-model="result.selected" class="result-checkbox" style="margin-right: 10px;">
+                                            </span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>

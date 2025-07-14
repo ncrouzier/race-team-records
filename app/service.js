@@ -15,8 +15,9 @@ module.exports = {
     updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
         await this.updateTeamRequirementStats(member);
-
     },
+
+
 
     updatePBsandAchivements: async function (member, clear) {
         let returnRes = [];
@@ -232,6 +233,10 @@ module.exports = {
                     }
                 }
             }
+
+                                               
+            
+                
 
             if (resModification) {
                 await result.save();
@@ -509,20 +514,135 @@ module.exports = {
             if (results.length !== 0) {
                 highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined && obj.agegrade !== null).map(obj => obj.agegrade));
             }
-            //console.log([results.length,highestAg]);
+                    
             member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg };
             await member.save();
             return [results.length, highestAg];
         }
+        
     },
 
-    updateTeamRequirementStatsForAllMembers: async function () {
-        const members = await Member.find();
-        for (const member of members) {
-            await this.updateTeamRequirementStats(member);
+    updateMembersInResults: async function (member) {
+        if (member) {
+            //update result member info
+            const resultsForMemberUpdate = await Result.find({
+                "members._id": member._id
+            });
+            for (const resultForMemberUpdate of resultsForMemberUpdate) {
+                for (const memberElement of resultForMemberUpdate.members) { //itirates members if relay race
+                    if (memberElement._id.equals(member._id)) {     
+                        if ( memberElement.firstname !== member.firstname || memberElement.lastname !== member.lastname
+                            || memberElement.username !== member.username || memberElement.sex !== member.sex || memberElement.dateofbirth.getTime() !== member.dateofbirth.getTime()
+                        ) {
+                            memberElement.firstname = member.firstname;
+                            memberElement.lastname = member.lastname;
+                            memberElement.username = member.username;
+                            memberElement.sex = member.sex;
+                            memberElement.dateofbirth = member.dateofbirth;
+                            await resultForMemberUpdate.save();
+                        }else{
+                        }
+                    }
+                }
+            }
         }
     },
 
+    startUpUpdate: async function () {
+        const startTime = new Date();
+        console.log(`[${startTime.toISOString()}] Starting startUpUpdate`);        
+        const members = await Member.find();
+        console.log(`Processing ${members.length} members...`);
+                
+        for (const member of members) {
+            await this.updateTeamRequirementStats(member);
+            await this.updateMembersInResults(member);
+        }
+
+        // Ensure all races have the proper location achievement
+        console.log(`Processing location achievements...`);
+        await this.updateAllLocationAchievements();
+        
+        const endTime = new Date();
+        const duration = endTime - startTime;
+        console.log(`[${endTime.toISOString()}] Completed startUpUpdate in ${duration}ms`);
+    },
+
+
+    /**
+     * Updates location achievements efficiently. If country/state are provided, only process that location.
+     * Otherwise, process all locations.
+     * Usage: await service.updateAllLocationAchievements(country, state);
+     */
+    updateAllLocationAchievements: async function (country, state) {
+        try {
+            let locations;
+            if (country) {
+                // Only process the specified location
+                locations = [{ _id: { country, state: state || null } }];
+            } else {
+                // Get all unique locations
+                locations = await Race.aggregate([
+                    {
+                        $group: {
+                            _id: {
+                                country: '$location.country',
+                                state: '$location.state'
+                            }
+                        }
+                    }
+                ]);
+            }
+
+            console.log(`Processing ${locations.length} unique locations...`);
+
+            for (const location of locations) {
+                // Find all races at this location, sorted by date (oldest first)
+                const racesAtLocation = await Race.find({
+                    'location.country': location._id.country,
+                    'location.state': location._id.state
+                }).sort('racedate order');
+
+                if (racesAtLocation.length === 0) continue;
+
+                const oldestRace = racesAtLocation[0];
+                const locationName = location._id.state || location._id.country;
+
+                // Remove achievement from all races at this location
+                for (const race of racesAtLocation) {
+                    if (race.achievements) {
+                        const newLocationIndex = race.achievements.findIndex(a => a.name === "newLocation");
+                        if (newLocationIndex !== -1) {
+                            race.achievements.splice(newLocationIndex, 1);
+                            await race.save();
+                        }
+                    }
+                }
+
+                // Add achievement only to the oldest race
+                if (!oldestRace.achievements) {
+                    oldestRace.achievements = [];
+                }
+
+                const achievement = {
+                    name: "newLocation",
+                    text: `First team race in ${locationName}!`,
+                    value: {
+                        country: oldestRace.location.country,
+                        state: oldestRace.location.state,
+                        locationName: locationName
+                    }
+                };
+
+                oldestRace.achievements.push(achievement);
+                await oldestRace.save();
+            }
+
+            console.log(`Completed processing location achievements`);
+        } catch (err) {
+            console.error('Error updating all location achievements:', err);
+        }
+    },
 
     // route middleware to make sure a user is logged in
     isLoggedIn: function (req, res, next) {
@@ -589,7 +709,8 @@ module.exports = {
         if (a.racetype.meters > b.racetype.meters)
             return 1;
         return 0;
-    }
+    },
+    
 
 };
 

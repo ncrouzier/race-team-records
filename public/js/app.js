@@ -82,12 +82,12 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
 
 
     //load result in cache
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
-        "preload":false
-    }).then(function(results) {
-        // console.log('return res in app.js', results);
-    });
+    // ResultsService.getResultsWithCacheSupport({
+    //     "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+    //     "preload":false
+    // }).then(function(results) {
+    //     // console.log('return res in app.js', results);
+    // });
 
     $scope.logout = function() {
         $http.get("/api/logout").success(function() {

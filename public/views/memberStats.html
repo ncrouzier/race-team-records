@@ -1,0 +1,293 @@
+<div class="jumbotron">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="detailscontainer" ng-if="currentMember">
+               
+                <div class="row text-center">
+                    <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
+                    <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}<span ng-if="user.role == 'admin'">, {{currentMember | memberAgeFilter }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeMember(currentMember)" title="remove user" ></i></h4>
+                    <h6 class="italic"> member <span ng-repeat="membershipdate in currentMember.membershipDates | orderBy:'start' track by $index" ><span ng-if="membershipdate.end === undefined">since</span><span ng-if="membershipdate.end !== undefined">from</span>  {{membershipdate.start | date:'M/d/y':'UTC'  }} <span ng-if="membershipdate.end !== undefined">to {{membershipdate.end | date:'M/d/y':'UTC' }}</span><span ng-if="currentMember.membershipDates.length >1 && $index < currentMember.membershipDates.length-2">, </span><span ng-if="currentMember.membershipDates.length >1  && $index < currentMember.membershipDates.length-1 && $index !== currentMember.membershipDates.length-1  && $index === currentMember.membershipDates.length-2"> and </span></span></h6>                            
+                </div>
+                
+                <!-- View Toggle Buttons -->
+                <div class="row text-center" style="margin-bottom: 20px;">
+                    <div class="btn-group" role="group">
+                        <a ui-sref="/members/member/bio({member: currentMember.username})" 
+                           class="btn btn-primary">
+                            <i class="fa fa-user"></i> Bio & Results
+                        </a>
+                        <a ui-sref="/members/member/stats({member: currentMember.username})" 
+                           class="btn btn-primary active">
+                            <i class="fa fa-bar-chart"></i> Statistics
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Statistics Content -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="detailscontainer" ng-if="currentMember">
+                            <div class="row text-center">
+                                <h2 class="bold">Statistics as a team member</h2>
+                            </div>
+                            
+                            <!-- Racing Activity Overview -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-calendar"></i> Racing Activity</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.totalRaces}}</div>
+                                                        <div class="stat-label">Total Races</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.racesThisYear}}</div>
+                                                        <div class="stat-label">Races This Year</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.avgRacesPerYear | number:1}}</div>
+                                                        <div class="stat-label">Avg Races/Year</div>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.yearsRacing}}</div>
+                                                        <div class="stat-label">Years Racing on the Team</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                               
+                            </div>
+
+                            <!-- Personal Bests -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4  title="Personal bests as MCRRC race team member"><i class="fa fa-trophy"></i> Personal Bests <span style="font-size: 75%;">(as MCRRC race team member)</span> </h4>
+                                        </div>
+                                        <div class="panel-body" style="padding: 0;">
+                                            <uib-tabset class="activePbTab" active="activePbTab">
+                                                <uib-tab index="0" heading="road" ng-show="(currentMember.personalBests | pbFilter: 'road').length > 0">
+                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
+                                                        <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                                                                     
+                                                                <div class="row">
+                                                                    <div class="col-sm-6" style="font-size: 15px;">
+                                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                    </div>
+                                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                        <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                    </div>                                                   
+                                                                </div>                                                    
+                                                        </li>
+                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'road' " ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">                                                        
+                                                            <div class="row"> 
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
+                                                                </div>
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </uib-tab>
+                                                <uib-tab index="1" heading="track" ng-show="(currentMember.personalBests | pbFilter: 'track').length > 0">
+                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
+                                                        <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                                <div class="row">
+                                                                    <div class="col-sm-6" style="font-size: 15px;">
+                                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                    </div>
+                                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                        <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                    </div>                                                   
+                                                                </div>                                                    
+                                                        </li>
+                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'track'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                            <div class="row" > 
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
+                                                                </div>
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </uib-tab>
+                                                <uib-tab index="2" heading="trail" ng-show="(currentMember.personalBests | pbFilter: 'cross country').length > 0">
+                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
+                                                        <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                                <div class="row">
+                                                                    <div class="col-sm-6" style="font-size: 15px;">
+                                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                    </div>
+                                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                        <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                    </div>                                                   
+                                                                </div>                                                    
+                                                        </li>
+                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'cross country'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                            <div class="row" > 
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
+                                                                </div>
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </uib-tab>
+                                                <uib-tab index="3" heading="ultra" ng-show="(currentMember.personalBests | pbFilter: 'ultra').length > 0">
+                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
+                                                        <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
+                                                                <div class="row">
+                                                                    <div class="col-sm-6" style="font-size: 15px;">
+                                                                        <span class="listheader hoverhand" title="Race">RACE</span>
+                                                                    </div>
+                                                                    <div class="col-sm-6" style="font-size: 15px;">                                                        
+                                                                        <span class="listheader hoverhand" title="Time">TIME</span>                                                                                                                                                                                                                                           
+                                                                    </div>                                                   
+                                                                </div>                                                    
+                                                        </li>
+                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'ultra'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                            <div class="row"> 
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
+                                                                </div>
+                                                                <div class="col-sm-6">
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </uib-tab>
+                                            </uib-tabset>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-trophy"></i> Performance Highlights</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({racername: currentMember.firstname + ' ' + currentMember.lastname, ranking: '1'})">
+                                                        <div class="stat-number">{{memberStats.wins}}</div>
+                                                        <div class="stat-label">Wins</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.top3Finishes}}</div>
+                                                        <div class="stat-label">Top 3 Finishes</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">                                                
+                                                <div class="col-sm-6">
+                                                    <div class="stat-box text-center">
+                                                        <div class="stat-number">{{memberStats.ageGroupWins}}</div>
+                                                        <div class="stat-label">Age Group Wins</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="stat-box text-center hoverhand" ng-click="showRaceModal(memberStats.bestAgeGradeRace)">
+                                                        <div class="stat-number">{{memberStats.bestAgeGrade | number:2}}%</div>
+                                                        <div class="stat-label">Best Age Grade</div>
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                            <div class="row">     
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Race Type Distribution -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-pie-chart"></i> Race Distance Distribution</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <d3-pie-chart 
+                                                data="memberStats.raceTypeBreakdown" 
+                                                width="350" 
+                                                height="250"
+                                                on-slice-click="goToResultsWithQuery({racername: currentMember.firstname + ' ' + currentMember.lastname, distance: data.name})">
+                                            </d3-pie-chart>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-map-marker"></i> Racing Locations</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="location-stats">
+                                                <div class="location-item" 
+                                                     dir-paginate="location in memberStats.locationBreakdown | itemsPerPage: 10 track by $index"
+                                                     pagination-id="location-pagination">
+                                                    <div class="location-name">
+                                                        <a ng-click="goToResultsWithLocationQuery(currentMember.firstname + ' ' + currentMember.lastname, location.country, location.state)" 
+                                                           class="hoverhandandunderline" 
+                                                           title="View all results for {{currentMember.firstname}} {{currentMember.lastname}} in {{location.displayName}}">
+                                                            <span ng-if="location.stateName">
+                                                                <img ng-src="{{location.stateFlag}}" alt="State flag" style="width: 16px; height: auto; margin-right: 4px; vertical-align: middle; border: 1px solid #898f95;">
+                                                                {{location.stateName}}
+                                                            </span>
+                                                            <span ng-if="!location.stateName">{{location.countryFlag}} {{location.countryName}}</span>
+                                                        </a>
+                                                    </div>
+                                                    <div class="location-count">{{location.count}} races</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Pagination Controls -->
+                                            <div class="text-center" ng-show="memberStats.locationBreakdown.length > 10">
+                                                <dir-pagination-controls 
+                                                    pagination-id="location-pagination"
+                                                    boundary-links="true" 
+                                                    direction-links="true" 
+                                                    max-size="5">
+                                                </dir-pagination-controls>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

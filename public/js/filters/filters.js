@@ -106,10 +106,14 @@ app.filter('secondsToTimeDiff', function () {
 });
 
 
-function resultToPace(result) {
+function resultToPace(result,race) {
     //round up!
     var seconds = Math.ceil(result.time / 100);
-    var distance = result.race.racetype.miles;
+    if (!race) {
+        distance = result.race.racetype.miles;
+    } else {
+        distance = race.racetype.miles;
+    }
 
     var m = Math.floor((seconds / 60) / distance);
 
@@ -249,7 +253,7 @@ app.filter('resultToBikePace', function () {
         var hours = result.time / 360000;
         var distance;
         if (raceinfo) {
-            distance = raceinfo.race.racetype.miles;
+            distance = raceinfo.racetype.miles;
         } else {
             distance = result.race.racetype.miles;
         }
@@ -264,7 +268,7 @@ app.filter('resultToSwimPace', function () {
         var seconds = Math.ceil(result.time / 100);
         var distance;
         if (raceinfo) {
-            distance = raceinfo.race.racetype.meters;
+            distance = raceinfo.racetype.meters;
         } else {
             distance = result.race.racetype.meters;
         }
@@ -284,7 +288,7 @@ app.filter('resultToSwimPace', function () {
 });
 
 app.filter('resultSportIcons', function () {
-    return function (result) {
+    return function (result,race) {
         var res = " ";
         if (result.race.isMultisport) {
             result.legs.forEach(function (leg) {
@@ -297,11 +301,20 @@ app.filter('resultSportIcons', function () {
                 }
             });
         } else {
-            if (result.race.racetype.name === 'Swim') {
-                res += '<span class="hoverhand" title="swim">🏊</span>';
-            } else if (result.race.racetype.name === 'Cycling') {
-                res += '<span class="hoverhand" title="bike">🚴</span>';
+            if(result.race){
+                if (result.race.racetype.name === 'Swim') {
+                    res += '<span class="hoverhand" title="swim">🏊</span>';
+                } else if (result.race.racetype.name === 'Cycling') {
+                    res += '<span class="hoverhand" title="bike">🚴</span>';
+                }
+            }else if (race){
+                if (race.racetype.name === 'Swim') {
+                    res += '<span class="hoverhand" title="swim">🏊</span>';
+                } else if (race.racetype.name === 'Cycling') {
+                    res += '<span class="hoverhand" title="bike">🚴</span>';
+                }
             }
+            
         }
 
         return res;
@@ -505,46 +518,146 @@ app.filter('memberFilter', function () {
     };
 });
 app.filter('resultSuperFilter', function () {
-    return function (results, query, racetype) {
+    return function (results, query, racetype, race) {
         if (query || racetype) {
+                       
             let filtered = [];
             let jsonQuery;
             if (isJson(query)) {
                 jsonQuery = JSON.parse(query);
             }
             angular.forEach(results, function (result) {
+                var raceData;
+                if (!result.race || race){
+                    raceData = race;
+                }else{
+                    raceData = result.race;
+                } 
+
                 let raceTypeFound = false;
-                if (racetype && result.race.racetype._id !== racetype._id) {
+                if (racetype && raceData.racetype._id !== racetype._id) {
                     return;
                 }
                 if (jsonQuery) {
-                    if (jsonQuery.country && result.race.location.country && jsonQuery.country.toLowerCase() === result.race.location.country.toLowerCase()) {
-                        if (jsonQuery.state) {
-                            if (result.race.location.state && jsonQuery.state.toLowerCase() === result.race.location.state.toLowerCase())
-                                filtered.push(result);
-                            return;
-                        } else {
-                            filtered.push(result);
-                            return;
+                    let allConditionsMet = true;
+                    
+                    // Check country condition
+                    if (jsonQuery.country) {
+                        if (!raceData.location.country || jsonQuery.country.toLowerCase() !== raceData.location.country.toLowerCase()) {
+                            allConditionsMet = false;
                         }
+                    }
+                    
+                    // Check state condition
+                    if (jsonQuery.state && allConditionsMet) {
+                        if (!raceData.location.state || jsonQuery.state.toLowerCase() !== raceData.location.state.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racername condition (search in result members)
+                    if (jsonQuery.racername && allConditionsMet) {
+                        let memberFound = false;
+                        result.members.forEach(function (member) {
+                            let memberName = member.firstname + ' ' + member.lastname;
+                            if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                memberFound = true;
+                            }
+                        });
+                        if (!memberFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check year condition (race year)
+                    if (jsonQuery.year && allConditionsMet) {
+                        if (!raceData.racedate) {
+                            allConditionsMet = false;
+                        } else {
+                            const raceYear = new Date(raceData.racedate).getFullYear().toString();
+                            if (raceYear !== jsonQuery.year.toString()) {
+                                allConditionsMet = false;
+                            }
+                        }
+                    }
+                    
+                    // Check distance condition (racetype.name)
+                    if (jsonQuery.distance && allConditionsMet) {
+                        if (jsonQuery.distance.toLowerCase() === 'other'){
+                            let isOther = false;
+                            // Check for multiple members in this result
+                            if (result.members && result.members.length > 1) {
+                                isOther = true;
+                            }
+                            // Check for variable distance or non-standard surface
+                            if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'cross country' && raceData.racetype.surface !== 'ultra')) {
+                                isOther = true;
+                            }
+                            if (!isOther) {
+                                allConditionsMet = false;
+                            }
+                        }else if (!raceData.racetype.name || raceData.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racename condition (race name)
+                    if (jsonQuery.racename && allConditionsMet) {
+                        if (!raceData.racename || raceData.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check ranking condition (overall or gender placement)
+                    if (jsonQuery.ranking && allConditionsMet) {
+                        let rankingFound = false;
+                        if(jsonQuery.racername ){
+                            result.members.forEach(function (member) {
+                                let memberName = member.firstname + ' ' + member.lastname;
+                                if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                    // Check if this racer has the specified ranking
+                                    if (result.ranking) {
+                                        if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                            rankingFound = true;
+                                        }
+                                    }
+                                }
+                            });
+                        }else{
+                            if (result.ranking) {
+                                if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                    rankingFound = true;
+                                }
+                            }
+                        }
+                       
+                        if (!rankingFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // If all conditions are met, add the result
+                    if (allConditionsMet) {
+                        filtered.push(result);
+                        return;
                     }
                 }
 
                 if (query) {
 
                     //race name
-                    if (result.race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
                     //racetype
-                    if (result.race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
 
                     //racetype surface
-                    if (result.race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                    if (raceData.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
@@ -569,13 +682,13 @@ app.filter('resultSuperFilter', function () {
                     }
 
                     //pace
-                    var pace = resultToPace(result);
+                    var pace = resultToPace(result,raceData);
                     if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
                         filtered.push(result);
                         return;
                     }
                 } else {
-                    if (racetype && result.race.racetype._id === racetype._id) {
+                    if (racetype && raceData.racetype._id === racetype._id) {
                         filtered.push(result);
                         return;
                     }
@@ -584,6 +697,192 @@ app.filter('resultSuperFilter', function () {
             return filtered;
         } else {
             return results;
+        }
+    };
+});
+
+app.filter('raceResultSuperFilter', function () {
+    return function (raceinfos, query, racetype) {
+        if (query || racetype) {
+            let filtered = [];
+            let jsonQuery;
+            if (isJson(query)) {
+                jsonQuery = JSON.parse(query);
+            }
+            angular.forEach(raceinfos, function (race) {
+                let raceTypeFound = false;
+                if (racetype && race.racetype._id !== racetype._id) {
+                    return;
+                }
+                if (jsonQuery) {
+                    let allConditionsMet = true;
+                    
+                    // Check country condition
+                    if (jsonQuery.country) {
+                        if (!race.location.country || jsonQuery.country.toLowerCase() !== race.location.country.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check state condition
+                    if (jsonQuery.state && allConditionsMet) {
+                        if (!race.location.state || jsonQuery.state.toLowerCase() !== race.location.state.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check year condition (race year)
+                    if (jsonQuery.year && allConditionsMet) {
+                        if (!race.racedate) {
+                            allConditionsMet = false;
+                        } else {
+                            const raceYear = new Date(race.racedate).getFullYear().toString();
+                            if (raceYear !== jsonQuery.year.toString()) {
+                                allConditionsMet = false;
+                            }
+                        }
+                    }
+                    
+                    // Check distance condition (racetype.name)
+                    if (jsonQuery.distance && allConditionsMet) {
+                        if (jsonQuery.distance.toLowerCase() === 'other'){
+                            let isOther = false;
+                            // Check for any result with multiple members
+                            if (race.results && race.results.some(function(result) { return result.members && result.members.length > 1; })) {
+                                isOther = true;
+                            }
+                            // Check for variable distance or non-standard surface
+                            if (race.racetype.isVariable || (race.racetype.surface !== 'road' && race.racetype.surface !== 'track' && race.racetype.surface !== 'cross country' && race.racetype.surface !== 'ultra')) {
+                                isOther = true;
+                            }
+                            if (!isOther) {
+                                allConditionsMet = false;
+                            }
+                        } else if (!race.racetype.name || race.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racename condition (race name)
+                    if (jsonQuery.racename && allConditionsMet) {
+                        if (!race.racename || race.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check racername condition (search in result members)
+                    if (jsonQuery.racername && allConditionsMet) {
+                        let memberFound = false;
+                        race.results.forEach(function (result) {
+                            result.members.forEach(function (member) {
+                                let memberName = member.firstname + ' ' + member.lastname;
+                                if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                    memberFound = true;
+                                }
+                            });
+                        });
+                        if (!memberFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // Check ranking condition (overall or gender placement)
+                    if (jsonQuery.ranking && allConditionsMet) {
+                        let rankingFound = false;
+                        race.results.forEach(function (result) {
+                            // If racername is specified, only check that racer's ranking
+                            if (jsonQuery.racername) {
+                                result.members.forEach(function (member) {
+                                    let memberName = member.firstname + ' ' + member.lastname;
+                                    if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                                        // Check if this racer has the specified ranking
+                                        if (result.ranking) {
+                                            if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                                rankingFound = true;
+                                            }
+                                        }
+                                    }
+                                });
+                            } else {
+                                // If no racername specified, check if any racer has the specified ranking
+                                if (result.ranking) {
+                                    if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                                        rankingFound = true;
+                                    }
+                                }
+                            }
+                        });
+                        if (!rankingFound) {
+                            allConditionsMet = false;
+                        }
+                    }
+                    
+                    // If all conditions are met, add the race
+                    if (allConditionsMet) {
+                        filtered.push(race);
+                        return;
+                    }
+                }
+
+                if (query) {
+
+                    //race name
+                    if (race.racename.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+                    //racetype
+                    if (race.racetype.name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+
+                    //racetype surface
+                    if (race.racetype.surface.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        filtered.push(race);
+                        return;
+                    }
+                    //member name
+                    var foundname = false;
+                    race.results.forEach(function (result) {
+                        result.members.forEach(function (member) {
+                            let name = member.firstname + ' ' + member.lastname + ', ';
+                            if (!foundname && name.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                                filtered.push(race);
+                                foundname = true;
+                                return;
+                            }
+                        });
+                        if (foundname) return;
+
+                        //time
+                        var time = secondsToTimeString(result.time);
+                        if (time.toLowerCase().indexOf(query.toLowerCase()) === 0) {
+                            filtered.push(race);
+                            return;
+                        }
+
+                        //pace
+                        var pace = resultToPace(result,race);
+                        if (pace.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                            filtered.push(race);
+                            return;
+                        }
+                    });
+                    
+
+
+                    
+                } else {
+                    if (racetype && race.racetype._id === racetype._id) {
+                        filtered.push(race);
+                        return;
+                    }
+                }
+            });
+            return filtered;
+        } else {
+            return raceinfos;
         }
     };
 });
@@ -941,5 +1240,25 @@ app.filter('racenameToDistance', function () {
     return function (name) {
         return racenameToDistance(name) || 0;
 
+    };
+});
+
+
+app.filter('addOrdinalSuffix', function () {
+    return function (number) {
+    if (number % 100 >= 11 && number % 100 <= 13) {
+        return number + "th";
+    }
+
+    switch (number % 10) {
+        case 1:
+            return number + "st";
+        case 2:
+            return number + "nd";
+        case 3:
+            return number + "rd";
+        default:
+            return number + "th";
+    }
     };
 });

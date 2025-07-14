@@ -20,11 +20,16 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             }
         }).state('/members', {
             url: "/members?member",
-            params: {
-                member: null,
-            },
-            templateUrl: "views/members.html",
+            templateUrl: "views/memberList.html",
             controller: 'MembersController',
+            redirectTo: function(transition) {
+                //backward compatibility
+                var member = transition.params().member;
+                if (member) {
+                    return transition.router.stateService.target('/members/member/bio', { member: member });
+                }
+                return null; // No redirect, stay on current state
+            },
             onEnter: function() {
                 gtag('set', 'page_path', '/members.html');
                 gtag('event', 'page_view');
@@ -35,16 +40,41 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             params: {
                 member: null,
             },
-            templateUrl: "views/members.html",
+            redirectTo: function(transition) {
+                var member = transition.params().member;
+                return transition.router.stateService.target('/members/member/bio', { member: member });
+            }
+        })
+        .state('/members/member/bio', {
+            url: "/members/:member/bio",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberDetail.html",
             controller: 'MembersController',
             onEnter: function() {
-                gtag('set', 'page_path', '/members.html');
+                gtag('set', 'page_path', '/memberDetail.html');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/members/member/stats', {
+            url: "/members/:member/stats",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberStats.html",
+            controller: 'MemberStatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/memberStats.html');
                 gtag('event', 'page_view');
             }
         }).state('/results', {
-            url: "/results?search",
+            url: "/results",
             templateUrl: "views/results.html",
             controller: 'ResultsController',
+            params: {
+                search: null
+            },
             onEnter: function() {
                 gtag('set', 'page_path', '/results.html');
                 gtag('event', 'page_view');

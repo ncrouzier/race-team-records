@@ -6,54 +6,80 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     var races = Restangular.all('races');
     var systeminfos = Restangular.all('systeminfos');
 
-    var cachedResults;
-    var cachedResultsDate;
+    function isRestangularized(obj) {
+        return obj && typeof obj.getRestangularUrl === 'function';
+    }
+
+
+
     // =====================================
     // RESULTS API CALLS ===================
     // =====================================
 
+    /**
+     * Retrieve a single result by its ID
+     * @param {string} resultId - The ID of the result to retrieve
+     * @return {Promise} - Promise that resolves with the result object
+     */
+    factory.getResultById = function(resultId) {
+        if (resultId){
+            return Restangular.one("results",resultId).get().then(
+                function(result) {
+                    return result;
+                },
+                function(res) {
+                    NotificationService.showNotifiction(false, "Error while retrieving result.");
+                    console.log('Error: ' + res.status);
+                    return null;
+                }
+            );
+        }else{
+            return null;
+        }
+        
+    };
 
-    async function getCurrent(db) {
-        var  results = await db.results.get("current");            
+    async function getKey(db,key) {
+        var  results = await db.get(key);            
         return results;
-      }
+    }
 
     //retrieve results
     factory.getResultsWithCacheSupport = async function (params) {
-        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
-            return sysinfo;
-        });
+        // var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+        //     return sysinfo;
+        // });
 
-        var db = new Dexie("mcrrcAppDatabase");
-        db.version(1).stores({
-            results: 'instance,date,data'
-        });
-        var date = new Date(sysinfo.resultUpdate);
+        // var db = new Dexie("mcrrcAppDatabase");
+        // db.version(1).stores({
+        //     results: 'instance,date,data'
+        // });
+        // var date = new Date(sysinfo.resultUpdate);
 
-        await db.open();
-        var currentCache = await getCurrent(db);
-        // console.log("current database", currentCache);
-        if (currentCache === undefined || date > new Date(currentCache.date)) {
-            // console.log("cache is undefined or out of date so we retrieve from the database",params);
-            return results.getList(params).then(function (resultsFromDatabase) {
-                if (!params.preload) {
-                    // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
-                    db.results.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
-                        // console.log("Done inserting data in cache");        
-                    });
-                }
-                // console.log("done retrieved function");  
-                return resultsFromDatabase;
-            });
-        } else {
-            // console.log("using cache");                        
-            var res = $q(function (resolve, reject) {
-                resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'results', true));
-                // console.log("done restangularizeCollection");
-            });
-            // console.log("done retrieve cache");
-            return res;
-        }
+        // await db.open();
+        // var currentCache = await getCurrent(db.results);
+        // // console.log("current database", currentCache);
+        // if (currentCache === undefined || date > new Date(currentCache.date)) {
+        //     // console.log("cache is undefined or out of date so we retrieve from the database",params);
+        //     return results.getList(params).then(function (resultsFromDatabase) {
+        //         if (!params.preload) {
+        //             // console.log("result retrieved preload == false so we save cache ",resultsFromDatabase);
+        //             db.results.put({ instance: "current", date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
+        //                 // console.log("Done inserting data in cache");        
+        //             });
+        //         }
+        //         // console.log("done retrieved function");  
+        //         return resultsFromDatabase;
+        //     });
+        // } else {
+        //     // console.log("using cache");                        
+        //     var res = $q(function (resolve, reject) {
+        //         resolve(Restangular.restangularizeCollection(null, JSON.parse(currentCache.data), 'results', true));
+        //         // console.log("done restangularizeCollection");
+        //     });
+        //     // console.log("done retrieve cache");
+        //     return res;
+        // }
     };
 
 
@@ -71,16 +97,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
      * @param {Array} resultsList - the list of results to add the new result to
      * @return {Promise} - the promise of the created result
      */
-    factory.createResult = async function(result,resultsList) {
+    factory.createResult = async function(result) {
         //post the result to the database
         return results.post(result).then(
             function(r) {
                 //simple success notification
                 NotificationService.showNotifiction(true,"Result created successfully!");
-                //if the list of results is provided, add the new result to the beginning of the list
-                if(resultsList){
-                    resultsList.unshift(r);
-                }
+           
                 //return the created result
                 return r;
             },
@@ -92,40 +115,52 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
     /**
-     * Save multiple results at once
+     * Save a single result
+     * @param {Object} result - Result to save
+     * @return {Promise} - Promise that resolves with the saved result
+     */
+    factory.saveSingleResult = function(result) {
+        return results.post(result);
+    };
+
+    /**
+     * Save multiple results with progress modal
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
      */
     factory.saveResults = function(resultsToSave) {
-        // Helper function to save results sequentially
-        function saveSequentially(resultsToSave, index = 0, savedResults = []) {
-            if (index >= resultsToSave.length) {
-                return $q.resolve(savedResults);
-            }
-
-            return results.post(resultsToSave[index]).then(
-                function(r) {
-                    savedResults.push(r);
-                    return saveSequentially(resultsToSave, index + 1, savedResults);
-                },
-                function(error) {
-                    console.error('Error saving result:', error);
-                    return $q.reject(error);
+        // Open progress modal
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/saveProgressModal.html',
+            controller: 'SaveProgressModalController',
+            size: 'lg',
+            backdrop: 'static',
+            keyboard: false,
+            resolve: {
+                resultsToSave: function() {
+                    return resultsToSave;
                 }
-            );
-        }
-
-        // Start sequential saving
-        return saveSequentially(resultsToSave).then(
-            function(savedResults) {
-                NotificationService.showNotifiction(true, savedResults.length + " results saved successfully!");
-                return savedResults;
-            },
-            function(error) {
-                NotificationService.showNotifiction(false, "Error while saving results.");
-                throw error;
             }
-        );
+        });
+
+        return modalInstance.result.then(function(result) {
+            var savedCount = result.savedResults.length;
+            var errorCount = result.errorResults.length;
+            
+            if (errorCount === 0) {
+                NotificationService.showNotifiction(true, savedCount + " results saved successfully!");
+            } else if (savedCount === 0) {
+                NotificationService.showNotifiction(false, "Failed to save any results. Please try again.");
+            } else {
+                NotificationService.showNotifiction(true, savedCount + " results saved successfully, " + errorCount + " failed.");
+            }
+            
+            return result.savedResults;
+        }, function() {
+            // Modal was dismissed
+            NotificationService.showNotifiction(false, "Save operation was cancelled.");
+            return $q.reject(new Error("Save operation cancelled"));
+        });
     };
 
     //edit a result
@@ -144,12 +179,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     ///delete a result
     factory.deleteResult = function(result) {
+        if (!isRestangularized(result)){
+            result = Restangular.restangularizeElement(null, result, 'results');
+        }
         return result.remove().then(
             function() {
                 NotificationService.showNotifiction(true,"Result deleted successfully!");
             },
             function(res) {
-                NotificationService.showNotifiction(false,"Result while deleting result!");
+                NotificationService.showNotifiction(false,"Error while deleting result!");
                 console.log('Error: ' + res.status);
             });
     };
@@ -158,66 +196,67 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function(result,resultsList) {
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/modals/resultModal.html',
-            controller: 'ResultModalInstanceController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                editmode: false,
-                resultsList: function() {
-                    return resultsList;
-                },
-                result: function() {
-                    return result;
-                }
-            }
-        });
-
-        return modalInstance.result.then(function(result) {
-            return factory.createResult(result).then(
-                function(r) {
-                    return r;
-                }, function() {
-                    return null;
-                }
-            );
-        }, function() {
-            return null;
-        });
-    };
-
-    factory.retrieveResultForEdit = function(result) {
-        if (result) {
-            var modalInstance = $uibModal.open({
+    factory.showAddResultModal = function(resultParam, onResultCreatedCallback) {
+        var modalPromise;
+        if (resultParam && resultParam._id){
+            // This is for duplicating. It gets a result first.
+            modalPromise = factory.getResultById(resultParam._id).then(function(result) {
+                return $uibModal.open({
+                    templateUrl: 'views/modals/resultModal.html',
+                    controller: 'ResultModalInstanceController',
+                    size: 'lg',
+                    backdrop: 'static',
+                    resolve: {
+                        editmode: false,
+                        result: function() {
+                            return result;
+                        },
+                        onResultCreated: function() {
+                            return onResultCreatedCallback;
+                        }
+                    }
+                }).result; // .result is the promise we want
+            });
+        }else{
+             // This is for a new result.
+            modalPromise = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
                 size: 'lg',
                 backdrop: 'static',
                 resolve: {
-                    editmode: true,
-                    resultsList: function() {
+                    editmode: false,
+                    result: function() {
                         return null;
                     },
-                    result: function() {                        
-                        return result;
+                    onResultCreated: function() {
+                        return onResultCreatedCallback;
                     }
                 }
-            });
-
-            return modalInstance.result.then(function(result) {
-                return factory.editResult(result).then(
-                    function(r) {
-                        return r;
-                    }, function() {
-                        return null;
-                    }
-                );
-            }, function() {
-                return null;
-            });
+            }).result;
         }
+        return modalPromise;
+    };
+
+    factory.retrieveResultForEdit = function(resultParam) {
+        return factory.getResultById(resultParam._id).then(
+            function(result) {
+                return $uibModal.open({
+                    templateUrl: 'views/modals/resultModal.html',
+                    controller: 'ResultModalInstanceController',
+                    size: 'lg',
+                    backdrop: 'static',
+                    resolve: {
+                        editmode: true,
+                        result: function() {
+                            return result;
+                        },
+                        onResultCreated: function() {
+                            return null;
+                        }
+                    }
+                }).result;
+        });
     };
 
     factory.showResultDetailsModal = function(result,race) {
@@ -258,6 +297,59 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             });
     };
 
+    factory.deleteRace = function(raceinfo) {
+        return Restangular.one('raceinfos',raceinfo._id).remove().then(
+            function() {
+                NotificationService.showNotifiction(true,"Race deleted successfully!");
+            },
+            function(res) {
+                NotificationService.showNotifiction(false,"Error while deleting race!");
+                console.log('Error: ' + res.status);
+            });
+    };
+
+    factory.getRaceResultsWithCacheSupport = async function (params) {
+        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+            return sysinfo;
+        });
+
+        var db = new Dexie("mcrrcAppDatabase");
+        db.version(1).stores({
+            races: 'instance,date,data'
+        });
+        var date = new Date(sysinfo.resultUpdate);
+
+        await db.open();
+        var cache, key;
+        if (params.type === "last30"){
+            key = "last30";
+        }else{
+            key = "current";
+        }
+        cache = await getKey(db.races,key);            
+        
+        if (cache === undefined || date > new Date(cache.date)) {
+            // console.log("loading " + params.filters);
+            return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
+                if (!params.preload) {
+                    // console.log("saving cache",key);
+                    db.races.put({ instance: key, date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
+                    });
+                }else{
+                    // console.log("not saving cache",key);
+                }
+                return resultsFromDatabase;
+            });
+        } else {
+            // console.log("using cache", key);
+            var res = $q(function (resolve, reject) {
+                resolve(Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true));
+            });
+            return res;
+        }
+    };
+
+
     factory.showRaceFromResultModal = function(raceId,fromStateParams) {
         return Restangular.one('raceinfos').get({
             limit: 1,
@@ -285,7 +377,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
             },
             function(res) {
                 console.log('Error: ' + res.status);
-            });
+            }
+        );
     };
 
     factory.showRaceFromRaceIdModal = function(raceId,fromStateParams) {
@@ -453,3 +546,4 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     return factory;
 
 }]);
+

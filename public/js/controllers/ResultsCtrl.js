@@ -1,6 +1,5 @@
 angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
     
-    //  console.log("params",$stateParams);
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -18,8 +17,14 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.resultsTableProperties.pageSize = 10;
     }
 
+    // Initialize current page
 
-    $scope.sortBy = function (criteria) {
+    // Watch for page changes and clear expanded races
+    $scope.pageChange = function (newPageNumber) {
+            $scope.expandedRaces = {};
+    };
+
+    $scope.sortRaceBy = function (criteria) {
         if ($scope.sortCriteria === criteria) {
             $scope.sortDirection = $scope.sortDirection === true ? false : true;
         } else {
@@ -27,75 +32,54 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             $scope.sortDirection = true;
         }
         //sortDirection true = asc, false = desc
-        $scope.resultsList.sort(customResultSort($scope.resultsList, $scope.sortCriteria, $scope.sortDirection));
+        $scope.racesList.sort(customRaceSort($scope.racesList, $scope.sortCriteria, $scope.sortDirection));
     };
 
-    function customResultSort(arr, field, order) {
-        return (result1, result2) => {
-            if (field === 'race.racedate') {
-                if (result1.race.racedate < result2.race.racedate) {
+    function customRaceSort(arr, field, order) {
+        return (race1, race2) => {
+           
+
+            if (field === 'racedate') {
+                if (race1.racedate < race2.racedate) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.racedate > result2.race.racedate) {
+                } else if (race1.racedate > race2.racedate) {
                     return order === true ? 1 : -1;
                 }
 
-                if (result1.race.order < result2.race.order) {
+                if (race1.order < race2.order) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.order > result2.race.order) {
+                } else if (race1.order > race2.order) {
                     return order === true ? 1 : -1;
                 }
 
-                if (result1.race.racename < result2.race.racename) {
+                if (race1.racename < race2.racename) {
                     return order === true ? -1 : 1;
-                } else if (result1.race.racename > result2.race.racename) {
+                } else if (race1.racename > race2.racename) {
                     return order === true ? 1 : -1;
-                }
-
-                if (result1.time < result2.time) {
-                    return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-                
+                }                                
                 return 0;
             }
 
-            if (field === 'pace') {
-                //if result is multisport, put at the end
-                if (result1.race.isMultisport) {
+            if (field === 'distance') {
+                // Always put multisport races at the end
+                if (race1.isMultisport && race1.isMultisport === true) {
                     return 1;
                 }
-                if (result2.race.isMultisport) {
+                if (race2.isMultisport && race2.isMultisport === true) {
                     return -1;
                 }
-                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
+                if (race1.racetype.miles > race2.racetype.miles) {
                     return order === true ? -1 : 1;
-                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
+                } else if (race1.racetype.miles < race2.racetype.miles) {
                     return order === true ? 1 : -1;
                 }
                 return 0;
             }
 
-            if (field === 'time') {
-                if (result1.time < result2.time) {
+            if (field === 'participation') {
+                if (race1.results.length > race2.results.length) {
                     return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-                return 0;
-            }
-
-            if (field === 'agegrade') {
-                //if result has no agegrade, put at the end    
-                if (result1.agegrade === undefined) {
-                    return 1;
-                }
-                if (result2.agegrade === undefined) {
-                    return -1;
-                }
-                if (result1.agegrade < result2.agegrade) {
-                    return order === true ? -1 : 1;
-                } else if (result1.agegrade > result2.agegrade) {
+                } else if (race1.results.length < race2.results.length) {
                     return order === true ? 1 : -1;
                 }
                 return 0;
@@ -105,40 +89,133 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.resultSize = [5, 10, 25, 50, 100];    
 
-    $scope.resultsList = [];
-    ResultsService.getResultsWithCacheSupport({
-        "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
-        "limit": 200,
-        "preload":true
-    }).then(function(results) {
-        $scope.resultsList = results;
-        //now load the whole thing unless the initial call return the cache version (>200 res).
-        if (results.length == 200){
-            ResultsService.getResultsWithCacheSupport({
-                "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
-                "preload":false
-            }).then(function(results) {
-                $scope.resultsList = results;
-            });
-        }    
-        
-    }); 
-    
+    // $scope.resultsList = [];
+    // ResultsService.getResultsWithCacheSupport({
+    //     "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+    //     "limit": 200,
+    //     "preload":true
+    // }).then(function(results) {
+    //     $scope.resultsList = results;
+    //     //now load the whole thing unless the initial call return the cache version (>200 res).
+    //     if (results.length == 200){
+    //         ResultsService.getResultsWithCacheSupport({
+    //             "sort": '-race.racedate -race.order race.racename time ranking.overallrank members.firstname',
+    //             "preload":false
+    //         }).then(function(results) {
+    //             $scope.resultsList = results;
+    //         });
+    //     }            
+    // }); 
 
-    $scope.showAddResultModal = function(resultSource) {
-        ResultsService.showAddResultModal(resultSource,$scope.resultsList).then(function(result) {
+    $scope.racesList = [];
+    $scope.expandedRaces = {}; 
+
+    ResultsService.getRaceResultsWithCacheSupport({
+        "limit": 100,
+        "sort": '-racedate -order racename',
+        "preload":true
+    }).then(function(races) {
+        $scope.racesList = races;        
+        //now load the whole thing unless the initial call return the cache version (>200 res).
+        if (races.length < 200){
+            ResultsService.getRaceResultsWithCacheSupport({
+                "sort": '-racedate -order racename',
+                "preload":false
+            }).then(function(races) {
+                $scope.racesList = races;
+            });
+        }
+    });
+
+    // ResultsService.getRaceResultsWithCacheSupport({
+    //     "sort": '-racedate -order racename'
+    // }).then(function(races) {
+    //     $scope.racesList = races;
+    // });
+
+    $scope.expand = function(raceinfo) {
+        if (raceinfo) {
+            // Toggle the expanded state for this race
+            $scope.expandedRaces[raceinfo._id] = !$scope.expandedRaces[raceinfo._id];
+        }
+    };
+
+    $scope.isRaceExpanded = function(raceId) {
+        return $scope.expandedRaces[raceId] === true;
+    };
+
+    $scope.expandAll = function() {
+        $scope.racesList.forEach(function(race) {
+            $scope.expandedRaces[race._id] = true;
+        });
+    };
+
+    $scope.collapseAll = function() {
+        $scope.expandedRaces = {};
+    };
+
+    $scope.removeRace = function(race) {
+        var dlg = dialogs.confirm("Delete Race", "Are you sure you want to delete this race and all its results? This action cannot be undone.");
+        dlg.result.then(function(btn) {
+            ResultsService.deleteRace(race._id).then(function() {
+                // Remove the race from the list
+                var index = $scope.racesList.findIndex(function(r) {
+                    return r._id === race._id;
+                });
+                if (index > -1) {
+                    $scope.racesList.splice(index, 1);
+                }
+            });
+        });
+    };
+
+    $scope.showAddResultModal = function() {
+        var onResultCreated = function(result) {
             if (result !== null) {
-                $scope.resultsList.unshift(result);
+                var existingRaceIndex = $scope.racesList.findIndex(function(race) {
+                    return race._id === result.race._id;
+                });
+
+                if (existingRaceIndex === -1) {
+                    var newRace = JSON.parse(JSON.stringify(result.race));
+                    newRace.results = [result];
+                    $scope.racesList.unshift(newRace);
+                } else {
+                    $scope.racesList[existingRaceIndex].results.unshift(result);
+                }
             }
-        }, function() {});
+        };
+
+        ResultsService.showAddResultModal(null, onResultCreated).then(function(result) {
+            // This will only be called when the modal is finally closed with the "Save and Close" button
+            onResultCreated(result);
+        }, 
+        // 2. Rejection Callback (for .dismiss())
+        function() {});
     };
 
     $scope.retrieveResultForEdit =  function(resultSource) {
-        ResultsService.retrieveResultForEdit(resultSource).then(function(result) {
-            if (result !== null) {
-                $scope.resultsList[$scope.findResultIndexById(resultSource._id)] = result;
+        ResultsService.retrieveResultForEdit(resultSource).then(function(editedResult) {
+            if (editedResult) {
+                // Find the race in the main list
+                var raceIndex = $scope.racesList.findIndex(function(race) {
+                    return race._id === editedResult.race._id;
+                });
+
+                if (raceIndex > -1) {
+                    // Find the result within that race's results array
+                    var resultIndex = $scope.racesList[raceIndex].results.findIndex(function(res) {
+                        return res._id === editedResult._id;
+                    });
+
+                    if (resultIndex > -1) {
+                        // Replace the old result with the edited one
+                        $scope.racesList[raceIndex].results[resultIndex] = editedResult;
+                    }
+                }
+
             }
-        });            
+        });
     };
 
     $scope.findResultIndexById = (id) => $scope.resultsList.findIndex(result => result._id === id);
@@ -163,8 +240,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     };
 
 
-    $scope.showResultDetailsModal = function(result) {
-        ResultsService.showResultDetailsModal(result).then(function(result) {});
+    $scope.showResultDetailsModal = function(result,race) {
+        ResultsService.showResultDetailsModal(result,race).then(function(result) {});
     };
 
     // $scope.getResultIcon = function(result){
@@ -179,9 +256,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.searchQuery = $stateParams.search;
     }
 
+    // Initialize searchQuery from URL parameter if present
+    if($stateParams.search){
+        $scope.searchQuery = $stateParams.search;
+    }
+
+   
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout','resultsList', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout,resultsList) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated) {
 
     
     $scope.isOlderDateCheck = function(date){       
@@ -372,7 +455,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
 
 
-    $scope.addResult = async function(addAnother) {
+    $scope.addResult = function(addAnother) {
         if ($scope.time.hours === null || $scope.time.hours === undefined || $scope.time.hours === "") $scope.time.hours = 0;
         if ($scope.time.minutes === null || $scope.time.minutes === undefined || $scope.time.minutes === "") $scope.time.minutes = 0;
         if ($scope.time.seconds === null || $scope.time.seconds === undefined || $scope.time.seconds === "") $scope.time.seconds = 0;
@@ -426,23 +509,28 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.customOptionsString !== undefined){
           $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
         }
-        if (addAnother) {
-            //save
-            $scope.isSaving = true;
-            await ResultsService.createResult($scope.formData,resultsList);
+
+        $scope.isSaving = true;
+        ResultsService.createResult($scope.formData).then(function(savedResult) {
+            if (!savedResult) return; // Or handle error
+
+            if (addAnother) {
+                if (onResultCreated) {
+                    onResultCreated(savedResult);
+                }
+                // Clear form for next entry
+                $scope.formData.members = [{}];
+                $scope.time = {};
+                $scope.formData.ranking.agerank = null;
+                $scope.formData.ranking.genderrank = null;
+                $scope.formData.ranking.overallrank = null;
+                $scope.formData.comments = undefined;
+            } else {
+                $uibModalInstance.close(savedResult);
+            }
+        }).finally(function() {
             $scope.isSaving = false;
-            //clear some field for new result after it was created
-            $scope.formData.members = [{}];
-            $scope.time = {};
-            $scope.formData.ranking.agerank = null;
-            $scope.formData.ranking.genderrank = null;
-            $scope.formData.ranking.overallrank = null;
-            $scope.formData.comments = undefined;                    
-        }else{
-            //close and save
-            $uibModalInstance.close($scope.formData);
-        }
-        
+        });
     };
 
     $scope.clearForm = function() {
@@ -495,7 +583,13 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         if ($scope.customOptionsString !== undefined){
           $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
         }
-        $uibModalInstance.close($scope.formData);
+
+        $scope.isSaving = true;
+        ResultsService.editResult($scope.formData).then(function(savedResult) {
+            $uibModalInstance.close(savedResult);
+        }).finally(function() {
+            $scope.isSaving = false;
+        });
     };
 
     $scope.cancel = function() {
@@ -605,7 +699,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     };
 
     $scope.open = function($event) {
-        console.log("cououc");
         $event.preventDefault();
         $event.stopPropagation();
 
@@ -623,7 +716,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', 'UtilsService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService, UtilsService) {
 
     $scope.raceinfo = raceinfo;
     if (fromStateParams){
@@ -646,6 +739,26 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         $scope.avg = Math.ceil(sum / count);
     }
 
+    // Calculate fastest time result
+    $scope.fastestTimeResult = null;
+    var fastestTime = Infinity;
+    for (i = 0; i < $scope.raceinfo.results.length; i++) {
+        if ($scope.raceinfo.results[i].time && $scope.raceinfo.results[i].time < fastestTime) {
+            fastestTime = $scope.raceinfo.results[i].time;
+            $scope.fastestTimeResult = $scope.raceinfo.results[i];
+        }
+    }
+
+    // Calculate best age grade result
+    $scope.bestAgeGradeResult = null;
+    var bestAgeGrade = 0;
+    for (i = 0; i < $scope.raceinfo.results.length; i++) {
+        if ($scope.raceinfo.results[i].agegrade && $scope.raceinfo.results[i].agegrade > bestAgeGrade) {
+            bestAgeGrade = $scope.raceinfo.results[i].agegrade;
+            $scope.bestAgeGradeResult = $scope.raceinfo.results[i];
+        }
+    }
+
     $scope.cancel = function() {
         if($scope.fromStateParams){         
             $state.go('/results');
@@ -657,6 +770,14 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
+    };
+
+    $scope.getStateFlag = function(stateCode) {
+        return UtilsService.getStateFlag(stateCode);
+    };
+
+    $scope.getCountryFlag = function(countryCode) {
+        return UtilsService.getCountryFlag(countryCode);
     };
 
     $scope.showResultDetailsModal = function(result,race) {
@@ -674,6 +795,17 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         }
         //sortDirection true = asc, false = desc
         $scope.raceinfo.results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
+    };
+
+    $scope.sortResultsBy = function (results,criteria) {
+        if ($scope.sortCriteria === criteria) {
+            $scope.sortDirection = $scope.sortDirection === true ? false : true;
+        } else {
+            $scope.sortCriteria = criteria;
+            $scope.sortDirection = true;
+        }
+        //sortDirection true = asc, false = desc
+        results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
     };
 
     function customResultSort(arr, field, order) {
@@ -768,9 +900,12 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
 angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result','race', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, race, MembersService, ResultsService, localStorageService) {
 
     $scope.result = result;
-    if (race !== null && race !== undefined){
-        $scope.result.race = race;
-    }
+    $scope.race = race;
+    // if (race !== null && race !== undefined){
+    //     $scope.result.race = race;
+    // }else{
+    //     $scope.race = race;
+    // }
 
     $scope.cancel = function() {
         $uibModalInstance.dismiss('cancel');
@@ -782,3 +917,5 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
         }
     };
 }]);
+
+

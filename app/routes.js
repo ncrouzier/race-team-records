@@ -60,7 +60,7 @@ module.exports = async function(app, qs, passport, async, _) {
 
     app.post('/api/signup', function(req, res, next) {
         passport.authenticate('local-signup', function(err, user, info) {
-            console.log(err);
+            // console.log(err);
             if (err) {
                 return next(err);
             }
@@ -334,6 +334,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 member.firstname = req.body.firstname;
                 member.lastname = req.body.lastname;
                 member.alternateFullNames = req.body.alternateFullNames;
+                member.username = req.body.username || member.username;
                 member.dateofbirth = req.body.dateofbirth;
                 member.sex = req.body.sex;
                 member.bio = req.body.bio;
@@ -349,6 +350,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                         if (memberElement._id.equals(req.body._id)) {
                                             memberElement.firstname = req.body.firstname;
                                             memberElement.lastname = req.body.lastname;
+                                            memberElement.username = req.body.username || member.username;
                                             memberElement.sex = req.body.sex;
                                             memberElement.dateofbirth = req.body.dateofbirth;
                                         }
@@ -494,7 +496,7 @@ module.exports = async function(app, qs, passport, async, _) {
     // get a result
     app.get('/api/results/:result_id',  async function(req, res) {
         try{
-            res.json(await Result.findOne(req.params.result_id));
+            res.json(await Result.findOne(new mongoose.Types.ObjectId(req.params.result_id)));
         }catch(err){
             res.send(err);
         }
@@ -549,7 +551,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                     state: req.body.race.location.state
                                 },
                                 racetype: req.body.race.racetype
-                            }).then(r => {          
+                            }).then(async r => {                                                                                                                            
                                 try{
                                     Result.create({
                                         race: r,
@@ -571,6 +573,9 @@ module.exports = async function(app, qs, passport, async, _) {
                                             let member = await Member.findById(m._id);    
                                             await service.updateMemberStats(member);   
                                         }              
+                                        // Update location achievements for this location
+                                        await service.updateAllLocationAchievements(r.location.country, r.location.state);
+                                        
                                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                         res.json(resultWithPBsAndAchievements);                                                                        
                                     });                                       
@@ -604,7 +609,10 @@ module.exports = async function(app, qs, passport, async, _) {
                                 for (let m of result.members) {
                                     let member = await Member.findById(m._id);    
                                     await service.updateMemberStats(member);   
-                                }                                   
+                                }
+                                // Update location achievements for this location
+                                await service.updateAllLocationAchievements(race.location.country, race.location.state);                                
+                                
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                 res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
@@ -679,8 +687,10 @@ module.exports = async function(app, qs, passport, async, _) {
                             state: req.body.race.location.state
                         },
                         racetype: req.body.race.racetype
-                    });                                                         
-                        result.race = r;
+                    });                                                    
+                    
+                                                         
+                    result.race = r;
                         result.members = members;
                         result.time = req.body.time;
                         result.legs = req.body.legs;
@@ -690,7 +700,8 @@ module.exports = async function(app, qs, passport, async, _) {
                         result.agegrade = agegrade;
                         result.is_accepted = req.body.is_accepted;
                         result.isRecordEligible = req.body.isRecordEligible;
-                        result.customOptions = req.body.customOptions;       
+                        result.customOptions = req.body.customOptions;     
+                        result.achievements=[];   //reset achievements
                         //not dealing with achievements because not editable by user (yet?)                    
                         await result.save();
                         // check if previous race entry is not a zombie now.
@@ -710,12 +721,16 @@ module.exports = async function(app, qs, passport, async, _) {
                             let member = await Member.findById(m._id);                                
                             await service.updateMemberStats(member);   
                         }                       
+                        // Update location achievements for this location
+                        await service.updateAllLocationAchievements(r.location.country, r.location.state);
+
                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                         res.json(resultWithPBsAndAchievements);                                                                     
                         
                                                     
             } else { // race exists       
-                result.race = race;                     
+                result.race = race;                
+                
                 result.members = members;
                 result.time = req.body.time;
                 result.legs = req.body.legs;
@@ -726,6 +741,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 result.is_accepted = req.body.is_accepted;
                 result.isRecordEligible = req.body.isRecordEligible;
                 result.customOptions = req.body.customOptions;
+                result.achievements=[];   //reset achievements
                 //not dealing with achievements because not editable by user (yet?)                
                 await result.save();                                                                  
                 // check if previous race entry is not a zombie now.
@@ -745,6 +761,8 @@ module.exports = async function(app, qs, passport, async, _) {
                     let member = await Member.findById(m._id);    
                     await service.updateMemberStats(member);   
                 }
+                // Update location achievements for this location
+                await service.updateAllLocationAchievements(race.location.country, race.location.state);
                 resultWithPBsAndAchievements = await Result.findById(result._id); 
                 res.json(resultWithPBsAndAchievements);                 
             }                    
@@ -864,14 +882,33 @@ module.exports = async function(app, qs, passport, async, _) {
 
         
         let query = Race.aggregate([
-            
-              
+                          
               {
                 $lookup: {
                   from: 'results',
                   localField: '_id',
                   foreignField: 'race._id',
                   as: 'results'
+                }
+              },
+              {
+                $set: {
+                  results: {
+                    $map: {
+                      input: "$results",
+                      as: "result",
+                      in: {
+                        $mergeObjects: [
+                          "$$result",
+                          {
+                            race: {
+                              _id: "$$result.race._id"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -919,6 +956,33 @@ module.exports = async function(app, qs, passport, async, _) {
     });
 
 
+    app.delete('/api/raceinfos/:race_id', service.isAdminLoggedIn, async function (req, res) {
+        //remove all results then the race itself
+        try {
+            const raceId = req.params.race_id;
+            let query = Result.find().where('race._id').equals(raceId);
+            let results = await query.exec();
+            for (let res of results) {
+                await Result.deleteOne({
+                    _id: res._id
+                });
+                for (let m of res.members) {
+                    let member = await Member.findById(m._id);
+                    await service.updateMemberStats(member);
+                }
+            }
+            await Race.deleteOne({
+                _id: raceId
+            }).then(raceD => {
+                res.json('{"success" : "Result deleted successfully", "status" : 200}');
+            });
+        }catch (err) {
+            res.send(err);
+        }
+    });
+
+
+
 
     // =====================================
     // ACHIEVEMENTS ========================
@@ -953,7 +1017,7 @@ app.get('/updateAgeGrade', service.isAdminLoggedIn, async function(req, res) {
                             const agegrade = (ag[res.race.racetype.name.toLowerCase()] / (res.time / 100) * 100).toFixed(2);          
                              if (res.agegrade- agegrade > maxDiff){
                                 maxDiff = res.agegrade-agegrade;
-                                console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
+                                // console.log(res.race.racedate,res.race.racename,res.members[0].firstname + ' ' + res.members[0].lastname, res.agegrade, agegrade, maxDiff);
                              }
                              if (res.agegrade - agegrade)
                                 {
@@ -1112,6 +1176,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         res.end('{"message" : "results not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
+
 
 
 
@@ -1797,188 +1862,145 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                     pageTitle: pageTitle
                 });
             } else if (url.includes('parkrun.')) {
-                // First, get the page to accept cookies
-                const cookieResponse = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Connection': 'keep-alive',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache',
-                        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-                        'Sec-Ch-Ua-Mobile': '?0',
-                        'Sec-Ch-Ua-Platform': '"macOS"',
-                        'Sec-Fetch-Dest': 'document',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Site': 'none',
-                        'Sec-Fetch-User': '?1',
-                        'Upgrade-Insecure-Requests': '1',
-                        'DNT': '1',
-                        'Referer': 'https://www.parkrun.com/'
-                    },
-                    maxRedirects: 5,
-                    validateStatus: function (status) {
-                        return status >= 200 && status < 500;
-                    },
-                    timeout: 10000 // 10 second timeout
-                });
-
-                // Get cookies from the response
-                const cookies = cookieResponse.headers['set-cookie'];
-
-                // Add a small delay to mimic human behavior
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                // Now fetch the page with cookies
-                const response = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Connection': 'keep-alive',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache',
-                        'Cookie': cookies ? cookies.join('; ') : '',
-                        'Referer': 'https://www.parkrun.com/',
-                        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-                        'Sec-Ch-Ua-Mobile': '?0',
-                        'Sec-Ch-Ua-Platform': '"macOS"',
-                        'Sec-Fetch-Dest': 'document',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Site': 'same-origin',
-                        'Sec-Fetch-User': '?1',
-                        'Upgrade-Insecure-Requests': '1',
-                        'DNT': '1'
-                    },
-                    maxRedirects: 5,
-                    validateStatus: function (status) {
-                        return status >= 200 && status < 500;
-                    },
-                    timeout: 10000 // 10 second timeout
-                });
-
-                // Check if we got a CAPTCHA page or any other error page
-                if (response.data.includes('JavaScript is disabled') || 
-                    response.data.includes('CAPTCHA') || 
-                    response.data.includes('Access Denied') ||
-                    response.data.includes('Please try again later')) {
-                    console.log('Received restricted access page from Parkrun');
-                    return res.status(403).json({
-                        success: false,
-                        error: 'Parkrun is restricting access. This could be due to CAPTCHA, rate limiting, or IP restrictions. Please try again later or use a different results source.'
+                // Use proxy to retrieve parkrun content
+                const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+                console.log(proxyUrl);
+                try {
+                    const response = await axios.get(proxyUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'Accept-Encoding': 'gzip, deflate, br',
+                            'Connection': 'keep-alive',
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache'
+                        },
+                        maxRedirects: 5,
+                        validateStatus: function (status) {
+                            return status >= 200 && status < 500;
+                        },
+                        timeout: 15000 // 15 second timeout for proxy
                     });
-                }
 
-                const $ = cheerio.load(response.data);
-                
-                // Extract page title from Results-header
-                const resultsHeader = $('.Results-header h1').text().trim();
-                
-                // Parse event number and date from h3 spans
-                const dateText = $('.Results-header h3 .format-date').text().trim();
-                const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
-                
-                // Convert date from DD/MM/YYYY to Date object
-                const [day, month, year] = dateText.split('/');
-                const raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                
-                const pageTitle = `${resultsHeader} #${eventNumber}`;
+                    // Check if we got a CAPTCHA page or any other error page
+                    if (response.data.includes('JavaScript is disabled') || 
+                        response.data.includes('CAPTCHA') || 
+                        response.data.includes('Access Denied') ||
+                        response.data.includes('Please try again later')) {
+                        return res.status(403).json({
+                            success: false,
+                            error: 'Parkrun is restricting access. This could be due to CAPTCHA, rate limiting, or IP restrictions. Please try again later or use a different results source.'
+                        });
+                    }
 
-                // Try different table selectors
-                let table = null;
-                let headers = [];
-                let data = [];
+                    const $ = cheerio.load(response.data);
+                    
+                    // Extract page title from Results-header
+                    const resultsHeader = $('.Results-header h1').text().trim();
+                    
+                    // Parse event number and date from h3 spans
+                    const dateText = $('.Results-header h3 .format-date').text().trim();
+                    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+                    
+                    // Convert date from DD/MM/YYYY to Date object
+                    const [day, month, year] = dateText.split('/');
+                    const raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    
+                    const pageTitle = `${resultsHeader} #${eventNumber}`;
 
-                // Parkrun specific table selectors
-                const tableSelectors = [
-                    'table.Results-table',  // Parkrun specific class
-                    'table.Results',        // Another Parkrun specific class
-                    'table.results-table',  // Common for results tables
-                    'table.table',          // Bootstrap tables
-                    'table.dataTable',      // DataTables
-                    'table.sortable',       // Sortable tables
-                    'table.grid',           // Grid tables
-                    'table',                // Any table as last resort
-                    'div.table',            // Some sites use div with table class
-                    'div.results'           // Some sites use div for results
-                ];
+                    // Try different table selectors
+                    let table = null;
+                    let headers = [];
+                    let data = [];
 
-                // Log the HTML for debugging
-                console.log('Parkrun HTML content:', response.data);
+                    // Parkrun specific table selectors
+                    const tableSelectors = [
+                        'table.Results-table',  // Parkrun specific class
+                        'table.Results',        // Another Parkrun specific class
+                        'table.results-table',  // Common for results tables
+                        'table.table',          // Bootstrap tables
+                        'table.dataTable',      // DataTables
+                        'table.sortable',       // Sortable tables
+                        'table.grid',           // Grid tables
+                        'table',                // Any table as last resort
+                        'div.table',            // Some sites use div with table class
+                        'div.results'           // Some sites use div for results
+                    ];
 
-                // Try each selector until we find a working one
-                for (const selector of tableSelectors) {
-                    const element = $(selector).first();
-                    if (element.length) {
-                        console.log('Found element with selector:', selector);
-                        // Try to extract headers - be more strict about what constitutes a header
-                        const potentialHeaders = [];
-                        const headerRow = element.find('thead tr, tr:first-child').first();
-                        
-                        // Only process if we found a header row
-                        if (headerRow.length) {
-                            console.log('Found header row:', headerRow.html());
-                            // Check if this looks like a header row (all cells should be th elements)
-                            const allCellsAreTh = headerRow.find('td').length === 0;
+                    // Try each selector until we find a working one
+                    for (const selector of tableSelectors) {
+                        const element = $(selector).first();
+                        if (element.length) {
+                            // Try to extract headers - be more strict about what constitutes a header
+                            const potentialHeaders = [];
+                            const headerRow = element.find('thead tr, tr:first-child').first();
                             
-                            if (allCellsAreTh) {
-                                headerRow.find('th').each(function() {
-                                    const headerText = $(this).text().trim();
-                                    // Only add if it looks like a header (not empty and not a number)
-                                    if (headerText && !/^\d+$/.test(headerText)) {
-                                        potentialHeaders.push(headerText);
-                                    }
-                                });
-                            }
-                        }
-
-                        // If we found valid headers, try to extract data
-                        if (potentialHeaders.length > 0) {
-                            console.log('Found headers:', potentialHeaders);
-                            const potentialData = [];
-                            // Skip the header row when getting data
-                            element.find('tbody tr, tr:not(:first-child)').each(function() {
-                                const row = {};
-                                $(this).find('td').each(function(index) {
-                                    if (potentialHeaders[index]) {
-                                        row[potentialHeaders[index]] = $(this).text().trim();
-                                    }
-                                });
-                                if (Object.keys(row).length > 0) {
-                                    potentialData.push(row);
+                            // Only process if we found a header row
+                            if (headerRow.length) {
+                                // Check if this looks like a header row (all cells should be th elements)
+                                const allCellsAreTh = headerRow.find('td').length === 0;
+                                
+                                if (allCellsAreTh) {
+                                    headerRow.find('th').each(function() {
+                                        const headerText = $(this).text().trim();
+                                        // Only add if it looks like a header (not empty and not a number)
+                                        if (headerText && !/^\d+$/.test(headerText)) {
+                                            potentialHeaders.push(headerText);
+                                        }
+                                    });
                                 }
-                            });
+                            }
 
-                            // If we found both headers and data, use this table
-                            if (potentialData.length > 0) {
-                                console.log('Found data rows:', potentialData.length);
-                                table = element;
-                                headers = potentialHeaders;
-                                data = potentialData;
-                                break;
+                            // If we found valid headers, try to extract data
+                            if (potentialHeaders.length > 0) {
+                                const potentialData = [];
+                                // Skip the header row when getting data
+                                element.find('tbody tr, tr:not(:first-child)').each(function() {
+                                    const row = {};
+                                    $(this).find('td').each(function(index) {
+                                        if (potentialHeaders[index]) {
+                                            row[potentialHeaders[index]] = $(this).text().trim();
+                                        }
+                                    });
+                                    if (Object.keys(row).length > 0) {
+                                        potentialData.push(row);
+                                    }
+                                });
+
+                                // If we found both headers and data, use this table
+                                if (potentialData.length > 0) {
+                                    table = element;
+                                    headers = potentialHeaders;
+                                    data = potentialData;
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                if (!table || headers.length === 0 || data.length === 0) {
-                    console.log('No table found with any selector');
-                    return res.status(400).json({ 
-                        success: false, 
-                        error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 
+                    if (!table || headers.length === 0 || data.length === 0) {
+                        return res.status(400).json({ 
+                            success: false, 
+                            error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ') 
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        headers: headers,
+                        data: data,
+                        pageTitle: pageTitle,
+                        raceDate: raceDate
+                    });
+
+                } catch (proxyError) {
+                    console.error('Proxy error for parkrun:', proxyError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Failed to retrieve parkrun data through proxy: ' + proxyError.message
                     });
                 }
-
-                res.json({
-                    success: true,
-                    headers: headers,
-                    data: data,
-                    pageTitle: pageTitle,
-                    raceDate: raceDate
-                });
             } else if (url.includes('athlinks.com')) {
                 // Extract event ID and race ID from the URL
                 // Look for event ID after 'Event/' in the URL

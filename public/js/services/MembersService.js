@@ -10,6 +10,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
     //retrieve members
     factory.getMembers = function(params) {
         return members.getList(params).then(function(members) {
+            
             return members;
         });
     };

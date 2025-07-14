@@ -6,6 +6,7 @@ var bcrypt = require('bcrypt-nodejs');
 var memberSchema = mongoose.Schema({
     firstname: String,
     lastname: String,
+    username:  String ,
     alternateFullNames : [String],
     sex: String,
     dateofbirth: Date,
@@ -46,6 +47,15 @@ memberSchema.pre('save', function(next, done) {
       }
     }
 
+    // Set username if not defined
+    // console.log(this.username + "--"); 
+    if (!this.username || this.username.trim() === "") {
+        this.username = ((this.firstname || "") + (this.lastname || ""))
+            .toLowerCase()
+            .normalize('NFD')  // Decompose accented characters
+            .replace(/[\u0300-\u036f]/g, '')  // Remove diacritics (accents)
+            .replace(/[^a-z]/g, '');  // Remove all non-letter characters
+    }
 
     if (this.isNew) {
         this.createdAt = Date.now();
@@ -53,6 +63,7 @@ memberSchema.pre('save', function(next, done) {
     this.updatedAt = Date.now();
     next();
 });
+
 
 
 

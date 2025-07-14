@@ -93,6 +93,11 @@ footer {
 
 }
 
+.time{
+    letter-spacing: -0.09em;
+    font-family: 'Courier New', monospace;
+}
+
 .navimg {
     &-1 {
         // background: url('../../images/topcover.jpg') left top no-repeat;
@@ -313,9 +318,11 @@ footer {
 .results-list {
     font-size: 14px;
     color: @gray;
+ 
 
     .resultlistheader {
         font-size: 12px;
+        border: 0px solid white;
         border-bottom: thick solid;
         font-weight: bold;
         color: @blue-dark;
@@ -328,15 +335,23 @@ footer {
 
         .timediff {
             color: @red;
+            letter-spacing: -0.09em;
+            font-family: 'Courier New', monospace;
         }
 
         .resultEvent {
             text-align: left;
-            font-size: 16px;
-            font-weight: normal;
+            font-size: 16px;            
             word-wrap: break-word;
+               
         }
-
+        .fa
+        {
+            &.expanded{
+                color: white;
+                font-weight: bold;            
+            }
+        }
         .resultPace {
             text-align: center;
             font-size: 14px;
@@ -347,12 +362,32 @@ footer {
             text-align: center;
             font-size: 20px;
             font-weight: bold;
+            // color: @brand-primary;
+            letter-spacing: -0.09em;
+            font-family: 'Courier New', monospace;
         }
 
         .resultPaceTxt {
             color: #808080;
             font-size: 70%;
         }
+
+        &.expanded{
+            background-color: #006687;
+            color: white;
+            font-weight: bold;      
+            border: 0px solid white;
+            border-bottom: 7px solid white;      
+        }
+        &.collapsed{
+            font-weight: normal;
+            border-left: 0px solid white;
+            border-right: 0px solid white;
+            border-top: 0px solid white;
+            margin-bottom: 0px;
+            border-bottom: 1px solid #ddd; 
+        }
+        
 
         // :hover{
         //   background-color: @brand-primary-very-light;
@@ -362,18 +397,49 @@ footer {
 
 .pb-list {
     .pblistheader {
-        padding-top: 1px;
-        padding-bottom: 1px;
+        padding: 15px;
         border: 0px;
-        border-bottom: thick solid;
+        border-bottom: 2px solid #dee2e6;
         font-weight: bold;
-        color: @blue-dark;
+        color: @brand-primary;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px 8px 0 0;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .pblistrow {
-        padding-top: 1px;
-        padding-bottom: 1px;
+        padding: 12px 15px;
         border: 0px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s ease;
+        
+        &:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+        
+        &:last-child {
+            border-bottom: none;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .row {
+            align-items: center;
+        }
+        
+        .resultEvent {
+            font-weight: 600;
+            color: @brand-primary;
+            transition: color 0.2s ease;
+            
+            &:hover {
+                color: @brand-primary-dark;
+                text-decoration: none;
+            }
+            
+        }
     }
 }
 
@@ -1244,6 +1310,1188 @@ footer {
             padding: 0;
             text-align: center;
             text-align-last: center;
+        }
+    }
+} 
+
+// Race List Styles
+.race-list {
+    &-item {
+        padding-right: 0;
+        padding-left: 0;
+        padding-bottom: 0;
+        cursor: pointer;
+
+        &.expanded {
+            background-color: #f8f9fa;
+        }
+
+        &.collapsed {
+            background-color: white;
+        }
+    }
+
+    &-content {
+        cursor: pointer;
+        padding-left: 15px;
+    }
+
+    &-name {
+        line-height: 2;
+    }
+
+    &-icon {
+        margin-right: 5px;
+    }
+
+    &-link {
+        margin-left: 5px;
+    }
+}
+
+// Results Section Styles
+.results-section {
+    margin-top: 0;
+    background-color: #006687;
+    border-radius: 0;
+    padding: 15px;
+
+    &-list {
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    &-header {
+        background-color: #e9ecef;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        padding: 12px 15px;
+        font-size: 0.9em;
+        color: #495057;
+    }
+
+    &-row {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        background-color: white;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: #f0f7fa;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            font-size: 0.95em;
+        }
+    }
+} 
+
+// Member Statistics Styles
+.stat-box {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .stat-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: @brand-primary;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: @gray;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+}
+
+.race-type-stats {
+    .race-type-item {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 6px;
+        background-color: #f8f9fa;
+
+        .race-type-label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: @gray-dark;
+
+            .race-type-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 8px;
+                display: inline-block;
+
+                &.race-type-1mile {
+                    background-color: #007bff;
+                }
+
+                &.race-type-5k {
+                    background-color: #28a745;
+                }
+
+                &.race-type-10k {
+                    background-color: #ffc107;
+                }
+
+                &.race-type-10mile {
+                    background-color: #fd7e14;
+                }
+
+                &.race-type-half {
+                    background-color: #e83e8c;
+                }
+
+                &.race-type-marathon {
+                    background-color: #dc3545;
+                }
+
+                &.race-type-ultra {
+                    background-color: #6f42c1;
+                }
+
+                &.race-type-other {
+                    background-color: #6c757d;
+                }
+            }
+        }
+
+        .race-type-bar {
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 5px;
+
+            .race-type-fill {
+                height: 100%;
+                background: linear-gradient(90deg, @brand-primary 0%, lighten(@brand-primary, 20%) 100%);
+                border-radius: 4px;
+                transition: width 0.8s ease;
+            }
+        }
+
+        .race-type-count {
+            font-size: 0.85em;
+            color: @gray;
+            text-align: right;
+        }
+    }
+}
+
+.pie-chart-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 15px 0;
+
+    .pie-chart {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+
+    .pie-legend {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+
+            .legend-color {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .legend-label {
+                font-weight: 600;
+                color: @gray-dark;
+                min-width: 80px;
+            }
+
+            .legend-count {
+                color: @gray;
+                font-size: 0.85em;
+            }
+        }
+    }
+}
+
+.location-stats {
+    .location-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: @gray-dark;
+        }
+
+        .location-count {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+    }
+}
+
+.trend-stat {
+    text-align: center;
+    padding: 20px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    margin-bottom: 15px;
+
+    .trend-label {
+        font-size: 0.9em;
+        color: @gray;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .trend-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: @brand-primary;
+        margin-bottom: 5px;
+    }
+
+    .trend-detail {
+        font-size: 0.8em;
+        color: @gray;
+        font-style: italic;
+    }
+}
+
+// Panel enhancements for statistics
+.panel {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+
+    .panel-heading {
+        background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 10%) 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        border: none;
+        padding: 15px 20px;
+
+        h4 {
+            margin: 0;
+            font-weight: 600;
+
+            i {
+                margin-right: 8px;
+            }
+        }
+    }
+
+    .panel-body {
+        padding: 20px;
+        background-color: white;
+        border-radius: 0 0 8px 8px;
+    }
+} 
+
+// Modern Modal Styles
+.modal {
+    .modal-dialog {
+        max-width: 900px;
+        margin: 30px auto;
+    }
+
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+
+    // Modern Modal Header
+    .modern-modal-header {
+        background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 15%) 100%);
+        color: white;
+        border: none;
+        padding: 25px 30px;
+        position: relative;
+
+        .race-header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .race-title-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+
+            .race-title {
+                margin: 0;
+                font-size: 28px;
+                font-weight: 700;
+                color: white;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+        }
+
+        .race-details-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+
+            .race-type-info {
+                font-size: 16px;
+                font-weight: 500;
+                opacity: 0.95;
+            }
+
+            .race-meta-info {
+                display: flex;
+                gap: 20px;
+                font-size: 14px;
+                opacity: 0.9;
+
+                .race-date,
+                .race-location {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+
+                    i {
+                        font-size: 16px;
+                        opacity: 0.8;
+                    }
+
+                    .location-flag {
+                        width: 16px;
+                        height: 12px;
+                        border-radius: 2px;
+                        margin-left: 4px;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .location-flag-emoji {
+                        font-size: 16px;
+                        margin-left: 4px;
+                        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+                    }
+                }
+            }
+        }
+
+        .race-stats-summary {
+            display: flex;
+            gap: 30px;
+            margin-top: 10px;
+
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: rgba(255,255,255,0.15);
+                padding: 12px 20px;
+                border-radius: 8px;
+                backdrop-filter: blur(10px);
+
+                .stat-number {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: white;
+                    line-height: 1;
+                }
+
+                .stat-label {
+                    font-size: 12px;
+                    opacity: 0.8;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-top: 4px;
+                    margin-bottom: 5px;
+                }
+
+                .stat-detail {
+                    font-size: 11px;
+                    opacity: 0.8;
+                    font-style: italic;
+                    line-height: 1.2;
+                    text-align: center;
+                }
+
+                .stat-achievements {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 5px;
+                    margin-top: 5px;
+
+                    .achievement-icon {
+                        font-size: 16px;
+                        opacity: 0.9;
+                    }
+                }
+            }
+        }
+    }
+
+     
+    // Ensure tooltips work properly in modal context
+    .modal .tooltip {
+        z-index: 99999 !important;
+        position: absolute !important;
+        pointer-events: none;
+    }
+    
+    .modal .tooltip-inner {
+        background-color: rgba(0, 0, 0, 0.95);
+        color: white;
+        font-size: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+        max-width: 200px;
+    }
+    
+    // Global tooltip override for modals
+    body .tooltip {
+        z-index: 99999 !important;
+    }
+      
+      // Ensure achievement icons are properly styled for tooltips
+    .stat-achievements span,
+    .stat-achievements i,
+    .stat-achievements img {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .stat-achievements span:hover,
+    .stat-achievements i:hover,
+    .stat-achievements img:hover {
+        transform: scale(1.1);
+    }
+    
+
+
+    // Modern Modal Body
+    .modern-modal-body {
+        padding: 0;
+        background-color: #f8f9fa;
+
+        .results-table-container {
+            .modern-results-header {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-bottom: 2px solid #dee2e6;
+                padding: 15px 20px;
+
+                .header-row {
+                    display: grid;
+                    grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 1.2fr 1.2fr;
+                    gap: 15px;
+                    align-items: center;
+                    min-height: 30px;
+
+                    .header-cell {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 20px;
+
+                        &.racer-cell {
+                            justify-content: flex-start;
+                        }
+
+                        .header-text {
+                            font-size: 12px;
+                            font-weight: 700;
+                            color: @gray-dark;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            cursor: pointer;
+                            transition: color 0.2s ease;
+
+                            &:hover {
+                                color: @brand-primary;
+                            }
+                        }
+
+                        .agesort {
+                            margin-left: 8px;
+                            color: #ffc107;
+                            cursor: pointer;
+                            transition: transform 0.2s ease;
+
+                            &:hover {
+                                transform: scale(1.1);
+                            }
+                        }
+                    }
+                }
+            }
+
+            .results-list {
+                .modern-result-row {
+                    background: white;
+                    border-bottom: 1px solid #e9ecef;
+                    transition: all 0.2s ease;
+                    cursor: pointer;
+
+                    &:hover {
+                        background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+                        transform: translateX(2px);
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    }
+
+                    &:last-child {
+                        border-bottom: none;
+                    }
+
+                    .result-content {
+                        display: grid;
+                        grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 1.2fr 1.2fr;
+                        gap: 15px;
+                        align-items: center;
+                        padding: 15px 20px;
+                        min-height: 30px;
+
+                        .result-cell {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 20px;
+
+                            &.racer-cell {
+                                justify-content: flex-start;
+                            }
+
+                            &.rank-cell {
+                                justify-content: center;
+                            }
+
+                            &.pace-cell {
+                                justify-content: center;
+                            }
+
+                            &.time-cell {
+                                justify-content: center;
+                            }
+
+                            .racer-link {
+                                color: @brand-primary;
+                                font-weight: 600;
+                                text-decoration: none;
+                                transition: color 0.2s ease;
+
+                                &:hover {
+                                    color: darken(@brand-primary, 15%);
+                                    text-decoration: underline;
+                                }
+                            }
+
+                            .rank-text {
+                                font-weight: 600;
+                                color: @gray-dark;
+                                font-size: 14px;
+                            }
+
+                            .time-text {
+                                font-weight: 700;
+                                color: @brand-primary;
+                                font-size: 16px;
+                                font-family: 'Courier New', monospace;
+                            }
+
+                            .view-details-link {
+                                color: @brand-primary;
+                                font-weight: 600;
+                                cursor: pointer;
+                                transition: color 0.2s ease;
+
+                                &:hover {
+                                    color: darken(@brand-primary, 15%);
+                                    text-decoration: underline;
+                                }
+                            }
+
+                            .result-link {
+                                margin-left: 8px;
+                                color: @gray;
+                                transition: color 0.2s ease;
+
+                                &:hover {
+                                    color: @brand-primary;
+                                }
+
+                                i {
+                                    font-size: 14px;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Modern Modal Footer
+    .modern-modal-footer {
+        background: white;
+        border-top: 1px solid #e9ecef;
+        padding: 20px 30px;
+
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .modern-btn {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                transition: all 0.2s ease;
+                border: none;
+
+                &.btn-primary {
+                    background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 10%) 100%);
+                    color: white;
+
+                    &:hover {
+                        background: linear-gradient(135deg, darken(@brand-primary, 10%) 0%, darken(@brand-primary, 20%) 100%);
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    }
+                }
+
+                &.btn-secondary {
+                    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+                    color: white;
+
+                    &:hover {
+                        background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    }
+                }
+
+                i {
+                    font-size: 14px;
+                }
+            }
+        }
+    }
+}
+
+// Responsive adjustments for modern modal
+@media (max-width: @screen-sm-max) {
+    .modal {
+        .modal-dialog {
+            margin: 10px;
+            max-width: calc(100% - 20px);
+        }
+
+        .modern-modal-header {
+            padding: 20px;
+
+            .race-details-section {
+                flex-direction: column;
+                gap: 15px;
+
+                .race-meta-info {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+            }
+
+            .race-stats-summary {
+                gap: 15px;
+
+                .stat-item {
+                    padding: 10px 15px;
+
+                    .stat-number {
+                        font-size: 20px;
+                    }
+                }
+            }
+        }
+
+        .modern-modal-body {
+            .results-table-container {
+                .modern-results-header .header-row,
+                .results-list .modern-result-row .result-content {
+                    grid-template-columns: 1fr;
+                    gap: 10px;
+                    text-align: center;
+                }
+
+                .modern-results-header {
+                    display: none; // Hide header on mobile
+                }
+
+                .results-list .modern-result-row .result-content {
+                    padding: 15px;
+
+                    .result-cell {
+                        justify-content: center;
+                        padding: 5px 0;
+
+                        &.racer-cell {
+                            justify-content: center;
+                            font-weight: 600;
+                        }
+                    }
+                }
+            }
+        }
+
+        .modern-modal-footer {
+            padding: 15px 20px;
+
+            .footer-actions {
+                flex-direction: column;
+                gap: 10px;
+
+                .modern-btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        }
+    }
+} 
+
+// Modern Year Selector Panel
+.year-selector-panel {
+    margin-bottom: 20px;
+    
+    .panel-heading {
+        background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 10%) 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        border: none;
+        padding: 15px 20px;
+
+        h4 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 16px;
+
+            i {
+                margin-right: 8px;
+            }
+        }
+    }
+
+    .panel-body {
+        padding: 20px;
+        background-color: white;
+        border-radius: 0 0 8px 8px;
+        border: 1px solid #dee2e6;
+        border-top: none;
+    }
+
+    .year-selector-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+
+        .year-selector-label {
+            font-weight: 600;
+            color: @gray-dark;
+            margin: 0;
+            font-size: 14px;
+            min-width: 80px;
+        }
+
+        .modern-year-select {
+            min-width: 120px;
+            max-width: 200px;
+
+            .ui-select-match {
+                background: white;
+                border: 2px solid #e9ecef;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-weight: 500;
+                color: @gray-dark;
+                transition: all 0.2s ease;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+                &:hover {
+                    border-color: @brand-primary;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                }
+
+                &:focus {
+                    border-color: @brand-primary;
+                    box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+                    outline: none;
+                }
+
+                .ui-select-match-text {
+                    color: @gray-dark;
+                }
+
+                .ui-select-toggle {
+                    color: @gray;
+                    transition: color 0.2s ease;
+
+                    &:hover {
+                        color: @brand-primary;
+                    }
+                }
+            }
+
+            .ui-select-choices {
+                border: 2px solid @brand-primary;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                background: white;
+                margin-top: 2px;
+
+                .ui-select-choices-row {
+                    padding: 8px 12px;
+                    transition: background-color 0.2s ease;
+
+                    &:hover {
+                        background-color: #f8f9fa;
+                    }
+
+                    &.ui-select-choices-row-selected {
+                        background-color: @brand-primary;
+                        color: white;
+                    }
+
+                    .ui-select-choices-row-inner {
+                        color: @gray-dark;
+                        font-weight: 500;
+
+                        &:hover {
+                            color: @brand-primary;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Responsive adjustments for year selector
+@media (max-width: @screen-sm-max) {
+    .year-selector-panel {
+        .year-selector-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+
+            .year-selector-label {
+                text-align: center;
+                min-width: auto;
+            }
+
+            .modern-year-select {
+                max-width: none;
+                width: 100%;
+            }
+        }
+    }
+} 
+
+// D3 Pie Chart Styles
+.d3-pie-chart-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    // margin: 20px 0;
+    // padding: 20px;
+    gap: 8px;
+    
+    .d3-pie-svg {
+        flex-shrink: 0;
+    }
+    
+    .d3-pie-legend {
+        flex: 1;
+        min-width: 200px;
+        max-width: 400px;
+    }
+    
+    svg {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .slice {
+        transition: all 0.3s ease;
+        
+        &:hover {
+            transform: scale(1.05);
+        }
+    }
+    
+    .legend {
+        .legend-item {
+            transition: all 0.2s ease;
+            
+            &:hover {
+                opacity: 0.7;
+            }
+            
+            text {
+                cursor: pointer;
+                
+                &:hover {
+                    font-weight: bold;
+                }
+            }
+        }
+    }
+}
+
+// Responsive adjustments for D3 pie chart
+@media (max-width: @screen-sm-max) {
+    .d3-pie-chart-container {
+        padding: 15px;
+        gap: 6px;
+        
+        .d3-pie-legend {
+            min-width: 100%;
+            max-width: none;
+        }
+    }
+}
+
+.d3-tooltip {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    line-height: 1.4;
+}
+
+// Global achievement flag styling (used in both modals and race list)
+.achievement-flag {
+    width: 16px;
+    height: 12px;
+    margin: 0 2px;
+    vertical-align: middle;
+    border: 1px solid #898f95;
+    border-radius: 1px;
+    display: inline-block;
+    object-fit: contain;
+    background-color: white;
+    max-width: 16px;
+    max-height: 12px;
+}
+
+// Save Progress Modal Styles
+.save-progress-modal {
+    .modal-body {
+        padding: 20px;
+    }
+    
+    .progress-container {
+        margin: 20px 0;
+        
+        .progress {
+            height: 25px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            overflow: hidden;
+            
+            .progress-bar {
+                background: linear-gradient(45deg, @brand-primary, lighten(@brand-primary, 15%));
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 12px;
+                line-height: 25px;
+                text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+            }
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: @gray-dark;
+            
+            .current-item {
+                color: @brand-primary;
+                font-size: 1.1em;
+            }
+            
+            .total-items {
+                color: @gray;
+            }
+        }
+    }
+    
+    .status-container {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid @brand-primary;
+        
+        h5 {
+            margin: 0 0 10px 0;
+            color: @gray-dark;
+            font-weight: 600;
+        }
+        
+        .current-result-info {
+            color: @gray;
+            
+            strong {
+                color: @gray-dark;
+                font-size: 1.1em;
+            }
+        }
+    }
+    
+    .saved-results, .error-results {
+        margin: 20px 0;
+        
+        h5 {
+            margin: 0 0 10px 0;
+            color: @gray-dark;
+            font-weight: 600;
+        }
+        
+        .list-group {
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 6px;
+            
+            .list-group-item {
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                margin-bottom: 5px;
+                padding: 8px 12px;
+                font-size: 13px;
+                
+                &.list-group-item-success {
+                    background-color: #d4edda;
+                    border-color: #c3e6cb;
+                    color: #155724;
+                }
+                
+                &.list-group-item-danger {
+                    background-color: #f8d7da;
+                    border-color: #f5c6cb;
+                    color: #721c24;
+                }
+                
+                i {
+                    margin-right: 8px;
+                    font-weight: bold;
+                }
+            }
+        }
+    }
+    
+    .alert {
+        border-radius: 6px;
+        border: none;
+        padding: 15px 20px;
+        
+        &.alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+        padding: 15px 20px;
+        
+        .btn {
+            border-radius: 6px;
+            font-weight: 600;
+            padding: 8px 20px;
+            
+            i {
+                margin-right: 5px;
+            }
+        }
+    }
+}
+
+// Responsive adjustments for save progress modal
+@media (max-width: @screen-sm-max) {
+    .save-progress-modal {
+        .modal-body {
+            padding: 15px;
+        }
+        
+        .progress-container {
+            margin: 15px 0;
+            
+            .progress {
+                height: 20px;
+                
+                .progress-bar {
+                    font-size: 11px;
+                    line-height: 20px;
+                }
+            }
+        }
+        
+        .status-container, .saved-results, .error-results {
+            margin: 15px 0;
+        }
+        
+        .saved-results .list-group, .error-results .list-group {
+            max-height: 150px;
         }
     }
 } 

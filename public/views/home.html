@@ -1,59 +1,85 @@
 <div class="jumbotron ">
 
     <p class="text-left">Welcome to the MCRRC racing team results and records site.</p>
-    <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and recognize highly talented and competitive members of MCRRC, promote competitive distance running among club members, and increase the visibility of MCRRC within the broader running community. The program establishes racing teams to compete at races in the metropolitan Washington, DC area.  <a href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank"><b>learn more...</b></a></i></small>
-    </p>
-
-    <p class="text-center">Latest races:
+    <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and recognize
+                highly talented and competitive members of MCRRC, promote competitive distance running among club
+                members, and increase the visibility of MCRRC within the broader running community. The program
+                establishes racing teams to compete at races in the metropolitan Washington, DC area. <a
+                    href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank"><b>learn
+                        more...</b></a></i></small>
     </p>
 
     <div class="row">
         <div class="col-md-12">
-            <ul class="results-list list-group">
-                <li class="list-group-item text-left resultlistheader" ng-show="racesList.length >0">
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <span class="listheader hoverhand" title="Event and date">EVENT NAME</span>
-                        </div>
-                        <div class="col-sm-2" style="text-align: left;">
-                            <span class="listheader hoverhand" title="Event type">EVENT TYPE</span>
-                        </div>
-                        <div class="col-sm-3" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Number of team members racing"># TEAM MEMBER RACING</span>
-                        </div>
-                        <div class="col-sm-3">
-                            <span class="listheader hoverhand" title="Pace">BEST TIME</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="raceinfo in racesList" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false" >
-                    <div class="row" >
-                        <div class="col-sm-4" style="line-height: 1.1;">
-                            <span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(raceinfo)" >{{raceinfo.racename }}</span>
-                            <br>
-                            <small>{{raceinfo.racedate | date:'longDate':'UTC' }} <span ng-if="raceinfo.location.state !== null" ng-bind-html="'-- ' + raceinfo.location.state"></span><span ng-if="raceinfo.location.state === null" ng-bind-html="'-- ' + raceinfo.location.country"></span></small>
-                        </div>
-                        <div class="col-sm-2" style="text-align: left;">
-                            <div ng-if="raceinfo.racetype.isVariable">
-                                {{raceinfo.distanceName}} <span class="getRaceTypeClass(race.racetype.surface)">({{raceinfo.racetype.surface}})</span>
-                            </div>
-                            <div ng-if="!raceinfo.racetype.isVariable">
-                                {{raceinfo.racetype.name}}
-                            </div>
-                        </div>
-                        <div class="col-sm-3" style="text-align: center;">
-                            {{ raceinfo.results.length }}
-                        </div>
-                        <div class="col-sm-3">
-                            <span class= "resultTime">{{raceinfo.results[0].time | secondsToTimeString}}</span>
-                        </div>
-                    </div>
-
-                </li>
-            </ul>
-
+            <h4>Last 5 Races</h4>
+            <div class="row">
+                <div class="col-md-12">
+                    <race-list 
+                        races-list="recentRaces"
+                        search-query="searchQuery"
+                        results-table-properties="resultsTableProperties"
+                        user="user">
+                    </race-list>
+                </div>
+            </div>
         </div>
     </div>
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Latest Achievements</h4>
+            <ul class="list-group">
+                <li class="list-group-item" ng-repeat="ach in recentAchievements | limitTo:10">
+                    <div ng-if="ach.achievements.length === 1">
+                        <span ng-switch="ach.achievements[0].name.toLowerCase()">
+                            <span ng-switch-when="pb">
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new PB of <span class="time">{{::ach.achievements[0].value.time | secondsToTimeString}}</span> with the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
+                            </span>
+                            <span ng-switch-when="racecount">
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
+                            </span>
+                            <span ng-switch-when="agegrade">
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade performance best of {{::ach.achievements[0].value}}% at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
+                            </span>
+                        </span>
+                    </div>
+                    <div ng-if="ach.achievements.length > 1">
+                        <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b>
+                        <span> had the following achievements at </span>
+                        <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>:
+                        <ul>
+                            <li ng-repeat="a in ach.achievements">
+                                <span ng-switch="a.name.toLowerCase()">
+                                    <span ng-switch-when="pb">
+                                        Achieved a new PB of <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
+                                    </span>
+                                    <span ng-switch-when="racecount">
+                                        Ran their {{a.value.raceCount | addOrdinalSuffix}} race.
+                                    </span>
+                                    <span ng-switch-when="agegrade">
+                                        Achieved a new age grade performance best of {{::a.value}}%.
+                                    </span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h4>Recent Team Ins & Outs</h4>
+            <ul class="list-group">
+                <li class="list-group-item" ng-repeat="change in recentStatusChanges">
+                    <b><a ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}} {{change.member.lastname}}</a></b>
+                    <span ng-if="change.type === 'entry'">joined</span>
+                    <span ng-if="change.type === 'exit'">left</span>
+                    <span>the team on {{change.date | date:'mediumDate':'UTC'}}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+    
 
 
 </div>

@@ -18,6 +18,11 @@ var raceSchema = mongoose.Schema({
       country: String,
       state: String
     },
+    achievements:[{
+        name:String,
+        text:String,
+        value: mongoose.Schema.Types.Mixed        
+      }],
     createdAt: Date,
     updatedAt: Date
  

@@ -22,6 +22,7 @@ const resultSchema = mongoose.Schema({
         _id: mongoose.Schema.ObjectId,
         firstname: String,
         lastname: String,
+        username: String,
         sex: String,
         dateofbirth: Date
     }],

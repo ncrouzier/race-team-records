@@ -115,40 +115,52 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
     /**
-     * Save multiple results at once
+     * Save a single result
+     * @param {Object} result - Result to save
+     * @return {Promise} - Promise that resolves with the saved result
+     */
+    factory.saveSingleResult = function(result) {
+        return results.post(result);
+    };
+
+    /**
+     * Save multiple results with progress modal
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
      */
     factory.saveResults = function(resultsToSave) {
-        // Helper function to save results sequentially
-        function saveSequentially(resultsToSave, index = 0, savedResults = []) {
-            if (index >= resultsToSave.length) {
-                return $q.resolve(savedResults);
-            }
-
-            return results.post(resultsToSave[index]).then(
-                function(r) {
-                    savedResults.push(r);
-                    return saveSequentially(resultsToSave, index + 1, savedResults);
-                },
-                function(error) {
-                    console.error('Error saving result:', error);
-                    return $q.reject(error);
+        // Open progress modal
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/saveProgressModal.html',
+            controller: 'SaveProgressModalController',
+            size: 'lg',
+            backdrop: 'static',
+            keyboard: false,
+            resolve: {
+                resultsToSave: function() {
+                    return resultsToSave;
                 }
-            );
-        }
-
-        // Start sequential saving
-        return saveSequentially(resultsToSave).then(
-            function(savedResults) {
-                NotificationService.showNotifiction(true, savedResults.length + " results saved successfully!");
-                return savedResults;
-            },
-            function(error) {
-                NotificationService.showNotifiction(false, "Error while saving results.");
-                throw error;
             }
-        );
+        });
+
+        return modalInstance.result.then(function(result) {
+            var savedCount = result.savedResults.length;
+            var errorCount = result.errorResults.length;
+            
+            if (errorCount === 0) {
+                NotificationService.showNotifiction(true, savedCount + " results saved successfully!");
+            } else if (savedCount === 0) {
+                NotificationService.showNotifiction(false, "Failed to save any results. Please try again.");
+            } else {
+                NotificationService.showNotifiction(true, savedCount + " results saved successfully, " + errorCount + " failed.");
+            }
+            
+            return result.savedResults;
+        }, function() {
+            // Modal was dismissed
+            NotificationService.showNotifiction(false, "Save operation was cancelled.");
+            return $q.reject(new Error("Save operation cancelled"));
+        });
     };
 
     //edit a result

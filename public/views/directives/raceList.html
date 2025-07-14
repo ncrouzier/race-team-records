@@ -12,8 +12,8 @@
                         <span ng-click="sortRaceBy('racedate')" class="listheader hoverhand" title="Event">EVENT</span>
                     </div>
                     <div class="col-sm-2" style="text-align: center;">
-                        <span ng-click="sortRaceBy('distance')" class="listheader hoverhand" title="Event type">
-                            TYPE</span>
+                        <span ng-click="sortRaceBy('distance')" class="listheader hoverhand" title="Event Distance">
+                            DISTANCE</span>
                     </div>
                     <div class="col-sm-1" style="text-align: center;">
                         <span ng-click="sortRaceBy('participation')" class="listheader hoverhand"
@@ -54,12 +54,15 @@
                                     ng-bind-html="'-- ' + raceInfo.location.country"></span></small>
                         </div>
                         <div class="col-sm-2" style="text-align: center;">
-                            <div ng-if="raceInfo.racetype.isVariable">
-                                {{::raceInfo.distanceName}} <span
-                                    class="getRaceTypeClass(race.racetype.surface)">({{::raceInfo.racetype.surface}})</span>
-                            </div>
-                            <div ng-if="!raceInfo.racetype.isVariable">
+                            <!-- Standard distance and event -->
+                            <div ng-if="!raceInfo.racetype.isVariable && raceInfo.racetype.name !== 'Multisport'">
                                 {{::raceInfo.racetype.name}}
+                            </div>
+                            <div ng-if="raceInfo.racetype.isVariable && raceInfo.racetype.name !== 'Multisport'">
+                                {{::raceInfo.distanceName}} 
+                            </div>                           
+                            <div ng-if="raceInfo.racetype.name === 'Multisport'">
+                                <span ng-bind-html="raceInfo | raceinfoSportIcons | unsafe"></span>
                             </div>
                         </div>
                         <div class="col-sm-1" style="text-align: center;">
@@ -118,7 +121,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <li ng-repeat="result in raceInfo.results | resultSuperFilter: searchQuery:raceInfo.racetype:raceInfo track by result._id" 
+                                <li ng-repeat="result in raceInfo.results  track by result._id" 
                                     class="list-group-item text-left resultlistrow" 
                                     ng-class="{hoverlistbg: hover2}" 
                                     ng-mouseenter="hover2 = true" 

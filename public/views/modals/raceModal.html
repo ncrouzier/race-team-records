@@ -1,65 +1,176 @@
-<div class="modal-header">
-    <span class="modal-title h3 bold"> {{raceinfo.racename}}</span>  <race-icon race="raceinfo"></race-icon> -- <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" ng-bind-html="(raceinfo.distanceName +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')"></span><span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')"></span><span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span><span  ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>  -- <span >{{raceinfo.racedate | date:'yyyy-MM-dd':'UTC' }}</span>  <span ng-if="raceinfo.location.state !== null" ng-bind-html="'-- ' + raceinfo.location.state"></span><span ng-if="raceinfo.location.state === null" ng-bind-html="'-- ' + raceinfo.location.country"></span>      
-    <br>{{raceinfo.results.length}} racer<span ng-show="raceinfo.results.length > 1">s</span>
-    <br>Average time: {{avg | secondsToTimeString}}
-</div>
-<div class="modal-body" style ="padding: 0px;">
-    <div id="member-list" class="row">
-        <div class="col-md-12">
-            <ul class="results-list list-group" style="margin-bottom: 0px;">
-                <li class="list-group-item text-left resultlistheader" ng-show="raceinfo.results.length >0">
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <span class="listheader hoverhand" title="Race's name">RACER</span>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Age Ranking">AGE</span>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Gender Ranking">GENDER</span>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="listheader hoverhand" title="Overall Ranking">OVERALL</span>
-                        </div>
-                        <div class="col-sm-2" style="text-align: center;">
-                            <span ng-click="sortBy('pace')" class="listheader hoverhand" title="Sort by pace">PACE</span> <i ng-if="raceinfo.results[0].agegrade" ng-click="sortBy('agegrade')" title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
-                        </div>
-                        <div class="col-sm-3" style="text-align: center;">
-                            <span ng-click="sortBy('time')" class="listheader hoverhand" title="Sort by net time">NET TIME</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="result in raceinfo.results" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                    <div class="row" style="display: flex; align-items: center;">
-                        <div class="col-sm-4">                            
-                            <a ng-click="cancel()" class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}" >{{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}} </span></a><result-icon result="result" race="raceinfo" race-display="true"></result-icon>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="center" title="Age Group ranking" ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="center" title="Gender ranking" ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
-                        </div>
-                        <div class="col-sm-1" style="text-align: center;">
-                            <span class="center" title="Overall ranking" ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
-                        </div>
-                        <div class="col-sm-2" ng-show="!raceinfo.isMultisport" style="text-align: center;">
-                            <result-pace race="raceinfo" result="result" ></result-pace>
-                        </div>
-                        <div class="col-sm-3" ng-show="raceinfo.isMultisport" style="text-align: center;">
-                            <span class="hoverhandandunderline resultPace" title="View details" ng-click="showResultDetailsModal(result,raceinfo.race)" >View details</span>
-                        </div>
-                        <div class="col-sm-3" style="text-align: center;">
-                            <span class="resultTime">{{result.time | secondsToTimeString}}</span> <a ng-show="result.resultlink !== ''" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a>
-                        </div>
-                    </div>
-                </li>
-                <!-- <li dir-paginate="result in resultsList | itemsPerPage: 10">{{ result.racename }}</li> -->
-            </ul>
+<div class="modal-header modern-modal-header">
+    <div class="race-header-content">
+        <div class="race-title-section">
+            <h3 class="race-title">{{raceinfo.racename}}</h3>
+            <race-icon race="raceinfo"></race-icon>
+        </div>
+        
+        <div class="race-details-section">
+            <div class="race-type-info">
+                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" 
+                      ng-bind-html="(raceinfo.distanceName +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                </span>
+                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" 
+                      ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                </span>
+                <span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
+                <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
+            </div>
+            
+            <div class="race-meta-info">
+                <div class="race-date">
+                    <i class="fa fa-calendar"></i>
+                    {{raceinfo.racedate | date:'yyyy-MM-dd':'UTC' }}
+                </div>
+                <div class="race-location">
+                    <i class="fa fa-map-marker"></i>
+                    <span ng-if="raceinfo.location.state !== null">
+                        {{raceinfo.location.state}}
+                        <img ng-if="getStateFlag(raceinfo.location.state)" 
+                             ng-src="{{getStateFlag(raceinfo.location.state)}}" 
+                             alt="{{raceinfo.location.state}}" 
+                             class="location-flag"
+                             onerror="this.style.display='none'">
+                    </span>
+                    <span ng-if="raceinfo.location.state === null">
+                        {{raceinfo.location.country}}
+                        <span ng-if="getCountryFlag(raceinfo.location.country)" 
+                              class="location-flag-emoji">
+                            {{getCountryFlag(raceinfo.location.country)}}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="race-stats-summary">
+            <div class="stat-item">
+                <span class="stat-number">{{raceinfo.results.length}}</span>
+                <span class="stat-label">racer<span ng-show="raceinfo.results.length > 1">s</span></span>
+            </div>            
+            <div class="stat-item" ng-show="fastestTimeResult">
+                <span class="stat-number">{{fastestTimeResult.time | secondsToTimeString}}</span>
+                <span class="stat-label">fastest time</span>
+                <div class="stat-detail">{{fastestTimeResult.members[0].firstname}} {{fastestTimeResult.members[0].lastname}}</div>
+            </div>
+            <div class="stat-item" ng-show="bestAgeGradeResult">
+                <span class="stat-number">{{bestAgeGradeResult.agegrade | number:1}}%</span>
+                <span class="stat-label">best age grade</span>
+                <div class="stat-detail">{{bestAgeGradeResult.members[0].firstname}} {{bestAgeGradeResult.members[0].lastname}}</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{avg | secondsToTimeString}}</span>
+                <span class="stat-label">avg time</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">achievements</span>
+                <div class="stat-achievements">
+                    <race-achievements race="raceinfo"></race-achievements>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<div class="modal-race-footer">
-    <button  class="btn btn-sm btn-success" style="padding: 5px 12px;" ng-click="copyRaceLinkToClipboard()">Copy race results permalink <i class="fa fa-clipboard" aria-hidden="true"></i></button>
-    <button style="float: right;" class="btn btn-danger" ng-click="cancel()">Close</button>
+
+<div class="modal-body modern-modal-body">
+    <div id="member-list" class="row">
+        <div class="col-md-12">
+            <div class="results-table-container">
+                <div class="results-header modern-results-header" ng-show="raceinfo.results.length >0">
+                    <div class="header-row">
+                        <div class="header-cell racer-cell">
+                            <span class="header-text">RACER</span>
+                        </div>
+                        <div class="header-cell rank-cell">
+                            <span class="header-text">AGE</span>
+                        </div>
+                        <div class="header-cell rank-cell">
+                            <span class="header-text">GENDER</span>
+                        </div>
+                        <div class="header-cell rank-cell">
+                            <span class="header-text">OVERALL</span>
+                        </div>
+                        <div class="header-cell pace-cell">
+                            <span class="header-text" ng-click="sortBy('pace')">PACE</span>
+                            <i ng-if="raceinfo.results[0].agegrade" 
+                               ng-click="sortBy('agegrade')" 
+                               title="Sort by age grading" 
+                               class="hoverhand agesort fa fa-star"></i>
+                        </div>
+                        <div class="header-cell time-cell">
+                            <span class="header-text" ng-click="sortBy('time')">NET TIME</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="results-list">
+                    <div class="result-row modern-result-row" 
+                         ng-repeat="result in raceinfo.results" 
+                         ng-class="{hoverlistbg: hover}" 
+                         ng-mouseenter="hover = true" 
+                         ng-mouseleave="hover = false">
+                        <div class="result-content">
+                            <div class="result-cell racer-cell">
+                                <a ng-click="cancel()" 
+                                   class="racer-link" 
+                                   ui-sref="/members/member({ member: result.members[0].username })">
+                                    <span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}">
+                                        {{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}
+                                    </span>
+                                </a>
+                                <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
+                            </div>
+                            <div class="result-cell rank-cell">
+                                <span class="rank-text" title="Age Group ranking" 
+                                      ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe">
+                                </span>
+                            </div>
+                            <div class="result-cell rank-cell">
+                                <span class="rank-text" title="Gender ranking" 
+                                      ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe">
+                                </span>
+                            </div>
+                            <div class="result-cell rank-cell">
+                                <span class="rank-text" title="Overall ranking" 
+                                      ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe">
+                                </span>
+                            </div>
+                            <div class="result-cell pace-cell" ng-show="!raceinfo.isMultisport">
+                                <result-pace race="raceinfo" result="result"></result-pace>
+                            </div>
+                            <div class="result-cell pace-cell" ng-show="raceinfo.isMultisport">
+                                <span class="view-details-link" 
+                                      title="View details" 
+                                      ng-click="showResultDetailsModal(result,raceinfo.race)">
+                                    View details
+                                </span>
+                            </div>
+                            <div class="result-cell time-cell">
+                                <span class="time-text">{{result.time | secondsToTimeString}}</span>
+                                <a ng-show="result.resultlink !== ''" 
+                                   ng-href="{{result.resultlink}}" 
+                                   target="_blank" 
+                                   class="result-link">
+                                    <i class="fa fa-external-link" title="view result"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer modern-modal-footer">
+    <div class="footer-actions">
+        <button class="btn btn-primary modern-btn" ng-click="copyRaceLinkToClipboard()">
+            <i class="fa fa-clipboard"></i>
+            Copy race results permalink
+        </button>
+        <button class="btn btn-secondary modern-btn" ng-click="cancel()">
+            <i class="fa fa-times"></i>
+            Close
+        </button>
+    </div>
 </div>

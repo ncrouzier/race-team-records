@@ -1,0 +1,63 @@
+<div class="modal-header">
+    <h3 class="modal-title">Saving Results</h3>
+</div>
+<div class="modal-body save-progress-modal">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i>
+                Please wait while your results are being saved. Do not close this window or navigate away.
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         ng-style="{'width': progressPercentage + '%'}"
+                         aria-valuenow="{{progressPercentage}}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{progressPercentage}}%
+                    </div>
+                </div>
+                <div class="progress-text">
+                    <span class="current-item">{{currentIndex + 1}}</span> of <span class="total-items">{{totalItems}}</span> results saved
+                </div>
+            </div>
+            
+            <div class="status-container" ng-show="currentResult">
+                <h5>Currently saving:</h5>
+                <div class="current-result-info">
+                    <strong>{{currentResult.members[0].firstname}} {{currentResult.members[0].lastname}}</strong>
+                    <br>
+                    <small>{{currentResult.race.racename}} - {{currentResult.race.racedate | date:'yyyy-MM-dd'}}</small>
+                </div>
+            </div>
+            
+            <div class="saved-results" ng-show="savedResults.length > 0">
+                <h5>Successfully saved:</h5>
+                <ul class="list-group">
+                    <li class="list-group-item list-group-item-success" ng-repeat="result in savedResults">
+                        <i class="fa fa-check"></i>
+                        {{result.members[0].firstname}} {{result.members[0].lastname}} - {{result.race.racename}}
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="error-results" ng-show="errorResults.length > 0">
+                <h5>Errors encountered:</h5>
+                <ul class="list-group">
+                    <li class="list-group-item list-group-item-danger" ng-repeat="error in errorResults">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        {{error.memberName}} - {{error.raceName}}: {{error.message}}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-footer" ng-show="isComplete">
+    <button class="btn btn-primary" ng-click="close()">
+        <i class="fa fa-check"></i> Close
+    </button>
+</div> 

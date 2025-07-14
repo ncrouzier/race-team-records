@@ -551,7 +551,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                     state: req.body.race.location.state
                                 },
                                 racetype: req.body.race.racetype
-                            }).then(r => {          
+                            }).then(async r => {                                                                                                                            
                                 try{
                                     Result.create({
                                         race: r,
@@ -573,6 +573,9 @@ module.exports = async function(app, qs, passport, async, _) {
                                             let member = await Member.findById(m._id);    
                                             await service.updateMemberStats(member);   
                                         }              
+                                        // Update location achievements for this location
+                                        await service.updateAllLocationAchievements(r.location.country, r.location.state);
+                                        
                                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                         res.json(resultWithPBsAndAchievements);                                                                        
                                     });                                       
@@ -606,7 +609,10 @@ module.exports = async function(app, qs, passport, async, _) {
                                 for (let m of result.members) {
                                     let member = await Member.findById(m._id);    
                                     await service.updateMemberStats(member);   
-                                }                                   
+                                }
+                                // Update location achievements for this location
+                                await service.updateAllLocationAchievements(race.location.country, race.location.state);                                
+                                
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                 res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
@@ -681,8 +687,10 @@ module.exports = async function(app, qs, passport, async, _) {
                             state: req.body.race.location.state
                         },
                         racetype: req.body.race.racetype
-                    });                                                         
-                        result.race = r;
+                    });                                                    
+                    
+                                                         
+                    result.race = r;
                         result.members = members;
                         result.time = req.body.time;
                         result.legs = req.body.legs;
@@ -713,12 +721,16 @@ module.exports = async function(app, qs, passport, async, _) {
                             let member = await Member.findById(m._id);                                
                             await service.updateMemberStats(member);   
                         }                       
+                        // Update location achievements for this location
+                        await service.updateAllLocationAchievements(r.location.country, r.location.state);
+
                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                         res.json(resultWithPBsAndAchievements);                                                                     
                         
                                                     
             } else { // race exists       
-                result.race = race;                     
+                result.race = race;                
+                
                 result.members = members;
                 result.time = req.body.time;
                 result.legs = req.body.legs;
@@ -749,7 +761,8 @@ module.exports = async function(app, qs, passport, async, _) {
                     let member = await Member.findById(m._id);    
                     await service.updateMemberStats(member);   
                 }
-                
+                // Update location achievements for this location
+                await service.updateAllLocationAchievements(race.location.country, race.location.state);
                 resultWithPBsAndAchievements = await Result.findById(result._id); 
                 res.json(resultWithPBsAndAchievements);                 
             }                    

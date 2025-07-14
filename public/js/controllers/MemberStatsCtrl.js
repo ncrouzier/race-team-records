@@ -35,10 +35,8 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             member: {_id :fullMember._id}
         }).then(function(results) {
             $scope.currentMember = fullMember;
-
             // Calculate member statistics
             $scope.calculateMemberStats(results);
-
             $scope.loading = false;
 
             $analytics.eventTrack('viewMemberStats', {
@@ -195,41 +193,13 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             percentage: Math.round((type.count / results.length) * 100)
         })).sort((a, b) => b.count - a.count);
 
-        // Calculate pie chart angles and add colors
-        let currentAngle = 0;
+        // Add colors for D3 pie chart
         const colors = ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#e83e8c', '#dc3545', '#6f42c1', '#6c757d'];
         
         $scope.memberStats.raceTypeBreakdown.forEach((type, index) => {
-            const sliceAngle = (type.percentage / 100) * 360;
-            const endAngle = currentAngle + sliceAngle;
-            
-            // Calculate end coordinates for the slice
-            const endRadians = (endAngle * Math.PI) / 180;
-            const endX = 50 + 50 * Math.cos(endRadians);
-            const endY = 50 - 50 * Math.sin(endRadians);
-            
-            type.startAngle = currentAngle;
-            type.endAngle = endAngle;
-            type.endX = endX;
-            type.endY = endY;
             type.color = colors[index % colors.length];
-            
-            currentAngle = endAngle;
-        });
-
-        // Generate conic-gradient CSS for pie chart
-        let gradientParts = [];
-        currentAngle = 0;
-        
-        $scope.memberStats.raceTypeBreakdown.forEach((type, index) => {
-            const sliceAngle = (type.percentage / 100) * 360;
-            const endAngle = currentAngle + sliceAngle;
-            
-            gradientParts.push(`${type.color} ${currentAngle}deg ${endAngle}deg`);
-            currentAngle = endAngle;
         });
         
-        $scope.memberStats.pieChartGradient = `conic-gradient(${gradientParts.join(', ')})`;
 
         // Create location breakdown
         $scope.memberStats.locationBreakdown = Object.values(locations).map(location => ({
@@ -242,9 +212,10 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             displayName: location.displayName,
             displayFlag: location.displayFlag,
             count: location.count
-        })).sort((a, b) => b.count - a.count).slice(0, 10); // Top 10 locations
+        })).sort((a, b) => b.count - a.count);
+        console.log($scope.memberStats.locationBreakdown );
     };
-
+    
     // Navigation functions for stats links
     $scope.goToResultsWithQuery = function(query) {
         if (query && (query.racername || query.distance || query.year)) {
@@ -276,7 +247,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     };
 
     $scope.showRaceModal = function(race) {
-        ResultsService.showRaceModal(race);
+        ResultsService.showRaceFromRaceIdModal(race._id);
     };
 
     // Initial load

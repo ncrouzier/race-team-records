@@ -105,14 +105,14 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 // });
 
 //update at startup and every day
-service.updateAllMembersStatsAndResults();
+service.startUpUpdate();
 const rule = new schedule.RecurrenceRule();
 rule.hour = 0;
 rule.minute = 1;
 rule.tz = 'Etc/GMT+5';
 const job = schedule.scheduleJob(rule, function(){
     console.log("team requirement stats updated");
-    service.updateAllMembersStatsAndResults();    
+    service.startUpUpdate();    
   });
 
 

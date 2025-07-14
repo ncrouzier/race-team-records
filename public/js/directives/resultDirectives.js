@@ -6,7 +6,7 @@ app.directive('rankingResult', function() {
     };
 });
 
-app.directive('resultIcon', function() {
+app.directive('resultIcon', ['UtilsService', function(UtilsService) {
     return {
         scope: {
           result:'=result',
@@ -62,17 +62,19 @@ app.directive('resultIcon', function() {
             $scope.isFourthOfJuly = true;
           }
 
+        
+
         },
-          template:	'<span ng-if="raceCounts" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text"><div class="pbBox">🎖️</div></span>' +
-          '<span ng-if="raceCounts" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text"><div class="pbBox">🧨</div></span>'+
-          '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value.raceCount}}</div>  </span>'+
+        template: '<span ng-if="raceCounts" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text"><div class="pbBox">🎖️</div></span>' +
+          '<span ng-if="raceCounts" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text"><div class="pbBox">🧨</div></span>' +
+          '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
           '<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span>' +
           '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
-          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +
-          '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
-          '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
-      };    
-});
+          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +         
+          '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
+          '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
+      };
+  }]);
 
 
 app.directive('raceIcon', function() {

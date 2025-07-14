@@ -32,18 +32,18 @@
                     <div ng-if="ach.achievements.length === 1">
                         <span ng-switch="ach.achievements[0].name.toLowerCase()">
                             <span ng-switch-when="pb">
-                                <b><a ui-sref="/members({ member: ach.result.members[0].firstname+ach.result.members[0].lastname })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new PB of {{::ach.achievements[0].value.time | secondsToTimeString}} with the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new PB of {{::ach.achievements[0].value.time | secondsToTimeString}} with the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
                             </span>
                             <span ng-switch-when="racecount">
-                                <b><a ui-sref="/members({ member: ach.result.members[0].firstname+ach.result.members[0].lastname })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
                             </span>
                             <span ng-switch-when="agegrade">
-                                <b><a ui-sref="/members({ member: ach.result.members[0].firstname+ach.result.members[0].lastname })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade performance best of {{::ach.achievements[0].value}}% at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade performance best of {{::ach.achievements[0].value}}% at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
                             </span>
                         </span>
                     </div>
                     <div ng-if="ach.achievements.length > 1">
-                        <b><a ui-sref="/members({ member: ach.result.members[0].firstname+ach.result.members[0].lastname })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b>
+                        <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b>
                         <span> had the following achievements at </span>
                         <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>:
                         <ul>
@@ -69,7 +69,7 @@
             <h4>Recent Team Ins & Outs</h4>
             <ul class="list-group">
                 <li class="list-group-item" ng-repeat="change in recentStatusChanges">
-                    <b><a ui-sref="/members({ member: change.member.firstname+change.member.lastname })">{{change.member.firstname}} {{change.member.lastname}}</a></b>
+                    <b><a ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}} {{change.member.lastname}}</a></b>
                     <span ng-if="change.type === 'entry'">joined</span>
                     <span ng-if="change.type === 'exit'">left</span>
                     <span>the team on {{change.date | date:'mediumDate':'UTC'}}</span>

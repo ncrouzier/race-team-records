@@ -39,7 +39,7 @@
 				</div>
 			</div>
       <div class="birthdaytext" ng-if="birthdays.length >0" ng-cloak>
-           <span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a><span ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2"> and </span></span>!🎂</span>
+           <span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a  ui-sref="/members/member({ member: m.username}) ">{{m.firstname}} {{m.lastname}}</a><span ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2"> and </span></span>!🎂</span>
       </div>
 			<div class="copyrightrow">
 			     <span ng-bind-html="getcr"></span>

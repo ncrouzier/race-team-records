@@ -20,6 +20,12 @@ angular.module('mcrrcApp').directive('raceList', function() {
                 return $scope.expandedRaces[raceId] === true;
             };
 
+            $scope.getRaceTypeClass = function(s) {
+                if (s !== undefined) {
+                    return s.replace(/ /g, '') + '-col';
+                }
+            };
+
             $scope.expandAll = function() {
                 $scope.racesList.forEach(function(race) {
                     $scope.expandedRaces[race._id] = true;
@@ -42,11 +48,26 @@ angular.module('mcrrcApp').directive('raceList', function() {
             };
 
             $scope.showAddResultModal = function(raceInfo) {
-                ResultsService.showAddResultModal(raceInfo.results[0]).then(function(result) {
-                    
-                    if (result) {
-                        raceInfo.results.unshift(result);
+                var onResultCreated = function(result) {
+                    if (result !== null) {
+                        var existingRaceIndex = $scope.racesList.findIndex(function(race) {
+                            return race._id === result.race._id;
+                        });
+        
+                        if (existingRaceIndex === -1) {
+                            var newRace = JSON.parse(JSON.stringify(result.race));
+                            newRace.results = [result];
+                            $scope.racesList.unshift(newRace);
+                        } else {
+                            $scope.racesList[existingRaceIndex].results.unshift(result);
+                        }
                     }
+                };
+
+
+                ResultsService.showAddResultModal(raceInfo.results[0]).then(function(result) {                    
+                    // This will only be called when the modal is finally closed with the "Save and Close" button
+                    onResultCreated(result);
                 }, function() {});
             };
 

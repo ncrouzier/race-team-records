@@ -716,7 +716,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', 'UtilsService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService, UtilsService) {
 
     $scope.raceinfo = raceinfo;
     if (fromStateParams){
@@ -739,6 +739,26 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         $scope.avg = Math.ceil(sum / count);
     }
 
+    // Calculate fastest time result
+    $scope.fastestTimeResult = null;
+    var fastestTime = Infinity;
+    for (i = 0; i < $scope.raceinfo.results.length; i++) {
+        if ($scope.raceinfo.results[i].time && $scope.raceinfo.results[i].time < fastestTime) {
+            fastestTime = $scope.raceinfo.results[i].time;
+            $scope.fastestTimeResult = $scope.raceinfo.results[i];
+        }
+    }
+
+    // Calculate best age grade result
+    $scope.bestAgeGradeResult = null;
+    var bestAgeGrade = 0;
+    for (i = 0; i < $scope.raceinfo.results.length; i++) {
+        if ($scope.raceinfo.results[i].agegrade && $scope.raceinfo.results[i].agegrade > bestAgeGrade) {
+            bestAgeGrade = $scope.raceinfo.results[i].agegrade;
+            $scope.bestAgeGradeResult = $scope.raceinfo.results[i];
+        }
+    }
+
     $scope.cancel = function() {
         if($scope.fromStateParams){         
             $state.go('/results');
@@ -750,6 +770,14 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
+    };
+
+    $scope.getStateFlag = function(stateCode) {
+        return UtilsService.getStateFlag(stateCode);
+    };
+
+    $scope.getCountryFlag = function(countryCode) {
+        return UtilsService.getCountryFlag(countryCode);
     };
 
     $scope.showResultDetailsModal = function(result,race) {
@@ -888,4 +916,84 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
             return s.replace(/ /g, '') + '-col';
         }
     };
+}]);
+
+angular.module('mcrrcApp.results').controller('SaveProgressModalController', ['$scope', '$uibModalInstance', 'resultsToSave', 'ResultsService', function($scope, $uibModalInstance, resultsToSave, ResultsService) {
+    
+    $scope.resultsToSave = resultsToSave;
+    $scope.totalItems = resultsToSave.length;
+    $scope.currentIndex = 0;
+    $scope.progressPercentage = 0;
+    $scope.savedResults = [];
+    $scope.errorResults = [];
+    $scope.currentResult = null;
+    $scope.isComplete = false;
+    
+    // Prevent modal from being closed during save process
+    $scope.$on('modal.closing', function(event, reason, closed) {
+        if (!$scope.isComplete) {
+            event.preventDefault();
+        }
+    });
+    
+    function updateProgress() {
+        $scope.progressPercentage = Math.round((($scope.currentIndex+1) / $scope.totalItems) * 100);
+    }
+    
+    function saveNextResult() {
+        if ($scope.currentIndex >= $scope.totalItems-1) {
+            // All results processed
+            $scope.isComplete = true;
+            return;
+        }
+        
+        var result = $scope.resultsToSave[$scope.currentIndex];
+        $scope.currentResult = result;
+        
+        // Save the result
+        ResultsService.saveSingleResult(result).then(
+            function(savedResult) {
+                $scope.savedResults.push(savedResult);
+                
+                
+                // Check if we've processed all results
+                if ($scope.currentIndex >= $scope.totalItems-1) {
+                    $scope.isComplete = true;
+                } else {
+                    $scope.currentIndex++;
+                    updateProgress();
+                    saveNextResult();
+                }
+            },
+            function(error) {
+                var errorInfo = {
+                    memberName: result.members[0].firstname + ' ' + result.members[0].lastname,
+                    raceName: result.race.racename,
+                    message: error.data ? error.data.message : 'Unknown error occurred'
+                };
+                $scope.errorResults.push(errorInfo);
+                $scope.currentIndex++;
+                updateProgress();
+                
+                // Check if we've processed all results
+                if ($scope.currentIndex >= $scope.totalItems-1) {
+                    $scope.isComplete = true;
+                    $scope.currentIndex++;
+                    updateProgress();
+                } else {
+                    saveNextResult();
+                }
+            }
+        );
+    }
+    
+    $scope.close = function() {
+        $uibModalInstance.close({
+            savedResults: $scope.savedResults,
+            errorResults: $scope.errorResults
+        });
+    };
+    
+    // Start the save process
+    saveNextResult();
 }]);

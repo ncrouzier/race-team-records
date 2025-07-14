@@ -167,7 +167,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                 ageGradeCount++;
                 if (result.agegrade > bestAgeGrade) {
                     bestAgeGrade = result.agegrade;
-                    bestAgeGradeRace = result.race.racename;
+                    bestAgeGradeRace = result.race;
                 }
             }
 

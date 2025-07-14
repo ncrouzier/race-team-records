@@ -103,7 +103,7 @@
                                                                     <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
                                                                 </div>
                                                                 <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
                                                                 </div>
                                                             </div>
                                                         </li>
@@ -127,7 +127,7 @@
                                                                     <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
                                                                 </div>
                                                                 <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
                                                                 </div>
                                                             </div>
                                                         </li>
@@ -151,7 +151,7 @@
                                                                     <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
                                                                 </div>
                                                                 <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
                                                                 </div>
                                                             </div>
                                                         </li>
@@ -175,7 +175,7 @@
                                                                     <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>
                                                                 </div>
                                                                 <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
+                                                                    <span class="hoverhandandunderline resultEvent time"  ng-click="showRaceModal(pb.result.race)"> {{pb.time | secondsToTimeString}}</span>
                                                                 </div>
                                                             </div>
                                                         </li>
@@ -213,8 +213,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
-                                                    <div class="stat-box text-center">
-                                                        <div class="stat-number">{{memberStats.bestAgeGrade | number:1}}%</div>
+                                                    <div class="stat-box text-center hoverhand" ng-click="showRaceModal(memberStats.bestAgeGradeRace)">
+                                                        <div class="stat-number">{{memberStats.bestAgeGrade | number:2}}%</div>
                                                         <div class="stat-label">Best Age Grade</div>
                                                     </div>
                                                 </div>

@@ -85,6 +85,8 @@
             
             <!-- Content when not loading -->
             <div ng-if="!loadingStates.miscStats">
+        
+
 
             <div class="row">
                 <div class="col-md-6">
@@ -126,13 +128,22 @@
                                 </li>
                                 <li class="list-group-item text-left" style="border: none;">
                                     <div class="row">
-                                        <div class="col-sm-8">
-                                            <strong>Most popular race distance</strong>
+                                        <div class="col-sm-12">
+                                            <strong>Most popular race distances:</strong>
                                         </div>
-                                        <div class="col-sm-4 text-right">
+                                        <!-- <div class="col-sm-4 text-right">
                                             {{miscStats.mostPopularRaceDistance}} ({{miscStats.mostPopularRaceCount}} races)
-                                        </div>
+                                        </div> -->
                                     </div>
+                                </li>
+                                <li class="list-group-item text-left" style="border: none;">
+                                  <div class="panel-body">
+                                    <d3-pie-chart 
+                                      data="teamRaceTypeBreakdown" 
+                                      width="350" 
+                                      height="250"
+                                      on-slice-click="goToResultsWithQuery({distance: data.name})">
+                                    </d3-pie-chart>
                                 </li>
                             </ul>
                         </div>
@@ -422,7 +433,7 @@
                     <span ng-repeat="m in membersList |filter:{memberStatus:'current'} | orderBy:'fromNow' |  limitTo:5 ">
                       <a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a> will be {{(m | memberAgeFilter)+1}} on {{m.dateofbirth |  date:'MM/dd': 'UTC' }}</br></span></br>
                   </div>
-              </div>
+              </div>     
                 <div class="col-md-12" >
                     <div>
                       <table style="width:100%">

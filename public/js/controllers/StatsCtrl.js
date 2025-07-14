@@ -131,6 +131,70 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         });
     };
 
+    $scope.calculateTeamRaceTypeBreakdown = function(races) {
+        const raceTypes = {};
+        let total = 0;
+        races.forEach(function(race) {
+            const raceType = race.racetype || {};
+            let category = 'other';
+            let name = 'Other';
+            // If any result has multiple members, categorize as Other
+            let hasMultiMemberResult = false;
+            if (race.results && race.results.length > 0) {
+                for (let i = 0; i < race.results.length; i++) {
+                    if (race.results[i].members && race.results[i].members.length > 1) {
+                        hasMultiMemberResult = true;
+                        break;
+                    }
+                }
+            }
+            if (hasMultiMemberResult) {
+                category = 'other';
+                name = 'Other';
+            } else 
+            if (raceType.isVariable) {
+                category = 'other';
+                name = 'Other';
+            } else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {
+                if (raceType.isVariable) {
+                    category = 'other';
+                    name = 'Other';
+                } else {
+                    category = raceType.name;
+                    name = raceType.name;
+                }
+            } else {
+                category = 'other';
+                name = 'Other';
+            }
+            const key = category + '|' + name;
+            raceTypes[key] = raceTypes[key] || { category: category, name: name, count: 0 };
+            raceTypes[key].count++;
+            total++;
+        });
+        const colors = [
+            '#007bff', // blue
+            '#28a745', // green
+            '#ffc107', // yellow
+            '#fd7e14', // orange
+            '#e83e8c', // pink
+            '#dc3545', // red
+            '#6f42c1', // purple
+            '#6c757d', // gray
+            '#20c997', // teal
+            '#17a2b8'  // cyan
+        ];
+        $scope.teamRaceTypeBreakdown = Object.values(raceTypes).map(function(type, idx) {
+            return {
+                category: type.category,
+                name: type.name,
+                count: type.count,
+                percentage: total > 0 ? Math.round((type.count / total) * 100) : 0,
+                color: colors[idx % colors.length]
+            };
+        }).sort(function(a, b) { return b.count - a.count; }).slice(0,10);
+    };
+
     $scope.getMiscStats = function() {
         $scope.loadingStates.miscStats = true;
         
@@ -157,7 +221,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 var raceDate = new Date(race.racedate);
                 var raceYear = raceDate.getUTCFullYear();
                 var selectedYear = parseInt($scope.miscStats.year);
-                             
+                              
                 
                 return raceYear === selectedYear;
             });
@@ -165,6 +229,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             $scope.calculateTeamMemberStats(filteredRaces);
             $scope.calculateGeneralStats(filteredRaces);
             $scope.calculateBasicStats(filteredRaces);
+            $scope.calculateTeamRaceTypeBreakdown(filteredRaces); // <--- Add this line
             $scope.loadingStates.miscStats = false;
         }).catch(function(error) {
             $scope.loadingStates.miscStats = false;

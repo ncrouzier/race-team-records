@@ -974,7 +974,7 @@ module.exports = async function(app, qs, passport, async, _) {
             await Race.deleteOne({
                 _id: raceId
             }).then(raceD => {
-                res.end('{"success" : "Result deleted successfully", "status" : 200}');
+                res.json('{"success" : "Result deleted successfully", "status" : 200}');
             });
         }catch (err) {
             res.send(err);

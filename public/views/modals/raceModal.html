@@ -91,7 +91,7 @@
                             <span class="header-text">OVERALL</span>
                         </div>
                         <div class="header-cell pace-cell">
-                            <span class="header-text" ng-click="sortBy('pace')">PACE</span>
+                            <span class="header-text" ng-click="sortBy('time')">PACE</span>
                             <i ng-if="raceinfo.results[0].agegrade" 
                                ng-click="sortBy('agegrade')" 
                                title="Sort by age grading" 
@@ -114,11 +114,12 @@
                                 <a ng-click="cancel()" 
                                    class="racer-link" 
                                    ui-sref="/members/member({ member: result.members[0].username })">
-                                    <span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}">
+                                    <!-- <span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}">
                                         {{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}
-                                    </span>
+                                    </span> -->
+                                    <result-members-names-full result="result" race="raceinfo"></result-members-names-full>
+                                    <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                                 </a>
-                                <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                             </div>
                             <div class="result-cell rank-cell">
                                 <span class="rank-text" title="Age Group ranking" 

@@ -229,7 +229,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             $scope.calculateTeamMemberStats(filteredRaces);
             $scope.calculateGeneralStats(filteredRaces);
             $scope.calculateBasicStats(filteredRaces);
-            $scope.calculateTeamRaceTypeBreakdown(filteredRaces); // <--- Add this line
+            $scope.calculateTeamRaceTypeBreakdown(filteredRaces);
             $scope.loadingStates.miscStats = false;
         }).catch(function(error) {
             $scope.loadingStates.miscStats = false;
@@ -245,9 +245,40 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         var memberAgeGrades = {};
         var memberYears = {};
         var raceTurnout = {};
+        // State stats aggregation
+        var stateStats = {};
+        // Country stats aggregation
+        var countryStats = {};
 
         // Process all races and results
         races.forEach(function(race) {
+            // State stats: count each race once per state
+            if (race.location && race.location.state && race.location.country === 'USA') {
+                var stateCode = race.location.state;
+                if (!stateStats[stateCode]) {
+                    stateStats[stateCode] = {
+                        code: stateCode,
+                        name: UtilsService.getStateNameFromCode(stateCode),
+                        flag: UtilsService.getStateFlag(stateCode),
+                        count: 0
+                    };
+                }
+                stateStats[stateCode].count++;
+            }
+            
+            // Country stats: count each race once per country
+            if (race.location && race.location.country) {
+                var countryCode = race.location.country;
+                if (!countryStats[countryCode]) {
+                    countryStats[countryCode] = {
+                        code: countryCode,
+                        name: UtilsService.getCountryNameFromCode(countryCode),
+                        flag: UtilsService.getCountryFlag(countryCode),
+                        count: 0
+                    };
+                }
+                countryStats[countryCode].count++;
+            }
             if (race.results && race.results.length > 0) {
                 // Count unique team members for this race
                 var uniqueMembers = new Set();
@@ -340,6 +371,12 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 });
             }
         });
+
+        // Set stateStats on scope, sorted by count descending
+        $scope.stateStats = Object.values(stateStats).sort(function(a, b) { return b.count - a.count; });
+        
+        // Set countryStats on scope, sorted by count descending
+        $scope.countryStats = Object.values(countryStats).sort(function(a, b) { return b.count - a.count; });
 
         // Convert to arrays and sort
         var memberStatsArray = Object.keys(memberStats).map(function(memberId) {

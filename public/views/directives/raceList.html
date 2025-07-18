@@ -132,6 +132,7 @@
                                         <div class="col-sm-3">
                                             <result-members-names result="result" race="raceInfo"></result-members-names>
                                             <result-icon result="result" race="raceInfo" race-display="true"></result-icon>
+                                            <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i>
                                         </div>
                                         <div class="col-sm-1" style="text-align: center;">
                                             <span ng-if="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')" 

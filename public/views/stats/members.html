@@ -1,0 +1,63 @@
+<div class="jumbotron">
+    <!-- Navigation -->
+    <ul class="nav nav-tabs">
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/team">Team Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/us-map">US Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/world-map">World Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/participation">Participation Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/members">Team Members Stats</a>
+        </li>
+    </ul>
+
+    <!-- Team Members Stats Content -->
+    <!-- Loading spinner for Team Members Stats -->
+    <div ng-if="loadingStates.attendanceStats" class="text-center" style="padding: 50px;">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <p style="margin-top: 15px;">Loading team members statistics...</p>
+    </div>
+    
+    <!-- Content when not loading -->
+    <div ng-if="!loadingStates.attendanceStats">
+        <div class="row text-left">
+            <div class="col-md-12" >
+                <div>
+                    <span class="bold"> Next 5 birthdays:</span></br>
+                    <span ng-repeat="m in membersList |filter:{memberStatus:'current'} | orderBy:'fromNow' |  limitTo:5 ">
+                        <a  ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a> will be {{(m | memberAgeFilter)+1}} on {{m.dateofbirth |  date:'MM/dd': 'UTC' }}</br></span></br>
+                </div>
+            </div>     
+            <div class="col-md-12" >
+                <div>
+                    <table style="width:100%">
+                        <tr>
+                            <th style="min-width:25px"></th>
+                            <th style="width:25%;"><a href="" ng-click="field='firstname'; reverseSort = !reverseSort">Member <span ng-show="field == 'firstname'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='age'; reverseSort = !reverseSort">Age <span ng-show="field == 'age'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='dateofbirth'; reverseSort = !reverseSort">DoB <span ng-show="field == 'dateofbirth'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a></th>
+                            <th style="width:25%;"><a href="" ng-click="field='status'; reverseSort = !reverseSort">Status <span ng-show="field == 'status'"><span ng-show="!reverseSort">^</span><span ng-show="reverseSort">v</span></a>
+                                <label><input type="radio" ng-model="statusChoice" ng-value="none" name="rdoResult">All</label>
+                                <label><input type="radio" ng-model="statusChoice" ng-value="current" name="rdoResult">Current</label>
+                                <label><input type="radio" ng-model="statusChoice" ng-value="past" name="rdoResult">Past</label></th>
+                        </tr>
+                        <tr ng-repeat="m in membersList |filter:statusChoice |sortMembers:field:reverseSort track by $index">
+                            <td>{{$index+1  }}</td>
+                            <td><a ui-sref="/members({ member: m.firstname+m.lastname }) ">{{m.firstname}} {{m.lastname}}</a></td>
+                            <td>{{m | memberAgeFilter}}</td>
+                            <td>{{m.dateofbirth |  date:'yyyy-MM-dd': 'UTC' }}</td>
+                            <td>{{m.memberStatus}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

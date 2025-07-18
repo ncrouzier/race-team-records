@@ -114,10 +114,45 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             }
         }).state('/stats', {
             url: "/stats",
-            templateUrl: "views/stats.html",
+            redirectTo: '/stats/team'
+        }).state('/stats/team', {
+            url: "/stats/team",
+            templateUrl: "views/stats/team.html",
             controller: 'StatsController',
             onEnter: function() {
-                gtag('set', 'page_path', '/stats.html');
+                gtag('set', 'page_path', '/stats/team.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/stats/us-map', {
+            url: "/stats/us-map",
+            templateUrl: "views/stats/us-map.html",
+            controller: 'StatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/stats/us-map.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/stats/world-map', {
+            url: "/stats/world-map",
+            templateUrl: "views/stats/world-map.html",
+            controller: 'StatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/stats/world-map.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/stats/participation', {
+            url: "/stats/participation",
+            templateUrl: "views/stats/participation.html",
+            controller: 'StatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/stats/participation.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/stats/members', {
+            url: "/stats/members",
+            templateUrl: "views/stats/members.html",
+            controller: 'StatsController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/stats/members.html');
                 gtag('event', 'page_view');
             }
         }).state('/tools', {

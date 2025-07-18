@@ -1,0 +1,53 @@
+<div class="jumbotron">
+    <!-- Navigation -->
+    <ul class="nav nav-tabs">
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/team">Team Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/us-map">US Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/world-map">World Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/participation">Participation Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/members">Team Members Stats</a>
+        </li>
+    </ul>
+
+    <!-- US Map Content -->
+    <div class="row text-left">
+        <div usa-map style="min-height:700px;">
+        </div>
+    </div>
+    <div class="row text-left" style="margin-top: 20px;">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4><i class="fa fa-list"></i> States with Races</h4>
+                </div>
+                <div class="panel-body" style="padding: 0;">
+                    <table class="table table-striped table-condensed" style="margin-bottom:0;">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">#</th>
+                                <th>State</th>
+                                <th style="width:100px;"># Races</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="state in stateStats track by $index">
+                                <td>{{$index+1}}</td>
+                                <td><img ng-src="{{state.flag}}" alt="State flag" style="width: 20px; height: 15px;" onerror="this.style.display='none'"> {{state.name}} ({{state.code}})</td>
+                                <td><a ng-click="goToResultsWithQuery({country: 'USA', state: state.code})" class="hoverhandandunderline" uib-tooltip="View all results in {{state.name}}" tooltip-placement="left">{{state.count}}</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

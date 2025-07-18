@@ -509,7 +509,7 @@ module.exports = async function(app, qs, passport, async, _) {
         let members = [];
         for (const m of req.body.members) {
             let member = await Member.findById(m._id);   
-
+            
             members.push(member);
         }
 
@@ -553,6 +553,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                 racetype: req.body.race.racetype
                             }).then(async r => {                                                                                                                            
                                 try{
+                                    
                                     Result.create({
                                         race: r,
                                         members: members,
@@ -569,10 +570,12 @@ module.exports = async function(app, qs, passport, async, _) {
                                         done: false
                                     }).then(async result =>{   
                                         //update PBs
+                                            
                                         for (let m of result.members) {
                                             let member = await Member.findById(m._id);    
                                             await service.updateMemberStats(member);   
-                                        }              
+                                        }      
+                                            
                                         // Update location achievements for this location
                                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
                                         
@@ -639,14 +642,9 @@ module.exports = async function(app, qs, passport, async, _) {
     app.put('/api/results/:result_id', service.isAdminLoggedIn, async function(req, res) {
 
         let members = [];
-        for (const member of req.body.members) {
-            members.push({
-                _id: member._id,
-                firstname: member.firstname,
-                lastname: member.lastname,
-                sex: member.sex,
-                dateofbirth: member.dateofbirth
-            });
+        for (const m of req.body.members) {
+            let member = await Member.findById(m._id);               
+            members.push(member);
         }
 
         try{

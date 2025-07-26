@@ -71,7 +71,31 @@
                     <race-achievements race="raceinfo"></race-achievements>
                 </div>
             </div>
+            <!-- Gender Filter -->
+            <div class="gender-filter-container">
+                <div class="btn-group" role="group">
+                    <button type="button" 
+                            class="btn btn-sm" 
+                            ng-class="{'btn-primary': !genderFilter, 'btn-outline-primary': genderFilter}"
+                            ng-click="setGenderFilter(null)">
+                        <i class="fa fa-users"></i>
+                        All Members
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm" 
+                            ng-class="{'btn-primary': genderFilter === 'Female', 'btn-outline-primary': genderFilter !== 'Female'}"
+                            ng-click="setGenderFilter('Female')"
+                            tooltip-append-to-body="true" 
+                            tooltip-placement="top"
+                            uib-tooltip-html="'Here for the women\'s race'">
+                        <i class="fa fa-venus"></i>
+                        Women Only
+                    </button>
+                </div>           
+            </div>
         </div>
+        
+       
     </div>
 </div>
 
@@ -114,7 +138,7 @@
                 
                 <div class="results-list">
                     <div class="result-row modern-result-row" 
-                         ng-repeat="result in raceinfo.results" 
+                         ng-repeat="result in getFilteredResults()" 
                          ng-class="{hoverlistbg: hover}" 
                          ng-mouseenter="hover = true" 
                          ng-mouseleave="hover = false">
@@ -122,10 +146,7 @@
                             <div class="result-cell racer-cell">
                                 <a ng-click="cancel()" 
                                    class="racer-link" 
-                                   ui-sref="/members/member({ member: result.members[0].username })">
-                                    <!-- <span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}">
-                                        {{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}
-                                    </span> -->
+                                   ui-sref="/members/member({ member: result.members[0].username })">                                    
                                     <result-members-names-full result="result" race="raceinfo"></result-members-names-full>
                                     <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                                 </a>

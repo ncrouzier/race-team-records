@@ -212,7 +212,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 return $uibModal.open({
                     templateUrl: 'views/modals/resultModal.html',
                     controller: 'ResultModalInstanceController',
-                    size: 'lg',
+                    windowClass: 'result-modal-class',
                     backdrop: 'static',
                     resolve: {
                         editmode: false,
@@ -230,7 +230,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             modalPromise = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
-                size: 'lg',
+                windowClass: 'result-modal-class',
                 backdrop: 'static',
                 resolve: {
                     editmode: false,
@@ -252,7 +252,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 return $uibModal.open({
                     templateUrl: 'views/modals/resultModal.html',
                     controller: 'ResultModalInstanceController',
-                    size: 'lg',
+                    windowClass: 'result-modal-class',
                     backdrop: 'static',
                     resolve: {
                         editmode: true,
@@ -349,6 +349,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 return $q.resolve(memCacheEntry.data);
             }
             
+            //try to get the data from the database
             try {
                 cache = await getKey(db.races,key);
             } catch (error) {

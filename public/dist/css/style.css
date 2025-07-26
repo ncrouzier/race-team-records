@@ -8592,6 +8592,9 @@ footer {
   background-color: white;
   border-radius: 0 0 8px 8px;
 }
+.modal.result-modal-class .modal-dialog {
+  max-width: 950px !important;
+}
 .modal .modal-dialog {
   max-width: 900px;
   margin: 30px auto;
@@ -8893,6 +8896,11 @@ footer {
   flex: 1;
   min-width: 0;
 }
+.modal .modern-modal-body .results-table-container .modern-results-header .header-row .header-cell.racer-cell {
+  flex: 2;
+  justify-content: flex-start;
+  min-width: 150px;
+}
 .modal .modern-modal-body .results-table-container .modern-results-header .header-row .header-cell.leg-cell {
   flex: 2;
   justify-content: flex-start;
@@ -8960,6 +8968,11 @@ footer {
   min-height: 16px;
   flex: 1;
   min-width: 0;
+}
+.modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content .result-cell.racer-cell {
+  flex: 2;
+  justify-content: flex-start;
+  min-width: 150px;
 }
 .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content .result-cell.leg-cell {
   flex: 2;
@@ -9029,7 +9042,7 @@ footer {
 }
 .modal .modern-modal-footer .footer-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
 }
 .modal .modern-modal-footer .footer-actions .modern-btn {
@@ -9099,6 +9112,7 @@ footer {
   .modal .modern-modal-header .race-stats-summary {
     gap: 15px;
     flex-wrap: wrap;
+    position: relative;
   }
   .modal .modern-modal-header .race-stats-summary .stat-item {
     padding: 10px 15px;
@@ -10912,6 +10926,168 @@ footer {
 .results-table-container .result-cell.pace-cell {
   flex: 1;
   min-width: 80px;
+}
+.team-requirement-bar {
+  display: block;
+  min-width: 120px;
+  margin-top: 4px;
+}
+.team-requirement-bar .requirement-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.team-requirement-bar .requirement-progress .progress-track {
+  flex: 1;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.team-requirement-bar .requirement-progress .progress-track .progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+.team-requirement-bar .requirement-progress .progress-track .progress-fill.filling {
+  background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+  box-shadow: 0 1px 3px rgba(255, 193, 7, 0.3);
+}
+.team-requirement-bar .requirement-progress .progress-track .progress-fill.full {
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  box-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
+}
+.team-requirement-bar .requirement-progress .progress-track .progress-fill.full.complete {
+  background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+  animation: pulse 2s infinite;
+}
+.team-requirement-bar .requirement-progress .progress-track .progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+.team-requirement-bar .requirement-progress .requirement-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 45px;
+}
+.team-requirement-bar .requirement-progress .requirement-stats .race-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star {
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star.fa-star-o {
+  color: #adb5bd;
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star.fa-star.ageworld {
+  color: #ffd700;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star.fa-star.agenational {
+  color: #c0c0c0;
+  text-shadow: 0 0 5px rgba(192, 192, 192, 0.5);
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star.fa-star.ageregional {
+  color: #cd7f32;
+  text-shadow: 0 0 5px rgba(205, 127, 50, 0.5);
+}
+.team-requirement-bar .requirement-progress .requirement-stats .requirement-star.fa-star.ageGradedRequirementMetStar {
+  animation: starGlow 1.5s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+@keyframes starGlow {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  100% {
+    transform: scale(1.1);
+    filter: brightness(1.3);
+  }
+}
+.gender-filter-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+.gender-filter-container .btn-group .btn {
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.gender-filter-container .btn-group .btn.btn-primary {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #333;
+}
+.gender-filter-container .btn-group .btn.btn-primary:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.gender-filter-container .btn-group .btn.btn-outline-primary {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+.gender-filter-container .btn-group .btn.btn-outline-primary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.gender-filter-container .btn-group .btn i {
+  margin-right: 3px;
+  font-size: 10px;
+}
+.gender-filter-container .filter-count {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .temp-adjustment-tool table {

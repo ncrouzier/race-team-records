@@ -21,25 +21,6 @@ angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', '
         $scope.updateCachedStats();
     });
 
-    // Migrate "cross country" to "trail" for existing data
-    $scope.migrateCrossCountryToTrail = function() {
-        if (!$scope.racetypesList) return;
-        
-        var needsUpdate = false;
-        $scope.racetypesList.forEach(function(racetype) {
-            if (racetype.surface === 'cross country') {
-                racetype.surface = 'trail';
-                needsUpdate = true;
-            }
-        });
-        
-        // If any changes were made, update the backend
-        if (needsUpdate) {
-            console.log('Migrating "cross country" to "trail" for race types');
-            // You might want to add a backend call here to persist the changes
-            // For now, we'll just update the local data
-        }
-    };
 
     // Update cached statistics when racetypesList changes
     $scope.updateCachedStats = function() {

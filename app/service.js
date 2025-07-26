@@ -22,7 +22,6 @@ async function getCachedSystemInfo() {
     
     // Return cached data if it's still fresh
     if (systemInfoCache.data && (now - systemInfoCache.lastUpdated) < systemInfoCache.cacheDuration) {
-        console.log("cached system info");
         return systemInfoCache.data;
     }
     

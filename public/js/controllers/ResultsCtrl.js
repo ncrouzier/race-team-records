@@ -946,6 +946,25 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
           });
       };
 
+    // Gender filter functionality
+    $scope.genderFilter = null;
+
+    $scope.setGenderFilter = function(gender) {
+        $scope.genderFilter = gender;
+    };
+
+    $scope.getFilteredResults = function() {
+        if (!$scope.genderFilter) {
+            return $scope.raceinfo.results;
+        }
+        return $scope.raceinfo.results.filter(function(result) {
+            // Check if any member in the result has the specified gender
+            return result.members && result.members.some(function(member) {
+                return member.sex === $scope.genderFilter;
+            });
+        });
+    };
+
 
 
 }]);

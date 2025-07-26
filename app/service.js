@@ -656,9 +656,9 @@ module.exports = {
             await this.updateMembersInResults(member);
         }
 
-        // Ensure all races have the proper location achievement
-        console.log(`Processing location achievements...`);
-        await this.updateAllLocationAchievements();
+        // Ensure all races have the proper location achievement. Don't do this for now
+        // console.log(`Processing location achievements...`);
+        // await this.updateAllLocationAchievements();
         
         const endTime = new Date();
         const duration = endTime - startTime;

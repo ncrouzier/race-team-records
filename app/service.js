@@ -653,7 +653,9 @@ module.exports = {
                 
         for (const member of members) {
             await this.updateTeamRequirementStats(member);
-            await this.updateMembersInResults(member);
+
+            //don't do this for now
+            // await this.updateMembersInResults(member);
         }
 
         // Ensure all races have the proper location achievement. Don't do this for now

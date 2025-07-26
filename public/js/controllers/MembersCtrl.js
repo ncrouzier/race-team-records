@@ -425,7 +425,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         await $scope.getMembers( $scope.paramModel);
 
         if($stateParams.member && $stateParams.member.trim() !== ''){
-            MembersService.getMembers({"filters[name]": $stateParams.member}).then(function(members) {                
+            MembersService.getMembers({"filters[username]": $stateParams.member}).then(function(members) {                
                 if (members && members.length > 0 && members[0]){
                     // Load member data without navigating
                     $scope.loadMemberData(members[0]);

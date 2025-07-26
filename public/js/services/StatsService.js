@@ -33,7 +33,7 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
         }
         
         // Try IndexedDB       
-        var date = new Date(sysinfo.resultUpdate);        
+        var date = new Date(sysinfo.overallUpdate);        
         var promise = db.statsCache.get(year).then(function(entry) {            
             if (entry && date.getTime()  === new Date(entry.date).getTime()  && entry.stats) {
                 MemoryCacheService.set(CACHE_NAMES.STATS, year, entry.stats);

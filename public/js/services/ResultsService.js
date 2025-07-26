@@ -326,7 +326,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             });
             
             var db = DexieService;
-            var date = new Date(sysinfo.resultUpdate);
+            var date = new Date(sysinfo.overallUpdate);
             
             try {
                 await db.open();

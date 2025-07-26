@@ -178,6 +178,9 @@ module.exports = async function(app, qs, passport, async, _) {
                     $eq: [{ $toLower: { $concat: ['$firstname', '$lastname'] } }, filters.name.toLowerCase()]
                   }});
             }
+            if (filters.username) {
+                query.where('username').equals(filters.username);
+            }
             if (filters.firstname) {
                 query.where('firstname').equals(filters.firstname);
             }
@@ -2287,9 +2290,9 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
     app.get('*', function(req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
-        console.log('Request URL:', req.url);
-        console.log('Request headers:', req.headers.host);
-        console.log('NODE_ENV:', process.env.NODE_ENV);
+        // console.log('Request URL:', req.url);
+        // console.log('Request headers:', req.headers.host);
+        // console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
             user: req.user,
             scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'

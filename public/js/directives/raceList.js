@@ -5,7 +5,8 @@ angular.module('mcrrcApp').directive('raceList', function() {
             racesList: '=',
             searchQuery: '=',
             resultsTableProperties: '=',
-            user: '='
+            user: '=',
+            loading: '='
         },
         templateUrl: 'views/directives/raceList.html',
         controller: function($scope,dialogs,ResultsService) {

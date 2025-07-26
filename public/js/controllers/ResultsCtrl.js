@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location, $q) {
     
 
     $scope.authService = AuthService;
@@ -110,28 +110,63 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.racesList = [];
     $scope.expandedRaces = {}; 
 
-    ResultsService.getRaceResultsWithCacheSupport({
-        "limit": 100,
-        "sort": '-racedate -order racename',
-        "preload":true
-    }).then(function(races) {
-        $scope.racesList = races;        
-        //now load the whole thing unless the initial call return the cache version (>200 res).
-        if (races.length < 200){
-            ResultsService.getRaceResultsWithCacheSupport({
-                "sort": '-racedate -order racename',
-                "preload":false
-            }).then(function(races) {
-                $scope.racesList = races;
-            });
-        }
-    });
+    // Loading states for better UX
+    $scope.loadingStates = {
+        races: false
+    };
+    
+    // Error state
+    $scope.loadingError = false;
 
-    // ResultsService.getRaceResultsWithCacheSupport({
-    //     "sort": '-racedate -order racename'
-    // }).then(function(races) {
-    //     $scope.racesList = races;
-    // });
+    $scope.loadRaces = function() {
+        $scope.loadingStates.races = true;
+        $scope.loadingError = false; // Clear any previous error state
+        
+        // Add a timeout to prevent infinite loading
+        var timeoutPromise = $q(function(resolve, reject) {
+            setTimeout(function() {
+                reject(new Error('Loading timeout - taking too long'));
+            }, 30000); // 30 second timeout
+        });
+        
+        var loadPromise = ResultsService.getRaceResultsWithCacheSupport({
+            "limit": 100,
+            "sort": '-racedate -order racename',
+            "preload":true
+        }).then(function(races) {
+            $scope.racesList = races;        
+            
+            //now load the whole thing unless the initial call return the cache version (>200 res).
+            if (races.length < 200){
+                return ResultsService.getRaceResultsWithCacheSupport({
+                    "sort": '-racedate -order racename',
+                    "preload":false
+                }).then(function(fullRaces) {
+                    $scope.racesList = fullRaces;
+                    return fullRaces;
+                });
+            } else {
+                return races;
+            }
+        }).then(function(finalRaces) {
+            $scope.loadingStates.races = false;
+            return finalRaces;
+        }).catch(function(error) {
+            $scope.loadingStates.races = false;
+            $scope.loadingError = true; // Set error state
+            throw error;
+        });
+        
+        // Race between the load promise and timeout
+        return $q.race([loadPromise, timeoutPromise]).catch(function(error) {
+            $scope.loadingStates.races = false;
+            $scope.loadingError = true; // Set error state
+            throw error;
+        });
+    };
+
+    // Initialize races when controller loads
+    $scope.loadRaces();
 
     $scope.expand = function(raceinfo) {
         if (raceinfo) {

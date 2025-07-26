@@ -1,10 +1,18 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'UtilsService', '$uibModal', '$q','localStorageService','$state','NotificationService', function(Restangular, UtilsService, $uibModal, $q, localStorageService, $state,NotificationService) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q','localStorageService','$state','NotificationService', 'DexieService', 'MemoryCacheService', function(Restangular, SystemService, $uibModal, $q, localStorageService, $state,NotificationService, DexieService, MemoryCacheService) {
 
     var factory = {};
     var results = Restangular.all('results');
     var racetypes = Restangular.all('racetypes');
     var races = Restangular.all('races');
     var systeminfos = Restangular.all('systeminfos');
+
+    // Cache names for MemoryCacheService
+    var CACHE_NAMES = {
+        RACE_RESULTS: 'raceResults'
+    };
+
+    // In-memory cache for race results
+    var raceResultsMemoryCache = {};
 
     function isRestangularized(obj) {
         return obj && typeof obj.getRestangularUrl === 'function';
@@ -46,7 +54,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
 
     //retrieve results
     factory.getResultsWithCacheSupport = async function (params) {
-        // var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
+        // var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
         //     return sysinfo;
         // });
 
@@ -293,7 +301,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
                 return races;
             },
             function(res) {
-                console.log('Error: ' + res.status);
+                console.error('Error in getRacesInfos:', res.status);
+                throw res; // Re-throw the error to ensure the promise is rejected
             });
     };
 
@@ -309,43 +318,81 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Ut
     };
 
     factory.getRaceResultsWithCacheSupport = async function (params) {
-        var sysinfo = await UtilsService.getSystemInfo('mcrrc').then(function (sysinfo) {
-            return sysinfo;
-        });
-
-        var db = new Dexie("mcrrcAppDatabase");
-        db.version(1).stores({
-            races: 'instance,date,data'
-        });
-        var date = new Date(sysinfo.resultUpdate);
-
-        await db.open();
-        var cache, key;
-        if (params.type === "last30"){
-            key = "last30";
-        }else{
-            key = "current";
-        }
-        cache = await getKey(db.races,key);            
-        
-        if (cache === undefined || date > new Date(cache.date)) {
-            // console.log("loading " + params.filters);
-            return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
-                if (!params.preload) {
-                    // console.log("saving cache",key);
-                    db.races.put({ instance: key, date: date, data: JSON.stringify(resultsFromDatabase) }).then(function (tata) {
-                    });
-                }else{
-                    // console.log("not saving cache",key);
-                }
-                return resultsFromDatabase;
+        try {
+            var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
+                return sysinfo;
+            }).catch(function(error) {
+                throw error;
             });
-        } else {
-            // console.log("using cache", key);
-            var res = $q(function (resolve, reject) {
-                resolve(Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true));
-            });
-            return res;
+            
+            var db = DexieService;
+            var date = new Date(sysinfo.resultUpdate);
+            
+            try {
+                await db.open();
+            } catch (error) {
+                throw error;
+            }
+            
+            var cache, key;
+            if (params.type === "last30"){
+                key = "last30";
+            }else{
+                key = "current";
+            }
+            // Use params as part of the memory cache key for more granularity
+            var memKey = key + ':' + JSON.stringify(params || {});
+            
+            // Check in-memory cache first using MemoryCacheService
+            var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKey);
+            if (memCacheEntry && memCacheEntry.date && date.getTime() === new Date(memCacheEntry.date).getTime()) {
+                return $q.resolve(memCacheEntry.data);
+            }
+            
+            try {
+                cache = await getKey(db.races,key);
+            } catch (error) {
+                // Continue to API call even if IndexedDB fails
+                cache = undefined;
+            }
+            
+            if (cache === undefined || date > new Date(cache.date)) {
+                return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
+                    if (!params.preload) {
+                        try {
+                            db.races.put({ instance: key, date: date, data: JSON.stringify(resultsFromDatabase) }).then(function () {
+                                // IndexedDB saved successfully
+                            }).catch(function(error) {
+                                // Don't throw here, just log the error
+                            });
+                        } catch (error) {
+                            // Don't throw here, just log the error
+                        }
+                    }
+                    
+                    // Update memory cache via MemoryCacheService
+                    var cacheData = { date: date, data: resultsFromDatabase };
+                    MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
+                    return resultsFromDatabase;
+                }).catch(function(error) {
+                    throw error;
+                });
+            } else {
+                var res = $q(function (resolve, reject) {
+                    try {
+                        var data = Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true);
+                        // Update memory cache via MemoryCacheService
+                        var cacheData = { date: cache.date, data: data };
+                        MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
+                        resolve(data);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+                return res;
+            }
+        } catch (error) {
+            throw error;
         }
     };
 

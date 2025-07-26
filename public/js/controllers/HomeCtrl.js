@@ -9,7 +9,14 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
 
     ResultsService.getRaceResultsWithCacheSupport({
         "filters": {
-            "dateFrom": new Date().setDate((new Date()).getDate() - 31)
+            "dateFrom": (function() {
+                // Calculate 31 days ago at UTC midnight for consistent cache keys
+                var now = new Date();
+                var thirtyOneDaysAgo = new Date(now.getTime() - 31 * 24 * 60 * 60 * 1000);
+                // Set to UTC midnight (00:00:00.000)
+                thirtyOneDaysAgo.setUTCHours(0, 0, 0, 0);
+                return thirtyOneDaysAgo.getTime();
+            })()
         },
         "sort": '-racedate -order racename',
         "type": 'last30'

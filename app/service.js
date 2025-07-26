@@ -9,8 +9,102 @@ const Result = require('./models/result');
 const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
 
+// Backend memory cache for system info
+var systemInfoCache = {
+    data: null,
+    lastUpdated: 0,
+    cacheDuration: 60000 // 1 minute cache duration
+};
+
+// Standalone function to get cached system info
+async function getCachedSystemInfo() {
+    const now = Date.now();
+    
+    // Return cached data if it's still fresh
+    if (systemInfoCache.data && (now - systemInfoCache.lastUpdated) < systemInfoCache.cacheDuration) {
+        console.log("cached system info");
+        return systemInfoCache.data;
+    }
+    
+    // Fetch fresh data from database
+    try {
+        const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+        if (systemInfo) {
+            systemInfoCache.data = systemInfo;
+            systemInfoCache.lastUpdated = now;
+        }
+        return systemInfo;
+    } catch (error) {
+        console.error('Error fetching system info:', error);
+        return systemInfoCache.data; // Return cached data as fallback
+    }
+}
+
 module.exports = {
 
+    // Initialize system info cache
+    initializeSystemInfoCache: async function() {
+        try {
+            const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+            if (systemInfo) {
+                systemInfoCache.data = systemInfo;
+                systemInfoCache.lastUpdated = Date.now();
+                console.log('System info cache initialized');
+            }
+        } catch (error) {
+            console.error('Error initializing system info cache:', error);
+        }
+    },
+
+    // Get cached system info or fetch from database if needed
+    getCachedSystemInfo: async function() {
+        return await getCachedSystemInfo();
+    },
+
+    // Update system info cache when changes are made
+    updateSystemInfoCache: async function() {
+        try {
+            const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+            if (systemInfo) {
+                systemInfoCache.data = systemInfo;
+                systemInfoCache.lastUpdated = Date.now();
+            }
+        } catch (error) {
+            console.error('Error updating system info cache:', error);
+        }
+    },
+
+    // Middleware to add latest resultUpdate date to response headers
+    addSystemInfoHeaders: async function(req, res, next) {
+        try {
+            // Get the latest system info from cache
+            const systemInfo = await getCachedSystemInfo();
+            if (systemInfo) {
+                // Add the individual update dates to response headers
+                res.set('X-Result-Update', systemInfo.resultUpdate ? systemInfo.resultUpdate.toISOString() : '');
+                res.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
+                res.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
+                res.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
+                
+                // Calculate the latest overall update date
+                const dates = [
+                    systemInfo.resultUpdate,
+                    systemInfo.raceUpdate,
+                    systemInfo.racetypeUpdate,
+                    systemInfo.memberUpdate
+                ].filter(date => date); // Remove null/undefined dates
+                
+                if (dates.length > 0) {
+                    const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
+                    res.set('X-Overall-Update', latestDate.toISOString());
+                }
+            }
+            next();
+        } catch (error) {
+            console.error('Error adding system info headers:', error);
+            next(); // Continue even if there's an error
+        }
+    },
 
     updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
@@ -551,6 +645,10 @@ module.exports = {
     startUpUpdate: async function () {
         const startTime = new Date();
         console.log(`[${startTime.toISOString()}] Starting startUpUpdate`);        
+        
+        // Initialize system info cache
+        await this.initializeSystemInfoCache();
+        
         const members = await Member.find();
         console.log(`Processing ${members.length} members...`);
                 

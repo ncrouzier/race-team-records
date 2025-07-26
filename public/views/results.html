@@ -19,11 +19,29 @@
 
     <div class="row">
         <div class="col-md-12">
+            <!-- Loading indicator -->
+            <div ng-if="loadingStates.races" class="text-center" style="padding: 40px;">
+                <i class="fa fa-spinner fa-spin fa-3x" style="color: #006687;"></i>
+                <p style="margin-top: 15px; color: #666;">Loading race results...</p>
+            </div>
+            
+            <!-- Error state -->
+            <div ng-if="loadingError" class="text-center" style="padding: 40px;">
+                <i class="fa fa-exclamation-triangle fa-3x" style="color: #dc3545;"></i>
+                <p style="margin-top: 15px; color: #666;">Failed to load race results</p>
+                <button class="btn btn-primary" ng-click="loadRaces()" style="margin-top: 10px;">
+                    <i class="fa fa-refresh"></i> Try Again
+                </button>
+            </div>
+            
+            <!-- Race list (only show when not loading and no error) -->
             <race-list 
+                ng-if="!loadingStates.races && !loadingError"
                 races-list="racesList"
                 search-query="searchQuery"
                 results-table-properties="resultsTableProperties"
-                user="user">
+                user="user"
+                loading="loadingStates.races">
             </race-list>
         </div>
     </div>

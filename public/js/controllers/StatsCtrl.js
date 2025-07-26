@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'dialogs','$filter', '$state', function($scope, AuthService, ResultsService, MembersService, UtilsService, dialogs,$filter, $state) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'StatsService', 'dialogs','$filter', '$state', 'MemoryCacheService', function($scope, AuthService, ResultsService, MembersService, UtilsService, StatsService, dialogs,$filter, $state, MemoryCacheService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -15,19 +15,20 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.attendanceStats.selectedAttendanceRaces = [];
     $scope.attendanceStats.year = "All Time";
 
-    // Loading states
+    // Loading states for better UX
     $scope.loadingStates = {
         raceStats: false,
         miscStats: false,
         attendanceStats: false,
-        participationStats: false
+        participationStats: false,
+        preloadingYears: false
     };
 
     $scope.field = 'firstname';
 
     $scope.current = {memberStatus:"current"};
+    
     $scope.past = {memberStatus:"past"};
-    $scope.none = {};
 
     $scope.statusChoice =$scope.current;
     $scope.reverseSort = false; 
@@ -41,27 +42,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     $scope.participationStats = {};
 
-    $scope.getMapStats = function() {
-
-    };
-
-
     $scope.partdates = {};
     var start = new Date(Date.UTC(new Date().getFullYear(),0,1,0,0,0,0));
-    // start.setFullYear(new Date().getFullYear(), 0, 1);
-    // start.setHours(0, 0, 0, 0);
     var end = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0));
-    // end.setUTCFullYear(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-    // end.setUTCHours(0, 0, 0, 0);    
     $scope.partdates.participationStatsStart =  start;
     $scope.partdates.participationStatsEnd = end;
-    // make sure dates are always UTC
-    // $scope.$watch('partdates.participationStatsStart ', function (date) {
-    //     $scope.partdates.participationStatsStart = $filter('date')($scope.partdates.participationStatsStart, 'yyyy-MM-dd', 'UTC');
-    // });
-    // $scope.$watch('partdates.participationStatsEnd ', function (date) {
-    //     $scope.partdates.participationStatsEnd = $filter('date')($scope.partdates.participationStatsEnd, 'yyyy-MM-dd', 'UTC');        
-    // });
 
     $scope.participationStatsStartPicker = {};
     $scope.openParticipationStatsStartPicker = function($event) {
@@ -85,14 +70,16 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.getParticipationStats = function () {
         $scope.loadingStates.participationStats = true;
         
-        MembersService.getParticipation({
-            "startdate": new Date($scope.partdates.participationStatsStart).getTime(),
-            "enddate": new Date($scope.partdates.participationStatsEnd).getTime()
-        }).then(function (stats) {
+        return StatsService.getParticipationStats(
+            $scope.partdates.participationStatsStart,
+            $scope.partdates.participationStatsEnd
+        ).then(function (stats) {
             $scope.participationStats = stats;
             $scope.loadingStates.participationStats = false;
+            return stats;
         }).catch(function(error) {
             $scope.loadingStates.participationStats = false;
+            throw error;
         });
     };
 
@@ -101,13 +88,14 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.loadingStates.raceStats = true;
 
         var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
-        var toDate = new Date().getTime();
+        var now = new Date();
+        var toDate = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
         if ($scope.raceStats.year !== "All Time") {
             fromDate = new Date(Date.UTC($scope.raceStats.year, 0, 1)).getTime();
-            toDate = new Date(Date.UTC($scope.raceStats.year + 1, 0, 1)).getTime();
+            toDate = Date.UTC($scope.raceStats.year + 1, 0, 1, 0, 0, 0, 0);
         }
 
-        ResultsService.getRacesInfos({
+        return StatsService.getRacesInfos({
             "limit": 10,
             "sort": '-count',
             "filters": {
@@ -126,449 +114,79 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             
             $scope.racesList = races;
             $scope.loadingStates.raceStats = false;
+            return races;
         }).catch(function(error) {
             $scope.loadingStates.raceStats = false;
+            throw error;
         });
-    };
-
-    $scope.calculateTeamRaceTypeBreakdown = function(races) {
-        const raceTypes = {};
-        let total = 0;
-        races.forEach(function(race) {
-            const raceType = race.racetype || {};
-            let category = 'other';
-            let name = 'Other';
-            // If any result has multiple members, categorize as Other
-            let hasMultiMemberResult = false;
-            if (race.results && race.results.length > 0) {
-                for (let i = 0; i < race.results.length; i++) {
-                    if (race.results[i].members && race.results[i].members.length > 1) {
-                        hasMultiMemberResult = true;
-                        break;
-                    }
-                }
-            }
-            if (hasMultiMemberResult) {
-                category = 'other';
-                name = 'Other';
-            } else 
-            if (raceType.isVariable) {
-                category = 'other';
-                name = 'Other';
-            } else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {
-                if (raceType.isVariable) {
-                    category = 'other';
-                    name = 'Other';
-                } else {
-                    category = raceType.name;
-                    name = raceType.name;
-                }
-            } else {
-                category = 'other';
-                name = 'Other';
-            }
-            const key = category + '|' + name;
-            raceTypes[key] = raceTypes[key] || { category: category, name: name, count: 0 };
-            raceTypes[key].count++;
-            total++;
-        });
-        const colors = [
-            '#007bff', // blue
-            '#28a745', // green
-            '#ffc107', // yellow
-            '#fd7e14', // orange
-            '#e83e8c', // pink
-            '#dc3545', // red
-            '#6f42c1', // purple
-            '#6c757d', // gray
-            '#20c997', // teal
-            '#17a2b8'  // cyan
-        ];
-        $scope.teamRaceTypeBreakdown = Object.values(raceTypes).map(function(type, idx) {
-            return {
-                category: type.category,
-                name: type.name,
-                count: type.count,
-                percentage: total > 0 ? Math.round((type.count / total) * 100) : 0,
-                color: colors[idx % colors.length]
-            };
-        }).sort(function(a, b) { return b.count - a.count; }).slice(0,10);
     };
 
     $scope.getMiscStats = function() {
         $scope.loadingStates.miscStats = true;
         
-        var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
-        var toDate = new Date().getTime();
-        if ($scope.miscStats.year !== "All Time") {
-            fromDate = new Date(Date.UTC($scope.miscStats.year, 0, 1)).getTime();
-            toDate = new Date(Date.UTC($scope.miscStats.year + 1, 0, 1)).getTime();
-        }
-
-        // Get all race data with results (cached) and filter on client side
-        ResultsService.getRaceResultsWithCacheSupport({
-            "sort": '-racedate -order racename',
-            "preload": false
-        }).then(function(races) {
+        StatsService.getStats($scope.miscStats.year).then(function(stats) {
+            // Update scope with stats from service
+            $scope.miscStats = {
+                year: $scope.miscStats.year,
+                ...stats.basicStats,
+                ...stats.generalStats,
+                ...stats.teamMemberStats
+            };
+            $scope.teamRaceTypeBreakdown = stats.teamRaceTypeBreakdown;
+            $scope.stateStats = stats.stateStats;
+            $scope.countryStats = stats.countryStats;
             
-            // Filter races by date on client side since cache doesn't respect server filters
-            var filteredRaces = races.filter(function(race) {
-                if ($scope.miscStats.year === "All Time") {
-                    return true; // Include all races for "All Time"
-                }
-                
-                // Use UTC methods to avoid timezone conversion issues
-                var raceDate = new Date(race.racedate);
-                var raceYear = raceDate.getUTCFullYear();
-                var selectedYear = parseInt($scope.miscStats.year);
-                              
-                
-                return raceYear === selectedYear;
-            });
-            
-            $scope.calculateTeamMemberStats(filteredRaces);
-            $scope.calculateGeneralStats(filteredRaces);
-            $scope.calculateBasicStats(filteredRaces);
-            $scope.calculateTeamRaceTypeBreakdown(filteredRaces);
+            // Reset loading state
             $scope.loadingStates.miscStats = false;
+            
+            // Force digest cycle to update UI
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            
+            return stats;
         }).catch(function(error) {
             $scope.loadingStates.miscStats = false;
-        });
-    };
-
-    $scope.calculateTeamMemberStats = function(races) {
-        var memberStats = {};
-        var memberLocations = {};
-        var memberRaceCounts = {};
-        var memberMiles = {};
-        var memberWins = {};
-        var memberAgeGrades = {};
-        var memberYears = {};
-        var raceTurnout = {};
-        // State stats aggregation
-        var stateStats = {};
-        // Country stats aggregation
-        var countryStats = {};
-
-        // Process all races and results
-        races.forEach(function(race) {
-            // State stats: count each race once per state
-            if (race.location && race.location.state && race.location.country === 'USA') {
-                var stateCode = race.location.state;
-                if (!stateStats[stateCode]) {
-                    stateStats[stateCode] = {
-                        code: stateCode,
-                        name: UtilsService.getStateNameFromCode(stateCode),
-                        flag: UtilsService.getStateFlag(stateCode),
-                        count: 0
-                    };
-                }
-                stateStats[stateCode].count++;
+            
+            // Force digest cycle to update UI
+            if (!$scope.$$phase) {
+                $scope.$apply();
             }
             
-            // Country stats: count each race once per country
-            if (race.location && race.location.country) {
-                var countryCode = race.location.country;
-                if (!countryStats[countryCode]) {
-                    countryStats[countryCode] = {
-                        code: countryCode,
-                        name: UtilsService.getCountryNameFromCode(countryCode),
-                        flag: UtilsService.getCountryFlag(countryCode),
-                        count: 0
-                    };
-                }
-                countryStats[countryCode].count++;
-            }
-            if (race.results && race.results.length > 0) {
-                // Count unique team members for this race
-                var uniqueMembers = new Set();
-                race.results.forEach(function(result) {
-                    result.members.forEach(function(member) {
-                        uniqueMembers.add(member._id);
-                    });
-                });
-                
-                raceTurnout[race._id] = {
-                    _id: race._id,
-                    racename: race.racename,
-                    racedate: race.racedate,
-                    racetype: race.racetype,
-                    location: race.location,
-                    teamMembers: uniqueMembers.size
-                };
-                
-                race.results.forEach(function(result) {
-                    result.members.forEach(function(member) {
-                        var memberId = member._id;
-                        
-                        // Initialize member stats if not exists
-                        if (!memberStats[memberId]) {
-                            memberStats[memberId] = {
-                                firstname: member.firstname,
-                                lastname: member.lastname,
-                                username: member.username,
-                                races: 0,
-                                miles: 0,
-                                wins: 0,
-                                totalAgeGrade: 0,
-                                ageGradeCount: 0,
-                                bestAgeGrade: 0,
-                                bestAgeGradeRace: '',
-                                years: new Set(),
-                                locations: new Set(),
-                                states: new Set(),
-                                countries: new Set()
-                            };
-                        }
-
-                        // Count races
-                        memberStats[memberId].races++;
-                        memberRaceCounts[memberId] = (memberRaceCounts[memberId] || 0) + 1;
-
-                        // Count parkrun races
-                        if (race.racename && race.racename.toLowerCase().includes('parkrun')) {
-                            memberStats[memberId].parkrunRaces = (memberStats[memberId].parkrunRaces || 0) + 1;
-                        }
-
-                        // Count miles (for non-multisport races)
-                        if (!race.isMultisport && race.racetype && race.racetype.miles) {
-                            memberStats[memberId].miles += race.racetype.miles;
-                            memberMiles[memberId] = (memberMiles[memberId] || 0) + race.racetype.miles;
-                        }
-
-                        // Count wins
-                        if (result.ranking && (result.ranking.overallrank === 1 || result.ranking.genderrank === 1)) {
-                            memberStats[memberId].wins++;
-                            memberWins[memberId] = (memberWins[memberId] || 0) + 1;
-                        }
-
-                        // Track age grades
-                        if (result.agegrade) {
-                            memberStats[memberId].totalAgeGrade += result.agegrade;
-                            memberStats[memberId].ageGradeCount++;
-                            if (result.agegrade > memberStats[memberId].bestAgeGrade) {
-                                memberStats[memberId].bestAgeGrade = result.agegrade;
-                                memberStats[memberId].bestAgeGradeRace = race;
-                            }
-                        }
-
-                        // Track years
-                        var raceYear = new Date(race.racedate).getUTCFullYear();
-                        memberStats[memberId].years.add(raceYear);
-                        memberYears[memberId] = (memberYears[memberId] || new Set()).add(raceYear);
-
-                        // Track locations
-                        var locationKey = race.location.country + (race.location.state ? ' - ' + race.location.state : '');
-                        memberStats[memberId].locations.add(locationKey);
-                        memberStats[memberId].states.add(race.location.state || '');
-                        memberStats[memberId].countries.add(race.location.country);
-                        
-                        if (!memberLocations[memberId]) {
-                            memberLocations[memberId] = new Set();
-                        }
-                        memberLocations[memberId].add(locationKey);
-                    });
-                });
-            }
+            throw error;
         });
-
-        // Set stateStats on scope, sorted by count descending
-        $scope.stateStats = Object.values(stateStats).sort(function(a, b) { return b.count - a.count; });
-        
-        // Set countryStats on scope, sorted by count descending
-        $scope.countryStats = Object.values(countryStats).sort(function(a, b) { return b.count - a.count; });
-
-        // Convert to arrays and sort
-        var memberStatsArray = Object.keys(memberStats).map(function(memberId) {
-            var stats = memberStats[memberId];
-            return {
-                id: memberId,
-                name: stats.firstname + ' ' + stats.lastname,
-                username: stats.username,
-                races: stats.races,
-                miles: Math.round(stats.miles * 100) / 100,
-                wins: stats.wins,
-                avgAgeGrade: stats.ageGradeCount > 0 ? Math.round((stats.totalAgeGrade / stats.ageGradeCount) * 100) / 100 : 0,
-                bestAgeGrade: Math.round(stats.bestAgeGrade * 100) / 100,
-                bestAgeGradeRace: stats.bestAgeGradeRace,
-                yearsRacing: stats.years.size,
-                uniqueLocations: stats.locations.size,
-                uniqueStates: stats.states.size,
-                uniqueCountries: stats.countries.size,
-                avgRacesPerYear: Math.round((stats.races / stats.years.size) * 100) / 100,
-                avgMilesPerRace: stats.races > 0 ? Math.round((stats.miles / stats.races) * 100) / 100 : 0,
-                parkrunRaces: stats.parkrunRaces || 0
-            };
-        });
-
-        // Sort by different criteria
-        $scope.miscStats.mostRaces = memberStatsArray
-            .sort(function(a, b) { return b.races - a.races; })
-            .slice(0, 10);
-
-        $scope.miscStats.mostMiles = memberStatsArray
-            .sort(function(a, b) { return b.miles - a.miles; })
-            .slice(0, 10);
-
-        $scope.miscStats.mostWins = memberStatsArray
-            .filter(function(member) { return member.wins > 0; })
-            .sort(function(a, b) { return b.wins - a.wins; })
-            .slice(0, 10);
-
-        $scope.miscStats.mostTraveled = memberStatsArray
-            .sort(function(a, b) { return b.uniqueLocations - a.uniqueLocations; })
-            .slice(0, 10);
-
-        $scope.miscStats.mostCountries = memberStatsArray
-            .sort(function(a, b) { return b.uniqueCountries - a.uniqueCountries; })
-            .slice(0, 10);
-
-        $scope.miscStats.bestAgeGrades = memberStatsArray
-            .filter(function(member) { return member.bestAgeGrade > 0; })
-            .sort(function(a, b) { return b.bestAgeGrade - a.bestAgeGrade; })
-            .slice(0, 10);
-
-        $scope.miscStats.mostConsistent = memberStatsArray
-            .filter(function(member) { return member.yearsRacing > 1; })
-            .sort(function(a, b) { return b.avgRacesPerYear - a.avgRacesPerYear; })
-            .slice(0, 10);
-
-        // Calculate best turnout races
-        var raceTurnoutArray = Object.keys(raceTurnout).map(function(raceId) {
-            return raceTurnout[raceId];
-        });
-        
-        $scope.miscStats.bestTurnout = raceTurnoutArray
-            .sort(function(a, b) { return b.teamMembers - a.teamMembers; })
-            .slice(0, 10);
-
-        // Overall team stats
-        $scope.miscStats.totalMembers = memberStatsArray.length;
-        $scope.miscStats.avgRacesPerMember = memberStatsArray.length > 0 ? 
-            Math.round((memberStatsArray.reduce(function(sum, member) { return sum + member.races; }, 0) / memberStatsArray.length) * 100) / 100 : 0;
-        $scope.miscStats.avgMilesPerMember = memberStatsArray.length > 0 ? 
-            Math.round((memberStatsArray.reduce(function(sum, member) { return sum + member.miles; }, 0) / memberStatsArray.length) * 100) / 100 : 0;
-    };
-
-    $scope.calculateGeneralStats = function(races) {
-        // Calculate most popular race distance
-        var raceTypeCounts = {};
-        var raceTypeNames = {};
-        
-        races.forEach(function(race) {
-            if (race.racetype && race.racetype.name) {
-                var raceTypeName = race.racetype.name;
-                if (!raceTypeCounts[raceTypeName]) {
-                    raceTypeCounts[raceTypeName] = 0;
-                    raceTypeNames[raceTypeName] = raceTypeName;
-                }
-                raceTypeCounts[raceTypeName]++;
-            }
-        });
-        
-        // Find the most popular race type
-        var mostPopularRaceType = '';
-        var maxCount = 0;
-        Object.keys(raceTypeCounts).forEach(function(raceType) {
-            if (raceTypeCounts[raceType] > maxCount) {
-                maxCount = raceTypeCounts[raceType];
-                mostPopularRaceType = raceType;
-            }
-        });
-        
-        $scope.miscStats.mostPopularRaceDistance = mostPopularRaceType;
-        $scope.miscStats.mostPopularRaceCount = maxCount;
-    };
-
-    $scope.calculateBasicStats = function(races) {
-        var totalMiles = 0;
-        var totalResults = 0;
-        var totalWins = 0;
-
-        races.forEach(function(race) {
-            if (race.results && race.results.length > 0) {
-                race.results.forEach(function(result) {
-                    totalResults++;
-                    
-                    // Count miles (for non-multisport races)
-                    if (!race.isMultisport && race.racetype && race.racetype.miles) {
-                        totalMiles += race.racetype.miles;
-                    }
-                    
-                    // Count wins
-                    if (result.ranking && (result.ranking.overallrank === 1 || result.ranking.genderrank === 1)) {
-                        totalWins++;
-                    }
-                });
-            }
-        });
-        
-        $scope.miscStats.milesRaced = parseFloat(totalMiles).toFixed(2);
-        $scope.miscStats.resultsCount = totalResults;
-        $scope.miscStats.raceWon = totalWins;
     };
 
     $scope.getAttendanceStats = function() {
         $scope.loadingStates.attendanceStats = true;
         
-        ResultsService.getRaces({
-            sort: '-racedate'
-        }).then(function(races) {
-            $scope.attendanceRacesList = races;
-        });
+        return StatsService.getAttendanceStats().then(function(data) {
+            $scope.attendanceRacesList = data.races;
+            
+            var now = new Date();
+            var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),0,0,0);
+            var nowUTCDate = new Date(nowUTC);
+            data.members.forEach(function(m){
+                var date = new Date($filter('date')(m.dateofbirth, 'yyyy-MM-dd', 'UTC'));
+                var currentYear = new Date().getUTCFullYear();
+                var birthdayDate =  new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate(),0,0,0));
 
+                 if (birthdayDate.getTime() < nowUTCDate.getTime()){
+                     birthdayDate.setUTCFullYear(currentYear+1);
+                 }
+                 m.fromNow = birthdayDate.getTime() - nowUTCDate.getTime();
+            });
 
-        MembersService.getMembers({
-            // "filters[memberStatus]": "current",
-            sort: 'firstname',
-            select: '-bio -personalBests',
-        }).then(function(members) {
-          var now = new Date();
-          var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),0,0,0);
-          var nowUTCDate = new Date(nowUTC);
-          members.forEach(function(m){
-            var date = new Date($filter('date')(m.dateofbirth, 'yyyy-MM-dd', 'UTC'));
-            var currentYear = new Date().getUTCFullYear();
-            var birthdayDate =  new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate(),0,0,0));
-
-             if (birthdayDate.getTime() < nowUTCDate.getTime()){
-                 birthdayDate.setUTCFullYear(currentYear+1);
-             }
-             m.fromNow = birthdayDate.getTime() - nowUTCDate.getTime();
-          });
-
-            $scope.membersList = members;
+            $scope.membersList = data.members;
             $scope.loadingStates.attendanceStats = false;
+            return data;
         }).catch(function(error) {
             $scope.loadingStates.attendanceStats = false;
+            throw error;
         });
     };
 
 
-    $scope.getAttendanceStatsByYear = function(){
-        var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
-        var toDate = new Date().getTime();
-        if ($scope.attendanceStats.year !== "All Time") {
-            fromDate = new Date(Date.UTC($scope.attendanceStats.year, 0, 1)).getTime();
-            toDate = new Date(Date.UTC($scope.attendanceStats.year + 1, 0, 1)).getTime();
-        }
-
-        ResultsService.getRaces({
-            sort: '-racedate',
-            "filters": {
-                "dateFrom": fromDate,
-                "dateTo": toDate-1
-            }
-        }).then(function(races) {
-            if (races !== undefined && races.length >0){
-                $scope.attendanceStats.selectedAttendanceRaces = [];
-                $scope.attendanceStats.racedRaces = new Array($scope.membersList.length).fill(0);
-                for (i =0;i<races.length;i++){
-                    $scope.onSelectRace(races[i]);
-                }
-            }
-        });
-    };
 
     $scope.onSelectRace = function(item, model) {
         ResultsService.getResults({
@@ -649,12 +267,78 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $state.go('/results', { search: searchQuery });
     };
 
-    $scope.getRacesStats();
-    $scope.getMiscStats();
-    $scope.getAttendanceStats();
-    $scope.getParticipationStats();
+   
   
+    // Pre-load all years in the cache for faster year switching
+    $scope.preloadAllYears = function() {
+        $scope.loadingStates.preloadingYears = true;
+        
+        // Get all years except "All Time" (which is already loaded)
+        var yearsToPreload = $scope.yearsList.filter(function(year) {
+            return year !== "All Time";
+        });
+        
+        // Pre-load each year with a small delay to avoid overwhelming the system
+        var preloadPromises = yearsToPreload.map(function(year, index) {
+            return new Promise(function(resolve) {
+                // Add a small delay between requests to be more user-friendly
+                setTimeout(function() {
+                    StatsService.getStats(year).then(function(stats) {
+                        resolve({ year: year, stats: stats });
+                    }).catch(function(error) {
+                        console.error(`[StatsCtrl] Error pre-loading year ${year}:`, error);
+                        resolve({ year: year, error: error });
+                    });
+                }, index * 100); // 100ms delay between each request
+            });
+        });
+        
+        // Wait for all pre-loads to complete
+        Promise.all(preloadPromises).then(function(results) {
+            var successCount = results.filter(function(result) {
+                return !result.error;
+            }).length;
+            $scope.loadingStates.preloadingYears = false;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+        }).catch(function(error) {
+            console.error('[StatsCtrl] Error pre-loading years:', error);            
+            $scope.loadingStates.preloadingYears = false;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+        });
+    };
 
+    // On controller load, check for DB updates and clear caches if needed
+    // Use Promise-based loading to avoid race conditions and ensure proper timing
+    $scope.initializeStats = function() {
+        // Start all stats loading in parallel and wait for all to complete
+        Promise.all([
+            $scope.getRacesStats(),
+            $scope.getMiscStats(),
+            $scope.getAttendanceStats(),
+            $scope.getParticipationStats()
+        ]).then(function(results) {
+            // Trigger a digest cycle to ensure UI updates
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            
+            // Pre-load all years after main stats are loaded
+            $scope.preloadAllYears();
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+        }).catch(function(error) {
+            console.error('[StatsCtrl] Error loading stats:', error);
+        });
+    };
+    
+    // Initialize stats when controller loads
+    $scope.initializeStats();
+    
 
 
 }]);

@@ -1,9 +1,11 @@
-angular.module('mcrrcApp').factory('UtilsService',['Restangular', function(Restangular) {
+angular.module('mcrrcApp').factory('UtilsService',['Restangular','MemoryCacheService', function(Restangular,MemoryCacheService) {
 
     var locationinfos = Restangular.all('locationinfos');
     var factory = {};
     var user;
-
+    
+    // Cache name for MemoryCacheService
+    var CACHE_NAME = 'locationInfo';
 
     factory.calculateAge = function(birthday) { // birthday is a date
         var bd = new Date(birthday);
@@ -13,16 +15,6 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular', function(Resta
     };
 
 
-    factory.getSystemInfo = function(name) {
-        return Restangular.one('systeminfos', name).get().then(
-            function(systeminfo) {
-                return systeminfo;
-            },
-            function(res) {
-                console.log('Error: ' + res.status);
-            });
-    };
-
     factory.getAgeGrade = function(params){
         return Restangular.one('agegrade').get(params).then(function(agegrade) {
             return agegrade;
@@ -31,10 +23,17 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular', function(Resta
     };
 
     factory.getLocationInfo = function(params) {
+      var key = JSON.stringify(params);
+      var cachedData = MemoryCacheService.get(CACHE_NAME, key);
+      if (cachedData) {
+        return Promise.resolve(cachedData);
+      }
       return Restangular.one('locations').get(params).then(function(results) {
+          MemoryCacheService.set(CACHE_NAME, key, results);
           return results;
       });
     };
+
 
     factory.getStateNameFromCode = function(code) {
         if (!code) return null;

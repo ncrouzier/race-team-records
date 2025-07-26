@@ -8,6 +8,9 @@ const axios = require('axios');
 
 module.exports = async function(app, qs, passport, async, _) {
 
+    // Apply system info headers middleware to all API routes
+    app.use('/api', service.addSystemInfoHeaders);
+
     // =====================================
     // LOGIN ===============================
     // =====================================
@@ -140,13 +143,13 @@ module.exports = async function(app, qs, passport, async, _) {
     // get a system info
     app.get('/api/systeminfos/:name', async function(req, res) {
         try{
-            SystemInfo.findOne({
-                name: req.params.name
-            }).then(systeminfo => {
-                if (systeminfo) {
-                    res.json(systeminfo);
-                }
-            });
+            // Use cached system info for better performance
+            const systeminfo = await service.getCachedSystemInfo();
+            if (systeminfo && systeminfo.name === req.params.name) {
+                res.json(systeminfo);
+            } else {
+                res.status(404).json({ error: 'System info not found' });
+            }
         }catch (err){
             res.send(err);
         }
@@ -2270,9 +2273,14 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
     });
 
     app.get('*', function(req, res) {
+        const isDev = process.env.NODE_ENV !== 'production';
+        console.log('Request URL:', req.url);
+        console.log('Request headers:', req.headers.host);
+        console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
-            user: req.user
-        }); // load the index.ejs file
+            user: req.user,
+            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'
+        });
     });
 
     app.post('/api/extract-parkrun', service.isAdminLoggedIn, async function(req, res) {

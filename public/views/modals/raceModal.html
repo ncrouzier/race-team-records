@@ -6,39 +6,42 @@
         </div>
         
         <div class="race-details-section">
-            <div class="race-type-info">
-                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" 
-                      ng-bind-html="(raceinfo.distanceName +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
-                </span>
-                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" 
-                      ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
-                </span>
-                <span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
-                <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
-            </div>
-            
-            <div class="race-meta-info">
-                <div class="race-date">
-                    <i class="fa fa-calendar"></i>
-                    {{raceinfo.racedate | date:'yyyy-MM-dd':'UTC' }}
+            <div class="race-info-panel">
+                <div class="race-type-info">
+                    <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" 
+                          ng-bind-html="(raceinfo.distanceName +' <span class=\''+getSurfaceClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" 
+                          ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getSurfaceClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
+                    <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
                 </div>
-                <div class="race-location">
-                    <i class="fa fa-map-marker"></i>
-                    <span ng-if="raceinfo.location.state !== null">
-                        {{raceinfo.location.state}}
-                        <img ng-if="getStateFlag(raceinfo.location.state)" 
-                             ng-src="{{getStateFlag(raceinfo.location.state)}}" 
-                             alt="{{raceinfo.location.state}}" 
-                             class="location-flag"
-                             onerror="this.style.display='none'">
-                    </span>
-                    <span ng-if="raceinfo.location.state === null">
-                        {{raceinfo.location.country}}
-                        <span ng-if="getCountryFlag(raceinfo.location.country)" 
-                              class="location-flag-emoji">
-                            {{getCountryFlag(raceinfo.location.country)}}
+                
+                <div class="race-meta-info">
+                    <div class="meta-item">
+                        <i class="fa fa-calendar"></i>
+                        <span>{{raceinfo.racedate | date:'MMM d, yyyy':'UTC' }}</span>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="fa fa-map-marker"></i>
+                        <span ng-if="raceinfo.location.state !== null">
+                            {{raceinfo.location.state}}
+                            <img ng-if="getStateFlag(raceinfo.location.state)" 
+                                 ng-src="{{getStateFlag(raceinfo.location.state)}}" 
+                                 alt="{{raceinfo.location.state}}" 
+                                 class="location-flag"
+                                 onerror="this.style.display='none'">
                         </span>
-                    </span>
+                        <span ng-if="raceinfo.location.state === null">
+                            {{raceinfo.location.country}}
+                            <span ng-if="getCountryFlag(raceinfo.location.country)" 
+                                  class="location-flag-emoji">
+                                {{getCountryFlag(raceinfo.location.country)}}
+                            </span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

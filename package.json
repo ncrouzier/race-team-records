@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "node server.js",
-    "dev": "PARKRUN_PROXY=https://your-proxy-service.com/api PARKRUN_PROXY_KEY=your-api-key-here node server.js"
+    "dev": "PARKRUN_PROXY=https://your-proxy-service.com/api PARKRUN_PROXY_KEY=your-api-key-here node server.js",
+    "migrate:cross-country-to-trail": "node migrations/migrate-cross-country-to-trail.js"
   },
   "name": "mcrrc-race-team-records",
   "main": "server.js",

@@ -314,7 +314,7 @@
                                                         </li>
                                                     </ul>
                                                 </uib-tab>
-                                                <uib-tab index="2" heading="trail" ng-show="(currentMember.personalBests | pbFilter: 'cross country').length > 0">
+                                                <uib-tab index="2" heading="trail" ng-show="(currentMember.personalBests | pbFilter: 'trail').length > 0">
                                                     <ul class="pb-list list-group" style="margin: 0; border: none;">
                                                         <li class="list-group-item text-left pblistheader" ng-show="currentMember.personalBests.length >0">                                                                                                
                                                                 <div class="row">
@@ -326,7 +326,7 @@
                                                                     </div>                                                   
                                                                 </div>                                                    
                                                         </li>
-                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'cross country'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                                        <li class="list-group-item text-left pblistrow" ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'trail'" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                                             <div class="row" > 
                                                                 <div class="col-sm-6">
                                                                     <span class="hoverhandandunderline resultEvent"  ng-click="showRaceModal(pb.result.race)"> {{pb.name}}</span>

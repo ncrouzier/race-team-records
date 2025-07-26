@@ -672,6 +672,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             return s.replace(/ /g, '') + '-col';
         }
     };
+    $scope.getSurfaceClass = function(surfaceName) {
+        if (!surfaceName) return '';
+        // Convert to lowercase and replace spaces with hyphens
+        return 'surface-' + surfaceName.toLowerCase().replace(/\s+/g, '-');
+    };
 
     $scope.onMetersChange = function() {
         if ($scope.autoconvert) {
@@ -814,6 +819,11 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
+    };
+    $scope.getSurfaceClass = function(surfaceName) {
+        if (!surfaceName) return '';
+        // Convert to lowercase and replace spaces with hyphens
+        return 'surface-' + surfaceName.toLowerCase().replace(/\s+/g, '-');
     };
 
     $scope.getStateFlag = function(stateCode) {

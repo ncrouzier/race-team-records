@@ -125,7 +125,7 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
     $scope.getRaceTypeClass = function(surface) {
         switch(surface) {
             case 'track': return 'tracksurface';
-            case 'cross country': return 'xcsurface';
+            case 'trail': return 'trailsurface';
             case 'road': return 'roadsurface';
             case 'ultra': return 'ultrasurface';
             case 'other': return 'othersurface';

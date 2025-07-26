@@ -3,6 +3,10 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
         $scope.user = user;
+        // Re-initialize stats when user changes to load participation stats if needed
+        if ($scope.statsInitialized) {
+            $scope.initializeStats();
+        }
     });
 
     $scope.raceStats = {};
@@ -314,13 +318,20 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     // On controller load, check for DB updates and clear caches if needed
     // Use Promise-based loading to avoid race conditions and ensure proper timing
     $scope.initializeStats = function() {
-        // Start all stats loading in parallel and wait for all to complete
-        Promise.all([
+        // Create array of promises for stats loading
+        var statsPromises = [
             $scope.getRacesStats(),
             $scope.getMiscStats(),
-            $scope.getAttendanceStats(),
-            $scope.getParticipationStats()
-        ]).then(function(results) {
+            $scope.getAttendanceStats()
+        ];
+        
+        // Only load participation stats if user is logged in as user or admin
+        if ($scope.user && ($scope.user.role === 'user' || $scope.user.role === 'admin')) {
+            statsPromises.push($scope.getParticipationStats());
+        }
+        
+        // Start all stats loading in parallel and wait for all to complete
+        Promise.all(statsPromises).then(function(results) {
             // Trigger a digest cycle to ensure UI updates
             if (!$scope.$$phase) {
                 $scope.$apply();
@@ -337,6 +348,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     };
     
     // Initialize stats when controller loads
+    $scope.statsInitialized = true;
     $scope.initializeStats();
     
 

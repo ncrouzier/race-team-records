@@ -1,17 +1,122 @@
 <div class="jumbotron">
-    <div class="row">
-        <div class="col-md-6">
-            <h2>Race types <i  class="hoverhand fa fa-plus-square"  style="color:#03C03C;"ng-show="user.role == 'admin'" ng-click="showAddRaceTypeModal()" title="Add race type"></i></h2>
-            <ul class="list-group">
-                <li class="list-group-item hoverhand" ng-class="{ 'tracksurface-bg': racetype.surface == 'track', 'xcsurface-bg': racetype.surface == 'cross country', 'roadsurface-bg': racetype.surface == 'road', 'ultrasurface-bg': racetype.surface == 'ultra', 'othersurface-bg': racetype.surface == 'other','multiplesurface-bg': racetype.surface == 'multiple'}" ng-repeat="racetype in racetypesList">
-                    {{racetype.name}} ({{racetype.surface}}) <span class="bold" ng-if="racetype.hasAgeGradedInfo === true" > Age graded</span><span class="bold"  ng-if="racetype.hasAgeGradedInfo ===false"> Not age graded</span> <span class="bold red"  ng-if="racetype.hasAgeGradedInfo ===undefined"> Age graded not defiend </span><span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveRaceTypeForEdit(racetype)" title="edit race type"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeRaceType(racetype)" title="remove race type"></i> </span>
-                </li>
-            </ul>
-        </div>
-        <div class="col-md-6">
-
+    <!-- Race Types Header -->
+    <div class="racetypes-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h2><i class="fa fa-flag-checkered"></i> Race Types</h2>
+                <p class="text-muted">Manage and configure different types of races and their properties</p>
+            </div>
+            <div class="col-md-4 text-right">
+                <div class="stats-summary">
+                    <div class="stat-item">
+                        <span class="stat-number">{{racetypesList.length}}</span>
+                        <span class="stat-label">Race Types</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-
+    <!-- Race Types Content -->
+    <div class="racetypes-content">
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Race Types List -->
+                <div class="racetypes-list-container">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-list"></i> All Race Types</h4>
+                            <div class="header-actions" ng-if="user.role == 'admin'">
+                                <button class="btn btn-primary btn-sm" ng-click="showAddRaceTypeModal()">
+                                    <i class="fa fa-plus"></i> Add Race Type
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <div class="racetypes-list">
+                                <div class="racetype-item" 
+                                     ng-class="{ 
+                                         'tracksurface-bg': racetype.surface == 'track', 
+                                         'trailsurface-bg': racetype.surface == 'trail', 
+                                         'roadsurface-bg': racetype.surface == 'road', 
+                                         'ultrasurface-bg': racetype.surface == 'ultra', 
+                                         'othersurface-bg': racetype.surface == 'other',
+                                         'multiplesurface-bg': racetype.surface == 'multiple'
+                                     }" 
+                                     ng-repeat="racetype in racetypesList">
+                                    
+                                    <div class="racetype-info">
+                                        <div class="racetype-name">
+                                            <i class="fa fa-flag"></i>
+                                            {{racetype.name}}
+                                        </div>
+                                        <div class="racetype-details">
+                                            <span class="surface-badge" ng-class="getSurfaceClass(racetype.surface)">
+                                                {{racetype.surface}}
+                                            </span>
+                                            <span class="agegrade-status" ng-class="getAgeGradeStatusClass(racetype.hasAgeGradedInfo)">
+                                                <i class="fa" ng-class="getAgeGradeIcon(racetype.hasAgeGradedInfo)"></i>
+                                                {{getAgeGradeText(racetype.hasAgeGradedInfo)}}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="racetype-actions" ng-if="user.role == 'admin'">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                ng-click="retrieveRaceTypeForEdit(racetype)" 
+                                                title="Edit race type">
+                                            <i class="fa fa-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                ng-click="removeRaceType(racetype)" 
+                                                title="Remove race type">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Race Types Summary -->
+                <div class="racetypes-summary-container">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h4><i class="fa fa-chart-pie"></i> Summary</h4>
+                        </div>
+                        <div class="panel-body">
+                            <div class="summary-stats">
+                                <div class="summary-item">
+                                    <div class="summary-number">{{racetypesList.length}}</div>
+                                    <div class="summary-label">Total Types</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-number">{{getAgeGradedCount()}}</div>
+                                    <div class="summary-label">Age Graded</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-number">{{getSurfaceTypesCount()}}</div>
+                                    <div class="summary-label">Surfaces</div>
+                                </div>
+                            </div>
+                            
+                            <div class="surface-breakdown">
+                                <h5><i class="fa fa-tags"></i> Surface Types</h5>
+                                <div class="surface-item" ng-repeat="surface in getSurfaceBreakdown()">
+                                    <div class="surface-info">
+                                        <span class="surface-color" ng-class="getSurfaceClass(surface.name)"></span>
+                                        <span class="surface-name">{{surface.name}}</span>
+                                    </div>
+                                    <span class="surface-count">{{surface.count}}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

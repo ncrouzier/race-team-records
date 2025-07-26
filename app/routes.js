@@ -243,9 +243,20 @@ module.exports = async function(app, qs, passport, async, _) {
     app.get('/api/members/:member_id', function(req, res) {
         res.setHeader("Content-Type", "application/json");
         try{
-            let query = Member.findOne({
-                _id: req.params.member_id
-            });
+            let query;
+            
+            // Check if member_id is actually a username (not a MongoDB ObjectId)
+            if (req.params.member_id && !req.params.member_id.match(/^[0-9a-fA-F]{24}$/)) {
+                // It's a username, search by username
+                query = Member.findOne({
+                    username: req.params.member_id
+                });
+            } else {
+                // It's an ObjectId, search by _id
+                query = Member.findOne({
+                    _id: req.params.member_id
+                });
+            }
 
             //remove teamRequirementStats if not logged in
             if (!req.isAuthenticated()) {
@@ -254,6 +265,8 @@ module.exports = async function(app, qs, passport, async, _) {
             query.exec().then(member =>{    
                 if (member) {
                     res.json(member);
+                } else {
+                    res.status(404).json({ error: 'Member not found' });
                 }
             });
         }catch(err){

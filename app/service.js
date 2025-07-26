@@ -120,7 +120,7 @@ module.exports = {
         const pbDistances = ["400m", "800m", "1500m", "1 mile", "2 miles", "5k", "5000m", "4 miles",
             "5 miles", "8k", "10k", "10000m", "10 miles", "Half Marathon", "20 miles",
             "Marathon", "50k", "50 miles", "100k", "100 miles"];
-        const pbSurfaces = ["road", "track", "ultra", "cross country"];
+        const pbSurfaces = ["road", "track", "ultra", "trail"];
         const raceNumber = [1, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000];
 
         if (clear) {
@@ -363,7 +363,7 @@ module.exports = {
             'members._id': member._id
         });
         resultquery.and({ "race.racetype.name": { $in: pbDistances } });
-        resultquery.and({ "race.racetype.surface": { $in: ["road", "track", "ultra", "cross country"] } }); //don't deal with swim or multi sports
+        resultquery.and({ "race.racetype.surface": { $in: ["road", "track", "ultra", "trail"] } }); //don't deal with swim or multi sports
         resultquery.and({ "$expr": { "$eq": [{ $size: "$members" }, 1] } }); // only deal with single members
         resultquery.sort('race.racedate race.order');
         let results = await resultquery.exec()

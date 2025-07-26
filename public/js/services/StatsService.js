@@ -385,7 +385,7 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
             if (raceType.isVariable) {
                 category = 'other';
                 name = 'Other';
-            } else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {
+            } else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'trail' || raceType.surface === 'ultra') {
                 if (raceType.isVariable) {
                     category = 'other';
                     name = 'Other';

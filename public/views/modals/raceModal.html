@@ -73,6 +73,12 @@
 </div>
 
 <div class="modal-body modern-modal-body">
+    <!-- Mobile scroll indicator -->
+    <div class="mobile-scroll-indicator" ng-show="$window.innerWidth <= 768">
+        <i class="fa fa-arrows-h"></i>
+        <span>Scroll horizontally to see all columns</span>
+    </div>
+    
     <div id="member-list" class="row">
         <div class="col-md-12">
             <div class="results-table-container">

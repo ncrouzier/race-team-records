@@ -8596,11 +8596,18 @@ footer {
   max-width: 900px;
   margin: 30px auto;
 }
+.modal .modal-dialog.modal-lg {
+  max-width: 1200px !important;
+}
+.modal .modal-dialog.modal-xl {
+  max-width: 1400px !important;
+}
 .modal .modal-content {
   border-radius: 12px;
   border: none;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
+  max-height: none !important;
 }
 .modal .modern-modal-header {
   background: linear-gradient(135deg, #008cba 0%, #00526e 100%);
@@ -8915,9 +8922,26 @@ footer {
   font-size: 14px;
 }
 @media (max-width: 991px) {
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+  }
   .modal .modal-dialog {
     margin: 10px;
-    max-width: calc(100% - 20px);
+    max-width: none !important;
+    width: auto !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal .modal-content {
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
+    max-height: none;
   }
   .modal .modern-modal-header {
     padding: 20px;
@@ -8932,32 +8956,78 @@ footer {
   }
   .modal .modern-modal-header .race-stats-summary {
     gap: 15px;
+    flex-wrap: wrap;
   }
   .modal .modern-modal-header .race-stats-summary .stat-item {
     padding: 10px 15px;
+    min-width: 120px;
   }
   .modal .modern-modal-header .race-stats-summary .stat-item .stat-number {
-    font-size: 20px;
+    font-size: 18px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item .stat-label {
+    font-size: 12px;
+  }
+  .modal .modern-modal-body {
+    padding: 15px;
+    flex: 1;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 12px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator i {
+    color: #007bff;
+    font-size: 14px;
+  }
+  .modal .modern-modal-body .results-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 600px;
   }
   .modal .modern-modal-body .results-table-container .modern-results-header .header-row,
   .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    text-align: center;
+    min-width: 600px;
   }
-  .modal .modern-modal-body .results-table-container .modern-results-header {
-    display: none;
+  .modal .modern-modal-body .results-table-container .header-cell {
+    min-width: 80px;
   }
-  .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content {
-    padding: 15px;
+  .modal .modern-modal-body .results-table-container .header-cell.racer-cell {
+    min-width: 150px;
   }
-  .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content .result-cell {
-    justify-content: center;
-    padding: 5px 0;
+  .modal .modern-modal-body .results-table-container .header-cell.rank-cell {
+    min-width: 60px;
   }
-  .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content .result-cell.racer-cell {
-    justify-content: center;
-    font-weight: 600;
+  .modal .modern-modal-body .results-table-container .header-cell.pace-cell {
+    min-width: 80px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.time-cell {
+    min-width: 100px;
+  }
+  .modal .modern-modal-body .results-table-container .result-cell {
+    min-width: 80px;
+  }
+  .modal .modern-modal-body .results-table-container .result-cell.racer-cell {
+    min-width: 150px;
+  }
+  .modal .modern-modal-body .results-table-container .result-cell.rank-cell {
+    min-width: 60px;
+  }
+  .modal .modern-modal-body .results-table-container .result-cell.pace-cell {
+    min-width: 80px;
+  }
+  .modal .modern-modal-body .results-table-container .result-cell.time-cell {
+    min-width: 100px;
   }
   .modal .modern-modal-footer {
     padding: 15px 20px;
@@ -8969,6 +9039,137 @@ footer {
   .modal .modern-modal-footer .footer-actions .modern-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+@media (max-width: 1px) {
+  .modal .modal-dialog {
+    margin: 5px;
+    max-width: none !important;
+    width: auto !important;
+  }
+  .modal .modern-modal-header {
+    padding: 15px;
+  }
+  .modal .modern-modal-header .race-title-section .race-title {
+    font-size: 18px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item {
+    padding: 8px 12px;
+    min-width: 100px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item .stat-number {
+    font-size: 16px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item .stat-label {
+    font-size: 11px;
+  }
+  .modal .modern-modal-body {
+    padding: 10px;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator i {
+    font-size: 12px;
+  }
+  .modal .modern-modal-body .results-table-container {
+    min-width: 500px;
+  }
+  .modal .modern-modal-body .results-table-container .modern-results-header .header-row,
+  .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content {
+    min-width: 500px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell,
+  .modal .modern-modal-body .results-table-container .result-cell {
+    min-width: 70px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.racer-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.racer-cell {
+    min-width: 120px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.rank-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.rank-cell {
+    min-width: 50px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.pace-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.pace-cell {
+    min-width: 70px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.time-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.time-cell {
+    min-width: 90px;
+  }
+}
+@media (max-width: 480px) {
+  .modal .modal-dialog {
+    margin: 2px;
+    max-width: none !important;
+    width: auto !important;
+  }
+  .modal .modern-modal-header {
+    padding: 12px;
+  }
+  .modal .modern-modal-header .race-title-section .race-title {
+    font-size: 16px;
+  }
+  .modal .modern-modal-header .race-stats-summary {
+    gap: 10px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item {
+    padding: 6px 10px;
+    min-width: 90px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item .stat-number {
+    font-size: 14px;
+  }
+  .modal .modern-modal-header .race-stats-summary .stat-item .stat-label {
+    font-size: 10px;
+  }
+  .modal .modern-modal-body {
+    padding: 8px;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator {
+    padding: 5px 8px;
+    font-size: 10px;
+    margin-bottom: 10px;
+  }
+  .modal .modern-modal-body .mobile-scroll-indicator i {
+    font-size: 11px;
+  }
+  .modal .modern-modal-body .results-table-container {
+    min-width: 450px;
+  }
+  .modal .modern-modal-body .results-table-container .modern-results-header .header-row,
+  .modal .modern-modal-body .results-table-container .results-list .modern-result-row .result-content {
+    min-width: 450px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell,
+  .modal .modern-modal-body .results-table-container .result-cell {
+    min-width: 60px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.racer-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.racer-cell {
+    min-width: 100px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.rank-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.rank-cell {
+    min-width: 45px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.pace-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.pace-cell {
+    min-width: 60px;
+  }
+  .modal .modern-modal-body .results-table-container .header-cell.time-cell,
+  .modal .modern-modal-body .results-table-container .result-cell.time-cell {
+    min-width: 80px;
+  }
+  .modal .modern-modal-footer {
+    padding: 12px 15px;
+  }
+  .modal .modern-modal-footer .footer-actions .modern-btn {
+    font-size: 14px;
+    padding: 8px 12px;
   }
 }
 .year-selector-panel {
@@ -9287,6 +9488,33 @@ footer {
   .save-progress-modal .error-results .list-group {
     max-height: 150px;
   }
+}
+@media (min-width: 768px) {
+  .modal .modal-dialog {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+@media (min-width: 992px) {
+  .modal .modal-dialog {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+@media (min-width: 1200px) {
+  .modal .modal-dialog {
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+.modal .modal-content {
+  max-height: none !important;
+  height: auto !important;
+}
+.modal .modal-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: none !important;
 }
 
 .temp-adjustment-tool table {

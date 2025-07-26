@@ -1637,6 +1637,15 @@ footer {
     .modal-dialog {
         max-width: 900px;
         margin: 30px auto;
+        
+        // Override for larger modals when needed
+        &.modal-lg {
+            max-width: 1200px !important;
+        }
+        
+        &.modal-xl {
+            max-width: 1400px !important;
+        }
     }
 
     .modal-content {
@@ -1644,6 +1653,11 @@ footer {
         border: none;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         overflow: hidden;
+        // Ensure content can be larger than viewport
+        max-height: none !important;
+        // Only show scrollbars when content actually overflows
+        // overflow-y: auto;
+        // overflow-x: hidden;
     }
 
     // Modern Modal Header
@@ -1817,9 +1831,9 @@ footer {
 
 
     // Modern Modal Body
-    .modern-modal-body {
-        padding: 0;
-        background-color: #f8f9fa;
+            .modern-modal-body {
+            padding: 0;
+            background-color: #f8f9fa;
 
         .results-table-container {
             .modern-results-header {
@@ -2030,9 +2044,36 @@ footer {
 // Responsive adjustments for modern modal
 @media (max-width: @screen-sm-max) {
     .modal {
+        // Ensure modal is properly positioned on mobile
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1050;
+        
         .modal-dialog {
             margin: 10px;
-            max-width: calc(100% - 20px);
+            // Override Bootstrap's default max-width constraints
+            max-width: none !important;
+            width: auto !important;
+            // Remove max-width constraint to maintain modal size
+            // max-width: calc(100% - 20px);
+            // Remove max-height constraint to prevent cutting
+            // max-height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            // Override Bootstrap's default max-height constraints
+            max-height: none !important;
+            // Remove max-height constraint to prevent cutting
+            // max-height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+            // Ensure modal can be larger than viewport
+            max-height: none;
         }
 
         .modern-modal-header {
@@ -2050,41 +2091,101 @@ footer {
 
             .race-stats-summary {
                 gap: 15px;
+                flex-wrap: wrap;
 
                 .stat-item {
                     padding: 10px 15px;
+                    min-width: 120px;
 
                     .stat-number {
-                        font-size: 20px;
+                        font-size: 18px;
+                    }
+
+                    .stat-label {
+                        font-size: 12px;
                     }
                 }
             }
         }
 
         .modern-modal-body {
+            padding: 15px;
+            // Remove unnecessary overflow that causes bottom scrollbar
+            // overflow-y: auto;
+            flex: 1;
+
+            // Mobile scroll indicator
+            .mobile-scroll-indicator {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                padding: 8px 12px;
+                margin-bottom: 15px;
+                text-align: center;
+                font-size: 12px;
+                color: #6c757d;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+
+                i {
+                    color: #007bff;
+                    font-size: 14px;
+                }
+            }
+
             .results-table-container {
+                // Maintain table structure with horizontal scroll
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                
+                // Set minimum width to prevent squishing
+                min-width: 600px;
+
                 .modern-results-header .header-row,
                 .results-list .modern-result-row .result-content {
-                    grid-template-columns: 1fr;
-                    gap: 10px;
-                    text-align: center;
+                    // Keep original grid layout but ensure minimum widths
+                    min-width: 600px;
                 }
 
-                .modern-results-header {
-                    display: none; // Hide header on mobile
+                .header-cell {
+                    min-width: 80px;
+                    
+                    &.racer-cell {
+                        min-width: 150px;
+                    }
+                    
+                    &.rank-cell {
+                        min-width: 60px;
+                    }
+                    
+                    &.pace-cell {
+                        min-width: 80px;
+                    }
+                    
+                    &.time-cell {
+                        min-width: 100px;
+                    }
                 }
 
-                .results-list .modern-result-row .result-content {
-                    padding: 15px;
-
-                    .result-cell {
-                        justify-content: center;
-                        padding: 5px 0;
-
-                        &.racer-cell {
-                            justify-content: center;
-                            font-weight: 600;
-                        }
+                .result-cell {
+                    min-width: 80px;
+                    
+                    &.racer-cell {
+                        min-width: 150px;
+                    }
+                    
+                    &.rank-cell {
+                        min-width: 60px;
+                    }
+                    
+                    &.pace-cell {
+                        min-width: 80px;
+                    }
+                    
+                    &.time-cell {
+                        min-width: 100px;
                     }
                 }
             }
@@ -2100,6 +2201,184 @@ footer {
                 .modern-btn {
                     width: 100%;
                     justify-content: center;
+                }
+            }
+        }
+    }
+}
+
+// Extra small screens (phones)
+@media (max-width: @screen-xs-max) {
+    .modal {
+        .modal-dialog {
+            margin: 5px;
+            // Override Bootstrap's default max-width constraints
+            max-width: none !important;
+            width: auto !important;
+            // Remove max-width constraint to maintain modal size
+            // max-width: calc(100% - 10px);
+        }
+
+        .modern-modal-header {
+            padding: 15px;
+
+            .race-title-section {
+                .race-title {
+                    font-size: 18px;
+                }
+            }
+
+            .race-stats-summary {
+                .stat-item {
+                    padding: 8px 12px;
+                    min-width: 100px;
+
+                    .stat-number {
+                        font-size: 16px;
+                    }
+
+                    .stat-label {
+                        font-size: 11px;
+                    }
+                }
+            }
+        }
+
+        .modern-modal-body {
+            padding: 10px;
+
+            .mobile-scroll-indicator {
+                padding: 6px 10px;
+                font-size: 11px;
+                
+                i {
+                    font-size: 12px;
+                }
+            }
+
+            .results-table-container {
+                min-width: 500px;
+
+                .modern-results-header .header-row,
+                .results-list .modern-result-row .result-content {
+                    min-width: 500px;
+                }
+
+                .header-cell,
+                .result-cell {
+                    min-width: 70px;
+                    
+                    &.racer-cell {
+                        min-width: 120px;
+                    }
+                    
+                    &.rank-cell {
+                        min-width: 50px;
+                    }
+                    
+                    &.pace-cell {
+                        min-width: 70px;
+                    }
+                    
+                    &.time-cell {
+                        min-width: 90px;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Very small screens (small phones)
+@media (max-width: 480px) {
+    .modal {
+        .modal-dialog {
+            margin: 2px;
+            // Override Bootstrap's default max-width constraints
+            max-width: none !important;
+            width: auto !important;
+            // Remove max-width constraint to maintain modal size
+            // max-width: calc(100% - 4px);
+        }
+
+        .modern-modal-header {
+            padding: 12px;
+
+            .race-title-section {
+                .race-title {
+                    font-size: 16px;
+                }
+            }
+
+            .race-stats-summary {
+                gap: 10px;
+                
+                .stat-item {
+                    padding: 6px 10px;
+                    min-width: 90px;
+
+                    .stat-number {
+                        font-size: 14px;
+                    }
+
+                    .stat-label {
+                        font-size: 10px;
+                    }
+                }
+            }
+        }
+
+        .modern-modal-body {
+            padding: 8px;
+
+            .mobile-scroll-indicator {
+                padding: 5px 8px;
+                font-size: 10px;
+                margin-bottom: 10px;
+                
+                i {
+                    font-size: 11px;
+                }
+            }
+
+            .results-table-container {
+                min-width: 450px;
+
+                .modern-results-header .header-row,
+                .results-list .modern-result-row .result-content {
+                    min-width: 450px;
+                }
+
+                .header-cell,
+                .result-cell {
+                    min-width: 60px;
+                    
+                    &.racer-cell {
+                        min-width: 100px;
+                    }
+                    
+                    &.rank-cell {
+                        min-width: 45px;
+                    }
+                    
+                    &.pace-cell {
+                        min-width: 60px;
+                    }
+                    
+                    &.time-cell {
+                        min-width: 80px;
+                    }
+                }
+            }
+        }
+
+        .modern-modal-footer {
+            padding: 12px 15px;
+
+            .footer-actions {
+                .modern-btn {
+                    font-size: 14px;
+                    padding: 8px 12px;
                 }
             }
         }
@@ -2493,5 +2772,40 @@ footer {
         .saved-results .list-group, .error-results .list-group {
             max-height: 150px;
         }
+    }
+} 
+
+// Comprehensive Bootstrap Modal Override
+// Ensure modal can be larger than Bootstrap's default constraints
+.modal {
+    .modal-dialog {
+        // Override Bootstrap's default width constraints
+        @media (min-width: 768px) {
+            width: auto !important;
+            max-width: none !important;
+        }
+        
+        @media (min-width: 992px) {
+            width: auto !important;
+            max-width: none !important;
+        }
+        
+        @media (min-width: 1200px) {
+            width: auto !important;
+            max-width: none !important;
+        }
+    }
+    
+    .modal-content {
+        // Override Bootstrap's default height constraints
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .modal-body {
+        // Ensure body can scroll when needed, but hide unnecessary scrollbars
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: none !important;
     }
 } 

@@ -150,10 +150,16 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             }
         }).then(function(finalRaces) {
             $scope.loadingStates.races = false;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
             return finalRaces;
         }).catch(function(error) {
             $scope.loadingStates.races = false;
             $scope.loadingError = true; // Set error state
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
             throw error;
         });
         
@@ -161,6 +167,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         return $q.race([loadPromise, timeoutPromise]).catch(function(error) {
             $scope.loadingStates.races = false;
             $scope.loadingError = true; // Set error state
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
             throw error;
         });
     };

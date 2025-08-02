@@ -3,6 +3,14 @@
         <div class="race-title-section">
             <h3 class="race-title">{{raceinfo.racename}}</h3>
             <race-icon race="raceinfo"></race-icon>
+            <button ng-if="user && user.role === 'admin'" 
+                    class="btn btn-sm btn-outline-primary edit-race-btn" 
+                    ng-click="editRace()"
+                    uib-tooltip="Edit race details"
+                    tooltip-append-to-body="true"
+                    tooltip-placement="top">
+                <i class="fa fa-pencil"></i>
+            </button>
         </div>
         
         <div class="race-details-section">

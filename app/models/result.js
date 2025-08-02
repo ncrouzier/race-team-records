@@ -113,8 +113,8 @@ resultSchema.methods.updateSystemInfo = function(name,date) {
                         console.log("error fetching systemInfo", err);
                     } else {
                         // Update the backend cache after saving
-                        const service = require('../service');
-                        service.updateSystemInfoCache();
+                        // const service = require('../service');
+                        // service.updateSystemInfoCache();
                     }
                 });
             }

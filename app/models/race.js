@@ -23,6 +23,13 @@ var raceSchema = mongoose.Schema({
         text:String,
         value: mongoose.Schema.Types.Mixed        
       }],
+      customOptions:[{
+        name:String,
+        value: mongoose.Schema.Types.Mixed,
+        text:String,
+        width:String,
+        height:String
+      }],
     createdAt: Date,
     updatedAt: Date
  
@@ -64,8 +71,8 @@ raceSchema.methods.updateSystemInfo = function(name,date) {
                         console.log("error fetching systemInfo", err);
                     } else {
                         // Update the backend cache after saving
-                        const service = require('../service');
-                        service.updateSystemInfoCache();
+                        // const service = require('../service');
+                        // service.updateSystemInfoCache();
                     }
                 });
             }
@@ -74,7 +81,6 @@ raceSchema.methods.updateSystemInfo = function(name,date) {
     }catch(SystemInfoFindOneErr){
         console.log("error fetching systemInfo")
     }
-    
 };
 
 

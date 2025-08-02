@@ -22,19 +22,20 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
     });
     
     this.getSystemInfo = function(name) {
-        // Check if we have recent system info from headers (within last 1 minute)
+        // Check if we have recent system info from headers (within last 10 minutes)
         var now = Date.now();
-        if (lastSystemInfo && (now - lastApiCallTime) < 60000) { 
+        if (lastSystemInfo && (now - lastApiCallTime) < 600000) { 
             return Promise.resolve(lastSystemInfo);
         }
-        
+
         // If no cached data, make a lightweight API call to get initial system info
-        // This should only happen on first page load or after cache expires
+        // This should only happen if there is no cache expires        
         return Restangular.one('systeminfos', name).get().then(
             function(systeminfo) {
-                lastSystemInfo = systeminfo;
+                // lastSystemInfo = systeminfo;
                 lastApiCallTime = now;
-                return systeminfo;
+                // console.log("NEW SYSTEM INFO FROM CALL", lastSystemInfo);
+                return lastSystemInfo;
             },
             function(res) {
                 // Return cached data if available, even if stale
@@ -45,6 +46,8 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
             }
         );
     };
+
+    
     
     // Method to update system info from response headers
     this.updateFromHeaders = function(response) {

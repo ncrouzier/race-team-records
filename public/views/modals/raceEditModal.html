@@ -1,0 +1,282 @@
+<div class="modal-header modern-modal-header">
+    <div class="race-edit-header-content">
+        <div class="race-edit-title-section">
+            <h3 class="race-edit-title">
+                <i class="fa fa-pencil"></i>
+                Edit Race: {{race.racename}}
+            </h3>
+        </div>
+    </div>
+</div>
+
+<div class="modal-body modern-modal-body">
+    <form name="raceEditForm">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racename.$invalid && !raceEditForm.racename.$pristine}">
+                    <label class="text-left">Race name: *</label>
+                    <input type="text" name="racename" class="form-control text-left" ng-model="race.racename" ng-required="true" required auto-focus>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racedate.$invalid && !raceEditForm.racedate.$pristine}">
+                    <label class="text-left">Race date: *</label>
+                    <p class="input-group">
+                        <input type="text" name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="race.racedate" ng-model-options="{timezone: 'utc'}" is-open="opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required close-text="Close" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <label class="text-left">Order:</label>
+                <input type="text" ng-model="race.order" only-digits class="form-control input-md text-left" placeholder="0">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racetype.$invalid }">
+                    <label class="text-left">Race Type: *</label>
+                    <br>
+                    <ui-select name="racetype" ng-required="true" ng-disabled="race.isMultisport" ng-model="race.racetype" theme="select2" style="min-width: 280px;">
+                        <ui-select-match placeholder="Select a race type">
+                            <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
+                        </ui-select-match>
+
+                        <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
+                            <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
+                                <span ng-show="!racetype.isVariable">
+                                    <small>length in meters: {{racetype.meters | number}} m</small>
+                                    <br>
+                                    <small>length in miles: {{racetype.miles | number}} miles</small>
+                                </span>
+                                <span ng-show="racetype.isVariable">
+                                    <small>Specify distance for each race result</small>
+                                </span>
+                            </div>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-show="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
+            <div class="col-md-3">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.distanceName.$invalid && !raceEditForm.distanceName.$pristine}">
+                    <label class="text-left">Distance Display Name:</label>
+                    <input type="text" name="distanceName" ng-model="race.distanceName" class="form-control input-md text-left" ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racetype.meters.$invalid && !raceEditForm.racetype.meters.$pristine}">
+                    <label class="text-left">Distance in meters:</label>
+                    <input type="text" ng-change="onMetersChange()" name="meters" ng-model="race.racetype.meters" class="form-control input-md text-left" ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
+                </div>
+            </div>
+            <div class="col-md-1 text-center">
+                <label><small>Auto convert</small></label>
+                <input type="checkbox" ng-model="autoconvert" ng-checked="autoconvert">
+            </div>
+            <div class="col-md-4">
+                <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racetype.miles.$invalid && !raceEditForm.racetype.miles.$pristine}">
+                    <label class="text-left">Distance in miles:</label>
+                    <input type="text" ng-change="onMilesChange()" name="miles" ng-model="race.racetype.miles" class="form-control input-md text-left" ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label text-left">Country:</label>
+                    <br>
+                    <ui-select name="country" ng-model="race.location.country" required theme="select2" style="min-width: 250px;">
+                        <ui-select-match placeholder="Select a country">
+                            <div ng-bind-html="$select.selected.name"></div>
+                        </ui-select-match>
+                        <ui-select-choices repeat="country.code as country in countries | propsFilter: {name: $select.search, code: $select.search}">
+                            <div ng-class="">
+                                <div ng-bind-html="(country.name + ' (' + country.code+')')| highlightignorespan: $select.search"></div>
+                            </div>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label text-left">State:</label>
+                    <br>
+                    <ui-select ng-disabled="race.location.country !== 'USA'" name="state" ng-model="race.location.state" ng-required="race.location.country === 'USA'" theme="select2" style="min-width: 250px;">
+                        <ui-select-match placeholder="Select a state">
+                            <div ng-bind-html="$select.selected.name"></div>
+                        </ui-select-match>
+                        <ui-select-choices repeat="state.code as state in states | propsFilter: {name: $select.search, code: $select.search}">
+                            <div ng-class="">
+                                <div ng-bind-html="(state.name + ' (' + state.code+')')| highlightignorespan: $select.search"></div>
+                            </div>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label text-left">Shortcuts:</label>
+                    <br>
+                    <button class="btn btn-primary" ng-click="race.location.country='USA'; race.location.state='MD'">MD</button>
+                    <button class="btn btn-primary" ng-click="race.location.country='USA'; race.location.state='DC'">DC</button>
+                    <button class="btn btn-primary" ng-click="race.location.country='USA'; race.location.state='VA'">VA</button>
+                    <button class="btn btn-primary" ng-click="race.location.country='USA'; race.location.state='PA'">PA</button>
+                    <button class="btn btn-primary" ng-click="race.location.country='USA'; race.location.state='DE'">DE</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="text-left">Is MultiSport?</label>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="race.isMultisport" ng-checked="race.isMultisport">
+                            This is a multisport event (triathlon, duathlon, etc.)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Options Section -->
+        <div class="custom-options-section">
+            <div class="section-header">
+                <h4>Custom Options</h4>
+                <button type="button" 
+                        class="btn btn-sm btn-success" 
+                        ng-click="addCustomOption()">
+                    <i class="fa fa-plus"></i> Add Custom Option
+                </button>
+            </div>
+            <div class="custom-option-item" ng-repeat="option in race.customOptions track by $index">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Option Name</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   ng-model="option.name">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Option Text</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   ng-model="option.text">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group">
+                            <label>Value (JSON)</label>
+                            <textarea class="form-control" 
+                                      rows="3" 
+                                      ng-model="option.valueString" 
+                                      ng-change="updateCustomOptionValue($index)"
+                                      placeholder="Enter JSON value..."></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="button" 
+                                    class="btn btn-sm btn-danger" 
+                                    ng-click="removeCustomOption($index)">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="no-items-message" ng-if="!race.customOptions || race.customOptions.length === 0">
+                <p class="text-muted">No custom options added yet. Click "Add Custom Option" to get started.</p>
+            </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div class="achievements-section">
+            <div class="section-header collapsible" ng-click="toggleAchievements()">
+                <h4>
+                    <i class="fa" ng-class="achievementsCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                    Achievements
+                </h4>
+                <button type="button" 
+                        class="btn btn-sm btn-success" 
+                        ng-click="addAchievement(); $event.stopPropagation()">
+                    <i class="fa fa-plus"></i> Add Achievement
+                </button>
+            </div>
+            <div class="achievements-content" ng-show="!achievementsCollapsed">
+                <div class="achievement-item" ng-repeat="achievement in race.achievements track by $index">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Achievement Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       ng-model="achievement.name"
+                                       ng-disabled="isAchievementDisabled(achievement)">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Achievement Text</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       ng-model="achievement.text"
+                                       ng-disabled="isAchievementDisabled(achievement)">
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Value (JSON)</label>
+                                <textarea class="form-control" 
+                                          rows="3" 
+                                          ng-model="achievement.valueString" 
+                                          ng-change="updateAchievementValue($index)"
+                                          ng-disabled="isAchievementDisabled(achievement)"
+                                          placeholder="Enter JSON value..."></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        ng-click="removeAchievement($index)">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="no-items-message" ng-if="!race.achievements || race.achievements.length === 0">
+                    <p class="text-muted">No achievements added yet. Click "Add Achievement" to get started.</p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal-footer modern-modal-footer">
+    <div class="footer-actions">
+        <button class="btn btn-secondary modern-btn" ng-click="cancel()">
+            <i class="fa fa-times"></i>
+            Cancel
+        </button>
+        <button class="btn btn-primary modern-btn" 
+                ng-click="save()" 
+                ng-disabled="raceEditForm.$invalid">
+            <i class="fa fa-save"></i>
+            Save Changes
+        </button>
+    </div>
+</div> 

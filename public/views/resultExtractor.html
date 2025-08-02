@@ -282,9 +282,15 @@
                     <button class="btn btn-default" ng-click="deselectAll()">Deselect All</button>
                 </div>
                 <div class="col-md-6 text-right">
-                    <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="saving || !hasSelectedResults()">
-                        {{saving ? 'Saving...' : 'Save Selected Results'}}
-                    </button>
+                    <div class="save-section">
+                        <div class="saving-indicator" ng-if="isLoading">
+                            <i class="fa fa-spinner fa-spin"></i>
+                            <span class="saving-text">{{savingMessage}}</span>
+                        </div>
+                        <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="isLoading || !hasSelectedResults()">
+                            {{isLoading ? 'Saving...' : 'Save Selected Results'}}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

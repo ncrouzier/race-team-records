@@ -419,6 +419,16 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular','MemoryCacheSer
     {"name": "Zambia", "code": "ZMB"},
     {"name": "Zimbabwe", "code": "ZWE"}];
 
+    // Get countries list
+    factory.getCountries = function() {
+        return Promise.resolve(factory.countries);
+    };
+
+    // Get states list
+    factory.getStates = function() {
+        return Promise.resolve(factory.states);
+    };
+
     return factory;
 
 }]);

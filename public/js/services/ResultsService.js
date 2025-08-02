@@ -132,43 +132,57 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     /**
-     * Save multiple results with progress modal
+     * Save multiple results in bulk
+     * @param {Array} resultsToSave - Array of results to save
+     * @param {Object} race - Race information
+     * @return {Promise} - Promise that resolves with the saved results
+     */
+    factory.saveResultsBulk = function(resultsToSave, race) {
+        return Restangular.all('results/bulk').post({
+            results: resultsToSave,
+            race: race
+        });
+    };
+
+    /**
+     * Save multiple results with bulk endpoint
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
      */
     factory.saveResults = function(resultsToSave) {
-        // Open progress modal
-        var modalInstance = $uibModal.open({
-            templateUrl: 'views/modals/saveProgressModal.html',
-            controller: 'SaveProgressModalController',
-            size: 'lg',
-            backdrop: 'static',
-            keyboard: false,
-            resolve: {
-                resultsToSave: function() {
-                    return resultsToSave;
+        // Extract race information from the first result
+        var race = null;
+        if (resultsToSave.length > 0 && resultsToSave[0].race) {
+            race = resultsToSave[0].race;
+        }
+        
+        if (!race) {
+            NotificationService.showNotifiction(false, "No race information found in results");
+            return $q.reject(new Error("No race information found"));
+        }
+        
+        // Save all results in one bulk request
+        return factory.saveResultsBulk(resultsToSave, race).then(
+            function(response) {
+                if (response.success) {
+                    NotificationService.showNotifiction(true, response.message || response.createdCount + " results saved successfully!");
+                    return resultsToSave; // Return the original results array
+                } else {
+                    NotificationService.showNotifiction(false, response.message || "Bulk save failed");
+                    return $q.reject(new Error(response.message || "Bulk save failed"));
                 }
+            },
+            function(error) {
+                var errorMessage = "Failed to save results";
+                if (error.data && error.data.error) {
+                    errorMessage = error.data.error;
+                } else if (error.data && error.data.details) {
+                    errorMessage = error.data.details;
+                }
+                NotificationService.showNotifiction(false, errorMessage);
+                return $q.reject(error);
             }
-        });
-
-        return modalInstance.result.then(function(result) {
-            var savedCount = result.savedResults.length;
-            var errorCount = result.errorResults.length;
-            
-            if (errorCount === 0) {
-                NotificationService.showNotifiction(true, savedCount + " results saved successfully!");
-            } else if (savedCount === 0) {
-                NotificationService.showNotifiction(false, "Failed to save any results. Please try again.");
-            } else {
-                NotificationService.showNotifiction(true, savedCount + " results saved successfully, " + errorCount + " failed.");
-            }
-            
-            return result.savedResults;
-        }, function() {
-            // Modal was dismissed
-            NotificationService.showNotifiction(false, "Save operation was cancelled.");
-            return $q.reject(new Error("Save operation cancelled"));
-        });
+        );
     };
 
     //edit a result
@@ -322,12 +336,14 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
                 return sysinfo;
             }).catch(function(error) {
+                console.log("error", error);
                 throw error;
             });
-            
-            var db = DexieService;
             var date = new Date(sysinfo.overallUpdate);
-            
+
+            var db = DexieService;
+           
+            // console.log("date++", date,sysinfo.overallUpdate);
             try {
                 await db.open();
             } catch (error) {
@@ -344,8 +360,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             var memKey = key + ':' + JSON.stringify(params || {});
             
             // Check in-memory cache first using MemoryCacheService
+        
+            // console.log("memKey", memKey);  
             var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKey);
+            // console.log("memCacheEntry", memCacheEntry);
             if (memCacheEntry && memCacheEntry.date && date.getTime() === new Date(memCacheEntry.date).getTime()) {
+                // console.log("using cache");
                 return $q.resolve(memCacheEntry.data);
             }
             
@@ -356,12 +376,27 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 // Continue to API call even if IndexedDB fails
                 cache = undefined;
             }
-            
-            if (cache === undefined || date > new Date(cache.date)) {
+           
+            // Parse the cache date properly since it's stored as a JSON string
+            let cacheDate;
+            if (cache && cache.date) {
+                try {
+                    // Parse the stringified date back to a Date object
+                    cacheDate = new Date(JSON.parse(cache.date));
+                } catch (e) {
+                    console.error("Error parsing cache date:", e);
+                    cacheDate = null;
+                }
+            }
+            // console.log("cache", cache === undefined,date.getTime(), cacheDate);
+            if (cache === undefined || !cacheDate || date.getTime() > cacheDate.getTime()) {
                 return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
+                    // console.log("using database");
                     if (!params.preload) {
                         try {
-                            db.races.put({ instance: key, date: date, data: JSON.stringify(resultsFromDatabase) }).then(function () {
+                            // console.log("date--", date);
+                            var jsonDate = JSON.stringify(date);
+                            db.races.put({ instance: key, date: jsonDate, data: JSON.stringify(resultsFromDatabase) }).then(function () {
                                 // IndexedDB saved successfully
                             }).catch(function(error) {
                                 // Don't throw here, just log the error
@@ -373,17 +408,20 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     
                     // Update memory cache via MemoryCacheService
                     var cacheData = { date: date, data: resultsFromDatabase };
+                    // console.log("setting memcache after database call", memKey, cacheData);
                     MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
                     return resultsFromDatabase;
                 }).catch(function(error) {
                     throw error;
                 });
             } else {
+                // console.log("using indexedb cache");
                 var res = $q(function (resolve, reject) {
                     try {
                         var data = Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true);
                         // Update memory cache via MemoryCacheService
-                        var cacheData = { date: cache.date, data: data };
+                        var cacheData = { date: date, data: data };
+                        // console.log("setting memcache after indexedb call", memKey, cacheData);
                         MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
                         resolve(data);
                     } catch (error) {
@@ -584,6 +622,84 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 console.log('Error: ' + res.status);
             });
 
+    };
+
+    // =====================================
+    // RACE API =====================
+    // =====================================
+
+    // Get a single race by ID
+    factory.getRaceById = function(raceId) {
+        if (raceId) {
+            return Restangular.one("races", raceId).get().then(
+                function(race) {
+                    return race;
+                },
+                function(res) {
+                    NotificationService.showNotifiction(false, "Error while retrieving race.");
+                    console.log('Error: ' + res.status);
+                    return null;
+                }
+            );
+        } else {
+            return null;
+        }
+    };
+
+    // Update a race
+    factory.updateRace = function(race) {
+        if (race && race._id) {
+            return Restangular.one("races", race._id).customPUT(race).then(
+                function(updatedRace) {
+                    NotificationService.showNotifiction(true, "Race updated successfully.");
+                    // System info will be updated by backend, triggering automatic cache invalidation
+                    return updatedRace;
+                },
+                function(res) {
+                    NotificationService.showNotifiction(false, "Error while updating race.");
+                    console.log('Error: ' + res.status);
+                    return null;
+                }
+            );
+        } else {
+            NotificationService.showNotifiction(false, "Invalid race data.");
+            return $q.reject("Invalid race data");
+        }
+    };
+
+    // =====================================
+    // RACE MODALS =====================
+    // =====================================
+
+    factory.showEditRaceModal = function(raceInput) {
+        return factory.getRaceById(raceInput._id).then(
+            function(race) {
+                var modalInstance = $uibModal.open({
+                    templateUrl: 'views/modals/raceEditModal.html',
+                    controller: 'RaceEditModalInstanceController',
+                    size: 'lg',
+                    windowClass: 'race-edit-modal-class',
+                    backdrop: 'static',
+                    resolve: {
+                        race: function() {
+                            return race;
+                        }
+                    }
+                    
+            });
+                        
+        return modalInstance.result.then(function(updatedRace) {
+            return factory.updateRace(updatedRace);
+        }, function() {
+            return null;
+        });
+    });
+    };
+    // Get race types for dropdown
+    factory.getRaceTypes = function() {
+        return racetypes.getList().then(function(racetypes) {
+            return racetypes;
+        });
     };
 
 

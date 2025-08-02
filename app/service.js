@@ -48,11 +48,17 @@ module.exports = {
             if (systemInfo) {
                 systemInfoCache.data = systemInfo;
                 systemInfoCache.lastUpdated = Date.now();
-                console.log('System info cache initialized');
+                // console.log('System info cache initialized');
             }
         } catch (error) {
             console.error('Error initializing system info cache:', error);
         }
+    },
+    // Invalidate system info cache
+    invalidateSystemInfoCache: async function() {
+        systemInfoCache.data = null;
+        systemInfoCache.lastUpdated = 0;
+        // console.log('System info cache invalidated');
     },
 
     // Get cached system info or fetch from database if needed
@@ -74,36 +80,39 @@ module.exports = {
     },
 
     // Middleware to add latest resultUpdate date to response headers
-    addSystemInfoHeaders: async function(req, res, next) {
-        try {
-            // Get the latest system info from cache
-            const systemInfo = await getCachedSystemInfo();
-            if (systemInfo) {
-                // Add the individual update dates to response headers
-                res.set('X-Result-Update', systemInfo.resultUpdate ? systemInfo.resultUpdate.toISOString() : '');
-                res.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
-                res.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
-                res.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
+    // addSystemInfoHeaders: async function(req, res, next) {
+    //     console.log("addSystemInfoHeaders");
+    //     try {
+    //         // Get the latest system info from cache
+    //         const systemInfo = await getCachedSystemInfo();
+    //         if (systemInfo) {
+    //             // Add the individual update dates to response headers
+    //             res.set('X-Result-Update', systemInfo.resultUpdate ? systemInfo.resultUpdate.toISOString() : '');
+    //             res.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
+    //             res.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
+    //             res.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
                 
-                // Calculate the latest overall update date
-                const dates = [
-                    systemInfo.resultUpdate,
-                    systemInfo.raceUpdate,
-                    systemInfo.racetypeUpdate,
-                    systemInfo.memberUpdate
-                ].filter(date => date); // Remove null/undefined dates
+    //             // Calculate the latest overall update date
+    //             const dates = [
+    //                 systemInfo.resultUpdate,
+    //                 systemInfo.raceUpdate,
+    //                 systemInfo.racetypeUpdate,
+    //                 systemInfo.memberUpdate
+    //             ].filter(date => date); // Remove null/undefined dates
                 
-                if (dates.length > 0) {
-                    const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
-                    res.set('X-Overall-Update', latestDate.toISOString());
-                }
-            }
-            next();
-        } catch (error) {
-            console.error('Error adding system info headers:', error);
-            next(); // Continue even if there's an error
-        }
-    },
+    //             if (dates.length > 0) {
+    //                 const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
+    //                 console.log("latestDate", latestDate);
+    //                 res.set('X-Overall-Update', latestDate.toISOString());
+    //             }
+    //         }
+    //         console.log("addSystemInfoHeaders");
+    //         next();
+    //     } catch (error) {
+    //         console.error('Error adding system info headers:', error);
+    //         next(); // Continue even if there's an error
+    //     }
+    // },
 
     updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
@@ -737,7 +746,6 @@ module.exports = {
                 await oldestRace.save();
             }
 
-            console.log(`Completed processing location achievements`);
         } catch (err) {
             console.error('Error updating all location achievements:', err);
         }

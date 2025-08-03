@@ -65,7 +65,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             wins: 0,
             ageGroupWins: 0,
             bestAgeGrade: 0,
-            bestAgeGradeRace: '',
+            bestAgeGradeRace: null,
             avgAgeGrade: 0,
             lastRaceDate: null,
             lastRaceName: '',
@@ -80,7 +80,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         let totalAgeGrade = 0;
         let ageGradeCount = 0;
         let bestAgeGrade = 0;
-        let bestAgeGradeRace = '';
+        let bestAgeGradeRace = null;
 
         results.forEach(result => {
             // Count races this year
@@ -104,7 +104,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                 name = 'Other';
             }
             // Categorize by race type name
-            else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'cross country' || raceType.surface === 'ultra') {
+            else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'trail' || raceType.surface === 'ultra') {
                 // Check if race type is variable distance
                 if (raceType.isVariable) {
                     category = 'other';
@@ -253,12 +253,16 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     // Initial load
     async function initialLoad() {
         if ($stateParams.member) {
-            // Find member by username
-            const members = await MembersService.getMembers();
-            const member = members.find(m => m.username === $stateParams.member);
-            if (member) {
-                $scope.loadMemberStats(member);
-            } else {
+            try {
+                // Get member directly by username using the updated API
+                const member = await MembersService.getMember($stateParams.member);
+                if (member) {
+                    $scope.loadMemberStats(member);
+                } else {
+                    $state.go('/members');
+                }
+            } catch (error) {
+                console.error('Error loading member:', error);
                 $state.go('/members');
             }
         }

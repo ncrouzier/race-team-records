@@ -1,12 +1,48 @@
 const mongoose = require('mongoose');
-const member = require('./models/member');
-const { query } = require('express');
-const path = require("path");
 const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
 module.exports = async function(app, qs, passport, async, _) {
+
+    // Add response modification middleware BEFORE routes
+    app.use('/api', function(req, res, next) {
+        // Store original method
+        const originalSend = res.send;
+        
+        // Override send method (catches all responses including res.json() calls)
+        res.send = function(data) {
+            // Get system info and set headers before sending
+            service.getCachedSystemInfo().then(function(systemInfo) {
+                if (systemInfo) {
+                    this.set('X-Result-Update', systemInfo.resultUpdate ? systemInfo.resultUpdate.toISOString() : '');
+                    this.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
+                    this.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
+                    this.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
+                    // Calculate overall update
+                    const dates = [
+                        systemInfo.resultUpdate,
+                        systemInfo.raceUpdate,
+                        systemInfo.racetypeUpdate,
+                        systemInfo.memberUpdate
+                    ].filter(date => date);
+                    
+                    if (dates.length > 0) {
+                        const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
+                        this.set('X-Overall-Update', latestDate.toISOString());
+                    }
+                }
+                // Send response after headers are set
+                originalSend.call(this, data);
+            }.bind(this)).catch(function(err) {
+                console.error('Error getting system info:', err);
+                // Send response even if there's an error
+                originalSend.call(this, data);
+            });
+        };
+        
+        next();
+    });
 
     // =====================================
     // LOGIN ===============================
@@ -140,13 +176,13 @@ module.exports = async function(app, qs, passport, async, _) {
     // get a system info
     app.get('/api/systeminfos/:name', async function(req, res) {
         try{
-            SystemInfo.findOne({
-                name: req.params.name
-            }).then(systeminfo => {
-                if (systeminfo) {
-                    res.json(systeminfo);
-                }
-            });
+            // Use cached system info for better performance
+            const systeminfo = await service.getCachedSystemInfo();
+            if (systeminfo && systeminfo.name === req.params.name) {
+                res.json(systeminfo);
+            } else {
+                res.status(404).json({ error: 'System info not found' });
+            }
         }catch (err){
             res.send(err);
         }
@@ -174,6 +210,9 @@ module.exports = async function(app, qs, passport, async, _) {
                 query = query.where({$expr: {
                     $eq: [{ $toLower: { $concat: ['$firstname', '$lastname'] } }, filters.name.toLowerCase()]
                   }});
+            }
+            if (filters.username) {
+                query.where('username').equals(filters.username);
             }
             if (filters.firstname) {
                 query.where('firstname').equals(filters.firstname);
@@ -240,9 +279,20 @@ module.exports = async function(app, qs, passport, async, _) {
     app.get('/api/members/:member_id', function(req, res) {
         res.setHeader("Content-Type", "application/json");
         try{
-            let query = Member.findOne({
-                _id: req.params.member_id
-            });
+            let query;
+            
+            // Check if member_id is actually a username (not a MongoDB ObjectId)
+            if (req.params.member_id && !req.params.member_id.match(/^[0-9a-fA-F]{24}$/)) {
+                // It's a username, search by username
+                query = Member.findOne({
+                    username: req.params.member_id
+                });
+            } else {
+                // It's an ObjectId, search by _id
+                query = Member.findOne({
+                    _id: req.params.member_id
+                });
+            }
 
             //remove teamRequirementStats if not logged in
             if (!req.isAuthenticated()) {
@@ -251,6 +301,8 @@ module.exports = async function(app, qs, passport, async, _) {
             query.exec().then(member =>{    
                 if (member) {
                     res.json(member);
+                } else {
+                    res.status(404).json({ error: 'Member not found' });
                 }
             });
         }catch(err){
@@ -321,13 +373,14 @@ module.exports = async function(app, qs, passport, async, _) {
         }catch(err){
             res.send(err);
         }    
+       await service.invalidateSystemInfoCache();
         res.end('{"success" : "Member created successfully", "status" : 200}');
     
     });
 
     
     //update a member
-    app.put('/api/members/:member_id', service.isAdminLoggedIn, function(req, res) {
+    app.put('/api/members/:member_id', service.isAdminLoggedIn, async function(req, res) {
         res.setHeader("Content-Type", "application/json");
         try{
             Member.findById(req.params.member_id).then(member=> {
@@ -344,7 +397,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 try{
                     member.save().then(async () => {       
                         try{
-                            Result.find({'members._id': member._id}).then(results => {                                
+                            Result.find({'members._id': member._id}).then(async results => {                                
                                 for (const resultElement of results) {
                                     for (const memberElement of resultElement.members) { //itirates members if relay race
                                         if (memberElement._id.equals(req.body._id)) {
@@ -364,6 +417,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                     
 
                                 }
+                               await service.invalidateSystemInfoCache();
                                 res.end('{"success" : "Member updated successfully", "status" : 200}');                                
                             });  
                         }catch(ResultFindErr){
@@ -390,12 +444,13 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
     // delete a member
-    app.delete('/api/members/:member_id', service.isAdminLoggedIn, function(req, res) {
+    app.delete('/api/members/:member_id', service.isAdminLoggedIn, async function(req, res) {
         try{
             Member.deleteOne({
                 _id: req.params.member_id
-            }).then(deleteResult => {               
+            }).then(async deleteResult => {               
                 if (deleteResult.deletedCount === 1){
+                   await service.invalidateSystemInfoCache();
                     res.send('{"success" : "Member deleted successfully", "status" : 200}');   
                 }else{
                     res.send('{"error" : "Member not deleted", "status" : 200}');   
@@ -580,6 +635,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
                                         
                                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                                       await service.invalidateSystemInfoCache();
                                         res.json(resultWithPBsAndAchievements);                                                                        
                                     });                                       
                                 }catch(resultCreateErr){                                  
@@ -617,6 +673,8 @@ module.exports = async function(app, qs, passport, async, _) {
                                 await service.updateAllLocationAchievements(race.location.country, race.location.state);                                
                                 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                                await service.invalidateSystemInfoCache();
+                                console.log("create result");
                                 res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
                         }catch(resultCreateErr){
@@ -723,6 +781,7 @@ module.exports = async function(app, qs, passport, async, _) {
                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
 
                         resultWithPBsAndAchievements = await Result.findById(result._id);                                 
+                       await service.invalidateSystemInfoCache();
                         res.json(resultWithPBsAndAchievements);                                                                     
                         
                                                     
@@ -762,6 +821,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 // Update location achievements for this location
                 await service.updateAllLocationAchievements(race.location.country, race.location.state);
                 resultWithPBsAndAchievements = await Result.findById(result._id); 
+               await service.invalidateSystemInfoCache();
                 res.json(resultWithPBsAndAchievements);                 
             }                    
                                          
@@ -772,6 +832,135 @@ module.exports = async function(app, qs, passport, async, _) {
 
     });
 
+    // create bulk results
+    app.post('/api/results/bulk', service.isAdminLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const { results, race } = req.body;
+            
+            if (!results || !Array.isArray(results) || results.length === 0) {
+                return res.status(400).json({ error: 'Results array is required and must not be empty' });
+            }
+            
+            if (!race) {
+                return res.status(400).json({ error: 'Race information is required' });
+            }
+            
+            // Check if race exists or create it
+            let existingRace = await Race.findOne({
+                'racename': race.racename,
+                'isMultisport': race.isMultisport,
+                'distanceName': race.distanceName,
+                'racedate': race.racedate,
+                'location.country': race.location.country,
+                'location.state': race.location.state,
+                'racetype._id': race.racetype._id,
+                'order': race.order
+            });
+            
+            let raceToUse = existingRace;
+            if (!existingRace) {
+                raceToUse = await Race.create({
+                    racename: race.racename,
+                    isMultisport: race.isMultisport,
+                    distanceName: race.distanceName,
+                    racedate: race.racedate,
+                    order: race.order,
+                    location: {
+                        country: race.location.country,
+                        state: race.location.state
+                    },
+                    racetype: race.racetype
+                });
+            }
+            
+            const createdResults = [];
+            const memberIds = new Set(); // Track unique members for PB updates
+            
+            // Process each result
+            for (const resultData of results) {
+                try {
+                    // Find members by ID from the member objects - throw error if they don't exist
+                    const members = [];
+                    for (const memberObj of resultData.members) {
+                        const member = await Member.findById(memberObj._id);
+                        if (!member) {
+                            throw new Error(`Member with ID ${memberObj._id} not found`);
+                        }
+                        members.push(member);
+                        memberIds.add(member._id.toString());
+                    }
+                    
+                    // Calculate age grade if applicable
+                    let agegrade = null;
+                    if (members.length === 1 && !raceToUse.isMultisport && resultData.isRecordEligible && resultData.time !== 0) {
+                        const ag = await service.getAgeGrading(
+                            members[0].sex.toLowerCase(),
+                            service.calculateAge(raceToUse.racedate, members[0].dateofbirth),
+                            raceToUse.racetype.surface,
+                            raceToUse.racedate
+                        );
+                        
+                        if (ag && ag[raceToUse.racetype.name.toLowerCase()] !== undefined) {
+                            agegrade = (ag[raceToUse.racetype.name.toLowerCase()] / (resultData.time / 100) * 100).toFixed(2);
+                        }
+                    }
+                    
+                    // Create the result
+                    const result = await Result.create({
+                        race: raceToUse,
+                        members: members,
+                        time: resultData.time,
+                        legs: resultData.legs || [],
+                        ranking: resultData.ranking || {},
+                        comments: resultData.comments || '',
+                        resultlink: resultData.resultlink || '',
+                        agegrade: agegrade,
+                        is_accepted: resultData.is_accepted !== undefined ? resultData.is_accepted : false,
+                        isRecordEligible: resultData.isRecordEligible !== undefined ? resultData.isRecordEligible : true,
+                        customOptions: resultData.customOptions || [],
+                        achievements: resultData.achievements || []
+                    });
+                    
+                    createdResults.push(result);
+                    
+                } catch (resultError) {
+                    console.error('Error creating result:', resultError);
+                    // Continue with other results even if one fails
+                }
+            }
+            
+            // Update PBs for all affected members
+            for (const memberId of memberIds) {
+                try {
+                    const member = await Member.findById(memberId);
+                    if (member) {
+                        await service.updateMemberStats(member);
+                    }
+                } catch (memberError) {
+                    console.error('Error updating member stats:', memberError);
+                }
+            }
+            
+            // Update location achievements
+            await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
+            
+            // Invalidate cache
+            await service.invalidateSystemInfoCache();
+            
+            res.json({
+                success: true,
+                message: `Successfully created ${createdResults.length} results`,
+                createdCount: createdResults.length,
+                totalRequested: results.length,
+                race: raceToUse
+            });
+            
+        } catch (error) {
+            console.error('Bulk result creation error:', error);
+            res.status(500).json({ error: 'Failed to create bulk results', details: error.message });
+        }
+    });
 
     // delete a result
     app.delete('/api/results/:result_id', service.isAdminLoggedIn, function(req, res) {
@@ -810,6 +999,7 @@ module.exports = async function(app, qs, passport, async, _) {
                                 let member = await Member.findById(m._id);    
                                 service.updateMemberStats(member);   
                             }                                               
+                           await service.invalidateSystemInfoCache();
                             res.end('{"success" : "Result deleted successfully", "status" : 200}');
                         
                     });
@@ -862,6 +1052,151 @@ module.exports = async function(app, qs, passport, async, _) {
         }catch(err){
             res.send(err)
         }    
+    });
+
+    // get a single race by ID
+    app.get('/api/races/:race_id', function(req, res) {
+        try {
+            Race.findById(req.params.race_id).then(race => {
+                if (race) {
+                    res.json(race);
+                } else {
+                    res.status(404).json({ error: 'Race not found' });
+                }
+            });
+        } catch(err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // update a race
+    app.put('/api/races/:race_id', service.isLoggedIn, async function(req, res) {
+        try {
+            const race = await Race.findById(req.params.race_id);
+            const oldRace = JSON.parse(JSON.stringify(race));
+            if (!race) {
+                return res.status(404).json({ error: 'Race not found' });
+            }
+
+            // Update race fields
+            const updateData = {
+                racename: req.body.racename,
+                distanceName: req.body.distanceName,
+                racedate: req.body.racedate,
+                order: req.body.order,
+                isMultisport: req.body.isMultisport,
+                racetype: req.body.racetype,
+                location: req.body.location,
+                achievements: req.body.achievements.filter(a => a.name !== "newLocation"),
+                customOptions: req.body.customOptions
+            };
+            console.log("updateData", updateData);
+            const updatedRace = await Race.findByIdAndUpdate(
+                req.params.race_id, 
+                updateData, 
+                { new: true, runValidators: true }
+            );
+
+            // Update all related results
+            const results = await Result.find({ 'race._id': req.params.race_id }).populate('members');
+            for (let result of results) {
+                // Update race information in the result
+                const raceUpdate = {
+                    'race.racename': updatedRace.racename,
+                    'race.distanceName': updatedRace.distanceName,
+                    'race.racedate': updatedRace.racedate,
+                    'race.order': updatedRace.order,
+                    'race.isMultisport': updatedRace.isMultisport,
+                    'race.racetype': updatedRace.racetype,
+                    'race.location': updatedRace.location,
+                    'race.achievements': updatedRace.achievements,
+                    'race.customOptions': updatedRace.customOptions
+                };
+                
+                // Recalculate age grade for single-member, non-multisport, record-eligible results with valid time
+                if (result.members.length === 1 && 
+                    !updatedRace.isMultisport && 
+                    result.isRecordEligible && 
+                    result.time !== 0) {
+                    
+                    const member = result.members[0];
+                    const ag = await service.getAgeGrading(
+                        member.sex.toLowerCase(),
+                        service.calculateAge(updatedRace.racedate, member.dateofbirth),
+                        updatedRace.racetype.surface,
+                        updatedRace.racedate
+                    );
+                    
+                    if (ag && ag[updatedRace.racetype.name.toLowerCase()] !== undefined) {
+                        const newAgeGrade = (ag[updatedRace.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
+                        raceUpdate.agegrade = newAgeGrade;
+                    }
+                }
+                
+                // Update the result with both race info and age grade
+                await Result.findByIdAndUpdate(result._id, {
+                    $set: raceUpdate
+                });
+                
+                // Update member stats for each member in this result
+                for (let m of result.members) {
+                    let member = await Member.findById(m._id);    
+                    await service.updateMemberStats(member);   
+                }
+            }
+
+            
+               
+            // Update location achievements for this location
+            if (oldRace.location.country !== race.location.country || oldRace.location.state !== race.location.state) {
+                await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
+            }
+            
+            await service.updateAllLocationAchievements(updateData.location.country, updateData.location.state);
+
+            // Get the updated race with populated results
+            const populatedRace = await Race.aggregate([
+                {
+                    $match: { _id: updatedRace._id }
+                },
+                {
+                    $lookup: {
+                        from: 'results',
+                        localField: '_id',
+                        foreignField: 'race._id',
+                        as: 'results'
+                    }
+                },
+                {
+                    $set: {
+                        results: {
+                            $map: {
+                                input: "$results",
+                                as: "result",
+                                in: {
+                                    $mergeObjects: [
+                                        "$$result",
+                                        {
+                                            race: {
+                                                _id: "$$result.race._id"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ]);
+
+            // Return the first (and only) result from the aggregation
+            const raceWithResults = populatedRace[0];
+           await service.invalidateSystemInfoCache();
+            res.json(raceWithResults);
+        } catch(err) {
+            console.error('Error updating race:', err);
+            res.status(500).json({ error: 'Error updating race' });
+        }
     });
 
     //  app.get('/api/results/:result_id',  async function(req, res) {
@@ -971,7 +1306,8 @@ module.exports = async function(app, qs, passport, async, _) {
             }
             await Race.deleteOne({
                 _id: raceId
-            }).then(raceD => {
+            }).then(async raceD => {
+               await service.invalidateSystemInfoCache();
                 res.json('{"success" : "Result deleted successfully", "status" : 200}');
             });
         }catch (err) {
@@ -1054,6 +1390,7 @@ app.get('/updateAgeGrade', service.isAdminLoggedIn, async function(req, res) {
                     }                           
             };
             diffrenceArray.sort((a, b) => b.diff - a.diff);
+           await service.invalidateSystemInfoCache();
                 res.json({ 'numberOfUpdates': numberOfUpdates,
                     'differences' : diffrenceArray
                 });
@@ -1078,11 +1415,12 @@ app.get('/updateAchievements', service.isAdminLoggedIn, async function(req, res)
                     "achievements": await service.updateAchievements(member)
                 });            
             }
+           await service.invalidateSystemInfoCache();
             res.end('{"success" : "Achievements updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(achievements)+'}');
         });
         
     }catch(err){
-        res.end('{"success" : "Achievements not updated", "status" : 500, "error" : "'+err+'"}');
+        res.end('{"error" : "Achievements not updated", "status" : 500, "error" : "'+err+'"}');
     }
     
 });
@@ -1102,12 +1440,13 @@ app.get('/updatePbs', service.isAdminLoggedIn, async function(req, res) {
                         "pbs": await updatePBs(member)
                     });                           
                 }
+               await service.invalidateSystemInfoCache();
                 res.end('{"success" : "Pbs updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(pbs)+'}');
             }            
     });
 
     }catch(err){
-        res.end('{"success" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
+        res.end('{"error" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
 
@@ -1126,12 +1465,13 @@ app.get('/updatePBsandAchivements', service.isAdminLoggedIn, async function(req,
                             "results": await service.updatePBsandAchivements(member, clear)
                         });                           
                     }
+                   await service.invalidateSystemInfoCache();
                     res.end('{"success" : "Pbs updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(pbs)+'}');
                 }            
         });
 
     }catch(err){
-        res.end('{"success" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
+        res.end('{"error" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
 
@@ -1168,10 +1508,11 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
             }
             
         }
-        res.end('{"message" : "results updated successfully", "status" : 200 ,  "Results":'+ JSON.stringify(returnRes)+'}');
+       await service.invalidateSystemInfoCache();
+        res.end('{"success" : "results updated successfully", "status" : 200 ,  "Results":'+ JSON.stringify(returnRes)+'}');
 
     }catch(err){
-        res.end('{"message" : "results not updated", "status" : 500, "error" : "'+err+'"}');
+        res.end('{"error" : "results not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
 
@@ -1653,7 +1994,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
     });
 
     // create racetype and send back all racetypes after creation
-    app.post('/api/racetypes', service.isAdminLoggedIn, function(req, res) {
+    app.post('/api/racetypes', service.isAdminLoggedIn, async function(req, res) {
         try{
             RaceType.create({
                 name: req.body.name,
@@ -1662,7 +2003,8 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                 miles: req.body.miles,
                 isVariable: req.body.isVariable,
                 hasAgeGradedInfo: req.body.hasAgeGradedInfo
-            }).then(racetype => {              
+            }).then(async racetype => {              
+               await service.invalidateSystemInfoCache();
                     res.end('{"success" : "Result created successfully", "status" : 200}');                    
             });
         }catch(raceTypeErr){
@@ -1671,7 +2013,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
     });
 
     //update a racetype
-    app.put('/api/racetypes/:racetype_id', service.isAdminLoggedIn, function(req, res) {
+    app.put('/api/racetypes/:racetype_id', service.isAdminLoggedIn, async function(req, res) {
         try{
             RaceType.findById(req.params.racetype_id).then(racetype => {
                 racetype.name = req.body.name;
@@ -1685,7 +2027,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                             try{
                                 Result.find({
                                     'race.racetype._id': racetype._id
-                                }).then(results => {                                    
+                                }).then(async results => {                                    
                                     for (const result of results) {
                                         if (!req.body.isVariable) {
                                             result.race.racetype = {
@@ -1717,6 +2059,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                                         }
                                         
                                     }
+                                   await service.invalidateSystemInfoCache();
                                     res.end('{"success" : "Result updated successfully", "status" : 200}');                                    
                                 }
                             );   
@@ -1741,12 +2084,13 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
 
     // delete a racetype
-    app.delete('/api/racetypes/:racetype_id', service.isAdminLoggedIn, function(req, res) {
+    app.delete('/api/racetypes/:racetype_id', service.isAdminLoggedIn, async function(req, res) {
         try{
             RaceType.deleteOne({
                 _id: req.params.racetype_id
-            }, function(err, racetype) {           
-                    res.end('{"success" : "Racetype deleted successfully", "status" : 200}');            
+            }, async function(err, racetype) {           
+               await service.invalidateSystemInfoCache();
+                res.end('{"success" : "Racetype deleted successfully", "status" : 200}');            
             });
         }catch(raceTypedeleteOneErr){
             res.send(raceTypedeleteOneErr);
@@ -1862,7 +2206,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
             } else if (url.includes('parkrun.')) {
                 // Use proxy to retrieve parkrun content
                 const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
-                console.log(proxyUrl);
+                // console.log(proxyUrl);
                 try {
                     const response = await axios.get(proxyUrl, {
                         headers: {
@@ -2270,9 +2614,14 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
     });
 
     app.get('*', function(req, res) {
+        const isDev = process.env.NODE_ENV !== 'production';
+        // console.log('Request URL:', req.url);
+        // console.log('Request headers:', req.headers.host);
+        // console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
-            user: req.user
-        }); // load the index.ejs file
+            user: req.user,
+            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'
+        });
     });
 
     app.post('/api/extract-parkrun', service.isAdminLoggedIn, async function(req, res) {

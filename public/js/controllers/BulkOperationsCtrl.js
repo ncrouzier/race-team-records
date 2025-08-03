@@ -16,8 +16,9 @@ angular.module('mcrrcApp.results').controller('BulkOperationsController', ['$sco
                 }
             }).then(function(results) {
                 $scope.results = results;
-
+                
                 for (i =0;i<$scope.results.length;i++){
+                    
                     $scope.timeDetails[i] ={
                         hours:parseInt((($scope.results[i].time / (100*60*60)) % 24)),
                         minutes:parseInt((($scope.results[i].time / (100*60)) % 60)),

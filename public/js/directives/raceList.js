@@ -5,10 +5,11 @@ angular.module('mcrrcApp').directive('raceList', function() {
             racesList: '=',
             searchQuery: '=',
             resultsTableProperties: '=',
-            user: '='
+            user: '=',
+            loading: '='
         },
         templateUrl: 'views/directives/raceList.html',
-        controller: function($scope,dialogs,ResultsService) {
+        controller: function($scope,dialogs,ResultsService,$timeout) {
             $scope.expand = function(raceinfo) {
                 if (raceinfo) {
                     // Toggle the expanded state for this race
@@ -105,6 +106,29 @@ angular.module('mcrrcApp').directive('raceList', function() {
                         }
                     });
                 }, function (btn) { });
+            };
+
+            $scope.editRace = function(raceInfo) {
+                ResultsService.showEditRaceModal(raceInfo).then(function(updatedRace) {
+                    if (updatedRace) {
+                        // Update the race in the list
+                        var index = $scope.racesList.findIndex(function (r) {
+                            return r._id === raceInfo._id;
+                        });
+                        if (index > -1) {
+                            // Force Angular to re-evaluate one-time bindings by creating a new object reference
+                            $scope.racesList[index] = JSON.parse(JSON.stringify(updatedRace));
+                            console.log("updated race", $scope.racesList[index]);
+                            
+                            // Force a re-render by temporarily removing and re-adding the race
+                            var raceToUpdate = $scope.racesList[index];
+                            $scope.racesList.splice(index, 1);
+                            $timeout(function() {
+                                $scope.racesList.splice(index, 0, raceToUpdate);
+                            }, 0);
+                        }
+                    }
+                });
             };
 
             $scope.showResultDetailsModal = function(result, raceinfo) {

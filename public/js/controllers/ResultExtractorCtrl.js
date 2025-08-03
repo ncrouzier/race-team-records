@@ -715,6 +715,8 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             });
 
             $scope.isLoading = true;
+            $scope.savingMessage = 'Saving ' + resultsToSave.length + ' results...';
+            
             ResultsService.saveResults(resultsToSave)
                 .then(function(savedResults) {
                     $analytics.eventTrack('Result Extractor', { 
@@ -724,10 +726,12 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     });
                     $scope.processedResults = []; // Clear processed results after successful save
                     $scope.isLoading = false;
+                    $scope.savingMessage = '';
                 })
                 .catch(function(error) {
                     console.error('Error saving results:', error);
                     $scope.isLoading = false;
+                    $scope.savingMessage = '';
                 });
         };
 
@@ -799,75 +803,3 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 ]); 
 
 
-angular.module('mcrrcApp.results').controller('SaveProgressModalController', ['$scope', '$uibModalInstance', 'resultsToSave', 'ResultsService', function($scope, $uibModalInstance, resultsToSave, ResultsService) {
-    
-    $scope.resultsToSave = resultsToSave;
-    $scope.totalItems = resultsToSave.length;
-    $scope.currentIndex = 0;
-    $scope.progressPercentage = 0;
-    $scope.savedResults = [];
-    $scope.errorResults = [];
-    $scope.currentResult = null;
-    $scope.isComplete = false;
-    
-    // Prevent modal from being closed during save process
-    $scope.$on('modal.closing', function(event, reason, closed) {
-        if (!$scope.isComplete) {
-            event.preventDefault();
-        }
-    });
-    
-    function updateProgress() {
-        $scope.progressPercentage = Math.round((($scope.currentIndex) / $scope.totalItems) * 100);
-    }
-    
-    function saveNextResult() {
-        if ($scope.currentIndex >= $scope.totalItems) {
-            $scope.isComplete = true;
-            updateProgress();
-            return;
-        }
-        
-        var result = $scope.resultsToSave[$scope.currentIndex];
-        $scope.currentResult = result;
-        
-        // Save the result
-        ResultsService.saveSingleResult(result).then(
-            function(savedResult) {
-                $scope.savedResults.push(savedResult);
-                $scope.currentIndex++;
-                updateProgress();
-                if ($scope.currentIndex >= $scope.totalItems) {
-                    $scope.isComplete = true;
-                } else {
-                    saveNextResult();
-                }
-            },
-            function(error) {
-                var errorInfo = {
-                    memberName: result.members[0].firstname + ' ' + result.members[0].lastname,
-                    raceName: result.race.racename,
-                    message: error.data ? error.data.message : 'Unknown error occurred'
-                };
-                $scope.errorResults.push(errorInfo);
-                $scope.currentIndex++;
-                updateProgress();
-                if ($scope.currentIndex >= $scope.totalItems) {
-                    $scope.isComplete = true;
-                } else {
-                    saveNextResult();
-                }
-            }
-        );
-    }
-    
-    $scope.close = function() {
-        $uibModalInstance.close({
-            savedResults: $scope.savedResults,
-            errorResults: $scope.errorResults
-        });
-    };
-    
-    // Start the save process
-    saveNextResult();
-}]);

@@ -590,7 +590,7 @@ app.filter('resultSuperFilter', function () {
                                 isOther = true;
                             }
                             // Check for variable distance or non-standard surface
-                            if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'cross country' && raceData.racetype.surface !== 'ultra')) {
+                            if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'trail' && raceData.racetype.surface !== 'ultra')) {
                                 isOther = true;
                             }
                             if (!isOther) {
@@ -752,7 +752,7 @@ app.filter('raceResultSuperFilter', function () {
                                 isOther = true;
                             }
                             // Check for variable distance or non-standard surface
-                            if (race.racetype.isVariable || (race.racetype.surface !== 'road' && race.racetype.surface !== 'track' && race.racetype.surface !== 'cross country' && race.racetype.surface !== 'ultra')) {
+                            if (race.racetype.isVariable || (race.racetype.surface !== 'road' && race.racetype.surface !== 'track' && race.racetype.surface !== 'trail' && race.racetype.surface !== 'ultra')) {
                                 isOther = true;
                             }
                             if (!isOther) {

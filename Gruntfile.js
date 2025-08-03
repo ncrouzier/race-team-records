@@ -79,6 +79,30 @@ module.exports = function(grunt) {
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
+            },
+            dev: {
+                src: ['public/libs/jquery/dist/jquery.js',
+                'public/libs/angular/angular.js',
+                'public/libs/angular-notify/dist/angular-notify.js',
+                // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                'public/libs/angular-loading-bar/build/loading-bar.js',
+                'public/libs/angular-sanitize/angular-sanitize.js',
+                'public/libs/angular-ui-router/release/angular-ui-router.js',
+                'public/libs/angular-ui-select/dist/select.js',
+                'public/libs/lodash/dist/lodash.js',
+                'public/libs/restangular/dist/restangular.js',
+                'public/libs/angular-utils-pagination/dirPagination.js',
+                'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
+                'public/libs/angulartics/dist/angulartics.min.js',
+                'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
+                'public/libs/jspdf/dist/jspdf.min.js',
+                'public/libs/async/dist/async.min.js',
+                'public/libs/datamaps/dist/datamaps.all.hires.min.js',
+                'public/libs/moment/min/moment.min.js',
+                'public/js/**/*.js',
+                'public/js/*.js'],
+                dest: 'public/dist/js/app.js'
             }
         },
 
@@ -165,6 +189,14 @@ module.exports = function(grunt) {
         nodemon: {
             dev: {
                 script: 'server.js'
+            },
+            prod: {
+                script: 'server.js',
+                options: {
+                    env: {
+                        NODE_ENV: 'production'
+                    }
+                }
             }
         },
 
@@ -173,7 +205,12 @@ module.exports = function(grunt) {
             options: {
                 logConcurrentOutput: true
             },
-            tasks: ['nodemon', 'watch']
+            dev: {
+                tasks: ['nodemon:dev', 'watch']
+            },
+            prod: {
+                tasks: ['nodemon:prod', 'watch']
+            }
         }
 
 
@@ -190,7 +227,14 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-concat');
 
-    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'concat', 'copy', 'concurrent']);
+    grunt.registerTask('default', ['less', 'cssmin', 'jshint', 'concat', 'copy', 'concurrent:dev']);
     grunt.registerTask('build', ['less', 'cssmin', 'jshint', 'concat', 'copy']);
+    // Add a dev task for non-minified JS
+    grunt.registerTask('dev', ['less', 'cssmin', 'jshint', 'concat:dev', 'copy', 'concurrent:dev']);
+    grunt.registerTask('prod', ['less', 'cssmin', 'jshint', 'concat', 'copy', 'concurrent:prod']);
+
+    // In your HTML, use:
+    // <script src="/dist/js/app.js"></script> <!-- for development -->
+    // <script src="/dist/js/app.min.js"></script> <!-- for production -->
 
 };

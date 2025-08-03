@@ -41,6 +41,11 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
             $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
             $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");
           }
+
+          if ($scope.race.customOptions !== undefined){
+            $scope.raceIcons = $scope.race.customOptions.filter(x => x.name === "raceIcon");
+            $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
+          }
           
           var d1= new Date($scope.race.racedate);
           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
@@ -70,7 +75,9 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
           '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
           '<span class="hoverhand" uib-tooltip="Birthday Race!" ng-if="isbirthdayRace">🎂</span>' +
           '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
-          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +         
+          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +   
+          '<span ng-if="raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +
+          '<span ng-if="raceTexts.length >0 && !raceDisplay" ng-repeat="raceText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceText.text"><span>{{raceText.value}}</span></span>' +
           '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
           '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
       };
@@ -118,9 +125,9 @@ app.directive('raceIcon', function() {
 
       },
         template:	
-        '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
-        '<span class="hoverhand" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
-        '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
-        '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
+        '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
+        '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
+        '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
+        '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
     };    
 });

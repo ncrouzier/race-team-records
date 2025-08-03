@@ -3,42 +3,53 @@
         <div class="race-title-section">
             <h3 class="race-title">{{raceinfo.racename}}</h3>
             <race-icon race="raceinfo"></race-icon>
+            <button ng-if="user && user.role === 'admin'" 
+                    class="btn btn-sm btn-outline-primary edit-race-btn" 
+                    ng-click="editRace()"
+                    uib-tooltip="Edit race details"
+                    tooltip-append-to-body="true"
+                    tooltip-placement="top">
+                <i class="fa fa-pencil"></i>
+            </button>
         </div>
         
         <div class="race-details-section">
-            <div class="race-type-info">
-                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" 
-                      ng-bind-html="(raceinfo.distanceName +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
-                </span>
-                <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" 
-                      ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getRaceTypeClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
-                </span>
-                <span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
-                <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
-            </div>
-            
-            <div class="race-meta-info">
-                <div class="race-date">
-                    <i class="fa fa-calendar"></i>
-                    {{raceinfo.racedate | date:'yyyy-MM-dd':'UTC' }}
+            <div class="race-info-panel">
+                <div class="race-type-info">
+                    <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === true" 
+                          ng-bind-html="(raceinfo.distanceName +' <span class=\''+getSurfaceClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="!raceinfo.isMultisport && raceinfo.racetype.isVariable === false" 
+                          ng-bind-html="(raceinfo.racetype.name +' <span class=\''+getSurfaceClass(raceinfo.racetype.surface)+'\'>(' + raceinfo.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="raceinfo.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
+                    <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
                 </div>
-                <div class="race-location">
-                    <i class="fa fa-map-marker"></i>
-                    <span ng-if="raceinfo.location.state !== null">
-                        {{raceinfo.location.state}}
-                        <img ng-if="getStateFlag(raceinfo.location.state)" 
-                             ng-src="{{getStateFlag(raceinfo.location.state)}}" 
-                             alt="{{raceinfo.location.state}}" 
-                             class="location-flag"
-                             onerror="this.style.display='none'">
-                    </span>
-                    <span ng-if="raceinfo.location.state === null">
-                        {{raceinfo.location.country}}
-                        <span ng-if="getCountryFlag(raceinfo.location.country)" 
-                              class="location-flag-emoji">
-                            {{getCountryFlag(raceinfo.location.country)}}
+                
+                <div class="race-meta-info">
+                    <div class="meta-item">
+                        <i class="fa fa-calendar"></i>
+                        <span>{{raceinfo.racedate | date:'MMM d, yyyy':'UTC' }}</span>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="fa fa-map-marker"></i>
+                        <span ng-if="raceinfo.location.state !== null">
+                            {{raceinfo.location.state}}
+                            <img ng-if="getStateFlag(raceinfo.location.state)" 
+                                 ng-src="{{getStateFlag(raceinfo.location.state)}}" 
+                                 alt="{{raceinfo.location.state}}" 
+                                 class="location-flag"
+                                 onerror="this.style.display='none'">
                         </span>
-                    </span>
+                        <span ng-if="raceinfo.location.state === null">
+                            {{raceinfo.location.country}}
+                            <span ng-if="getCountryFlag(raceinfo.location.country)" 
+                                  class="location-flag-emoji">
+                                {{getCountryFlag(raceinfo.location.country)}}
+                            </span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,11 +79,41 @@
                     <race-achievements race="raceinfo"></race-achievements>
                 </div>
             </div>
+            <!-- Gender Filter -->
+            <div class="gender-filter-container">
+                <div class="btn-group" role="group">
+                    <button type="button" 
+                            class="btn btn-sm" 
+                            ng-class="{'btn-primary': !genderFilter, 'btn-outline-primary': genderFilter}"
+                            ng-click="setGenderFilter(null)">
+                        <i class="fa fa-users"></i>
+                        All Members
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm" 
+                            ng-class="{'btn-primary': genderFilter === 'Female', 'btn-outline-primary': genderFilter !== 'Female'}"
+                            ng-click="setGenderFilter('Female')"
+                            tooltip-append-to-body="true" 
+                            tooltip-placement="top"
+                            uib-tooltip-html="'Here for the women\'s race'">
+                        <i class="fa fa-venus"></i>
+                        Women Only
+                    </button>
+                </div>           
+            </div>
         </div>
+        
+       
     </div>
 </div>
 
 <div class="modal-body modern-modal-body">
+    <!-- Mobile scroll indicator -->
+    <div class="mobile-scroll-indicator" ng-show="$window.innerWidth <= 768">
+        <i class="fa fa-arrows-h"></i>
+        <span>Scroll horizontally to see all columns</span>
+    </div>
+    
     <div id="member-list" class="row">
         <div class="col-md-12">
             <div class="results-table-container">
@@ -105,7 +146,7 @@
                 
                 <div class="results-list">
                     <div class="result-row modern-result-row" 
-                         ng-repeat="result in raceinfo.results" 
+                         ng-repeat="result in getFilteredResults()" 
                          ng-class="{hoverlistbg: hover}" 
                          ng-mouseenter="hover = true" 
                          ng-mouseleave="hover = false">
@@ -113,10 +154,7 @@
                             <div class="result-cell racer-cell">
                                 <a ng-click="cancel()" 
                                    class="racer-link" 
-                                   ui-sref="/members/member({ member: result.members[0].username })">
-                                    <!-- <span uib-tooltip="{{result | membersNamesWithAgeFilter:raceinfo}}">
-                                        {{result.members | membersNamesFilter:raceinfo.race | cut:false:25:"..."}}
-                                    </span> -->
+                                   ui-sref="/members/member({ member: result.members[0].username })">                                    
                                     <result-members-names-full result="result" race="raceinfo"></result-members-names-full>
                                     <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                                 </a>

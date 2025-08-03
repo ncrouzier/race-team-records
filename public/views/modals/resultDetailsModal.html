@@ -1,66 +1,108 @@
-<div class="modal-header">
-    <span class="modal-title h3 bold"> {{race.racename}}</span> -- <span ng-bind-html="race | raceinfoSportIcons | unsafe"></span> -- <span >{{race.racedate | date:'yyyy-MM-dd':'UTC' }}</span> -- <span><a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link hoverhand" ng-show="result.resultlink !== ''" title="view result"></i></a>
-</div>
-<div class="modal-body" style ="padding: 0px;">
-    <div class="row" style="margin-left:0;" ng-show="result.comments !== undefined && result.comments !== ''">
-        <div class="col-md-12">
-            <h4><result-members-names-full race="race" result="result"></result-members-names-full></h4>
-            <h4>Total time: <span class="bold">{{result.time | secondsToTimeString}}</span></h4>
+<div class="modal-header modern-modal-header">
+    <div class="race-header-content">
+        <div class="race-title-section">
+            <h3 class="race-title">{{race.racename}}</h3>
+            <race-icon race="race"></race-icon>
         </div>
-    </div>
-    <div id="member-list" class="row">
-        <div class="col-md-12">
-            <ul class="results-list list-group">
-                <li class="list-group-item text-left resultlistheader" ng-show="result.legs.length >0">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <span class="listheader" title="Leg">Leg Name</span>
-                        </div>
-                        <div class="col-sm-2">
-                            <span class="listheader" title="Leg">Leg Distance</span>
-                        </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-2'">
-                            <span class="listheader" title="Net Time">Net Time</span>
-                        </div>
-                        <div class="col-sm-2">
-                            <span class="listheader" title="Pace">Pace</span>
-                        </div>
-                        <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <span class="listheader" title="Edit">Edit</span>
-                        </div>
+        
+        <div class="race-details-section">
+            <div class="race-info-panel">
+                <div class="race-type-info">
+                    <span ng-show="!race.isMultisport && race.racetype.isVariable === true" 
+                          ng-bind-html="(race.distanceName +' <span class=\''+getSurfaceClass(race.racetype.surface)+'\'>(' + race.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="!race.isMultisport && race.racetype.isVariable === false" 
+                          ng-bind-html="(race.racetype.name +' <span class=\''+getSurfaceClass(race.racetype.surface)+'\'>(' + race.racetype.surface +')</span>')">
+                    </span>
+                    <span ng-show="race.isMultisport" ng-bind-html="'Multiple-sport Event'"></span>
+                    <span ng-bind-html="race | raceinfoSportIcons | unsafe"></span>
+                </div>
+                
+                <div class="race-meta-info">
+                    <div class="meta-item">
+                        <i class="fa fa-calendar"></i>
+                        <span>{{race.racedate | date:'MMM d, yyyy':'UTC' }}</span>
                     </div>
-                </li>
-                <li ng-repeat="leg in result.legs | orderBy:'order'" class="list-group-item text-left resultlistrow" class="list-group-item text-left resultlistrow"  ng-class="{hoverlistbg: hover, 'lightergraybg': leg.isTransition}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <span>{{leg.legName}}</span>
-                        </div>
-                        <div class="col-sm-2">
-                            <span>{{leg.distanceName}}</span>
-                        </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-2'">
-                            <span>{{leg.time | secondsToTimeString}}</span>
-                        </div>
-                        <div class="col-sm-2" >
-                            <multisport-pace></multisport-pace>
-                        </div>
-                        <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'" ng-click="retrieveResultForEdit(result)" title="edit result" ></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result" ></i> </span >
-                        </div>
-                    </div>                 
-                </li>
-                <!-- <li dir-paginate="result in resultsList | itemsPerPage: 10">{{ result.racename }}</li> -->
-            </ul>
+                    
+                    <div class="meta-item">
+                        <i class="fa fa-user"></i>
+                        <span><result-members-names-full race="race" result="result"></result-members-names-full></span>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <i class="fa fa-clock-o"></i>
+                        <span>{{result.time | secondsToTimeString}}</span>
+                    </div>
+                    
+                    <div class="meta-item" ng-show="result.resultlink !== undefined && result.resultlink !== ''">
+                        <a ng-href="{{result.resultlink}}" target="_blank" class="result-link">
+                            <i class="fa fa-link"></i>
+                            <span>View Result</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="row" style="margin-left:0;" ng-show="result.comments !== undefined && result.comments !== ''">
-        <div class="col-md-12">
-            <h4>Comment</h4>
-            <div>"{{result.comments}}"</div>
-        </div>
-    </div>
-
 </div>
-<div class="modal-footer">
-    <button class="btn btn-danger" ng-click="cancel()">Close</button>
+
+<div class="modal-body modern-modal-body">
+    <div class="results-table-container">
+        <div class="results-header modern-results-header" ng-show="result.legs.length > 0">
+            <div class="header-row">
+                <div class="header-cell leg-cell">
+                    <span class="header-text">LEG NAME</span>
+                </div>
+                <div class="header-cell distance-cell">
+                    <span class="header-text">DISTANCE</span>
+                </div>
+                <div class="header-cell time-cell">
+                    <span class="header-text">NET TIME</span>
+                </div>
+                <div class="header-cell pace-cell">
+                    <span class="header-text">PACE</span>
+                </div>            
+            </div>
+        </div>
+        
+        <div class="results-list">
+            <div class="result-row modern-result-row" 
+                 ng-repeat="leg in result.legs | orderBy:'order'" 
+                 ng-class="{hoverlistbg: hover, 'transition-leg': leg.isTransition}" 
+                 ng-mouseenter="hover = true" 
+                 ng-mouseleave="hover = false">
+                <div class="result-content">
+                    <div class="result-cell leg-cell">
+                        <span class="leg-name" ng-show="!leg.isTransition">{{leg.legName}}</span>
+                        <span class="transition-badge" ng-show="leg.isTransition">{{leg.legName}}</span>
+                    </div>
+                    <div class="result-cell distance-cell">
+                        <span class="distance-text">{{leg.distanceName}}</span>
+                    </div>
+                    <div class="result-cell time-cell">
+                        <span class="time-text">{{leg.time | secondsToTimeString}}</span>
+                    </div>
+                    <div class="result-cell pace-cell">
+                        <multisport-pace></multisport-pace>
+                    </div>                 
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="comments-section" ng-show="result.comments !== undefined && result.comments !== ''">
+        <div class="comments-panel">
+            <h5><i class="fa fa-comment"></i> Comments</h5>
+            <div class="comment-text">"{{result.comments}}"</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer modern-modal-footer">
+    <div class="footer-actions">
+        <button class="btn btn-secondary modern-btn" ng-click="cancel()">
+            <i class="fa fa-times"></i>
+            Close
+        </button>
+    </div>
 </div>

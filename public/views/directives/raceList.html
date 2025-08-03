@@ -75,6 +75,8 @@
                             <race-achievements race="raceInfo"></race-achievements>
                         </div>
                         <div ng-if="user.role == 'admin'" class="col-sm-1"  style="text-align: center;">
+                            <i class="hoverhand fa fa-pencil" ng-show="user.role == 'admin'"
+                            ng-click="$event.stopPropagation(); editRace(raceInfo)" title="Edit race"></i>
                             <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
                             ng-click="$event.stopPropagation(); removeRace(raceInfo)" title="Remove race"></i>
                         <i class="hoverhand fa  fa-plus-square" ng-show="user.role == 'admin'"

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', function($scope, $analytics, AuthService, ResultsService, dialogs, localStorageService,$stateParams,$location, $q) {
     
 
     $scope.authService = AuthService;
@@ -110,28 +110,72 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     $scope.racesList = [];
     $scope.expandedRaces = {}; 
 
-    ResultsService.getRaceResultsWithCacheSupport({
-        "limit": 100,
-        "sort": '-racedate -order racename',
-        "preload":true
-    }).then(function(races) {
-        $scope.racesList = races;        
-        //now load the whole thing unless the initial call return the cache version (>200 res).
-        if (races.length < 200){
-            ResultsService.getRaceResultsWithCacheSupport({
-                "sort": '-racedate -order racename',
-                "preload":false
-            }).then(function(races) {
-                $scope.racesList = races;
-            });
-        }
-    });
+    // Loading states for better UX
+    $scope.loadingStates = {
+        races: false
+    };
+    
+    // Error state
+    $scope.loadingError = false;
 
-    // ResultsService.getRaceResultsWithCacheSupport({
-    //     "sort": '-racedate -order racename'
-    // }).then(function(races) {
-    //     $scope.racesList = races;
-    // });
+    $scope.loadRaces = function() {
+        $scope.loadingStates.races = true;
+        $scope.loadingError = false; // Clear any previous error state
+        
+        // Add a timeout to prevent infinite loading
+        var timeoutPromise = $q(function(resolve, reject) {
+            setTimeout(function() {
+                reject(new Error('Loading timeout - taking too long'));
+            }, 30000); // 30 second timeout
+        });
+        
+        var loadPromise = ResultsService.getRaceResultsWithCacheSupport({
+            "limit": 100,
+            "sort": '-racedate -order racename',
+            "preload":true
+        }).then(function(races) {
+            $scope.racesList = races;        
+            
+            //now load the whole thing unless the initial call return the cache version (>200 res).
+            if (races.length < 200){
+                return ResultsService.getRaceResultsWithCacheSupport({
+                    "sort": '-racedate -order racename',
+                    "preload":false
+                }).then(function(fullRaces) {
+                    $scope.racesList = fullRaces;
+                    return fullRaces;
+                });
+            } else {
+                return races;
+            }
+        }).then(function(finalRaces) {
+            $scope.loadingStates.races = false;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            return finalRaces;
+        }).catch(function(error) {
+            $scope.loadingStates.races = false;
+            $scope.loadingError = true; // Set error state
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            throw error;
+        });
+        
+        // Race between the load promise and timeout
+        return $q.race([loadPromise, timeoutPromise]).catch(function(error) {
+            $scope.loadingStates.races = false;
+            $scope.loadingError = true; // Set error state
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            throw error;
+        });
+    };
+
+    // Initialize races when controller loads
+    $scope.loadRaces();
 
     $scope.expand = function(raceinfo) {
         if (raceinfo) {
@@ -628,6 +672,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             return s.replace(/ /g, '') + '-col';
         }
     };
+    $scope.getSurfaceClass = function(surfaceName) {
+        if (!surfaceName) return '';
+        // Convert to lowercase and replace spaces with hyphens
+        return 'surface-' + surfaceName.toLowerCase().replace(/\s+/g, '-');
+    };
 
     $scope.onMetersChange = function() {
         if ($scope.autoconvert) {
@@ -716,7 +765,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', 'UtilsService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService, UtilsService) {
+angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', 'UtilsService', 'AuthService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService, UtilsService, AuthService) {
+
+    $scope.authService = AuthService;
+    $scope.$watch('authService.isLoggedIn()', function(user) {
+        $scope.user = user;
+    });
 
     $scope.raceinfo = raceinfo;
     if (fromStateParams){
@@ -770,6 +824,11 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
+    };
+    $scope.getSurfaceClass = function(surfaceName) {
+        if (!surfaceName) return '';
+        // Convert to lowercase and replace spaces with hyphens
+        return 'surface-' + surfaceName.toLowerCase().replace(/\s+/g, '-');
     };
 
     $scope.getStateFlag = function(stateCode) {
@@ -892,6 +951,37 @@ angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$
           });
       };
 
+    // Edit race functionality
+    $scope.editRace = function() {
+        if ($scope.user && $scope.user.role === 'admin') {
+            ResultsService.showEditRaceModal($scope.raceinfo).then(function(updatedRace) {
+                if (updatedRace) {
+                    // Update the current race info
+                    $scope.raceinfo = updatedRace;
+                }
+            });
+        }
+    };
+
+    // Gender filter functionality
+    $scope.genderFilter = null;
+
+    $scope.setGenderFilter = function(gender) {
+        $scope.genderFilter = gender;
+    };
+
+    $scope.getFilteredResults = function() {
+        if (!$scope.genderFilter) {
+            return $scope.raceinfo.results;
+        }
+        return $scope.raceinfo.results.filter(function(result) {
+            // Check if any member in the result has the specified gender
+            return result.members && result.members.some(function(member) {
+                return member.sex === $scope.genderFilter;
+            });
+        });
+    };
+
 
 
 }]);
@@ -915,6 +1005,202 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
+    };
+}]);
+
+// Race Edit Modal Controller
+angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', 'race', 'ResultsService', 'UtilsService', function($scope, $uibModalInstance, race, ResultsService, UtilsService) {
+    
+
+    
+    // Create a deep copy of the race to avoid modifying the original
+    $scope.race = JSON.parse(JSON.stringify(race));
+    
+    // Ensure achievements array exists and convert values to JSON strings for display
+    if (!$scope.race.achievements) {
+        $scope.race.achievements = [];
+    } else {
+        // Convert existing achievement values to JSON strings for display
+        $scope.race.achievements.forEach(function(achievement) {
+            if (achievement.value !== undefined && achievement.value !== null) {
+                if (typeof achievement.value === 'object') {
+                    achievement.valueString = JSON.stringify(achievement.value, null, 2);
+                } else {
+                    achievement.valueString = String(achievement.value);
+                }
+            } else {
+                achievement.valueString = '';
+            }
+        });
+    }
+    
+    // Ensure customOptions array exists and convert values to JSON strings for display
+    if (!$scope.race.customOptions) {
+        $scope.race.customOptions = [];
+    } else {
+        // Convert existing customOption values to JSON strings for display
+        $scope.race.customOptions.forEach(function(option) {
+            if (option.value !== undefined && option.value !== null) {
+                if (typeof option.value === 'object') {
+                    option.valueString = JSON.stringify(option.value, null, 2);
+                } else {
+                    option.valueString = String(option.value);
+                }
+            } else {
+                option.valueString = '';
+            }
+        });
+    }
+    
+    // Ensure location object exists
+    if (!$scope.race.location) {
+        $scope.race.location = { country: '', state: '' };
+    }
+    
+    // Ensure racetype object exists
+    if (!$scope.race.racetype) {
+        $scope.race.racetype = {
+            name: '',
+            surface: 'road',
+            miles: 0,
+            isVariable: false
+        };
+    }
+    
+    // Convert date to Date object for the date picker
+    if ($scope.race.racedate) {
+        $scope.race.racedate = new Date($scope.race.racedate);
+    }
+    
+    // Initialize data
+    $scope.racetypesList = [];
+    $scope.countries = [];
+    $scope.states = [];
+    $scope.autoconvert = true;
+    $scope.opened = false;
+    $scope.achievementsCollapsed = false;
+    
+    // Load racetypes
+    ResultsService.getRaceTypes().then(function(racetypes) {
+        $scope.racetypesList = racetypes;
+    });
+    
+    // Load countries and states
+    UtilsService.getCountries().then(function(countries) {
+        $scope.countries = countries;
+    });
+    
+    UtilsService.getStates().then(function(states) {
+        $scope.states = states;
+    });
+
+   
+    
+    // Helper functions
+    $scope.getRaceTypeClass = function(surface) {
+        if (surface !== undefined) {
+            return surface.replace(/ /g, '') + 'surface';
+        }
+    };
+    
+    $scope.open = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+    
+    $scope.onMetersChange = function() {
+        if ($scope.autoconvert && $scope.race.racetype.meters) {
+            $scope.race.racetype.miles = ($scope.race.racetype.meters * 0.000621371).toFixed(2);
+        }
+    };
+    
+    $scope.onMilesChange = function() {
+        if ($scope.autoconvert && $scope.race.racetype.miles) {
+            $scope.race.racetype.meters = Math.round($scope.race.racetype.miles * 1609.34);
+        }
+    };
+    
+    // Watch for country changes and nullify state if not USA
+    $scope.$watch('race.location.country', function(newCountry, oldCountry) {
+        if (newCountry !== oldCountry && newCountry !== 'USA') {
+            $scope.race.location.state = null;
+        }
+    });
+    
+
+    
+    $scope.addAchievement = function() {
+        $scope.race.achievements.push({
+            name: '',
+            text: '',
+            value: '',
+            valueString: ''
+        });
+    };
+    
+    $scope.removeAchievement = function(index) {
+        $scope.race.achievements.splice(index, 1);
+    };
+    
+    $scope.updateAchievementValue = function(index) {
+        var achievement = $scope.race.achievements[index];
+        try {
+            if (achievement.valueString && achievement.valueString.trim()) {
+                achievement.value = JSON.parse(achievement.valueString);
+            } else {
+                achievement.value = '';
+            }
+        } catch (e) {
+            // Keep the string value if JSON parsing fails
+            achievement.value = achievement.valueString;
+        }
+    };
+    
+    $scope.addCustomOption = function() {
+        $scope.race.customOptions.push({
+            name: '',
+            text: '',
+            value: '',
+            valueString: ''
+        });
+    };
+    
+    $scope.removeCustomOption = function(index) {
+        $scope.race.customOptions.splice(index, 1);
+    };
+    
+    $scope.updateCustomOptionValue = function(index) {
+        var option = $scope.race.customOptions[index];
+        try {
+            if (option.valueString && option.valueString.trim()) {
+                option.value = JSON.parse(option.valueString);
+            } else {
+                option.value = '';
+            }
+        } catch (e) {
+            // Keep the string value if JSON parsing fails
+            option.value = option.valueString;
+        }
+    };
+    
+    $scope.isAchievementDisabled = function(achievement) {
+        return achievement.name === 'newLocation';
+    };
+    
+    $scope.toggleAchievements = function() {
+        $scope.achievementsCollapsed = !$scope.achievementsCollapsed;
+    };
+    
+    $scope.save = function() {
+        
+        // For now, always try to save regardless of validation
+
+        $uibModalInstance.close($scope.race);
+    };
+    
+    $scope.cancel = function() {
+        $uibModalInstance.dismiss('cancel');
     };
 }]);
 

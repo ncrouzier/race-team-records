@@ -1,6 +1,8 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
  const resultSchema = require('./result').schema
+ const SystemInfo = require('./systeminfo');
+
 
 // define the schema for our user model
 var memberSchema = mongoose.Schema({
@@ -39,7 +41,7 @@ memberSchema.pre('save', function(next, done) {
 
     //set memberStatus
     this.memberStatus = 'past';
-    var currentDate = new Date();
+    var currentDate = Date.now();
     for (i = 0; i < this.membershipDates.length; i++) {
       if (this.membershipDates[i].end === undefined || (currentDate > this.membershipDates[i].start && currentDate < this.membershipDates[i].end)){
            this.memberStatus = 'current';
@@ -58,13 +60,36 @@ memberSchema.pre('save', function(next, done) {
     }
 
     if (this.isNew) {
-        this.createdAt = Date.now();
+        this.createdAt =currentDate;
     }
-    this.updatedAt = Date.now();
+    this.updatedAt = currentDate;
+    memberSchema.methods.updateSystemInfo('mcrrc',currentDate);
     next();
 });
 
-
+memberSchema.methods.updateSystemInfo = function(name,date) {
+    try{
+        SystemInfo.findOne({
+            name: name
+        }).then(systemInfo =>{
+            if (systemInfo) {
+                systemInfo.memberUpdate = date;
+                systemInfo.save().then(err => {
+                    if (!err) {
+                        console.log("error fetching systemInfo", err);
+                    } else {
+                        // Update the backend cache after saving
+                        // const service = require('../service');
+                        // service.updateSystemInfoCache();
+                    }
+                });
+            }
+    
+        });
+    }catch(SystemInfoFindOneErr){
+        console.log("error fetching systemInfo")
+    }
+};
 
 
 // create the model for users and expose it to our app

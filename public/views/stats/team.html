@@ -24,16 +24,17 @@
 
         </div>
         <div class="col-md-3" >
-            <div style="float:right;"><ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
-                <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
-                <ui-select-choices repeat="year in yearsList">
-                    <div ng-bind="year"></div>
-                </ui-select-choices>
-            </ui-select>
+            <div style="float:right;">
+                <ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
+                    <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                    <ui-select-choices repeat="year in yearsList">
+                        <div ng-bind="year"></div>
+                    </ui-select-choices>
+                </ui-select>
+               
             </div>
         </div>
     </div>
-    
     <!-- Loading spinner for Team stats -->
     <div ng-if="loadingStates.miscStats" class="text-center" style="padding: 50px;">
         <i class="fa fa-spinner fa-spin fa-3x"></i>

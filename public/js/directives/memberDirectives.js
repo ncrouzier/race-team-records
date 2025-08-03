@@ -68,10 +68,17 @@ app.directive('teamRequirements', function () {
 
             };
         },
-        template: '<div tooltip-placement="bottom"  uib-tooltip-html="getText(member.teamRequirementStats)| unsafe"  class="progress-bar">' +
-            '<div class="progress-bar-fill" ng-class="getProgressBarClass(member.teamRequirementStats)" ng-style="{' +
-            'width: (member.teamRequirementStats.raceCount / numberOfRequiredRaces) * 100 + \'%\'}"></div>' +
-            '<i  ng-class="getStarClass(member.teamRequirementStats.maxAgeGrade)" class="fa"></i>' +
+        template: '<div class="team-requirement-bar" tooltip-placement="bottom" uib-tooltip-html="getText(member.teamRequirementStats)| unsafe">' +
+            '<div class="requirement-progress">' +
+                '<div class="progress-track">' +
+                    '<div class="progress-fill" ng-class="getProgressBarClass(member.teamRequirementStats)" ng-style="{' +
+                    'width: (member.teamRequirementStats.raceCount / numberOfRequiredRaces) * 100 + \'%\'}"></div>' +
+                '</div>' +
+                '<div class="requirement-stats">' +
+                    '<span class="race-count">{{member.teamRequirementStats.raceCount}}/{{numberOfRequiredRaces}}</span>' +
+                    '<i ng-class="getStarClass(member.teamRequirementStats.maxAgeGrade)" class="fa requirement-star"></i>' +
+                '</div>' +
+            '</div>' +
             '</div>'
 
     };

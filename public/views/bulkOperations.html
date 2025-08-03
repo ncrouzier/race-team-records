@@ -46,7 +46,7 @@
                                         <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
                                     </ui-select-match>
                                     <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
-                                        <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                        <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
                                             <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
                                             <span ng-show="!racetype.isVariable">
                                                 <small>length in meters: {{racetype.meters | number}} m</small>
@@ -199,7 +199,7 @@
                                         <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span>')"></div>
                                     </ui-select-match>
                                     <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
-                                        <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                        <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
                                             <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
                                             <span ng-show="!racetype.isVariable">
                                                 <small>length in meters: {{racetype.meters | number}} m</small>

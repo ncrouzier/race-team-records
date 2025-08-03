@@ -90,7 +90,7 @@
                 <ui-select-choices
                     repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                     <div
-                        ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                        ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
                         <div
                             ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search">
                         </div>
@@ -282,9 +282,15 @@
                     <button class="btn btn-default" ng-click="deselectAll()">Deselect All</button>
                 </div>
                 <div class="col-md-6 text-right">
-                    <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="saving || !hasSelectedResults()">
-                        {{saving ? 'Saving...' : 'Save Selected Results'}}
-                    </button>
+                    <div class="save-section">
+                        <div class="saving-indicator" ng-if="isLoading">
+                            <i class="fa fa-spinner fa-spin"></i>
+                            <span class="saving-text">{{savingMessage}}</span>
+                        </div>
+                        <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="isLoading || !hasSelectedResults()">
+                            {{isLoading ? 'Saving...' : 'Save Selected Results'}}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -9,8 +9,110 @@ const Result = require('./models/result');
 const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
 
+// Backend memory cache for system info
+var systemInfoCache = {
+    data: null,
+    lastUpdated: 0,
+    cacheDuration: 60000 // 1 minute cache duration
+};
+
+// Standalone function to get cached system info
+async function getCachedSystemInfo() {
+    const now = Date.now();
+    
+    // Return cached data if it's still fresh
+    if (systemInfoCache.data && (now - systemInfoCache.lastUpdated) < systemInfoCache.cacheDuration) {
+        return systemInfoCache.data;
+    }
+    
+    // Fetch fresh data from database
+    try {
+        const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+        if (systemInfo) {
+            systemInfoCache.data = systemInfo;
+            systemInfoCache.lastUpdated = now;
+        }
+        return systemInfo;
+    } catch (error) {
+        console.error('Error fetching system info:', error);
+        return systemInfoCache.data; // Return cached data as fallback
+    }
+}
+
 module.exports = {
 
+    // Initialize system info cache
+    initializeSystemInfoCache: async function() {
+        try {
+            const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+            if (systemInfo) {
+                systemInfoCache.data = systemInfo;
+                systemInfoCache.lastUpdated = Date.now();
+                // console.log('System info cache initialized');
+            }
+        } catch (error) {
+            console.error('Error initializing system info cache:', error);
+        }
+    },
+    // Invalidate system info cache
+    invalidateSystemInfoCache: async function() {
+        systemInfoCache.data = null;
+        systemInfoCache.lastUpdated = 0;
+        // console.log('System info cache invalidated');
+    },
+
+    // Get cached system info or fetch from database if needed
+    getCachedSystemInfo: async function() {
+        return await getCachedSystemInfo();
+    },
+
+    // Update system info cache when changes are made
+    updateSystemInfoCache: async function() {
+        try {
+            const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
+            if (systemInfo) {
+                systemInfoCache.data = systemInfo;
+                systemInfoCache.lastUpdated = Date.now();
+            }
+        } catch (error) {
+            console.error('Error updating system info cache:', error);
+        }
+    },
+
+    // Middleware to add latest resultUpdate date to response headers
+    // addSystemInfoHeaders: async function(req, res, next) {
+    //     console.log("addSystemInfoHeaders");
+    //     try {
+    //         // Get the latest system info from cache
+    //         const systemInfo = await getCachedSystemInfo();
+    //         if (systemInfo) {
+    //             // Add the individual update dates to response headers
+    //             res.set('X-Result-Update', systemInfo.resultUpdate ? systemInfo.resultUpdate.toISOString() : '');
+    //             res.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
+    //             res.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
+    //             res.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
+                
+    //             // Calculate the latest overall update date
+    //             const dates = [
+    //                 systemInfo.resultUpdate,
+    //                 systemInfo.raceUpdate,
+    //                 systemInfo.racetypeUpdate,
+    //                 systemInfo.memberUpdate
+    //             ].filter(date => date); // Remove null/undefined dates
+                
+    //             if (dates.length > 0) {
+    //                 const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
+    //                 console.log("latestDate", latestDate);
+    //                 res.set('X-Overall-Update', latestDate.toISOString());
+    //             }
+    //         }
+    //         console.log("addSystemInfoHeaders");
+    //         next();
+    //     } catch (error) {
+    //         console.error('Error adding system info headers:', error);
+    //         next(); // Continue even if there's an error
+    //     }
+    // },
 
     updateMemberStats: async function (member) {
         await this.updatePBsandAchivements(member);
@@ -26,7 +128,7 @@ module.exports = {
         const pbDistances = ["400m", "800m", "1500m", "1 mile", "2 miles", "5k", "5000m", "4 miles",
             "5 miles", "8k", "10k", "10000m", "10 miles", "Half Marathon", "20 miles",
             "Marathon", "50k", "50 miles", "100k", "100 miles"];
-        const pbSurfaces = ["road", "track", "ultra", "cross country"];
+        const pbSurfaces = ["road", "track", "ultra", "trail"];
         const raceNumber = [1, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000];
 
         if (clear) {
@@ -269,7 +371,7 @@ module.exports = {
             'members._id': member._id
         });
         resultquery.and({ "race.racetype.name": { $in: pbDistances } });
-        resultquery.and({ "race.racetype.surface": { $in: ["road", "track", "ultra", "cross country"] } }); //don't deal with swim or multi sports
+        resultquery.and({ "race.racetype.surface": { $in: ["road", "track", "ultra", "trail"] } }); //don't deal with swim or multi sports
         resultquery.and({ "$expr": { "$eq": [{ $size: "$members" }, 1] } }); // only deal with single members
         resultquery.sort('race.racedate race.order');
         let results = await resultquery.exec()
@@ -551,17 +653,23 @@ module.exports = {
     startUpUpdate: async function () {
         const startTime = new Date();
         console.log(`[${startTime.toISOString()}] Starting startUpUpdate`);        
+        
+        // Initialize system info cache
+        await this.initializeSystemInfoCache();
+        
         const members = await Member.find();
         console.log(`Processing ${members.length} members...`);
                 
         for (const member of members) {
             await this.updateTeamRequirementStats(member);
-            await this.updateMembersInResults(member);
+
+            //don't do this for now
+            // await this.updateMembersInResults(member);
         }
 
-        // Ensure all races have the proper location achievement
-        console.log(`Processing location achievements...`);
-        await this.updateAllLocationAchievements();
+        // Ensure all races have the proper location achievement. Don't do this for now
+        // console.log(`Processing location achievements...`);
+        // await this.updateAllLocationAchievements();
         
         const endTime = new Date();
         const duration = endTime - startTime;
@@ -638,7 +746,6 @@ module.exports = {
                 await oldestRace.save();
             }
 
-            console.log(`Completed processing location achievements`);
         } catch (err) {
             console.error('Error updating all location achievements:', err);
         }

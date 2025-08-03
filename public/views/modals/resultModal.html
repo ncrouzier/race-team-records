@@ -38,7 +38,7 @@
             </ui-select-match>
 
             <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
-              <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'xcsurface': racetype.surface == 'cross country', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+              <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
                 <!-- <div ng-bind-html="(racetype.name +' (' + racetype.surface +')') | highlight: $select.search"></div> -->
                 <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
                 <span ng-show="!racetype.isVariable">

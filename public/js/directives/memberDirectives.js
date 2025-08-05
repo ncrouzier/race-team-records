@@ -72,7 +72,7 @@ app.directive('teamRequirements', function () {
             '<div class="requirement-progress">' +
                 '<div class="progress-track">' +
                     '<div class="progress-fill" ng-class="getProgressBarClass(member.teamRequirementStats)" ng-style="{' +
-                    'width: (member.teamRequirementStats.raceCount / numberOfRequiredRaces) * 100 + \'%\'}"></div>' +
+            'width: (member.teamRequirementStats.raceCount / numberOfRequiredRaces) * 100 + \'%\'}"></div>' +
                 '</div>' +
                 '<div class="requirement-stats">' +
                     '<span class="race-count">{{member.teamRequirementStats.raceCount}}/{{numberOfRequiredRaces}}</span>' +

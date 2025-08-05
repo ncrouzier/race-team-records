@@ -102,7 +102,8 @@ angular.module('mcrrcApp').factory('UtilsService',['Restangular','MemoryCacheSer
             'ECU': '🇪🇨', 'COL': '🇨🇴', 'VEN': '🇻🇪', 'GUY': '🇬🇾', 'SUR': '🇸🇷',
             'PRY': '🇵🇾', 'URY': '🇺🇾', 'ZAF': '🇿🇦', 'NAM': '🇳🇦', 'BWA': '🇧🇼',
             'ZWE': '🇿🇼', 'ZMB': '🇿🇲', 'MWI': '🇲🇼', 'MOZ': '🇲🇿', 'MDG': '🇲🇬',
-            'MUS': '🇲🇺', 'SYC': '🇸🇨', 'COM': '🇰🇲', 'SWZ': '🇸🇿', 'LSO': '🇱🇸'
+            'MUS': '🇲🇺', 'SYC': '🇸🇨', 'COM': '🇰🇲', 'SWZ': '🇸🇿', 'LSO': '🇱🇸',
+            'UKR': '🇺🇦'
         };
         return countryFlags[code.toUpperCase()] || '🏳️';
     };

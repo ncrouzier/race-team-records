@@ -17,7 +17,6 @@ angular.module('mcrrcApp.results').controller('RaceTypeController', ['$scope', '
     }).then(function(raceTypes) {
         $scope.racetypesList = raceTypes;
         // Migrate "cross country" to "trail" if needed
-        $scope.migrateCrossCountryToTrail();
         $scope.updateCachedStats();
     });
 

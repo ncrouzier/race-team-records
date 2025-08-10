@@ -1080,6 +1080,10 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         $scope.race.racedate = new Date($scope.race.racedate);
     }
     
+    if($scope.race.isMultisport === undefined){
+        $scope.race.isMultisport = false;
+    }
+
     // Initialize data
     $scope.racetypesList = [];
     $scope.countries = [];

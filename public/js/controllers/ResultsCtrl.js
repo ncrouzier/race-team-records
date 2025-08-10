@@ -540,6 +540,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('state',$scope.formData.race.location.state);
         localStorageService.set('legs', $scope.formData.legs);
 
+
+        if ($scope.formData.race.isMultisport === undefined){
+            $scope.formData.race.isMultisport = false;
+        }
+
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
         }
@@ -613,6 +618,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
                 if (l.timeExp.centiseconds === null || l.timeExp.centiseconds === undefined || l.timeExp.centiseconds === "") l.timeExp.centiseconds = 0;
                 l.time = l.timeExp.hours * 360000 + l.timeExp.minutes * 6000 + l.timeExp.seconds * 100 + l.timeExp.centiseconds;
             });
+        }
+        if ($scope.formData.race.isMultisport === undefined){
+            $scope.formData.race.isMultisport = false;
         }
 
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){

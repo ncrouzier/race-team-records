@@ -674,7 +674,6 @@ module.exports = async function(app, qs, passport, async, _) {
                                 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                 await service.invalidateSystemInfoCache();
-                                console.log("create result");
                                 res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
                         }catch(resultCreateErr){
@@ -945,8 +944,9 @@ module.exports = async function(app, qs, passport, async, _) {
             // Update location achievements
             await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
             
-            // Invalidate cache
-            await service.invalidateSystemInfoCache();
+            // Invalidate cache 
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
+
             
             res.json({
                 success: true,
@@ -994,12 +994,11 @@ module.exports = async function(app, qs, passport, async, _) {
                             }catch(cleanQueryExecErr){
                                 res.send(cleanQueryExecErr)
                             }        
-                            console.log('updating after delete');
                             for (let m of members) {
                                 let member = await Member.findById(m._id);    
                                 service.updateMemberStats(member);   
                             }                                               
-                           await service.invalidateSystemInfoCache();
+                            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                             res.end('{"success" : "Result deleted successfully", "status" : 200}');
                         
                     });
@@ -1071,88 +1070,195 @@ module.exports = async function(app, qs, passport, async, _) {
 
     // update a race
     app.put('/api/races/:race_id', service.isLoggedIn, async function(req, res) {
+
+        
         try {
+
             const race = await Race.findById(req.params.race_id);
             const oldRace = JSON.parse(JSON.stringify(race));
             if (!race) {
                 return res.status(404).json({ error: 'Race not found' });
             }
 
-            // Update race fields
-            const updateData = {
-                racename: req.body.racename,
-                distanceName: req.body.distanceName,
-                racedate: req.body.racedate,
-                order: req.body.order,
-                isMultisport: req.body.isMultisport,
-                racetype: req.body.racetype,
-                location: req.body.location,
-                achievements: req.body.achievements.filter(a => a.name !== "newLocation"),
-                customOptions: req.body.customOptions
-            };
-            console.log("updateData", updateData);
-            const updatedRace = await Race.findByIdAndUpdate(
-                req.params.race_id, 
-                updateData, 
-                { new: true, runValidators: true }
-            );
+            let raceToUse;
+            // Check if race exists or create it
+            let existingRace = await Race.findOne({
+                '_id': { $ne: race._id },
+                'racename': req.body.racename,
+                'isMultisport': req.body.isMultisport,
+                'distanceName': req.body.distanceName,
+                'racedate': req.body.racedate,
+                'location.country': req.body.location.country,
+                'location.state': req.body.location.state,
+                'racetype._id': req.body.racetype._id,
+                'order': req.body.order
+            });
+
+            
+
+            if (existingRace) {
+                raceToUse = existingRace;
+            } else {
+                raceToUse = race;
+                // Update raceToUse with request body data
+                raceToUse.racename = req.body.racename;
+                raceToUse.distanceName = req.body.distanceName;
+                raceToUse.racedate = req.body.racedate;
+                raceToUse.order = req.body.order;
+                raceToUse.isMultisport = req.body.isMultisport;
+                raceToUse.racetype = req.body.racetype;
+                raceToUse.location = req.body.location;
+                await raceToUse.save();
+            }
+
+            // Update the race data
+            const updatedRace = raceToUse;
 
             // Update all related results
             const results = await Result.find({ 'race._id': req.params.race_id }).populate('members');
+            
+            // OPTIMIZATION: Collect all unique member IDs to avoid duplicate processing
+            const allMemberIds = new Set();
+            for (let result of results) {
+                result.members.forEach(member => {
+                    allMemberIds.add(member._id.toString());
+                });
+            }
+
+            
+            // OPTIMIZATION: Use bulk operations for result updates
+            const resultBulkOperations = [];
+            const ageGradeResults = [];
+            
             for (let result of results) {
                 // Update race information in the result
-                const raceUpdate = {
-                    'race.racename': updatedRace.racename,
-                    'race.distanceName': updatedRace.distanceName,
-                    'race.racedate': updatedRace.racedate,
-                    'race.order': updatedRace.order,
-                    'race.isMultisport': updatedRace.isMultisport,
-                    'race.racetype': updatedRace.racetype,
-                    'race.location': updatedRace.location,
-                    'race.achievements': updatedRace.achievements,
-                    'race.customOptions': updatedRace.customOptions
-                };
-                
-                // Recalculate age grade for single-member, non-multisport, record-eligible results with valid time
+                // const raceUpdate = {
+                //     'race.racename': updatedRace.racename,
+                //     'race.distanceName': updatedRace.distanceName,
+                //     'race.racedate': updatedRace.racedate,
+                //     'race.order': updatedRace.order,
+                //     'race.isMultisport': updatedRace.isMultisport,
+                //     'race.racetype': updatedRace.racetype,
+                //     'race.location': updatedRace.location,
+                //     'race.achievements': updatedRace.achievements,
+                //     'race.customOptions': updatedRace.customOptions
+                // };
+
+                // Check if age grade needs recalculation
                 if (result.members.length === 1 && 
                     !updatedRace.isMultisport && 
                     result.isRecordEligible && 
                     result.time !== 0) {
                     
-                    const member = result.members[0];
-                    const ag = await service.getAgeGrading(
-                        member.sex.toLowerCase(),
-                        service.calculateAge(updatedRace.racedate, member.dateofbirth),
-                        updatedRace.racetype.surface,
-                        updatedRace.racedate
-                    );
-                    
-                    if (ag && ag[updatedRace.racetype.name.toLowerCase()] !== undefined) {
-                        const newAgeGrade = (ag[updatedRace.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
-                        raceUpdate.agegrade = newAgeGrade;
-                    }
-                }
-                
-                // Update the result with both race info and age grade
-                await Result.findByIdAndUpdate(result._id, {
-                    $set: raceUpdate
-                });
-                
-                // Update member stats for each member in this result
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);    
-                    await service.updateMemberStats(member);   
+                    ageGradeResults.push({
+                        resultId: result._id,
+                        member: result.members[0],
+                        raceUpdate: raceToUse
+                    });
+                } else {
+                    // Add to bulk operations for results that don't need age grade recalculation
+                    resultBulkOperations.push({
+                        updateOne: {
+                            filter: { _id: result._id },
+                            update: { $set: { race: raceToUse } }
+                        }
+                    });
                 }
             }
-
             
-               
+            // Process age grade calculations in parallel
+            const ageGradePromises = ageGradeResults.map(async ({ resultId, member, raceUpdate }) => {
+                // Get the result to access its time
+                const result = results.find(r => r._id.toString() === resultId.toString());
+                if (!result) {
+                    return null;
+                }
+                
+                const ag = await service.getAgeGrading(
+                    member.sex.toLowerCase(),
+                    service.calculateAge(updatedRace.racedate, member.dateofbirth),
+                    updatedRace.racetype.surface,
+                    updatedRace.racedate
+                );
+                // console.log("age grade", ag);
+
+                let newAgeGrade = null;
+                if (ag && ag[updatedRace.racetype.name.toLowerCase()] !== undefined) {
+                    newAgeGrade = (ag[updatedRace.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
+                }
+                return {
+                    updateOne: {
+                        filter: { _id: resultId },
+                        update: { 
+                            $set: { 
+                                race: raceUpdate,
+                                agegrade: newAgeGrade
+                            } 
+                        }
+                    }
+                };
+            });
+            
+            const ageGradeBulkOps = await Promise.all(ageGradePromises);
+            // Filter out null operations (failed age grade calculations)
+            const validAgeGradeOps = ageGradeBulkOps.filter(op => op !== null);
+            resultBulkOperations.push(...validAgeGradeOps);
+            
+            // Execute all result updates in a single bulk operation
+            if (resultBulkOperations.length > 0) {
+                await Result.bulkWrite(resultBulkOperations);
+            }
+            
+            
+            // OPTIMIZATION: Update all unique members in bulk to avoid version conflicts
+            const memberIdsArray = Array.from(allMemberIds);
+            
+            try {
+                await service.updateMemberStatsBulk(memberIdsArray);
+                
+            } catch (error) {
+                console.error(`❌ Error in bulk member stats update:`, error.message);
+                // Fallback to individual updates with retry logic
+                
+                for (const memberId of memberIdsArray) {
+                    let memberUpdateSuccess = false;
+                    let retryCount = 0;
+                    const maxRetries = 3;
+                    
+                    while (!memberUpdateSuccess && retryCount < maxRetries) {
+                        try {
+                            const member = await Member.findById(memberId);
+                            if (!member) {
+                                break;
+                            }
+                            
+                            await service.updateMemberStats(member);
+                            memberUpdateSuccess = true;
+                            
+                        } catch (error) {
+                            retryCount++;
+                            if (error.name === 'VersionError') {
+                                console.log(`🔄 Version conflict for member ${memberId}, retry ${retryCount}/${maxRetries}`);
+                                if (retryCount >= maxRetries) {
+                                    console.error(`❌ Failed to update member ${memberId} after ${maxRetries} retries:`, error.message);
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+                            } else {
+                                console.error(`❌ Error updating member ${memberId}:`, error.message);
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
+            }
+            
             // Update location achievements for this location
-            if (oldRace.location.country !== race.location.country || oldRace.location.state !== race.location.state) {
+            if (oldRace.location.country !== updatedRace.location.country || oldRace.location.state !== updatedRace.location.state) {
                 await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
             }
             
-            await service.updateAllLocationAchievements(updateData.location.country, updateData.location.state);
+            await service.updateAllLocationAchievements(updatedRace.location.country, updatedRace.location.state);
 
             // Get the updated race with populated results
             const populatedRace = await Race.aggregate([
@@ -1191,7 +1297,14 @@ module.exports = async function(app, qs, passport, async, _) {
 
             // Return the first (and only) result from the aggregation
             const raceWithResults = populatedRace[0];
-           await service.invalidateSystemInfoCache();
+            
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
+            
+            // If we found an existing race we are merging into it, delete the old race AFTER all updates are complete
+            if (existingRace) {
+                await race.deleteOne();
+            }
+            
             res.json(raceWithResults);
         } catch(err) {
             console.error('Error updating race:', err);
@@ -1307,7 +1420,7 @@ module.exports = async function(app, qs, passport, async, _) {
             await Race.deleteOne({
                 _id: raceId
             }).then(async raceD => {
-               await service.invalidateSystemInfoCache();
+                await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                 res.json('{"success" : "Result deleted successfully", "status" : 200}');
             });
         }catch (err) {

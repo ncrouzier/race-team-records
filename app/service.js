@@ -1046,8 +1046,10 @@ module.exports = {
         }
 
         const currentYear = new Date().getFullYear();
-        const currentYearStart = new Date(currentYear, 0, 1);
-        const currentYearEnd = new Date(currentYear + 1, 0, 1);
+        //get current year start time in epoc time
+        const currentYearStart = new Date(currentYear, 0, 1).getTime();
+        //get current year end time in epoc time
+        const currentYearEnd = new Date(currentYear + 1, 0, 1).getTime();
 
         // OPTIMIZATION: Use aggregation to calculate stats in one query
         const statsAggregation = await Result.aggregate([
@@ -1055,8 +1057,8 @@ module.exports = {
                 $match: {
                     "members._id": member._id,
                     "race.racedate": {
-                        $gte: currentYearStart,
-                        $lt: currentYearEnd
+                        $gte: new Date(currentYearStart),
+                        $lt: new Date(currentYearEnd)
                     }
                 }
             },
@@ -1112,17 +1114,27 @@ module.exports = {
                 .lean();
             
             const currentYear = new Date().getFullYear();
-            const currentYearStart = new Date(currentYear, 0, 1);
-            const currentYearEnd = new Date(currentYear + 1, 0, 1);
+            //get current year start time in epoc time
+            const currentYearStart = new Date(currentYear, 0, 1).getTime();
+            //get current year end time in epoc time
+            const currentYearEnd = new Date(currentYear + 1, 0, 1).getTime();
+            
+            // Convert string IDs to ObjectIds if needed
+            const mongoose = require('mongoose');
+            const normalizedMemberIds = memberIds.map(id => {
+                if (typeof id === 'string') {
+                    return new mongoose.Types.ObjectId(id);
+                }
+                return id;
+            });
             
             // OPTIMIZATION: Use aggregation to calculate stats for all members in one query
             const statsAggregation = await Result.aggregate([
                 {
                     $match: {
-                        "members._id": { $in: memberIds },
                         "race.racedate": {
-                            $gte: currentYearStart,
-                            $lt: currentYearEnd
+                            $gte: new Date(currentYearStart),
+                            $lt: new Date(currentYearEnd)
                         }
                     }
                 },
@@ -1131,7 +1143,7 @@ module.exports = {
                 },
                 {
                     $match: {
-                        "members._id": { $in: memberIds }
+                        "members._id": { $in: normalizedMemberIds }
                     }
                 },
                 {
@@ -1150,6 +1162,8 @@ module.exports = {
                     }
                 }
             ]);
+            
+
             
             // Create a map of member stats
             const memberStatsMap = {};

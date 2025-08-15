@@ -10,6 +10,9 @@ const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
 const { configDotenv } = require('dotenv');
 
+// In-memory age grading cache for performance optimization
+let ageGradingCache = null;
+
 // Global query counter for tracking all database operations
 let globalQueryCount = 0;
 
@@ -66,12 +69,35 @@ module.exports = {
             if (systemInfo) {
                 systemInfoCache.data = systemInfo;
                 systemInfoCache.lastUpdated = Date.now();
-                // console.log('System info cache initialized');
+                console.log('✅ System info cache initialized');
             }
         } catch (error) {
             console.error('Error initializing system info cache:', error);
         }
     },
+
+    initializeAgeGradingCache: async function() {
+        try {
+            const allAgeGrading = await AgeGrading.find().lean();
+            
+            ageGradingCache = new Map();
+            
+            for (const ag of allAgeGrading) {
+                const key = `${ag.sex}_${ag.type}_${ag.age}_${ag.version}`;
+                ageGradingCache.set(key, ag);
+            }
+            
+            console.log(`✅ Age grading cache initialized with ${ageGradingCache.size} entries`);
+        } catch (error) {
+            console.error('❌ Error initializing age grading cache:', error);
+            ageGradingCache = new Map(); // Fallback to empty cache
+        }
+    },
+
+    refreshAgeGradingCache: async function() {
+        await this.initializeAgeGradingCache();
+    },
+
     // Invalidate system info cache
     invalidateSystemInfoCache: async function() {
         systemInfoCache.data = null;
@@ -163,6 +189,9 @@ module.exports = {
     updateMemberStats: async function (member) {
         // OPTIMIZATION: Run functions sequentially to avoid conflicts on member object
         // but use optimized versions for better performance
+        // OPTIMIZATION: Use bulk processing for single member
+        await this.updateMemberStatsBulk([member._id]);
+        return;
         await this.updatePBsandAchivementsOptimized(member);
         await this.updateTeamRequirementStatsOptimized(member);
     },
@@ -416,37 +445,72 @@ module.exports = {
     /**
      * Optimized version of updatePBsandAchivements using processMemberAchievements to avoid code duplication
      */
-    updatePBsandAchivementsOptimized: async function (member) {
-        try {
-            // Fetch member results with projection for efficiency
-            const results = await Result.find({
-                'members._id': member._id
-            })
-            .populate('race')
-            .sort('race.racedate race.order')
-            .lean();
+    // updatePBsandAchivementsOptimized: async function (member) {
+    //     try {
+    //         // Fetch member results with projection for efficiency
+    //         const results = await Result.find({
+    //             'members._id': member._id
+    //         })
+    //         .populate('race')
+    //         .sort('race.racedate race.order')
+    //         .lean();
 
-            // Use the shared processMemberAchievements function
-            const { resultOps, memberOp } = await this.processMemberAchievements(member, results);
+    //         // Use the shared processMemberAchievements function
+    //         const { resultOps, memberOp } = await this.processMemberAchievements(member, results);
             
-            // Execute bulk operations
-            if (resultOps.length > 0) {
-                await Result.bulkWrite(resultOps);
-            }
+    //         // Execute bulk operations
+    //         if (resultOps.length > 0) {
+    //             await Result.bulkWrite(resultOps);
+    //         }
             
-            if (memberOp) {
-                await Member.bulkWrite([memberOp]);
-            }
+    //         if (memberOp) {
+    //             await Member.bulkWrite([memberOp]);
+    //         }
             
-            return { 
-                "Number of saves": resultOps.length, 
-                "Results": [] // processMemberAchievements doesn't return detailed results
-            };
+    //         return { 
+    //             "Number of saves": resultOps.length, 
+    //             "Results": [] // processMemberAchievements doesn't return detailed results
+    //         };
             
-        } catch (error) {
-            console.error(`❌ Error in updatePBsandAchivementsOptimized for ${member.firstname}:`, error);
-            throw error;
+    //     } catch (error) {
+    //         console.error(`❌ Error in updatePBsandAchivementsOptimized for ${member.firstname}:`, error);
+    //         throw error;
+    //     }
+    // },
+
+    // Helper function to compare achievements efficiently
+    achievementsAreDifferent: function(existingAchievements, calculatedAchievements) {
+        // Sort both arrays by name for consistent comparison
+        const sortedExisting = existingAchievements.sort((a, b) => a.name.localeCompare(b.name));
+        const sortedCalculated = calculatedAchievements.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Check if arrays have different lengths
+        if (sortedExisting.length !== sortedCalculated.length) {
+            return true;
         }
+        
+        // Compare each achievement by name, text, and value
+        for (let i = 0; i < sortedExisting.length; i++) {
+            const existing = sortedExisting[i];
+            const calculated = sortedCalculated[i];
+            
+            // Compare name
+            if (existing.name !== calculated.name) {
+                return true;
+            }
+            
+            // Compare text
+            if (existing.text !== calculated.text) {
+                return true;
+            }
+            
+            // Compare value (handle different value structures)
+            if (JSON.stringify(existing.value) !== JSON.stringify(calculated.value)) {
+                return true;
+            }
+        }
+        
+        return false; // No differences found
     },
 
     updatePBsandAchivementsBulk: async function (memberIds) {
@@ -537,7 +601,6 @@ module.exports = {
             "Marathon", "50k", "50 miles", "100k", "100 miles"];
         const pbSurfaces = ["road", "track", "ultra", "trail"];
         const raceNumber = [1, 10, 25, 50, 75, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775, 800, 825, 850, 875, 900, 925, 950, 975, 1000];
-        
         // OPTIMIZATION: Use Sets for faster lookups
         const pbDistancesSet = new Set(pbDistances);
         const pbSurfacesSet = new Set(pbSurfaces);
@@ -550,77 +613,22 @@ module.exports = {
         // OPTIMIZATION: Use Map for faster PB lookups
         const pbMap = new Map();
         
-        // OPTIMIZATION: Clear all member-specific achievements from all results first
-        const clearedResults = [];
+        // OPTIMIZATION: Calculate what achievements SHOULD be first
         const memberIdStr = member._id.toString();
+        const calculatedAchievements = new Map(); // Map<resultId, achievements>
         
-        // console.log(`   🔍 Clearing achievements for member ${member.firstname} (${memberIdStr})`);
-        
-        for (const result of allResults) {
-            // OPTIMIZATION: More efficient filtering with early returns
-            const modifiedAchievements = [];
-            let clearedCount = 0;
-            
-            for (const achievement of result.achievements) {
-                if (achievement.name === "agegrade") {
-                    clearedCount++;
-                    continue; // Skip all age grade achievements
-                }
-                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
-                    achievement.value.memberId.toString() === memberIdStr) {
-                    clearedCount++;
-                    continue; // Skip race count achievements (they will be recalculated)
-                }
-                if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
-                    achievement.value.memberId.toString() === memberIdStr) {
-                    clearedCount++;
-                    continue; // Clear PB achievements (they will be recalculated chronologically)
-                }
-                // Keep other achievements
-                modifiedAchievements.push(achievement);
-            }
-            
-            if (clearedCount > 0) {
-                // console.log(`   🧹 Cleared ${clearedCount} achievements from result ${result._id}`);
-            }
-            
-            // Create a copy of the result with cleared achievements
-            const clearedResult = {
-                ...result,
-                achievements: modifiedAchievements
-            };
-            clearedResults.push(clearedResult);
-            
-            // Only add bulk operation if achievements were actually removed
-            if (modifiedAchievements.length !== result.achievements.length) {
-                const removedCount = result.achievements.length - modifiedAchievements.length;
-                // console.log(`   📝 Adding bulk operation for result ${result._id}: removed ${removedCount} achievements`);
-                resultBulkOperations.push({
-                    updateOne: {
-                        filter: { _id: result._id },
-                        update: { $set: { achievements: modifiedAchievements } }
-                    }
-                });
-            }
-        }
-        
-        // Process results chronologically using the cleared results
+        // Process results chronologically to calculate correct achievements
         let raceIndex = 0;
-        for (const result of clearedResults) {
-            const addedAchievements = new Set(); // Track achievements added to this result
-            let resModification = false;
+        for (const result of allResults) {
+            const resultAchievements = [];
             
             // Check if this result is a race count milestone
             if (raceNumberSet.has(raceIndex + 1)) {
-                const achievement = {
+                resultAchievements.push({
                     name: "raceCount",
                     text: member.firstname + "'s " + addOrdinalSuffix(raceIndex + 1) + " race with the team!",
                     value: { raceCount: raceIndex + 1, memberId: new mongoose.Types.ObjectId(member._id) }
-                };
-                
-                result.achievements.push(achievement);
-                addedAchievements.add('raceCount');
-                resModification = true;
+                });
             }
             
             // OPTIMIZATION: Pre-calculate valid PB conditions
@@ -631,7 +639,6 @@ module.exports = {
             
             // Handle personal bests
             if (isValidPB) {
-                
                 const pbKey = `${result.race.racetype.name}-${result.race.racetype.surface}`;
                 const existingPB = pbMap.get(pbKey);
                 
@@ -647,29 +654,19 @@ module.exports = {
                             source: "computed"
                         };
                         pbMap.set(pbKey, newPB);
-
-                        // Add PB achievement to the current result
-                        if (!addedAchievements.has('pb')) {
-                            result.achievements.push({
-                                name: "pb",
-                                text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
-                                value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
-                            });
-                            addedAchievements.add('pb');
-                            resModification = true;
-                        }
+                        
+                        resultAchievements.push({
+                            name: "pb",
+                            text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
+                            value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
+                        });
                     } else if (result.time === existingPB.time) {
                         // Tie: keep previous PB achievement and also add PB achievement to this result
-                        // Do NOT update pbMap so personal best reference remains stable
-                        if (!addedAchievements.has('pb')) {
-                            result.achievements.push({
-                                name: "pb",
-                                text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
-                                value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
-                            });
-                            addedAchievements.add('pb');
-                            resModification = true;
-                        }
+                        resultAchievements.push({
+                            name: "pb",
+                            text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
+                            value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
+                        });
                     }
                 } else {
                     // Create new PB
@@ -683,15 +680,11 @@ module.exports = {
                     };
                     pbMap.set(pbKey, newPB);
                     
-                    if (!addedAchievements.has('pb')) {
-                        result.achievements.push({
-                            name: "pb",
-                            text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
-                            value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
-                        });
-                        addedAchievements.add('pb');
-                        resModification = true;
-                    }
+                    resultAchievements.push({
+                        name: "pb",
+                        text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
+                        value: { time: result.time, memberId: new mongoose.Types.ObjectId(member._id) }
+                    });
                 }
             }
             
@@ -699,47 +692,56 @@ module.exports = {
             if (result.agegrade && parseFloat(result.agegrade) > bestAgeGrade) {
                 bestAgeGrade = parseFloat(result.agegrade);
                 
-                if (!addedAchievements.has('agegrade')) {
-                    result.achievements.push({
-                        name: "agegrade",
-                        text: member.firstname + "'s best age graded result with the team! " + result.agegrade + "%",
-                        value: { agegrade: bestAgeGrade }
-                    });
-                    addedAchievements.add('agegrade');
-                    resModification = true;
-                }
-            }
-            
-            // Update result if modified
-            if (resModification) {
-                // OPTIMIZATION: More efficient deduplication using Map
-                const uniqueAchievements = [];
-                const seenAchievements = new Map();
-                
-                for (const achievement of result.achievements) {
-                    if (achievement.value && achievement.value.memberId && 
-                        achievement.value.memberId.toString() === member._id.toString()) {
-                        const key = achievement.name;
-                        if (!seenAchievements.has(key)) {
-                            seenAchievements.set(key, true);
-                            uniqueAchievements.push(achievement);
-                        }
-                    } else {
-                        uniqueAchievements.push(achievement);
-                    }
-                }
-                
-                resultBulkOperations.push({
-                    updateOne: {
-                        filter: { _id: result._id },
-                        update: { $set: { achievements: uniqueAchievements } }
-                    }
+                resultAchievements.push({
+                    name: "agegrade",
+                    text: member.firstname + "'s best age graded result with the team! " + result.agegrade + "%",
+                    value: { agegrade: bestAgeGrade }
                 });
             }
             
+            calculatedAchievements.set(result._id.toString(), resultAchievements);
             raceIndex++;
         }
         
+        // OPTIMIZATION: Compare calculated achievements with existing ones and only update if different
+        for (const result of allResults) {
+            const resultId = result._id.toString();
+            const calculated = calculatedAchievements.get(resultId) || [];
+            
+            // Get existing member-specific achievements
+            const existingMemberAchievements = result.achievements.filter(achievement => {
+                if (achievement.name === "agegrade") return true;
+                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return true;
+                if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return true;
+                return false;
+            });
+            
+            // Get non-member-specific achievements (keep these unchanged)
+            const otherAchievements = result.achievements.filter(achievement => {
+                if (achievement.name === "agegrade") return false;
+                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return false;
+                if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return false;
+                return true;
+            });
+            
+            // Combine other achievements with calculated ones
+            const newAchievements = [...otherAchievements, ...calculated];
+            
+            // OPTIMIZATION: Only update if achievements actually changed
+            const achievementsChanged = this.achievementsAreDifferent(existingMemberAchievements, calculated);
+            if (achievementsChanged) {                                
+                resultBulkOperations.push({
+                    updateOne: {
+                        filter: { _id: result._id },
+                        update: { $set: { achievements: newAchievements } }
+                    }
+                });
+            }
+        }
         // OPTIMIZATION: Convert Map back to array for member update
         tmpPersonalBests = Array.from(pbMap.values());
         
@@ -946,12 +948,14 @@ module.exports = {
 
 
     getAgeGrading: async function (sex, age, raceSurface, raceDate) {
+        // Determine version (existing logic)
+        let version;
         if (raceSurface === "road") {
             if (new Date(raceDate).getFullYear() < 2020) {
                 version = "2015";
             } else if (new Date(raceDate).getFullYear() < 2025){
                 version = "2020";
-            }else{ 
+            } else { 
                 version = "2025";
             }
         }
@@ -962,6 +966,17 @@ module.exports = {
                 version = "2023";
             }
         }
+        
+        // Use cache if available
+        if (ageGradingCache) {
+            const key = `${sex}_${raceSurface}_${age}_${version}`;
+            const cached = ageGradingCache.get(key);
+            if (cached) {
+                return cached;
+            }
+        }
+        
+        // Fallback to database query (for cache misses or when cache not initialized)
         try {
             const ag = await AgeGrading.findOne({
                 sex: sex,
@@ -974,7 +989,6 @@ module.exports = {
             //no age grading
             return null;
         }
-
     },
 
 
@@ -1030,81 +1044,81 @@ module.exports = {
     /**
      * Optimized version of updateTeamRequirementStats using aggregation for better performance
      */
-    updateTeamRequirementStatsOptimized: async function (member) {
+    // updateTeamRequirementStatsOptimized: async function (member) {
         
-        if (!member) {
-            return null;
-        }
+    //     if (!member) {
+    //         return null;
+    //     }
 
-        // Only update team requirement stats for current members
-        if (member.memberStatus === 'past') {
-            if (member.teamRequirementStats != undefined) {
-                member.teamRequirementStats = undefined;
-                await member.save();
-            }
-            return null;
-        }
+    //     // Only update team requirement stats for current members
+    //     if (member.memberStatus === 'past') {
+    //         if (member.teamRequirementStats != undefined) {
+    //             member.teamRequirementStats = undefined;
+    //             await member.save();
+    //         }
+    //         return null;
+    //     }
 
-        const currentYear = new Date().getFullYear();
-        //get current year start time in epoc time
-        const currentYearStart = new Date(currentYear, 0, 1).getTime();
-        //get current year end time in epoc time
-        const currentYearEnd = new Date(currentYear + 1, 0, 1).getTime();
+    //     const currentYear = new Date().getFullYear();
+    //     //get current year start time in epoc time
+    //     const currentYearStart = new Date(currentYear, 0, 1).getTime();
+    //     //get current year end time in epoc time
+    //     const currentYearEnd = new Date(currentYear + 1, 0, 1).getTime();
 
-        // OPTIMIZATION: Use aggregation to calculate stats in one query
-        const statsAggregation = await Result.aggregate([
-            {
-                $match: {
-                    "members._id": member._id,
-                    "race.racedate": {
-                        $gte: new Date(currentYearStart),
-                        $lt: new Date(currentYearEnd)
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: null,
-                    raceCount: { $sum: 1 },
-                    maxAgeGrade: {
-                        $max: {
-                            $cond: [
-                                { $and: [{ $ne: ["$agegrade", null] }, { $ne: ["$agegrade", undefined] }] },
-                                "$agegrade",
-                                -Infinity
-                            ]
-                        }
-                    }
-                }
-            }
-        ]);
+    //     // OPTIMIZATION: Use aggregation to calculate stats in one query
+    //     const statsAggregation = await Result.aggregate([
+    //         {
+    //             $match: {
+    //                 "members._id": member._id,
+    //                 "race.racedate": {
+    //                     $gte: new Date(currentYearStart),
+    //                     $lt: new Date(currentYearEnd)
+    //                 }
+    //             }
+    //         },
+    //         {
+    //             $group: {
+    //                 _id: null,
+    //                 raceCount: { $sum: 1 },
+    //                 maxAgeGrade: {
+    //                     $max: {
+    //                         $cond: [
+    //                             { $and: [{ $ne: ["$agegrade", null] }, { $ne: ["$agegrade", undefined] }] },
+    //                             "$agegrade",
+    //                             -Infinity
+    //                         ]
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     ]);
 
-        let raceCount = 0;
-        let maxAgeGrade = "N/A";
+    //     let raceCount = 0;
+    //     let maxAgeGrade = "N/A";
 
-        if (statsAggregation.length > 0) {
-            raceCount = statsAggregation[0].raceCount;
-            maxAgeGrade = statsAggregation[0].maxAgeGrade === -Infinity ? "N/A" : statsAggregation[0].maxAgeGrade;
-        }
+    //     if (statsAggregation.length > 0) {
+    //         raceCount = statsAggregation[0].raceCount;
+    //         maxAgeGrade = statsAggregation[0].maxAgeGrade === -Infinity ? "N/A" : statsAggregation[0].maxAgeGrade;
+    //     }
 
-        // OPTIMIZATION: Only save if stats have actually changed
-        const currentStats = member.teamRequirementStats;
-        const statsChanged = !currentStats || 
-            currentStats.year !== currentYear ||
-            currentStats.raceCount !== raceCount ||
-            currentStats.maxAgeGrade !== maxAgeGrade;
+    //     // OPTIMIZATION: Only save if stats have actually changed
+    //     const currentStats = member.teamRequirementStats;
+    //     const statsChanged = !currentStats || 
+    //         currentStats.year !== currentYear ||
+    //         currentStats.raceCount !== raceCount ||
+    //         currentStats.maxAgeGrade !== maxAgeGrade;
 
-        if (statsChanged) {
-            member.teamRequirementStats = { 
-                year: currentYear, 
-                raceCount: raceCount, 
-                maxAgeGrade: maxAgeGrade 
-            };
-            await member.save();
-        }
+    //     if (statsChanged) {
+    //         member.teamRequirementStats = { 
+    //             year: currentYear, 
+    //             raceCount: raceCount, 
+    //             maxAgeGrade: maxAgeGrade 
+    //         };
+    //         await member.save();
+    //     }
 
-        return [raceCount, maxAgeGrade];
-    },
+    //     return [raceCount, maxAgeGrade];
+    // },
 
     updateTeamRequirementStatsBulk: async function (memberIds) {
         try {
@@ -1267,9 +1281,12 @@ module.exports = {
 
     startUpUpdate: async function () {
         try {
-        // Initialize system info cache
-        await this.initializeSystemInfoCache();
-        
+            // Initialize system info cache
+            await this.initializeSystemInfoCache();
+            
+            // Initialize age grading cache
+            await this.initializeAgeGradingCache();
+            
             // OPTIMIZATION: Use bulk processing instead of individual member updates
             const members = await Member.find().select('_id firstname memberStatus teamRequirementStats');
             

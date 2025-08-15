@@ -1206,7 +1206,19 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     
     $scope.save = function() {
         
-        // For now, always try to save regardless of validation
+        // Process all achievement values before saving
+        if ($scope.race.achievements) {
+            $scope.race.achievements.forEach(function(achievement, index) {
+                $scope.updateAchievementValue(index);
+            });
+        }
+        
+        // Process all custom option values before saving
+        if ($scope.race.customOptions) {
+            $scope.race.customOptions.forEach(function(option, index) {
+                $scope.updateCustomOptionValue(index);
+            });
+        }
 
         $uibModalInstance.close($scope.race);
     };

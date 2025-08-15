@@ -153,7 +153,7 @@
                                         <span class="rank-number">{{$index+1}}</span>
                                     </td>
                                     <td class="member-cell">
-                                        <a ui-sref="/members({ member: r.firstname+r.lastname })" 
+                                        <a ui-sref="/members({ member: r.username })" 
                                            ng-class="r.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
                                            class="member-link">
                                             <i class="fa fa-user-circle"></i>

@@ -35,6 +35,17 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             member: {_id :fullMember._id}
         }).then(function(results) {
             $scope.currentMember = fullMember;
+            $scope.currentMemberResultList = results; 
+
+            // get racetypes from these results
+            $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
+                const { _id, race } = result;
+                if (!racetypes[race.racetype._id]) {
+                    racetypes[race.racetype._id] = race.racetype;
+                }
+                return racetypes;
+            }, {})).sort((a, b) => a.meters - b.meters);
+
             // Calculate member statistics
             $scope.calculateMemberStats(results);
             $scope.loading = false;
@@ -76,6 +87,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         // Track years and race types
         const years = new Set();
         const raceTypes = {};
+        const yearlyBreakdown = {};
         const locations = {};
         let totalAgeGrade = 0;
         let ageGradeCount = 0;
@@ -123,6 +135,15 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             const key = category + '|' + name;
             raceTypes[key] = raceTypes[key] || { category: category, name: name, count: 0 };
             raceTypes[key].count++;
+
+            // Add to yearly breakdown for chart
+            if (!yearlyBreakdown[raceYear]) {
+                yearlyBreakdown[raceYear] = {};
+            }
+            if (!yearlyBreakdown[raceYear][category]) {
+                yearlyBreakdown[raceYear][category] = { results: [] };
+            }
+            yearlyBreakdown[raceYear][category].results.push(result);
 
             // Track locations
             const location = result.race.location.state || result.race.location.country;
@@ -178,6 +199,8 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             }
         });
 
+
+
         // Calculate derived stats
         $scope.memberStats.yearsRacing = years.size;
         $scope.memberStats.avgRacesPerYear = results.length / years.size;
@@ -186,17 +209,23 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         $scope.memberStats.avgAgeGrade = ageGradeCount > 0 ? totalAgeGrade / ageGradeCount : 0;
 
         // Create race type breakdown
-        $scope.memberStats.raceTypeBreakdown = Object.values(raceTypes).map(type => ({
+        var raceTypeBreakdownArray = Object.values(raceTypes).map(type => ({
             category: type.category,
             name: type.name,
             count: type.count,
             percentage: Math.round((type.count / results.length) * 100)
         })).sort((a, b) => b.count - a.count);
 
+        // Create race type breakdown object with yearly data for charts
+        $scope.memberStats.raceTypeBreakdown = {
+            categories: raceTypeBreakdownArray,
+            yearly: yearlyBreakdown
+        };
+
         // Add colors for D3 pie chart
         const colors = ['#007bff', '#28a745', '#ffc107', '#fd7e14', '#e83e8c', '#dc3545', '#6f42c1', '#6c757d'];
         
-        $scope.memberStats.raceTypeBreakdown.forEach((type, index) => {
+        $scope.memberStats.raceTypeBreakdown.categories.forEach((type, index) => {
             type.color = colors[index % colors.length];
         });
         
@@ -213,7 +242,6 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             displayFlag: location.displayFlag,
             count: location.count
         })).sort((a, b) => b.count - a.count);
-        console.log($scope.memberStats.locationBreakdown );
     };
     
     // Navigation functions for stats links

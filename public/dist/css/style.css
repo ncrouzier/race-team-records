@@ -1071,7 +1071,7 @@ html {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 body {
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 15px;
   line-height: 1.4;
   color: #222222;
@@ -1172,7 +1172,7 @@ h6,
 .h4,
 .h5,
 .h6 {
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
   line-height: 1.1;
   color: inherit;
@@ -6051,7 +6051,7 @@ button.close {
   position: absolute;
   z-index: 1070;
   display: block;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-style: normal;
   font-weight: normal;
   letter-spacing: normal;
@@ -6169,7 +6169,7 @@ button.close {
   display: none;
   max-width: 276px;
   padding: 1px;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-style: normal;
   font-weight: normal;
   letter-spacing: normal;
@@ -7694,6 +7694,7 @@ footer {
   }
 }
 .select2-container .select2-choice {
+  background: linear-gradient(90deg, #00526e 10%, #008cba 97%);
   height: 36px;
   line-height: 33px;
 }
@@ -7703,6 +7704,12 @@ footer {
     line-height: 33px;
   }
 }
+.select2-drop {
+  background: linear-gradient(90deg, #00526e 10%, #008cba 97%);
+}
+.select2-results .select2-highlighted {
+  background: #008cba;
+}
 .ui-select-container[theme=select2].direction-up .ui-select-dropdown .select2-search {
   margin-top: 0px;
 }
@@ -7710,7 +7717,7 @@ footer {
   margin-top: 0px;
 }
 .ui-select-choices-row:hover {
-  background-color: #006687;
+  background: #008cba;
 }
 .member-list {
   font-size: 14px;
@@ -7758,6 +7765,9 @@ footer {
   color: #AD757F;
 }
 .crosscountry-col {
+  color: #84CC97;
+}
+.trail-col {
   color: #84CC97;
 }
 .road-col {
@@ -11175,6 +11185,116 @@ footer {
 .race-edit-modal-class .no-items-message p {
   margin: 0;
   font-style: italic;
+}
+.chart-container {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  margin: 20px 0;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
+  min-width: 250px;
+}
+.custom-dropdown .dropdown-toggle {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  min-height: 20px;
+}
+.custom-dropdown .dropdown-toggle:hover {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.custom-dropdown .dropdown-toggle i {
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+.custom-dropdown .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ced4da;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.custom-dropdown .dropdown-menu .dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 1px solid #f8f9fa;
+}
+.custom-dropdown .dropdown-menu .dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+.custom-dropdown .dropdown-menu .dropdown-item:last-child {
+  border-bottom: none;
+}
+.racetype-selector select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+.age-grade-toggle {
+  margin-top: 10px;
+  text-align: center;
+}
+.age-grade-toggle label {
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.age-grade-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+.chart-controls {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.performance-mode-toggle {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.performance-mode-toggle label {
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+.performance-mode-toggle input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
 }
 .save-section {
   display: flex;

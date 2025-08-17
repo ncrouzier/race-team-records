@@ -540,6 +540,11 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         localStorageService.set('state',$scope.formData.race.location.state);
         localStorageService.set('legs', $scope.formData.legs);
 
+
+        if ($scope.formData.race.isMultisport === undefined){
+            $scope.formData.race.isMultisport = false;
+        }
+
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
             $scope.formData.race.distanceName = undefined;
         }
@@ -613,6 +618,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
                 if (l.timeExp.centiseconds === null || l.timeExp.centiseconds === undefined || l.timeExp.centiseconds === "") l.timeExp.centiseconds = 0;
                 l.time = l.timeExp.hours * 360000 + l.timeExp.minutes * 6000 + l.timeExp.seconds * 100 + l.timeExp.centiseconds;
             });
+        }
+        if ($scope.formData.race.isMultisport === undefined){
+            $scope.formData.race.isMultisport = false;
         }
 
         if (!$scope.formData.race.isMultisport && $scope.formData.race.racetype.isVariable === false){
@@ -1072,6 +1080,10 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         $scope.race.racedate = new Date($scope.race.racedate);
     }
     
+    if($scope.race.isMultisport === undefined){
+        $scope.race.isMultisport = false;
+    }
+
     // Initialize data
     $scope.racetypesList = [];
     $scope.countries = [];
@@ -1194,7 +1206,19 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     
     $scope.save = function() {
         
-        // For now, always try to save regardless of validation
+        // Process all achievement values before saving
+        if ($scope.race.achievements) {
+            $scope.race.achievements.forEach(function(achievement, index) {
+                $scope.updateAchievementValue(index);
+            });
+        }
+        
+        // Process all custom option values before saving
+        if ($scope.race.customOptions) {
+            $scope.race.customOptions.forEach(function(option, index) {
+                $scope.updateCustomOptionValue(index);
+            });
+        }
 
         $uibModalInstance.close($scope.race);
     };

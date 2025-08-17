@@ -382,64 +382,123 @@ module.exports = async function(app, qs, passport, async, _) {
     //update a member
     app.put('/api/members/:member_id', service.isAdminLoggedIn, async function(req, res) {
         res.setHeader("Content-Type", "application/json");
-        try{
-            Member.findById(req.params.member_id).then(member=> {
-                member.firstname = req.body.firstname;
-                member.lastname = req.body.lastname;
-                member.alternateFullNames = req.body.alternateFullNames;
-                member.username = req.body.username || member.username;
-                member.dateofbirth = req.body.dateofbirth;
-                member.sex = req.body.sex;
-                member.bio = req.body.bio;
-                member.pictureLink = req.body.pictureLink;
-                member.memberStatus = req.body.memberStatus;
-                member.membershipDates = req.body.membershipDates;
-                try{
-                    member.save().then(async () => {       
-                        try{
-                            Result.find({'members._id': member._id}).then(async results => {                                
-                                for (const resultElement of results) {
-                                    for (const memberElement of resultElement.members) { //itirates members if relay race
-                                        if (memberElement._id.equals(req.body._id)) {
-                                            memberElement.firstname = req.body.firstname;
-                                            memberElement.lastname = req.body.lastname;
-                                            memberElement.username = req.body.username || member.username;
-                                            memberElement.sex = req.body.sex;
-                                            memberElement.dateofbirth = req.body.dateofbirth;
-                                        }
-                                    }
-                                    try {
-                                        resultElement.save().then(()=> {});
-                                    }catch(resultsiSaveErr){
-                                        console.log(resultsiSaveErr);
-                                        res.send(resultsiSaveErr);
-                                    }
-                                    
+        try {
+            const member = await Member.findById(req.params.member_id);
+            if (!member) {
+                return res.status(404).json({ error: 'Member not found' });
+            }
 
-                                }
-                               await service.invalidateSystemInfoCache();
-                                res.end('{"success" : "Member updated successfully", "status" : 200}');                                
-                            });  
-                        }catch(ResultFindErr){
-                            console.log(ResultFindErr);
-                            res.send(ResultFindErr);
-                        }      
-                        //update member stats after edit (in case status changes or age etc)
-                        await service.updateMemberStats(member);                                             
-                    });
-                }catch(memberSaveErr){
-                    console.log(memberSaveErr);
-                    res.send(memberSaveErr);
+            // Store old values to detect changes that require age grade recalculation
+            const oldDateOfBirth = member.dateofbirth;
+            const oldSex = member.sex;
+
+            // Update member fields
+            member.firstname = req.body.firstname;
+            member.lastname = req.body.lastname;
+            member.alternateFullNames = req.body.alternateFullNames;
+            member.username = req.body.username || member.username;
+            member.dateofbirth = req.body.dateofbirth;
+            member.sex = req.body.sex;
+            member.bio = req.body.bio;
+            member.pictureLink = req.body.pictureLink;
+            member.memberStatus = req.body.memberStatus;
+            member.membershipDates = req.body.membershipDates;
+
+            // Save the updated member
+            await member.save();
+
+            // Check if age grade recalculation is needed
+            const needsAgeGradeRecalculation = 
+                oldDateOfBirth.getTime() !== member.dateofbirth.getTime() || 
+                oldSex !== member.sex;
+
+            // Find all results for this member
+            const results = await Result.find({ 'members._id': member._id }).populate('race');
+            
+            // Prepare bulk operations for result updates
+            const resultBulkOperations = [];
+
+            for (const result of results) {
+                let resultModified = false;
+
+                // Update member info in result only if changed
+                for (const memberElement of result.members) {
+                    if (memberElement._id.equals(member._id)) {
+                        // Check if any member info actually changed
+                        const memberInfoChanged = 
+                            memberElement.firstname !== member.firstname ||
+                            memberElement.lastname !== member.lastname ||
+                            memberElement.username !== member.username ||
+                            memberElement.sex !== member.sex ||
+                            memberElement.dateofbirth.getTime() !== member.dateofbirth.getTime();
+                        
+                        if (memberInfoChanged) {
+                            memberElement.firstname = member.firstname;
+                            memberElement.lastname = member.lastname;
+                            memberElement.username = member.username;
+                            memberElement.sex = member.sex;
+                            memberElement.dateofbirth = member.dateofbirth;
+                            resultModified = true;
+                        }
+                    }
                 }
-                
+
+                // Recalculate age grade if needed
+                if (needsAgeGradeRecalculation && 
+                    result.members.length === 1 && 
+                    !result.race.isMultisport && 
+                    result.isRecordEligible && 
+                    result.time !== 0) {
+                    
+                    const ag = await service.getAgeGrading(
+                        member.sex.toLowerCase(),
+                        service.calculateAge(result.race.racedate, member.dateofbirth),
+                        result.race.racetype.surface,
+                        result.race.racedate
+                    );
+                    
+                    if (ag && ag[result.race.racetype.name.toLowerCase()] !== undefined) {
+                        const newAgeGrade = (ag[result.race.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
+                        result.agegrade = newAgeGrade;
+                        resultModified = true;
+                    }
+                }
+
+                // Add to bulk operations if modified
+                if (resultModified) {
+                    resultBulkOperations.push({
+                        updateOne: {
+                            filter: { _id: result._id },
+                            update: { 
+                                $set: { 
+                                    members: result.members,
+                                    ...(result.agegrade !== undefined && { agegrade: result.agegrade })
+                                } 
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Execute result updates
+            if (resultBulkOperations.length > 0) {
+                await Result.bulkWrite(resultBulkOperations);
+            }
+
+            // Update member stats using bulk operations
+            await service.updateMemberStatsBulk([member._id]);
+            
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("results");
+            
+            res.json({ 
+                success: "Member updated successfully, number of results updated: " + resultBulkOperations.length, 
+                status: 200
             });
-        }catch(MemberFindByIdErr){
-            res.send(MemberFindByIdErr);
+            
+        } catch (error) {
+            console.error('Error updating member:', error);
+            res.status(500).json({ error: 'Error updating member' });
         }
-        
-
-
-
     });
 
 
@@ -674,7 +733,6 @@ module.exports = async function(app, qs, passport, async, _) {
                                 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);                                 
                                 await service.invalidateSystemInfoCache();
-                                console.log("create result");
                                 res.json(resultWithPBsAndAchievements);                                                                      
                             }); 
                         }catch(resultCreateErr){
@@ -930,23 +988,19 @@ module.exports = async function(app, qs, passport, async, _) {
                 }
             }
             
-            // Update PBs for all affected members
-            for (const memberId of memberIds) {
-                try {
-                    const member = await Member.findById(memberId);
-                    if (member) {
-                        await service.updateMemberStats(member);
-                    }
-                } catch (memberError) {
-                    console.error('Error updating member stats:', memberError);
-                }
+            // Update PBs for all affected members using bulk operation
+            try {
+                await service.updateMemberStatsBulk(Array.from(memberIds));
+            } catch (memberError) {
+                console.error('Error updating member stats:', memberError);
             }
             
             // Update location achievements
             await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
             
-            // Invalidate cache
-            await service.invalidateSystemInfoCache();
+            // Invalidate cache 
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
+
             
             res.json({
                 success: true,
@@ -994,12 +1048,11 @@ module.exports = async function(app, qs, passport, async, _) {
                             }catch(cleanQueryExecErr){
                                 res.send(cleanQueryExecErr)
                             }        
-                            console.log('updating after delete');
                             for (let m of members) {
                                 let member = await Member.findById(m._id);    
                                 service.updateMemberStats(member);   
                             }                                               
-                           await service.invalidateSystemInfoCache();
+                            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                             res.end('{"success" : "Result deleted successfully", "status" : 200}');
                         
                     });
@@ -1071,88 +1124,196 @@ module.exports = async function(app, qs, passport, async, _) {
 
     // update a race
     app.put('/api/races/:race_id', service.isLoggedIn, async function(req, res) {
+
+        
         try {
+
             const race = await Race.findById(req.params.race_id);
             const oldRace = JSON.parse(JSON.stringify(race));
             if (!race) {
                 return res.status(404).json({ error: 'Race not found' });
             }
 
-            // Update race fields
-            const updateData = {
-                racename: req.body.racename,
-                distanceName: req.body.distanceName,
-                racedate: req.body.racedate,
-                order: req.body.order,
-                isMultisport: req.body.isMultisport,
-                racetype: req.body.racetype,
-                location: req.body.location,
-                achievements: req.body.achievements.filter(a => a.name !== "newLocation"),
-                customOptions: req.body.customOptions
-            };
-            console.log("updateData", updateData);
-            const updatedRace = await Race.findByIdAndUpdate(
-                req.params.race_id, 
-                updateData, 
-                { new: true, runValidators: true }
-            );
+            let raceToUse;
+            // Check if race exists or create it
+            let existingRace = await Race.findOne({
+                '_id': { $ne: race._id },
+                'racename': req.body.racename,
+                'isMultisport': req.body.isMultisport,
+                'distanceName': req.body.distanceName,
+                'racedate': req.body.racedate,
+                'location.country': req.body.location.country,
+                'location.state': req.body.location.state,
+                'racetype._id': req.body.racetype._id,
+                'order': req.body.order
+            });
+
+            
+
+            if (existingRace) {
+                raceToUse = existingRace;
+            } else {
+                raceToUse = race;
+                // Update raceToUse with request body data
+                raceToUse.racename = req.body.racename;
+                raceToUse.distanceName = req.body.distanceName;
+                raceToUse.racedate = req.body.racedate;
+                raceToUse.order = req.body.order;
+                raceToUse.isMultisport = req.body.isMultisport;
+                raceToUse.racetype = req.body.racetype;
+                raceToUse.location = req.body.location;
+                raceToUse.achievements = req.body.achievements || [];
+                raceToUse.customOptions = req.body.customOptions || [];
+                await raceToUse.save();
+            }
+
+            // Update the race data
+            const updatedRace = raceToUse;
 
             // Update all related results
             const results = await Result.find({ 'race._id': req.params.race_id }).populate('members');
+            
+            // OPTIMIZATION: Collect all unique member IDs to avoid duplicate processing
+            const allMemberIds = new Set();
+            for (let result of results) {
+                result.members.forEach(member => {
+                    allMemberIds.add(member._id.toString());
+                });
+            }
+
+            
+            // OPTIMIZATION: Use bulk operations for result updates
+            const resultBulkOperations = [];
+            const ageGradeResults = [];
+            
             for (let result of results) {
                 // Update race information in the result
-                const raceUpdate = {
-                    'race.racename': updatedRace.racename,
-                    'race.distanceName': updatedRace.distanceName,
-                    'race.racedate': updatedRace.racedate,
-                    'race.order': updatedRace.order,
-                    'race.isMultisport': updatedRace.isMultisport,
-                    'race.racetype': updatedRace.racetype,
-                    'race.location': updatedRace.location,
-                    'race.achievements': updatedRace.achievements,
-                    'race.customOptions': updatedRace.customOptions
-                };
-                
-                // Recalculate age grade for single-member, non-multisport, record-eligible results with valid time
+                // const raceUpdate = {
+                //     'race.racename': updatedRace.racename,
+                //     'race.distanceName': updatedRace.distanceName,
+                //     'race.racedate': updatedRace.racedate,
+                //     'race.order': updatedRace.order,
+                //     'race.isMultisport': updatedRace.isMultisport,
+                //     'race.racetype': updatedRace.racetype,
+                //     'race.location': updatedRace.location,
+                //     'race.achievements': updatedRace.achievements,
+                //     'race.customOptions': updatedRace.customOptions
+                // };
+
+                // Check if age grade needs recalculation
                 if (result.members.length === 1 && 
                     !updatedRace.isMultisport && 
                     result.isRecordEligible && 
                     result.time !== 0) {
                     
-                    const member = result.members[0];
-                    const ag = await service.getAgeGrading(
-                        member.sex.toLowerCase(),
-                        service.calculateAge(updatedRace.racedate, member.dateofbirth),
-                        updatedRace.racetype.surface,
-                        updatedRace.racedate
-                    );
-                    
-                    if (ag && ag[updatedRace.racetype.name.toLowerCase()] !== undefined) {
-                        const newAgeGrade = (ag[updatedRace.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
-                        raceUpdate.agegrade = newAgeGrade;
-                    }
-                }
-                
-                // Update the result with both race info and age grade
-                await Result.findByIdAndUpdate(result._id, {
-                    $set: raceUpdate
-                });
-                
-                // Update member stats for each member in this result
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);    
-                    await service.updateMemberStats(member);   
+                    ageGradeResults.push({
+                        resultId: result._id,
+                        member: result.members[0],
+                        raceUpdate: raceToUse
+                    });
+                } else {
+                    // Add to bulk operations for results that don't need age grade recalculation
+                    resultBulkOperations.push({
+                        updateOne: {
+                            filter: { _id: result._id },
+                            update: { $set: { race: raceToUse } }
+                        }
+                    });
                 }
             }
-
             
-               
+            // Process age grade calculations in parallel
+            const ageGradePromises = ageGradeResults.map(async ({ resultId, member, raceUpdate }) => {
+                // Get the result to access its time
+                const result = results.find(r => r._id.toString() === resultId.toString());
+                if (!result) {
+                    return null;
+                }
+                
+                const ag = await service.getAgeGrading(
+                    member.sex.toLowerCase(),
+                    service.calculateAge(updatedRace.racedate, member.dateofbirth),
+                    updatedRace.racetype.surface,
+                    updatedRace.racedate
+                );
+                // console.log("age grade", ag);
+
+                let newAgeGrade = null;
+                if (ag && ag[updatedRace.racetype.name.toLowerCase()] !== undefined) {
+                    newAgeGrade = (ag[updatedRace.racetype.name.toLowerCase()] / (result.time / 100) * 100).toFixed(2);
+                }
+                return {
+                    updateOne: {
+                        filter: { _id: resultId },
+                        update: { 
+                            $set: { 
+                                race: raceUpdate,
+                                agegrade: newAgeGrade
+                            } 
+                        }
+                    }
+                };
+            });
+            
+            const ageGradeBulkOps = await Promise.all(ageGradePromises);
+            // Filter out null operations (failed age grade calculations)
+            const validAgeGradeOps = ageGradeBulkOps.filter(op => op !== null);
+            resultBulkOperations.push(...validAgeGradeOps);
+            
+            // Execute all result updates in a single bulk operation
+            if (resultBulkOperations.length > 0) {
+                await Result.bulkWrite(resultBulkOperations);
+            }
+            
+            
+            // OPTIMIZATION: Update all unique members in bulk to avoid version conflicts
+            const memberIdsArray = Array.from(allMemberIds);
+            
+            try {
+                await service.updateMemberStatsBulk(memberIdsArray);
+                
+            } catch (error) {
+                console.error(`❌ Error in bulk member stats update:`, error.message);
+                // Fallback to individual updates with retry logic
+                
+                for (const memberId of memberIdsArray) {
+                    let memberUpdateSuccess = false;
+                    let retryCount = 0;
+                    const maxRetries = 3;
+                    
+                    while (!memberUpdateSuccess && retryCount < maxRetries) {
+                        try {
+                            const member = await Member.findById(memberId);
+                            if (!member) {
+                                break;
+                            }
+                            
+                            await service.updateMemberStats(member);
+                            memberUpdateSuccess = true;
+                            
+                        } catch (error) {
+                            retryCount++;
+                            if (error.name === 'VersionError') {
+                                console.log(`🔄 Version conflict for member ${memberId}, retry ${retryCount}/${maxRetries}`);
+                                if (retryCount >= maxRetries) {
+                                    console.error(`❌ Failed to update member ${memberId} after ${maxRetries} retries:`, error.message);
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+                            } else {
+                                console.error(`❌ Error updating member ${memberId}:`, error.message);
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
+            }
+            
             // Update location achievements for this location
-            if (oldRace.location.country !== race.location.country || oldRace.location.state !== race.location.state) {
+            if (oldRace.location.country !== updatedRace.location.country || oldRace.location.state !== updatedRace.location.state) {
                 await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
             }
             
-            await service.updateAllLocationAchievements(updateData.location.country, updateData.location.state);
 
             // Get the updated race with populated results
             const populatedRace = await Race.aggregate([
@@ -1191,7 +1352,14 @@ module.exports = async function(app, qs, passport, async, _) {
 
             // Return the first (and only) result from the aggregation
             const raceWithResults = populatedRace[0];
-           await service.invalidateSystemInfoCache();
+            
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
+            
+            // If we found an existing race we are merging into it, delete the old race AFTER all updates are complete
+            if (existingRace) {
+                await race.deleteOne();
+            }
+            
             res.json(raceWithResults);
         } catch(err) {
             console.error('Error updating race:', err);
@@ -1295,19 +1463,21 @@ module.exports = async function(app, qs, passport, async, _) {
             const raceId = req.params.race_id;
             let query = Result.find().where('race._id').equals(raceId);
             let results = await query.exec();
-            for (let res of results) {
-                await Result.deleteOne({
-                    _id: res._id
-                });
-                for (let m of res.members) {
-                    let member = await Member.findById(m._id);
-                    await service.updateMemberStats(member);
-                }
+            // Collect all member IDs first
+            const memberIds = new Set();
+            await Result.deleteMany({ _id: { $in: results.map(r => r._id) } });
+            results.forEach(res => {
+                res.members.forEach(m => memberIds.add(m._id));
+            });
+            
+            // Update stats for all members in bulk
+            if (memberIds.size > 0) {
+                await service.updateMemberStatsBulk(Array.from(memberIds));
             }
             await Race.deleteOne({
                 _id: raceId
             }).then(async raceD => {
-               await service.invalidateSystemInfoCache();
+                await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                 res.json('{"success" : "Result deleted successfully", "status" : 200}');
             });
         }catch (err) {
@@ -1317,6 +1487,21 @@ module.exports = async function(app, qs, passport, async, _) {
 
 
 
+
+    // =====================================
+    // CACHE MANAGEMENT ====================
+    // =====================================
+
+    // Refresh age grading cache
+    app.post('/api/refresh-agegrading-cache', service.isAdminLoggedIn, async function(req, res) {
+        try {
+            await service.refreshAgeGradingCache();
+            res.json({ success: true, message: 'Age grading cache refreshed successfully' });
+        } catch (error) {
+            console.error('Error refreshing age grading cache:', error);
+            res.status(500).json({ error: 'Failed to refresh age grading cache' });
+        }
+    });
 
     // =====================================
     // ACHIEVEMENTS ========================
@@ -1695,6 +1880,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
                     'newRoot': {                      
                       'firstname': '$firstname',
                       'lastname': '$lastname',
+                      'username': '$username',
                       'memberStatus': '$memberStatus',
                       'dateofbirth': '$dateofbirth',
                       'numberofraces': {

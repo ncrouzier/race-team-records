@@ -411,6 +411,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                             racedate: $scope.formData.raceDate ? new Date($scope.formData.raceDate).getTime() : null,
                             racetype: $scope.formData.raceType,
                             location: $scope.formData.location,
+                            isMultisport: false,
                             distanceName: $scope.formData.distanceName                        
                         },
                         ranking: {                                                    

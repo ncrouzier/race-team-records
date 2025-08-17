@@ -237,7 +237,7 @@
                                         </div>
                                         <div class="panel-body">
                                             <d3-pie-chart 
-                                                data="memberStats.raceTypeBreakdown" 
+                                                data="memberStats.raceTypeBreakdown.categories" 
                                                 width="350" 
                                                 height="250"
                                                 on-slice-click="goToResultsWithQuery({racername: currentMember.firstname + ' ' + currentMember.lastname, distance: data.name})">
@@ -280,6 +280,23 @@
                                                     max-size="5">
                                                 </dir-pagination-controls>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Age Grade Performance Chart -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-line-chart"></i> Best Time Performance Over Time</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <member-best-time-chart 
+                                                member="currentMember" 
+                                                race-type-breakdown="memberStats.raceTypeBreakdown">
+                                            </member-best-time-chart>
                                         </div>
                                     </div>
                                 </div>

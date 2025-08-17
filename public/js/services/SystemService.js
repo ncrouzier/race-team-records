@@ -34,7 +34,7 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
             function(systeminfo) {
                 // lastSystemInfo = systeminfo;
                 lastApiCallTime = now;
-                // console.log("NEW SYSTEM INFO FROM CALL", lastSystemInfo);
+
                 return lastSystemInfo;
             },
             function(res) {

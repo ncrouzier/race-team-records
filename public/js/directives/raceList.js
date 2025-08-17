@@ -6,10 +6,35 @@ angular.module('mcrrcApp').directive('raceList', function() {
             searchQuery: '=',
             resultsTableProperties: '=',
             user: '=',
-            loading: '='
+            loading: '=',
+            onReloadRaces: '&'
         },
         templateUrl: 'views/directives/raceList.html',
         controller: function($scope,dialogs,ResultsService,$timeout) {
+            
+            // Function to reload the races list
+            $scope.reloadRacesList = function() {
+                console.log("reloadRacesList", $scope.onReloadRaces);
+                if ($scope.onReloadRaces) {
+                    // Call parent scope reload function if available
+                    $scope.onReloadRaces();
+                } else {
+                    // Fallback: reload using ResultsService directly
+                    // $scope.loading = true;
+                    // ResultsService.getRaceResultsWithCacheSupport({
+                    //     "sort": '-racedate -order racename',
+                    //     "preload": false
+                    // }).then(function(races) {
+                    //     $scope.racesList = races;
+                    //     $scope.loading = false;
+                    //     console.log("Race list reloaded after edit");
+                    // }).catch(function(error) {
+                    //     console.error("Error reloading race list:", error);
+                    //     $scope.loading = false;
+                    // });
+                }
+            };
+            
             $scope.expand = function(raceinfo) {
                 if (raceinfo) {
                     // Toggle the expanded state for this race
@@ -62,6 +87,9 @@ angular.module('mcrrcApp').directive('raceList', function() {
                         } else {
                             $scope.racesList[existingRaceIndex].results.unshift(result);
                         }
+                        // Reload the entire race list to get the most up-to-date data
+                        // This handles all scenarios: normal updates, merges, etc.
+                        // $scope.reloadRacesList();
                     }
                 };
 
@@ -75,10 +103,56 @@ angular.module('mcrrcApp').directive('raceList', function() {
             $scope.retrieveResultForEdit = function(raceInfo,resultSource) {
                 ResultsService.retrieveResultForEdit(resultSource).then(function(result) {
                     if (result) {
-                        var index = raceInfo.results.findIndex(function (r) {
-                            return r._id === resultSource._id;
-                        });                    
-                        raceInfo.results[index] =result;
+                        // Check if the result was moved to a different race
+                        var resultMovedToNewRace = result.race._id !== resultSource.race._id;
+                        
+                        if (resultMovedToNewRace) {
+                            // Result was moved to a different race - remove from original race
+                            var originalIndex = raceInfo.results.findIndex(function (r) {
+                                return r._id === resultSource._id;
+                            });
+                            if (originalIndex > -1) {
+                                raceInfo.results.splice(originalIndex, 1);
+                            }
+                            
+                            // Check if the new race already exists in the list
+                            var existingRaceIndex = $scope.racesList.findIndex(function (race) {
+                                return race._id === result.race._id;
+                            });
+                            
+                            if (existingRaceIndex > -1) {
+                                // Add the result to the existing race
+                                $scope.racesList[existingRaceIndex].results.unshift(result);
+                                
+                                // Force a re-render of the updated race
+                                var raceToUpdate = $scope.racesList[existingRaceIndex];
+                                $scope.racesList.splice(existingRaceIndex, 1);
+                                $timeout(function() {
+                                    $scope.racesList.splice(existingRaceIndex, 0, raceToUpdate);
+                                }, 0);
+                            } else {
+                                // Create a new race and add it to the beginning of the list
+                                var newRace = JSON.parse(JSON.stringify(result.race));
+                                newRace.results = [result];
+                                $scope.racesList.unshift(newRace);
+                            }
+                        } else {
+                            // Result stayed in the same race - normal update
+                            var index = raceInfo.results.findIndex(function (r) {
+                                return r._id === resultSource._id;
+                            });                    
+                            if (index > -1) {
+                                // Force Angular to detect the change by creating a new object reference
+                                raceInfo.results[index] = JSON.parse(JSON.stringify(result));
+                                
+                                // Force a re-render by temporarily removing and re-adding the result
+                                var resultToUpdate = raceInfo.results[index];
+                                raceInfo.results.splice(index, 1);
+                                $timeout(function() {
+                                    raceInfo.results.splice(index, 0, resultToUpdate);
+                                }, 0);
+                            }
+                        }
                     }
                 });
             };
@@ -89,6 +163,9 @@ angular.module('mcrrcApp').directive('raceList', function() {
                     ResultsService.deleteResult(resultSource).then(function() {
                         var index = raceinfo.results.indexOf(resultSource);
                         if (index > -1) raceinfo.results.splice(index, 1);
+                        // Reload the entire race list to get the most up-to-date data
+                        // This handles all scenarios: normal updates, merges, etc.
+                        // $scope.reloadRacesList();
                     });
                 }, function(btn) {});
             };
@@ -104,6 +181,9 @@ angular.module('mcrrcApp').directive('raceList', function() {
                         if (index > -1) {
                             $scope.racesList.splice(index, 1);
                         }
+                        // Reload the entire race list to get the most up-to-date data
+                        // This handles all scenarios: normal updates, merges, etc.
+                        // $scope.reloadRacesList();
                     });
                 }, function (btn) { });
             };
@@ -111,21 +191,52 @@ angular.module('mcrrcApp').directive('raceList', function() {
             $scope.editRace = function(raceInfo) {
                 ResultsService.showEditRaceModal(raceInfo).then(function(updatedRace) {
                     if (updatedRace) {
-                        // Update the race in the list
-                        var index = $scope.racesList.findIndex(function (r) {
+                        // Check if the race was merged into an existing race (different ID)
+                        var wasMerged = updatedRace._id !== raceInfo._id;
+                        
+                        // Find the original race in the list
+                        var originalIndex = $scope.racesList.findIndex(function (r) {
                             return r._id === raceInfo._id;
                         });
-                        if (index > -1) {
-                            // Force Angular to re-evaluate one-time bindings by creating a new object reference
-                            $scope.racesList[index] = JSON.parse(JSON.stringify(updatedRace));
-                            console.log("updated race", $scope.racesList[index]);
+                        
+                        if (wasMerged) {
+                            // Race was merged - remove the original race from the list
+                            if (originalIndex > -1) {
+                                $scope.racesList.splice(originalIndex, 1);
+                            }
                             
-                            // Force a re-render by temporarily removing and re-adding the race
-                            var raceToUpdate = $scope.racesList[index];
-                            $scope.racesList.splice(index, 1);
-                            $timeout(function() {
-                                $scope.racesList.splice(index, 0, raceToUpdate);
-                            }, 0);
+                            // Check if the target race already exists in the list
+                            var targetIndex = $scope.racesList.findIndex(function (r) {
+                                return r._id === updatedRace._id;
+                            });
+                            
+                            if (targetIndex > -1) {
+                                // Update the existing target race
+                                $scope.racesList[targetIndex] = JSON.parse(JSON.stringify(updatedRace));
+                                
+                                // Force a re-render of the updated race
+                                var raceToUpdate1 = $scope.racesList[targetIndex];
+                                $scope.racesList.splice(targetIndex, 1);
+                                $timeout(function() {
+                                    $scope.racesList.splice(targetIndex, 0, raceToUpdate1);
+                                }, 0);
+                            } else {
+                                // Target race doesn't exist in current list, add it
+                                $scope.racesList.push(JSON.parse(JSON.stringify(updatedRace)));
+                            }
+                        } else {
+                            // Normal update - same race ID
+                            if (originalIndex > -1) {
+                                // Force Angular to re-evaluate one-time bindings by creating a new object reference
+                                $scope.racesList[originalIndex] = JSON.parse(JSON.stringify(updatedRace));
+                                
+                                // Force a re-render by temporarily removing and re-adding the race
+                                var raceToUpdate2 = $scope.racesList[originalIndex];
+                                $scope.racesList.splice(originalIndex, 1);
+                                $timeout(function() {
+                                    $scope.racesList.splice(originalIndex, 0, raceToUpdate2 );
+                                }, 0);
+                            }
                         }
                     }
                 });

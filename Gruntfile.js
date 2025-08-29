@@ -76,7 +76,7 @@ module.exports = function(grunt) {
                 'public/libs/async/dist/async.min.js',
                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
                 'public/libs/moment/min/moment.min.js',
-                'public/libs/nouislider/distribute/nouislider.min.js',
+                'public/libs/nouislider/distribute/nouislider.js',
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
@@ -101,7 +101,7 @@ module.exports = function(grunt) {
                 'public/libs/async/dist/async.min.js',
                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
                 'public/libs/moment/min/moment.min.js',
-                'public/libs/nouislider/distribute/nouislider.min.js',
+                'public/libs/nouislider/distribute/nouislider.js',
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.js'

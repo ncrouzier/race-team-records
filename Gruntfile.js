@@ -76,6 +76,7 @@ module.exports = function(grunt) {
                 'public/libs/async/dist/async.min.js',
                 'public/libs/datamaps/dist/datamaps.all.hires.min.js',
                 'public/libs/moment/min/moment.min.js',
+                'public/libs/nouislider/distribute/nouislider.min.js',
                 'public/js/**/*.js',
                 'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
@@ -137,6 +138,7 @@ module.exports = function(grunt) {
                             'public/libs/angular-ui-select/dist/select.css',
                             'public/libs/angular-dialog-service/dist/dialogs.min.css',
                             'public/libs/angular-notify/dist/angular-notify.css',
+                            'public/libs/nouislider/distribute/nouislider.min.css',
                             'public/dist/css/style.css'
                         ]
                 }

@@ -5577,6 +5577,63 @@ footer {
       }
     }
     
+    // Responsive adjustments for smaller screens
+    @media (max-width: 1200px) {
+      .date-range-wrapper {
+        gap: 6px;
+        
+        .date-input-group {
+          input {
+            padding: 8px 10px;
+            font-size: 12px;
+          }
+        }
+        
+        .date-separator {
+          font-size: 12px;
+        }
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .date-range-wrapper {
+        gap: 4px;
+        
+        .date-input-group {
+          input {
+            padding: 6px 8px;
+            font-size: 11px;
+          }
+        }
+        
+        .date-separator {
+          font-size: 11px;
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .date-range-wrapper {
+        flex-direction: column;
+        gap: 8px;
+        
+        .date-input-group {
+          width: 100%;
+          
+          input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 12px;
+          }
+        }
+        
+        .date-separator {
+          font-size: 12px;
+          text-align: center;
+        }
+      }
+    }
+    
         // noUiSlider styling
     .distance-slider-container {
       .distance-range-display {

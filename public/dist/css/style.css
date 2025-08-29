@@ -11816,6 +11816,48 @@ footer {
   font-weight: 500;
   font-size: 14px;
 }
+@media (max-width: 1200px) {
+  .filter-panel .filter-content .date-range-wrapper {
+    gap: 6px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-input-group input {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-separator {
+    font-size: 12px;
+  }
+}
+@media (max-width: 992px) {
+  .filter-panel .filter-content .date-range-wrapper {
+    gap: 4px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-input-group input {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-separator {
+    font-size: 11px;
+  }
+}
+@media (max-width: 768px) {
+  .filter-panel .filter-content .date-range-wrapper {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-input-group {
+    width: 100%;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-input-group input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .filter-panel .filter-content .date-range-wrapper .date-separator {
+    font-size: 12px;
+    text-align: center;
+  }
+}
 .filter-panel .filter-content .distance-slider-container .distance-range-display {
   display: flex;
   justify-content: space-between;

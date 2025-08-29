@@ -2799,7 +2799,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
         }
     });
 
-    app.get('*', function(req, res) {
+    app.get('*', function(req, res) { 
         const isDev = process.env.NODE_ENV !== 'production';
         // console.log('Request URL:', req.url);
         // console.log('Request headers:', req.headers.host);

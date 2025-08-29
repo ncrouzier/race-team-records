@@ -1,3 +1,10 @@
+// Load noUiSlider library
+if (typeof noUiSlider === 'undefined') {
+    var script = document.createElement('script');
+    script.src = '/libs/nouislider/dist/nouislider.min.js';
+    document.head.appendChild(script);
+}
+
 var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule','cgNotify']);
 
 var membersModule = angular.module('mcrrcApp.members', []);
@@ -76,7 +83,7 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
             sort: 'dateofbirth'
         };
 
-        MembersService.getMembers(birthdayParams).then(function(members) {
+        MembersService.getMembersWithCacheSupport(birthdayParams).then(function(members) {
             $scope.birthdays = members;
         });
 

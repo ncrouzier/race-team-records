@@ -20,7 +20,8 @@
     "datamaps": "0.5.8",
     "moment": "^2.24.0",
     "angular-notify": "^2.5.1",
-    "chart.js": "^3.9.1"
+    "chart.js": "^3.9.1",
+    "nouislider": "^15.8.1"
   },
   "description": "",
   "main": "",

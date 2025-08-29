@@ -9,7 +9,7 @@
                                 <i class="fa hoverhand"  ng-click="toggleExpandAll()" title="Expand/Collapse all races" ng-class="{'fa-expand': !allRacesExpanded(), 'fa-compress': allRacesExpanded()}"></i>
                             <!-- </button> -->
                         </div>
-                        <span ng-click="sortRaceBy('racedate')" class="listheader hoverhand" title="Event">EVENT</span>
+                        <span ng-click="sortRaceBy('racedate')" class="listheader hoverhand" title="Event">EVENT ({{racesList.length}})</span>
                     </div>
                     <div class="col-sm-2" style="text-align: center;">
                         <span ng-click="sortRaceBy('distance')" class="listheader hoverhand" title="Event Distance">

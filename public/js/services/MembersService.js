@@ -1,7 +1,89 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', function(Restangular, $uibModal) {
-
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'MemoryCacheService', function(Restangular, $uibModal, $q, MemoryCacheService) {
     var factory = {};
     var members = Restangular.all('members');
+    
+    // Cache names for MemoryCacheService
+    var CACHE_NAMES = {
+        MEMBERS: 'members',
+        LOADING_PROMISES: 'loadingPromises'
+    };
+    
+
+    
+    // Helper function to strip functions and clean objects for IndexedDB storage
+    function stripFunctions(obj) {
+        try {
+            // First try the simple approach
+            var cleaned = JSON.parse(JSON.stringify(obj));
+            
+            // Additional cleaning for member objects
+            if (Array.isArray(cleaned)) {
+                cleaned = cleaned.map(function(member) {
+                    if (member && typeof member === 'object') {
+                        // Remove any problematic properties that might cause IndexedDB issues
+                        var cleanMember = {};
+                        for (var key in member) {
+                            if (member.hasOwnProperty(key)) {
+                                var value = member[key];
+                                // Skip functions, undefined, and complex nested objects
+                                if (typeof value !== 'function' && value !== undefined) {
+                                    // Handle dates
+                                    if (value instanceof Date) {
+                                        cleanMember[key] = value.toISOString();
+                                    }
+                                    // Handle simple types
+                                    else if (typeof value === 'string' || 
+                                             typeof value === 'number' || 
+                                             typeof value === 'boolean' || 
+                                             value === null) {
+                                        cleanMember[key] = value;
+                                    }
+                                    // Handle arrays and objects (but be careful with deep nesting)
+                                    else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+                                        try {
+                                            // Try to serialize and deserialize to ensure it's safe
+                                            var testSerialize = JSON.stringify(value);
+                                            if (testSerialize.length < 1000000) { // Limit size to 1MB
+                                                cleanMember[key] = JSON.parse(testSerialize);
+                                            } else {
+                                                console.warn("Skipping large property:", key, "size:", testSerialize.length);
+                                            }
+                                        } catch (e) {
+                                            console.warn("Skipping problematic property:", key, e.message);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return cleanMember;
+                    }
+                    return member;
+                });
+            }
+            
+            return cleaned;
+        } catch (error) {
+            console.error("Error in stripFunctions:", error);
+            // Fallback: return a minimal version with just essential properties
+            if (Array.isArray(obj)) {
+                return obj.map(function(member) {
+                    if (member && typeof member === 'object') {
+                        return {
+                            _id: member._id,
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username,
+                            memberStatus: member.memberStatus,
+                            dateofbirth: member.dateofbirth,
+                            sex: member.sex
+                        };
+                    }
+                    return member;
+                });
+            }
+            return obj;
+        }
+    }
 
     // =====================================
     // MEMBERS API CALLS ===================
@@ -9,10 +91,43 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
 
     //retrieve members
     factory.getMembers = function(params) {
-        return members.getList(params).then(function(members) {
-            
+        return members.getList(params).then(function(members) {            
             return members;
         });
+    };
+
+    //retrieve members with cache support (memory cache only)
+    factory.getMembersWithCacheSupport = function(params) {        
+        var cacheKey = JSON.stringify(params || {});
+        
+        // Check memory cache first
+        var cachedMembers = MemoryCacheService.get(CACHE_NAMES.MEMBERS, cacheKey);
+        if (cachedMembers) {
+            return $q.resolve(cachedMembers);
+        }
+        
+        // Check for loading promises to prevent duplicate requests
+        var loadingPromises = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, cacheKey);
+        if (loadingPromises) {
+            return loadingPromises;
+        }
+        
+        
+        // Fetch from API and cache in memory only
+        var promise = members.getList(params).then(function(membersFromDatabase) {            
+            // Cache in memory
+            MemoryCacheService.set(CACHE_NAMES.MEMBERS, cacheKey, membersFromDatabase);
+            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
+            
+            return membersFromDatabase;
+        }).catch(function(error) {
+            console.error("❌ API call failed:", error);
+            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
+            throw error;
+        });
+        
+        MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, promise);
+        return promise;
     };
 
 

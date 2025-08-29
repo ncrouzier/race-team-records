@@ -369,19 +369,19 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
             let category = 'other';
             let name = 'Other';
             // If any result has multiple members, categorize as Other
-            let hasMultiMemberResult = false;
-            if (race.results && race.results.length > 0) {
-                for (let i = 0; i < race.results.length; i++) {
-                    if (race.results[i].members && race.results[i].members.length > 1) {
-                        hasMultiMemberResult = true;
-                        break;
-                    }
-                }
-            }
-            if (hasMultiMemberResult) {
-                category = 'other';
-                name = 'Other';
-            } else 
+            // let hasMultiMemberResult = false;
+            // if (race.results && race.results.length > 0) {
+            //     for (let i = 0; i < race.results.length; i++) {
+            //         if (race.results[i].members && race.results[i].members.length > 1) {
+            //             hasMultiMemberResult = true;
+            //             break;
+            //         }
+            //     }
+            // }
+            // if (hasMultiMemberResult) {
+            //     category = 'other';
+            //     name = 'Other';
+            // } else 
             if (raceType.isVariable) {
                 category = 'other';
                 name = 'Other';

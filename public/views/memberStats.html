@@ -193,7 +193,7 @@
                                         <div class="panel-body">
                                             <div class="row">
                                                 <div class="col-sm-6">
-                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({racername: currentMember.firstname + ' ' + currentMember.lastname, ranking: '1'})">
+                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1'}]})">
                                                         <div class="stat-number">{{memberStats.wins}}</div>
                                                         <div class="stat-label">Wins</div>
                                                     </div>
@@ -240,7 +240,7 @@
                                                 data="memberStats.raceTypeBreakdown.categories" 
                                                 width="350" 
                                                 height="250"
-                                                on-slice-click="goToResultsWithQuery({racername: currentMember.firstname + ' ' + currentMember.lastname, distance: data.name})">
+                                                on-slice-click="goToResultsWithQuery({members:[{username: currentMember.username}], distance: data.name})">
                                             </d3-pie-chart>
                                         </div>
                                     </div>
@@ -257,7 +257,7 @@
                                                      dir-paginate="location in memberStats.locationBreakdown | itemsPerPage: 10 track by $index"
                                                      pagination-id="location-pagination">
                                                     <div class="location-name">
-                                                        <a ng-click="goToResultsWithLocationQuery(currentMember.firstname + ' ' + currentMember.lastname, location.country, location.state)" 
+                                                        <a ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], states:[location.state]})" 
                                                            class="hoverhandandunderline" 
                                                            title="View all results for {{currentMember.firstname}} {{currentMember.lastname}} in {{location.displayName}}">
                                                             <span ng-if="location.stateName">

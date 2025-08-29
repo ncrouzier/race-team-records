@@ -362,14 +362,31 @@ app.filter('membersNamesFilter', function () {
     };
 });
 
-app.filter('memberAgeFilter', function () {
-    function calculateAgeAtDate(birthday, date) {
-        var bd = new Date(birthday);
-        var customDate = new Date(date);
-        var ageDifMs = customDate.getTime() - bd.getTime();
-        var ageDate = new Date(ageDifMs);
-        return Math.abs(ageDate.getUTCFullYear() - 1970);
+function calculateAgeAtDate(birthday, date) {    
+    // Parse dates consistently using UTC to avoid timezone issues
+    var bd = new Date(birthday);
+    var customDate = new Date(date);
+    
+    // Use UTC methods to avoid timezone complications
+    var birthYear = bd.getUTCFullYear();
+    var birthMonth = bd.getUTCMonth();
+    var birthDay = bd.getUTCDate();
+    
+    var targetYear = customDate.getUTCFullYear();
+    var targetMonth = customDate.getUTCMonth();
+    var targetDay = customDate.getUTCDate();
+    
+    // Calculate age by comparing year, month, and day
+    var age = targetYear - birthYear;
+    
+    // Adjust age if birthday hasn't occurred yet this year
+    if (targetMonth < birthMonth || (targetMonth === birthMonth && targetDay < birthDay)) {
+        age--;
     }
+    return Math.max(0, age); // Ensure age is never negative
+}
+
+app.filter('memberAgeFilter', function () {
     return function (member) {
         var res = "";
         res = calculateAgeAtDate(member.dateofbirth, new Date());
@@ -378,14 +395,9 @@ app.filter('memberAgeFilter', function () {
 });
 
 
+
 app.filter('membersNamesWithAgeFilter', function () {
-    function calculateAgeAtDate(birthday, date) {
-        var bd = new Date(birthday);
-        var customDate = new Date(date);
-        var ageDifMs = customDate.getTime() - bd.getTime();
-        var ageDate = new Date(ageDifMs);
-        return Math.abs(ageDate.getUTCFullYear() - 1970);
-    }
+    
     return function (result, race) {
         var res = "";
         var members = result.members;
@@ -478,13 +490,6 @@ app.filter('ageFilter', function () {
 });
 
 app.filter('ageAtDateFilter', function () {
-    function calculateAgeAtDate(birthday, date) {
-        var bd = new Date(birthday);
-        var customDate = new Date(date);
-        var ageDifMs = customDate.getTime() - bd.getTime();
-        var ageDate = new Date(ageDifMs);
-        return Math.abs(ageDate.getUTCFullYear() - 1970);
-    }
 
     return function (birthdate, date) {
         return calculateAgeAtDate(birthdate, date);
@@ -522,10 +527,10 @@ app.filter('resultSuperFilter', function () {
         if (query || racetype) {
                        
             let filtered = [];
-            let jsonQuery;
-            if (isJson(query)) {
-                jsonQuery = JSON.parse(query);
-            }
+            // let jsonQuery;
+            // if (isJson(query)) {
+            //     jsonQuery = JSON.parse(query);
+            // }
             angular.forEach(results, function (result) {
                 var raceData;
                 if (!result.race || race){
@@ -538,110 +543,110 @@ app.filter('resultSuperFilter', function () {
                 if (racetype && raceData.racetype._id !== racetype._id) {
                     return;
                 }
-                if (jsonQuery) {
-                    let allConditionsMet = true;
+                // if (jsonQuery) {
+                //     let allConditionsMet = true;
                     
-                    // Check country condition
-                    if (jsonQuery.country) {
-                        if (!raceData.location.country || jsonQuery.country.toLowerCase() !== raceData.location.country.toLowerCase()) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //     // Check country condition
+                //     if (jsonQuery.country) {
+                //         if (!raceData.location.country || jsonQuery.country.toLowerCase() !== raceData.location.country.toLowerCase()) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // Check state condition
-                    if (jsonQuery.state && allConditionsMet) {
-                        if (!raceData.location.state || jsonQuery.state.toLowerCase() !== raceData.location.state.toLowerCase()) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //     // Check state condition
+                //     if (jsonQuery.state && allConditionsMet) {
+                //         if (!raceData.location.state || jsonQuery.state.toLowerCase() !== raceData.location.state.toLowerCase()) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // Check racername condition (search in result members)
-                    if (jsonQuery.racername && allConditionsMet) {
-                        let memberFound = false;
-                        result.members.forEach(function (member) {
-                            let memberName = member.firstname + ' ' + member.lastname;
-                            if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
-                                memberFound = true;
-                            }
-                        });
-                        if (!memberFound) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //     // Check racername condition (search in result members)
+                //     if (jsonQuery.racername && allConditionsMet) {
+                //         let memberFound = false;
+                //         result.members.forEach(function (member) {
+                //             let memberName = member.firstname + ' ' + member.lastname;
+                //             if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                //                 memberFound = true;
+                //             }
+                //         });
+                //         if (!memberFound) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // Check year condition (race year)
-                    if (jsonQuery.year && allConditionsMet) {
-                        if (!raceData.racedate) {
-                            allConditionsMet = false;
-                        } else {
-                            const raceYear = new Date(raceData.racedate).getFullYear().toString();
-                            if (raceYear !== jsonQuery.year.toString()) {
-                                allConditionsMet = false;
-                            }
-                        }
-                    }
+                //     // Check year condition (race year)
+                //     if (jsonQuery.year && allConditionsMet) {
+                //         if (!raceData.racedate) {
+                //             allConditionsMet = false;
+                //         } else {
+                //             const raceYear = new Date(raceData.racedate).getFullYear().toString();
+                //             if (raceYear !== jsonQuery.year.toString()) {
+                //                 allConditionsMet = false;
+                //             }
+                //         }
+                //     }
                     
-                    // Check distance condition (racetype.name)
-                    if (jsonQuery.distance && allConditionsMet) {
-                        if (jsonQuery.distance.toLowerCase() === 'other'){
-                            let isOther = false;
-                            // Check for multiple members in this result
-                            if (result.members && result.members.length > 1) {
-                                isOther = true;
-                            }
-                            // Check for variable distance or non-standard surface
-                            if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'trail' && raceData.racetype.surface !== 'ultra')) {
-                                isOther = true;
-                            }
-                            if (!isOther) {
-                                allConditionsMet = false;
-                            }
-                        }else if (!raceData.racetype.name || raceData.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //     // Check distance condition (racetype.name)
+                //     if (jsonQuery.distance && allConditionsMet) {
+                //         if (jsonQuery.distance.toLowerCase() === 'other'){
+                //             let isOther = false;
+                //             // Check for multiple members in this result
+                //             if (result.members && result.members.length > 1) {
+                //                 isOther = true;
+                //             }
+                //             // Check for variable distance or non-standard surface
+                //             if (raceData.racetype.isVariable || (raceData.racetype.surface !== 'road' && raceData.racetype.surface !== 'track' && raceData.racetype.surface !== 'trail' && raceData.racetype.surface !== 'ultra')) {
+                //                 isOther = true;
+                //             }
+                //             if (!isOther) {
+                //                 allConditionsMet = false;
+                //             }
+                //         }else if (!raceData.racetype.name || raceData.racetype.name.toLowerCase() !== jsonQuery.distance.toLowerCase()) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // Check racename condition (race name)
-                    if (jsonQuery.racename && allConditionsMet) {
-                        if (!raceData.racename || raceData.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //     // Check racename condition (race name)
+                //     if (jsonQuery.racename && allConditionsMet) {
+                //         if (!raceData.racename || raceData.racename.toLowerCase() !== jsonQuery.racename.toLowerCase()) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // Check ranking condition (overall or gender placement)
-                    if (jsonQuery.ranking && allConditionsMet) {
-                        let rankingFound = false;
-                        if(jsonQuery.racername ){
-                            result.members.forEach(function (member) {
-                                let memberName = member.firstname + ' ' + member.lastname;
-                                if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
-                                    // Check if this racer has the specified ranking
-                                    if (result.ranking) {
-                                        if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
-                                            rankingFound = true;
-                                        }
-                                    }
-                                }
-                            });
-                        }else{
-                            if (result.ranking) {
-                                if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
-                                    rankingFound = true;
-                                }
-                            }
-                        }
+                //     // Check ranking condition (overall or gender placement)
+                //     if (jsonQuery.ranking && allConditionsMet) {
+                //         let rankingFound = false;
+                //         if(jsonQuery.racername ){
+                //             result.members.forEach(function (member) {
+                //                 let memberName = member.firstname + ' ' + member.lastname;
+                //                 if (memberName.toLowerCase() === jsonQuery.racername.toLowerCase()) {
+                //                     // Check if this racer has the specified ranking
+                //                     if (result.ranking) {
+                //                         if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                //                             rankingFound = true;
+                //                         }
+                //                     }
+                //                 }
+                //             });
+                //         }else{
+                //             if (result.ranking) {
+                //                 if (result.ranking.overallrank === parseInt(jsonQuery.ranking) || result.ranking.genderrank === parseInt(jsonQuery.ranking)) {
+                //                     rankingFound = true;
+                //                 }
+                //             }
+                //         }
                        
-                        if (!rankingFound) {
-                            allConditionsMet = false;
-                        }
-                    }
+                //         if (!rankingFound) {
+                //             allConditionsMet = false;
+                //         }
+                //     }
                     
-                    // If all conditions are met, add the result
-                    if (allConditionsMet) {
-                        filtered.push(result);
-                        return;
-                    }
-                }
+                //     // If all conditions are met, add the result
+                //     if (allConditionsMet) {
+                //         filtered.push(result);
+                //         return;
+                //     }
+                // }
 
                 if (query) {
 

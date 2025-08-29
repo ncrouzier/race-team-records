@@ -1,11 +1,26 @@
 <div class="jumbotron">
+    <!-- Original Filter Bar -->
     <div class="row text-left" style="padding-left:15px; margin-bottom:10px;">
-        <div class="btn-group" style="width:100%; padding-right:15px;">
-            <div class="btn-group">
-                <span > Search for a result: <input ng-model="searchQuery" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{searchQuery}}" autofocus ng-model-options="{debounce: 100}"><span class="searchclear fa fa-times-circle" ng-show="searchQuery" ng-click="searchQuery='';"></span>
-                <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" ng-if="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i>
+        <div class="col-sm-12" >
+        <div  class="btn-group" style="width:100%; padding-right:15px;">
+            <div class=" btn-group input-wrapper">
+                 Search for a result: <input ng-model="searchQuery" class="form-control" type="text" placeholder="Filter by race, racer, date, time..." style="width: 300px; display:inline;" analytics-on="change" analytics-event="Result" analytics-category="viewResult" analytics-label="view result : {{searchQuery}}" autofocus ng-model-options="{debounce: 100}">
+                     <span class="searchclear fa fa-times-circle" ng-show="searchQuery" ng-click="searchQuery='';"></span>        
+                          
             </div>
-
+            <div style="float:left; padding-left: 10px;">
+                <button class="btn btn-sm btn-primary" ng-click="toggleAdvancedFilters()" style="height: 39px; font-size: 14px; font-weight: 500; transition: all 0.2s ease; border: none; background: linear-gradient(135deg, #006687 0%, #005a73 100%);">
+                    <i class="fa fa-filter"></i> 
+                    <span ng-show="!showAdvancedFilters">Show Advanced Filters</span>
+                    <span ng-show="showAdvancedFilters">Hide Advanced Filters</span>
+                </button>
+                <button  ng-if="user.role == 'admin'"  class="btn btn-sm btn-primary" ng-click="showAddResultModal()" style="height: 39px; font-size: 14px; font-weight: 500; transition: all 0.2s ease; border: none; background: linear-gradient(135deg, #006687 0%, #005a73 100%);">
+                    <i class="hoverhand fa fa-plus-square" style="color:#03C03C;" title="Add a result"></i>
+                </button>
+            </div>
+            <div>
+            <!-- <i class="hoverhand fa fa-plus-square" style="float:left; color:#03C03C;" ng-if="user.role == 'admin'" ng-click="showAddResultModal()" title="Add a result"></i> -->
+        </div>
             <span style="float:right;">Page size:<ui-select ng-model="resultsTableProperties.pageSize" theme="select2" style="min-width: 60px;">
                 <ui-select-match placeholder="Select a result size type">{{$select.selected}}</ui-select-match>
                 <ui-select-choices repeat="size in resultSize track by size">
@@ -14,7 +29,206 @@
             </ui-select>
             </span>
         </div>
+        </div>
+    </div>
 
+    <!-- Advanced Filter Panel (Optional) -->
+    <div class="filter-panel" ng-show="showAdvancedFilters">
+        <div class="filter-header">
+                          <div class="filter-title">
+                  <i class="fa fa-filter"></i>
+                  <span>Advanced Filters <span ng-if="getActiveFilterCount() > 0" class="filter-count">{{getActiveFilterCount()}}</span></span>
+              </div>
+            <div class="filter-controls">
+                <button class="btn btn-sm " ng-click="clearAllFilters()" >
+                    <i class="fa fa-times"></i> Clear All
+                </button>
+                <button class="btn btn-sm " ng-click="toggleFilterPanel()">
+                    <i class="fa" ng-class="filterPanelExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="filter-content" ng-show="filterPanelExpanded">
+                                    <div class="row">
+                            <!-- Date Range Filter -->
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label class="filter-label">
+                                        <i class="fa fa-calendar"></i> Date Range
+                                    </label>
+                                    <div class="date-range-wrapper">
+                                        <div class="date-input-group">
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   ng-model="filters.dateFrom" 
+                                                   ng-change="applyFilters()"
+                                                   placeholder="From">
+                                        </div>
+                                        <div class="date-separator">to</div>
+                                        <div class="date-input-group">
+                                            <input type="date" 
+                                                   class="form-control" 
+                                                   ng-model="filters.dateTo" 
+                                                   ng-change="applyFilters()"
+                                                   placeholder="To">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Distance Range Slider -->
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label class="filter-label">
+                                        <i class="fa fa-road"></i> Distance Range (miles)
+                                    </label>
+                                    <div class="distance-slider-container">
+                                        <div class="distance-range-display">
+                                            <span class="distance-min">
+                                                <i class="fa fa-circle" style="color: #4fc3f7;"></i> Min: {{filters.distanceMin}} mi
+                                            </span>
+                                            <span class="distance-max">
+                                                <i class="fa fa-circle" style="color: #006687;"></i> Max: {{filters.distanceMax}} mi
+                                            </span>
+                                        </div>
+                                        <div class="nouislider-container">
+                                            <div id="distance-slider"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Race Type Filter -->
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label class="filter-label">
+                                        <i class="fa fa-flag-checkered"></i> Race Type <span class="feedback-message" ng-show="showRaceTypeFeedback">Added to filter </span>
+                                    </label>
+                                    <ui-select name="raceType" ng-model="selectedRaceType" theme="select2" style="min-width: 250px;" ng-change="addRaceTypeToFilter(selectedRaceType); selectedRaceType = null;">
+                                        <ui-select-match placeholder="Add a race type">
+                                          <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span> - ' + $select.selected.count + ' races')"></div>
+                                        </ui-select-match>
+                                        <ui-select-choices repeat="racetype in availableRaceTypes | propsFilter: {name: $select.search, surface: $select.search}">
+                                          <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                            <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span> - ' + racetype.count + ' races') | highlightignorespan: $select.search"></div>                                
+                                          </div>
+                                        </ui-select-choices>
+                                    </ui-select>             
+                                </div>
+                            </div>
+                        </div>
+            
+            <div class="row">
+                <!-- Location Filter -->
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="filter-label">
+                            <i class="fa fa-map-marker"></i> Countries {{selectedCountry}} <span class="feedback-message" ng-show="showCountryFeedback">Added to filter </span>
+                        </label>
+                                                  <ui-select name="country" ng-model="selectedCountry" theme="select2" style="min-width: 250px;" ng-change="addCountryToFilter(selectedCountry); selectedCountry = null;">
+                            <ui-select-match placeholder="Add a country">
+                              <div ng-bind-html="$select.selected.name + ' (' + $select.selected.count + ' races)'"></div>
+                            </ui-select-match>
+                            <ui-select-choices repeat="country in availableCountries | propsFilter: {name: $select.search, code: $select.search}">
+                              <div ng-class="">
+                                <div ng-bind-html="(country.name + ' (' + country.code + ') - ' + country.count + ' races')| highlightignorespan: $select.search"></div>
+                                </span>
+                              </div>
+                            </ui-select-choices>
+                          </ui-select>
+                          
+                    </div>
+                </div>  
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="filter-label">
+                            <i class="fa fa-map-marker"></i> States <span class="feedback-message" ng-show="showStateFeedback">Added to filter </span>
+                        </label>                        
+                                                  <ui-select name="state" ng-model="selectedState" theme="select2" style="min-width: 250px;" ng-change="addStateToFilter(selectedState); selectedState = null;">
+                            <ui-select-match placeholder="Add a state">
+                              <div ng-bind-html="$select.selected.name + ' (' + $select.selected.count + ' races)'"></div>
+                            </ui-select-match>
+                            <ui-select-choices repeat="state in availableStates | propsFilter: {name: $select.search, code: $select.search}">
+                              <div ng-class="">
+                                <div ng-bind-html="(state.name + ' (' + state.code + ') - ' + state.count + ' races')| highlightignorespan: $select.search"></div>
+                                </span>
+                              </div>
+                            </ui-select-choices>
+                          </ui-select>                         
+                    </div>                    
+                </div>
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label uib-tooltip="Only show races where ALL selected members participated" uib-tooltip-append-to-body="true"
+                            tooltip-placement="top" class="hoverhand filter-label">
+                            <i class="fa fa-users"></i>Members <span class="feedback-message" ng-show="showMemberFeedback">Added to
+                                filter </span>
+                        </label>
+                        <ui-select name="member" ng-model="selectedMember" theme="select2" style="min-width: 250px;"
+                            ng-change="addMemberToFilter(selectedMember); selectedMember = null;">
+                            <ui-select-match placeholder="Add a member">{{$select.selected.firstname}} {{$select.selected.lastname}} <i
+                                    ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="Men"></i><i
+                                    ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="Women"></i></ui-select-match>
+                            <ui-select-choices repeat="member in allMembers | filter: $select.search">
+                                <span ng-class="{'past-member' : member.memberStatus === 'past'}">
+                                    <div ng-bind-html="(member.firstname +' ' + member.lastname + (member.memberStatus === 'past' ? ' (past)' : '')) | highlight: $select.search"></div>
+                                </span>
+                            </ui-select-choices>
+                        </ui-select>
+                    </div>
+                    </div>
+            </div>
+            
+
+            
+            <!-- Active Filters Display -->
+            <div class="active-filters" ng-show="hasActiveFilters()">
+                <div class="active-filters-label">
+                    <i class="fa fa-tags"></i> Active Filters:
+                </div>
+                <div class="filter-tags">
+                    <div class="selected-items">
+                        <span class="selected-item" ng-show="searchQuery">
+                            Search: "{{searchQuery}}"
+                            <i class="fa fa-times" ng-click="searchQuery=''; applyFilters()"></i>
+                        </span>
+                        <span class="selected-item" ng-show="filters.dateFrom">
+                            From: {{filters.dateFrom | date:'MMM dd, yyyy':'UTC'}}
+                            <i class="fa fa-times" ng-click="filters.dateFrom=''; applyFilters()"></i>
+                        </span>
+                        <span class="selected-item" ng-show="filters.dateTo">
+                            To: {{filters.dateTo | date:'MMM dd, yyyy':'UTC'}}
+                            <i class="fa fa-times" ng-click="filters.dateTo=''; applyFilters()"></i>
+                        </span>
+                        <span class="selected-item" ng-show="filters.distanceMin > 0 || filters.distanceMax < distanceRange.max">
+                            Distance: {{filters.distanceMin}}-{{filters.distanceMax}} mi
+                            <i class="fa fa-times" ng-click="clearDistanceFilter()"></i>
+                        </span>
+                        <span class="selected-item" ng-repeat="raceType in filters.raceTypes">
+                            {{raceType.name}} ({{raceType.surface}})
+                            <i class="fa fa-times" ng-click="removeRaceTypeFromFilter(raceType)"></i>
+                        </span>
+                        <span class="selected-item" ng-repeat="country in filters.countries">
+                            {{country.name}} ({{country.code}})
+                            <i class="fa fa-times" ng-click="removeCountryFromFilter(country.code)"></i>
+                        </span>
+                
+                        <span class="selected-item" ng-repeat="state in filters.states">
+                            {{state.name}} ({{state.code}})
+                            <i class="fa fa-times" ng-click="removeStateFromFilter(state.code)"></i>
+                        </span>
+                    </div>
+                    <div class="selected-items">
+                        <span class="selected-item" ng-repeat="member in filters.selectedMembers">
+                            {{member.firstname}} {{member.lastname}}
+                            <span ng-if="member.ranking" class="ranking-info">ranked: {{member.ranking}}<span ng-if="member.ranking % 10 == 1 && member.ranking != 11">st</span><span ng-if="member.ranking % 10 == 2 && member.ranking != 12">nd</span><span ng-if="member.ranking % 10 == 3 && member.ranking != 13">rd</span><span ng-if="(member.ranking % 10 > 3 || member.ranking % 10 == 0) || (member.ranking >= 11 && member.ranking <= 13)">th</span></span>
+                            <i class="fa fa-times" ng-click="removeMemberFromFilter(member._id)"></i>
+                        </span>
+                    </div>
+                </div>
+                </div>
+        </div>
     </div>
 
     <div class="row">
@@ -37,7 +251,7 @@
             <!-- Race list (only show when not loading and no error) -->
             <race-list 
                 ng-if="!loadingStates.races && !loadingError"
-                races-list="racesList"
+                races-list="showAdvancedFilters ? filteredRacesList : racesList"
                 search-query="searchQuery"
                 results-table-properties="resultsTableProperties"
                 user="user"

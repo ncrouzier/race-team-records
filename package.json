@@ -57,7 +57,12 @@
   "jest": {
     "testEnvironment": "node",
     "testTimeout": 60000,
-    "testMatch": ["**/tests/**/*.test.js"],
-    "testPathIgnorePatterns": ["/node_modules/", "/public/"]
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/public/"
+    ]
   }
 }

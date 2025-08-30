@@ -11861,9 +11861,56 @@ footer {
 .filter-panel .filter-content .distance-slider-container .distance-range-display {
   display: flex;
   justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 10px;
   font-size: 14px;
   font-weight: 500;
   color: #666;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-label i {
+  font-size: 10px;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-input {
+  width: 60px;
+  border: 2px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  transition: all 0.2s ease;
+  /* Remove spinner arrows */
+  /* Firefox */
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-input:focus {
+  border-color: #006687;
+  box-shadow: 0 0 0 2px rgba(0, 102, 135, 0.1);
+  outline: none;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-input::-webkit-inner-spin-button,
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-input[type=number] {
+  -moz-appearance: textfield;
+}
+.filter-panel .filter-content .distance-slider-container .distance-range-display .distance-input-group .distance-unit {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
 }
 .filter-panel .filter-content .distance-slider-container .nouislider-container {
   margin: 0 10px;

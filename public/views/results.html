@@ -85,12 +85,32 @@
                                     </label>
                                     <div class="distance-slider-container">
                                         <div class="distance-range-display">
-                                            <span class="distance-min">
-                                                <i class="fa fa-circle" style="color: #4fc3f7;"></i> Min: {{filters.distanceMin}} mi
-                                            </span>
-                                            <span class="distance-max">
-                                                <i class="fa fa-circle" style="color: #006687;"></i> Max: {{filters.distanceMax}} mi
-                                            </span>
+                                            <div class="distance-input-group">
+                                                <label class="distance-label">
+                                                    <i class="fa fa-circle" style="color: #4fc3f7;"></i> Min:
+                                                </label>
+                                                <input type="number" 
+                                                       class="distance-input" 
+                                                       ng-model="filters.distanceMin" 
+                                                       ng-change="onDistanceMinInputChange()"
+                                                       min="0" 
+                                                       step="0.1"
+                                                       placeholder="0">
+                                                <span class="distance-unit">mi</span>
+                                            </div>
+                                            <div class="distance-input-group">
+                                                <label class="distance-label">
+                                                    <i class="fa fa-circle" style="color: #006687;"></i> Max:
+                                                </label>
+                                                <input type="number" 
+                                                       class="distance-input" 
+                                                       ng-model="filters.distanceMax" 
+                                                       ng-change="onDistanceMaxInputChange()"
+                                                       min="0" 
+                                                       step="0.1"
+                                                       placeholder="{{distanceRange.max}}">
+                                                <span class="distance-unit">mi</span>
+                                            </div>
                                         </div>
                                         <div class="nouislider-container">
                                             <div id="distance-slider"></div>

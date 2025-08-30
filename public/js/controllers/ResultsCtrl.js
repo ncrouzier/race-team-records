@@ -320,6 +320,42 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }
     };
 
+    // Update slider when input fields change
+    $scope.updateSliderFromInputs = function() {
+        var distanceSlider = document.getElementById('distance-slider');
+        if (distanceSlider && distanceSlider.noUiSlider) {
+            distanceSlider.noUiSlider.set([$scope.filters.distanceMin, $scope.filters.distanceMax]);
+        }
+    };
+
+    // Handle min distance input change
+    $scope.onDistanceMinInputChange = function() {
+        // Ensure min doesn't exceed max
+        if ($scope.filters.distanceMin > $scope.filters.distanceMax) {
+            $scope.filters.distanceMin = $scope.filters.distanceMax;
+        }
+        // Ensure min is not negative
+        if ($scope.filters.distanceMin < 0) {
+            $scope.filters.distanceMin = 0;
+        }
+        $scope.updateSliderFromInputs();
+        $scope.applyFilters();
+    };
+
+    // Handle max distance input change
+    $scope.onDistanceMaxInputChange = function() {
+        // Ensure max doesn't go below min
+        if ($scope.filters.distanceMax < $scope.filters.distanceMin) {
+            $scope.filters.distanceMax = $scope.filters.distanceMin;
+        }
+        // Ensure max doesn't exceed the actual max distance
+        if ($scope.filters.distanceMax > $scope.distanceRange.max) {
+            $scope.filters.distanceMax = $scope.distanceRange.max;
+        }
+        $scope.updateSliderFromInputs();
+        $scope.applyFilters();
+    };
+
 
 
     $scope.hasActiveFilters = function() {

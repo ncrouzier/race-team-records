@@ -53,7 +53,7 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
     // Fetch recent team member status changes (entry or exit)
     if (typeof MembersService !== 'undefined') {
         // Get all members with membershipDates
-        MembersService.getMembers({
+        MembersService.getMembersWithCacheSupport({
             sort: '-membershipDates.start',
             select: '-bio -personalBests',
         }).then(function(members) {

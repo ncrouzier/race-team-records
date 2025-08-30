@@ -108,15 +108,15 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             let name = 'Other';
             
             // Check if result has multiple members
-            if (result.members && result.members.length > 1) {
-                category = 'other';
-                name = 'Other';
-            } else if (raceType.isVariable) {
-                category = 'other';
-                name = 'Other';
-            }
+            // if (result.members && result.members.length > 1) {
+            //     category = 'other';
+            //     name = 'Other';
+            // } else if (raceType.isVariable) {
+            //     category = 'other';
+            //     name = 'Other';
+            // }
             // Categorize by race type name
-            else if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'trail' || raceType.surface === 'ultra') {
+             if (raceType.surface === 'road' || raceType.surface === 'track' || raceType.surface === 'trail' || raceType.surface === 'ultra') {
                 // Check if race type is variable distance
                 if (raceType.isVariable) {
                     category = 'other';
@@ -246,17 +246,18 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     
     // Navigation functions for stats links
     $scope.goToResultsWithQuery = function(query) {
-        if (query && (query.racername || query.distance || query.year)) {
+        if (query && (query.members || query.distance || query.year)) {
             $state.go('/results', { search: JSON.stringify(query) });
         }
     };
 
-    $scope.goToResultsWithLocationQuery = function(racername, country, state) {
-        if (racername && (country || state)) {
-            const query = { racername: racername };
-            if (country) query.country = country;
-            if (state) query.state = state;
-            $state.go('/results', { search: JSON.stringify(query) });
+    $scope.goToResultsWithLocationQuery = function(members, countries, states) {
+        // Only navigate if we have at least a racername and either country or state
+        if (members && (countries || states)) {
+            var queryParams = { members: members };
+            if (countries) queryParams.countries = countries;
+            if (states) queryParams.states = states;
+            $scope.goToResultsWithQuery(queryParams);
         }
     };
 

@@ -53,7 +53,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$s
                 raceinfo.results.forEach(function(result) {
                     var members = '';
                     result.members.forEach(function(m) {
-                        members += m.firstname + ' ' + m.lastname + ' & ';
+                        members += m.firstname + ' ' + m.lastname + ' & '; 
                     });
                     members = members.slice(0, -3);
                     $scope.reportHTLM += '<tr><td style="font-weight:bold;">' + members + '</td>' + $filter('rankTooltipTd')(result.ranking) + '<td style="text-align: center;"><span style="cursor:pointer;" title="pace: ' + $filter('resultToPace')(result,raceinfo) + '">' + $filter('secondsToTimeString')(result.time) + '</span></td></tr>';

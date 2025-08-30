@@ -76,7 +76,7 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
             sort: 'dateofbirth'
         };
 
-        MembersService.getMembers(birthdayParams).then(function(members) {
+        MembersService.getMembersWithCacheSupport(birthdayParams).then(function(members) {
             $scope.birthdays = members;
         });
 

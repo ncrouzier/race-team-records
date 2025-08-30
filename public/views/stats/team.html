@@ -94,7 +94,7 @@
                                   data="teamRaceTypeBreakdown" 
                                   width="350" 
                                   height="250"
-                                  on-slice-click="goToResultsWithQuery({distance: data.name})">
+                                  on-slice-click="goToResultsWithQuery({distance: data.name, year: miscStats.year !== 'All Time' ? miscStats.year : undefined})">
                                 </d3-pie-chart>
                             </li>
                         </ul>
@@ -139,7 +139,7 @@
                                         <br><small>{{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years racing</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({racername: member.name})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races</a><span class="hoverhand" uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
+                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races</a><span class="hoverhand" uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
                                     </div>
                                 </div>
                             </li>
@@ -209,7 +209,7 @@
                                         <br><small>{{member.races}} total races</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({racername: member.name, ranking: '1'})" class="hoverhandandunderline" title="View all wins for {{member.name}}">{{member.wins}} wins</a>
+                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username, ranking: '1'}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})" class="hoverhandandunderline" title="View all wins for {{member.name}}">{{member.wins}} wins</a>
                                     </div>
                                 </div>
                             </li>

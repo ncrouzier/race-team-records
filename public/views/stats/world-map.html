@@ -42,7 +42,7 @@
                             <tr ng-repeat="country in countryStats track by $index">
                                 <td>{{$index+1}}</td>
                                 <td><span style="font-size: 16px;">{{country.flag}}</span> {{country.name}} ({{country.code}})</td>
-                                <td><a ng-click="goToResultsWithQuery({country: country.code})" class="hoverhandandunderline" uib-tooltip="View all results in {{country.name}}" tooltip-placement="left">{{country.count}}</a></td>
+                                <td><a ng-click="goToResultsWithQuery({countries: [country.code]})" class="hoverhandandunderline" uib-tooltip="View all results in {{country.name}}" tooltip-placement="left">{{country.count}}</a></td>
                             </tr>
                         </tbody>
                     </table>

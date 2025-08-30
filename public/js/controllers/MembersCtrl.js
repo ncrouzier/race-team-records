@@ -320,7 +320,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             };
         }
 
-        await MembersService.getMembers(params).then(function(members) {
+        await MembersService.getMembersWithCacheSupport(params).then(function(members) {
             $scope.membersList = members;
             $scope.memberListcolumns = [];
             for (var i = 0; i < 4; i++) {
@@ -475,12 +475,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     };
 
-    $scope.goToResultsWithLocationQuery = function(racername, country, state) {
+    $scope.goToResultsWithLocationQuery = function(members, countries, states) {
         // Only navigate if we have at least a racername and either country or state
-        if (racername && (country || state)) {
-            var queryParams = { racername: racername };
-            if (country) queryParams.country = country;
-            if (state) queryParams.state = state;
+        if (members && (countries || states)) {
+            var queryParams = { members: members };
+            if (countries) queryParams.countries = countries;
+            if (states) queryParams.states = states;
             $scope.goToResultsWithQuery(queryParams);
         }
     };

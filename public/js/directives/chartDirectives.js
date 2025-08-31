@@ -23,6 +23,9 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                          <div ng-bind-html="racetype.formattedDisplayName | highlightignorespan: $select.search"></div>
                      </ui-select-choices>
                 </ui-select>
+                <button class="btn btn-primary" ng-click="reloadChart()" style="margin-left: 10px;" uib-tooltip="Reload Graph" tooltip-placement="right">
+                    <i class="fa fa-refresh"></i>
+                </button>
                 <div class="chart-controls">
                     <div class="age-grade-toggle">
                         <label>
@@ -110,7 +113,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                 
                 // Create datasets array
                 var datasets = [{
-                    label: (scope.selectedRaceType ? scope.selectedRaceType.name : '') + ' Best Time',
+                    label: (scope.selectedRaceType ? scope.selectedRaceType.name : '') + (scope.performanceMode === 'best' ? ' Best Time' : ' Time'),
                     data: timeData,
                     borderColor: '#3498db',
                     backgroundColor: '#3498db20',
@@ -126,7 +129,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                 // Only add age grade dataset if data is available
                 if (hasAgeGradeData) {
                     datasets.push({
-                        label: (scope.selectedRaceType ? scope.selectedRaceType.name : '') + ' Max Age Grade',
+                        label: (scope.selectedRaceType ? scope.selectedRaceType.name : '') + (scope.performanceMode === 'best' ? ' Max Age Grade' : ' Age Grade'),
                         data: ageGradeData,
                         borderColor: '#e74c3c',
                         backgroundColor: '#e74c3c20',
@@ -719,6 +722,16 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
             scope.updateChart = function() {
                 if (scope.selectedRaceType && scope.selectedRaceType._id) {
                     // Clear removed points when switching race types or modes
+                    scope.removedPoints.clear();
+                    $timeout(function() {
+                        initializeChart();
+                    }, 100);
+                }
+            };
+            
+            scope.reloadChart = function() {
+                if (scope.selectedRaceType && scope.selectedRaceType._id) {
+                    // Clear removed points and reload chart
                     scope.removedPoints.clear();
                     $timeout(function() {
                         initializeChart();

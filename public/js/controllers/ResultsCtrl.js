@@ -1076,7 +1076,16 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                             }
                         });
                     } else {
-                        let matchingRaceTypes = $scope.availableRaceTypes.filter(rt => rt.name === searchParams.distance);
+                        let matchingRaceTypes = $scope.availableRaceTypes.filter(rt => {
+                            // Handle metric distance matching
+                            if (searchParams.distance === '5k' && rt.name === '5000m') {
+                                return true;
+                            } else if (searchParams.distance === '10k' && rt.name === '10000m') {
+                                return true;
+                            } else {
+                                return rt.name === searchParams.distance;
+                            }
+                        });
                         matchingRaceTypes.forEach(raceType => {
                             $scope.filters.raceTypes.push(raceType);
                         });

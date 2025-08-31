@@ -43,7 +43,7 @@
                                          'othersurface-bg': racetype.surface == 'other',
                                          'multiplesurface-bg': racetype.surface == 'multiple'
                                      }" 
-                                     ng-repeat="racetype in racetypesList">
+                                     ng-repeat="racetype in racetypesList | orderBy:'meters'">
                                     
                                     <div class="racetype-info">
                                         <div class="racetype-name">

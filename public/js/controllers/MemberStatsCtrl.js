@@ -131,9 +131,18 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                     category = 'other';
                     name = 'Other';
                 } else {
-                    // Use the racetype name for categorization
-                    category = raceType.name;
-                    name = raceType.name;
+                    // Special handling for metric track distances
+                    if (raceType.name === '5000m') {
+                        category = '5k';
+                        name = '5k';
+                    } else if (raceType.name === '10000m') {
+                        category = '10k';
+                        name = '10k';
+                    } else {
+                        // Use the racetype name for categorization
+                        category = raceType.name;
+                        name = raceType.name;
+                    }
                 }
             } else {
                 // Non-running races (other surfaces, etc.)

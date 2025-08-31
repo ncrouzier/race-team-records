@@ -390,8 +390,17 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                     category = 'other';
                     name = 'Other';
                 } else {
-                    category = raceType.name;
-                    name = raceType.name;
+                    if (raceType.name === '5000m') {
+                        category = '5k';
+                        name = '5k';
+                    } else if (raceType.name === '10000m') {
+                        category = '10k';
+                        name = '10k';
+                    } else {
+                        // Use the racetype name for categorization
+                        category = raceType.name;
+                        name = raceType.name;
+                    }                 
                 }
             } else {
                 category = 'other';

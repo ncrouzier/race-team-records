@@ -38,7 +38,7 @@
                                 <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
                             </span>
                             <span ng-switch-when="agegrade">
-                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade performance best of {{::ach.achievements[0].value}}% at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade performance best of {{::ach.achievements[0].value.agegrade}}% at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
                             </span>
                         </span>
                     </div>
@@ -56,7 +56,7 @@
                                         Ran their {{a.value.raceCount | addOrdinalSuffix}} race.
                                     </span>
                                     <span ng-switch-when="agegrade">
-                                        Achieved a new age grade performance best of {{::a.value}}%.
+                                        Achieved a new age grade performance best of {{::a.value.agegrade}}%.
                                     </span>
                                 </span>
                             </li>

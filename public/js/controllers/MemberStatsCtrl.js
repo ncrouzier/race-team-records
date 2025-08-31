@@ -14,13 +14,22 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         $state.go('/members');
     };
 
+    
+
     // Load member data for stats
     $scope.loadMemberStats = async function(member_param) { 
-       if (member_param === undefined) return;
+        if (member_param === undefined) return;
 
-       $scope.currentMember = null;
-       $scope.memberStats = null;
-       $scope.loading = true;
+        //load the race list
+        var raceList = [];
+        raceList = await ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        });
+
+        $scope.currentMember = null;
+        $scope.memberStats = null;
+        $scope.loading = true;
 
         // get the member details if this is just a "light member object"
         let fullMember;
@@ -47,7 +56,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             }, {})).sort((a, b) => a.meters - b.meters);
 
             // Calculate member statistics
-            $scope.calculateMemberStats(results);
+            $scope.calculateMemberStats(results,raceList);
             $scope.loading = false;
 
             $analytics.eventTrack('viewMemberStats', {
@@ -58,7 +67,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     };
 
     // Calculate comprehensive statistics for the current member
-    $scope.calculateMemberStats = function(results) {
+    $scope.calculateMemberStats = function(results,raceList) {
         if (!$scope.currentMember || !results) {
             return;
         }
@@ -242,6 +251,72 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             displayFlag: location.displayFlag,
             count: location.count
         })).sort((a, b) => b.count - a.count);
+
+        // Calculate top team members raced with
+        $scope.calculateTopTeamMembers = function(results, raceList) {
+            const startTime = performance.now();
+            const teamMemberCounts = {};
+            const currentMemberId = $scope.currentMember._id;
+
+            // Go through all races to find team members
+            raceList.forEach(race => {
+                if (!race.results || race.results.length === 0) {
+                    return; // Skip races with no results
+                }
+
+                // Early exit: Check if current member participated in this race
+                let currentMemberInRace = false;
+                for (let i = 0; i < race.results.length; i++) {
+                    const result = race.results[i];
+                    if (result.members) {
+                        for (let j = 0; j < result.members.length; j++) {
+                            if (result.members[j]._id === currentMemberId) {
+                                currentMemberInRace = true;
+                                break; // Found current member, no need to check further
+                            }
+                        }
+                        if (currentMemberInRace) break; // Exit outer loop too
+                    }
+                }
+
+                // Skip this race entirely if current member didn't participate
+                if (!currentMemberInRace) {
+                    return;
+                }
+
+                // Count all other team members in this race
+                race.results.forEach(result => {
+                    if (result.members) {
+                        result.members.forEach(member => {
+                            if (member._id !== currentMemberId) {
+                                if (!teamMemberCounts[member._id]) {
+                                    teamMemberCounts[member._id] = {
+                                        _id: member._id,
+                                        firstname: member.firstname,
+                                        lastname: member.lastname,
+                                        username: member.username,
+                                        count: 0
+                                    };
+                                }
+                                teamMemberCounts[member._id].count++;
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Convert to array and sort by count
+            $scope.memberStats.topTeamMembers = Object.values(teamMemberCounts)
+                .sort((a, b) => b.count - a.count);
+                 // Top 10
+
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+           
+        };
+
+        // Calculate top team members
+        $scope.calculateTopTeamMembers(results, raceList);
     };
     
     // Navigation functions for stats links
@@ -252,7 +327,6 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     };
 
     $scope.goToResultsWithLocationQuery = function(members, countries, states) {
-        // Only navigate if we have at least a racername and either country or state
         if (members && (countries || states)) {
             var queryParams = { members: members };
             if (countries) queryParams.countries = countries;

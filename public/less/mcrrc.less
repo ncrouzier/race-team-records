@@ -1597,6 +1597,35 @@ footer {
     }
 }
 
+.team-members-stats {
+    .team-member-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .team-member-name {
+            
+            font-weight: 600;
+            color: @gray-dark;
+        }
+
+        .team-member-count {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+    }
+}
+
 .trend-stat {
     text-align: center;
     padding: 20px;

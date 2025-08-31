@@ -285,6 +285,44 @@
                                 </div>
                             </div>
 
+                            <!-- Top Team Members -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-users"></i> Top Team Members Raced With</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="team-members-stats">
+                                                <div class="team-member-item" 
+                                                     dir-paginate="member in memberStats.topTeamMembers | itemsPerPage: 10 track by $index"
+                                                     pagination-id="team-member-pagination">
+                                                    <div class="team-member-name">
+                                                        <a class="hoverhand" ui-sref="/members/member({ member: member.username })">                                                                                                                     
+                                                            {{member.firstname}} {{member.lastname}}
+                                                        </a>
+                                                    </div>
+                                                    <div class="team-member-count"> 
+                                                        <span ng-click="goToResultsWithQuery({members:[{username: currentMember.username}, {username: member.username}]})" 
+                                                        class="hoverhandandunderline" 
+                                                        title="View all races where {{currentMember.firstname}} {{currentMember.lastname}} and {{member.firstname}} {{member.lastname}} both participated">{{member.count}} races together  </span></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Pagination Controls -->
+                                            <div class="text-center" ng-show="memberStats.topTeamMembers.length > 10">
+                                                <dir-pagination-controls 
+                                                    pagination-id="team-member-pagination"
+                                                    boundary-links="true" 
+                                                    direction-links="true" 
+                                                    max-size="5">
+                                                </dir-pagination-controls>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Age Grade Performance Chart -->
                             <div class="row">
                                 <div class="col-md-12">

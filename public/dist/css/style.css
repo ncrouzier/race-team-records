@@ -8563,6 +8563,28 @@ footer {
   font-size: 0.8em;
   font-weight: 600;
 }
+.team-members-stats .team-member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+.team-members-stats .team-member-item:last-child {
+  border-bottom: none;
+}
+.team-members-stats .team-member-item .team-member-name {
+  font-weight: 600;
+  color: #333333;
+}
+.team-members-stats .team-member-item .team-member-count {
+  background-color: #008cba;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
 .trend-stat {
   text-align: center;
   padding: 20px;

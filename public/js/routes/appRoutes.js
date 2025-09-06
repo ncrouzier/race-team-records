@@ -68,7 +68,47 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 gtag('set', 'page_path', '/memberStats.html');
                 gtag('event', 'page_view');
             }
-        }).state('/results', {
+        })
+        .state('/members/member/head-to-head-compare', {
+            url: "/members/:member/head-to-head/:member2",
+            params: {
+                member: null,
+                member2: null,
+            },
+            templateUrl: "views/headToHead.html",
+            controller: 'HeadToHeadController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/memberHeadToHead.html');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/members/member/head-to-head', {
+            url: "/members/:member/head-to-head",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/headToHead.html",
+            controller: 'HeadToHeadController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/memberHeadToHead.html');
+                gtag('event', 'page_view');
+            }
+        })
+
+        .state('/members/head-to-head', {
+            url: "/members/head-to-head/:member1/:member2?",
+            params: {
+                member1: null,
+                member2: null,
+            },
+            templateUrl: "views/headToHead.html",
+            controller: 'HeadToHeadController',
+            onEnter: function() {
+                gtag('set', 'page_path', '/headToHead.html');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/results', {
             url: "/results",
             templateUrl: "views/results.html",
             controller: 'ResultsController',

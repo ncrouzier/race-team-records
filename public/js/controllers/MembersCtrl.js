@@ -197,11 +197,33 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
            
 
-        ResultsService.getResults({
-            sort: '-race.racedate -race.order',
-            member: {_id :fullMember._id}
-        }).then(function(results) {
-            $scope.currentMemberResultList = results; 
+        // Use cached race results and extract member results
+        ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        }).then(function(raceList) {
+            // Extract results for the current member from the cached race data
+            $scope.currentMemberResultList = [];
+            
+            raceList.forEach(race => {
+                if (race.results && race.results.length > 0) {
+                    race.results.forEach(result => {
+                        if (result.members) {
+                            result.members.forEach(member => {
+                                if (member._id === fullMember._id) {
+                                    $scope.currentMemberResultList.push({
+                                        ...result,
+                                        race: race
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Sort by race date
+            $scope.currentMemberResultList.sort((a, b) => new Date(b.race.racedate) - new Date(a.race.racedate)); 
 
             // get racetypes from these results
             $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
@@ -222,6 +244,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
             });
         });
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
     };
 
     // Navigate back to member list
@@ -255,11 +280,33 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
            
 
-        ResultsService.getResults({
-            sort: '-race.racedate -race.order',
-            member: {_id :fullMember._id}
-        }).then(function(results) {
-            $scope.currentMemberResultList = results; 
+        // Use cached race results and extract member results
+        ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        }).then(function(raceList) {
+            // Extract results for the current member from the cached race data
+            $scope.currentMemberResultList = [];
+            
+            raceList.forEach(race => {
+                if (race.results && race.results.length > 0) {
+                    race.results.forEach(result => {
+                        if (result.members) {
+                            result.members.forEach(member => {
+                                if (member._id === fullMember._id) {
+                                    $scope.currentMemberResultList.push({
+                                        ...result,
+                                        race: race
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Sort by race date
+            $scope.currentMemberResultList.sort((a, b) => new Date(b.race.racedate) - new Date(a.race.racedate)); 
 
             // get racetypes from these results
             $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
@@ -272,6 +319,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             
             $scope.currentMember = fullMember;
 
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
             $analytics.eventTrack('viewMember', {
                 category: 'Member',
                 label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
@@ -425,10 +475,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         await $scope.getMembers( $scope.paramModel);
 
         if($stateParams.member && $stateParams.member.trim() !== ''){
-            MembersService.getMembers({"filters[username]": $stateParams.member}).then(function(members) {                
-                if (members && members.length > 0 && members[0]){
+            MembersService.getMembersWithCacheSupport().then(function(allMembers) {                
+                // Find the current member
+                const member = allMembers.find(m => m.username === $stateParams.member);
+                if (member){
                     // Load member data without navigating
-                    $scope.loadMemberData(members[0]);
+                    $scope.loadMemberData(member);
                     
                     // Set the correct view based on the current route
                     if($state.current.name === '/members/member/bio') {

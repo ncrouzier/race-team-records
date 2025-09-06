@@ -11081,7 +11081,7 @@ footer {
   }
 }
 .gender-filter-container {
-  display: flex;
+  display: contents;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -12350,6 +12350,476 @@ footer {
 }
 .searchclear:hover {
   color: #333;
+}
+.head-to-head-page .page-header {
+  margin-bottom: 30px;
+}
+.head-to-head-page .page-header h1 {
+  color: #008cba;
+  margin-bottom: 10px;
+}
+.head-to-head-page .page-header .lead {
+  color: #6f6f6f;
+  font-size: 18px;
+}
+.head-to-head-page .member-card .panel-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.head-to-head-page .member-card .panel-body p {
+  margin-bottom: 8px;
+}
+.head-to-head-page .member-card .panel-body .label {
+  font-size: 11px;
+}
+.head-to-head-page .head-to-head-record .well {
+  margin-bottom: 0;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-record .well h3 {
+  margin: 0 0 5px 0;
+  font-size: 32px;
+  font-weight: bold;
+}
+.head-to-head-page .head-to-head-record .well p {
+  margin: 0;
+  font-size: 14px;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-record .well-primary {
+  background-color: #008cba;
+  border-color: #008cba;
+  color: white;
+}
+.head-to-head-page .head-to-head-record .well-info {
+  background-color: #5bc0de;
+  border-color: #5bc0de;
+  color: white;
+}
+.head-to-head-page .head-to-head-record .well-warning {
+  background-color: #E99002;
+  border-color: #E99002;
+  color: white;
+}
+.head-to-head-page .comparison-table .table th {
+  background-color: #eeeeee;
+  font-weight: 600;
+}
+.head-to-head-page .comparison-table .table td {
+  vertical-align: middle;
+}
+.head-to-head-page .comparison-table .table .text-primary {
+  color: #008cba;
+  font-weight: 600;
+}
+.head-to-head-page .comparison-table .table .text-info {
+  color: #5bc0de;
+  font-weight: 600;
+}
+.head-to-head-page .comparison-table .table .text-muted {
+  color: #6f6f6f;
+  font-weight: 600;
+}
+.head-to-head-page .shared-races-table .table th {
+  background-color: #eeeeee;
+  font-weight: 600;
+}
+.head-to-head-page .shared-races-table .table tbody tr.success {
+  background-color: #e1f3e8;
+}
+.head-to-head-page .shared-races-table .table tbody tr.info {
+  background-color: #ffffff;
+}
+.head-to-head-page .shared-races-table .table tbody tr.warning {
+  background-color: #ffedd2;
+}
+.head-to-head-page .shared-races-table .table .time-difference {
+  font-weight: 600;
+}
+.head-to-head-page .shared-races-table .table .age-grade {
+  font-size: 11px;
+  color: #6f6f6f;
+}
+.head-to-head-page .team-member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+.head-to-head-page .team-member-item:last-child {
+  border-bottom: none;
+}
+.head-to-head-page .team-member-item .team-member-name {
+  flex: 1;
+}
+.head-to-head-page .team-member-item .team-member-name a {
+  color: #008cba;
+  text-decoration: none;
+}
+.head-to-head-page .team-member-item .team-member-name a:hover {
+  text-decoration: underline;
+}
+.head-to-head-page .team-member-item .team-member-count {
+  text-align: right;
+}
+.head-to-head-page .team-member-item .team-member-count .btn-xs {
+  margin-top: 5px;
+  font-size: 10px;
+  padding: 2px 6px;
+}
+.head-to-head-page .win-count {
+  margin: 20px 0;
+}
+.head-to-head-page .win-count h2 {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 0;
+}
+.head-to-head-page .win-count p {
+  font-size: 16px;
+  color: #6f6f6f;
+  margin: 5px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.head-to-head-page .vs-section {
+  margin: 20px 0;
+}
+.head-to-head-page .vs-section h2 {
+  font-size: 36px;
+  font-weight: bold;
+  color: #999999;
+  margin-bottom: 30px;
+}
+.head-to-head-page .vs-section .ties-count {
+  margin: 20px 0;
+}
+.head-to-head-page .vs-section .ties-count h4 {
+  font-size: 32px;
+  font-weight: bold;
+  margin: 0;
+  color: #E99002;
+}
+.head-to-head-page .vs-section .ties-count p {
+  font-size: 14px;
+  color: #6f6f6f;
+  margin: 5px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.head-to-head-page .member-1-color {
+  color: #27ae60 !important;
+}
+.head-to-head-page .member-2-color {
+  color: #e74c3c !important;
+}
+.head-to-head-page .member-1-bg {
+  background-color: rgba(39, 174, 96, 0.1) !important;
+  border-left: 4px solid #27ae60 !important;
+}
+.head-to-head-page .member-2-bg {
+  background-color: rgba(231, 76, 60, 0.1) !important;
+  border-left: 4px solid #e74c3c !important;
+}
+.head-to-head-page .comparison-table .table tbody tr td:nth-child(2).winning-cell,
+.head-to-head-page .comparison-table .table tbody tr td:nth-child(3).winning-cell {
+  font-weight: bold;
+  font-size: 16px;
+}
+.head-to-head-page .panel-heading-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.head-to-head-page .panel-heading-content h4 {
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container {
+  flex-shrink: 0;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn {
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 2px solid;
+  margin-right: 5px;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn.btn-outline-primary {
+  border-color: #005a73;
+  background: #005a73;
+  color: white;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn.btn-outline-primary:hover {
+  background: #005a73;
+  color: white;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn.btn-primary {
+  background: #005a73;
+  border-color: white;
+  color: white;
+}
+.head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn.btn-primary:hover {
+  background: #005a73;
+  border-color: white;
+}
+.head-to-head-page .head-to-head-tables .table {
+  border: 1px solid #ddd;
+  border-radius: 0;
+  overflow: hidden;
+}
+.head-to-head-page .head-to-head-tables .table thead {
+  background: linear-gradient(135deg, #008cba 0%, #006687 100%);
+}
+.head-to-head-page .head-to-head-tables .table thead th {
+  border: none;
+  color: #6f6f6f;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 15px 12px;
+  font-size: 13px;
+  text-align: center;
+  vertical-align: middle;
+}
+.head-to-head-page .head-to-head-tables .table thead th:first-child {
+  text-align: center;
+  width: 60px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(2) {
+  width: 100px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(3) {
+  text-align: left;
+  min-width: 200px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(4) {
+  width: 100px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(5),
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(6) {
+  width: 120px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(7) {
+  width: 100px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(8) {
+  width: 100px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:only-child {
+  text-align: left;
+  min-width: 200px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-last-child(3) {
+  text-align: center;
+  width: 120px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-last-child(2) {
+  text-align: center;
+  width: 120px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-last-child(1) {
+  text-align: center;
+  width: 100px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(1):nth-last-child(7) {
+  /* Team Member */
+  text-align: left;
+  min-width: 150px;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(2):nth-last-child(6) {
+  /* Races Together */
+  width: 100px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(3):nth-last-child(5) {
+  /* Wins */
+  width: 80px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(4):nth-last-child(4) {
+  /* Losses */
+  width: 80px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(5):nth-last-child(3) {
+  /* Ties */
+  width: 60px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(6):nth-last-child(2) {
+  /* Win Rate */
+  width: 80px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table thead th:nth-child(7):nth-last-child(1) {
+  /* Actions */
+  width: 100px;
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr {
+  transition: all 0.2s ease;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.head-to-head-page .head-to-head-tables .table tbody tr.warning {
+  background-color: rgba(255, 193, 7, 0.1) !important;
+  border-left: 4px solid #ffc107 !important;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td {
+  padding: 12px;
+  vertical-align: middle;
+  border-top: 1px solid #ddd;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:first-child {
+  text-align: center;
+  font-weight: 600;
+  color: #6f6f6f;
+  font-size: 16px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(2) {
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(3) {
+  text-align: left;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(3) a {
+  color: #008cba;
+  text-decoration: none;
+  font-weight: 500;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(3) a:hover {
+  color: #00526e;
+  text-decoration: underline;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(4) {
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(5),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(6) {
+  text-align: center;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(5) .time,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(6) .time {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(5) small,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(6) small {
+  color: #6f6f6f;
+  font-size: 12px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(7) {
+  text-align: center;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(7) .time {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) {
+  text-align: center;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .member-1-color,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .member-2-color {
+  font-weight: 600;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .member-1-color i,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .member-2-color i {
+  margin-right: 5px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .text-warning {
+  font-weight: 600;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(8) .text-warning i {
+  margin-right: 5px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:only-child {
+  text-align: left;
+  color: #6f6f6f;
+  font-weight: 500;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(3) {
+  text-align: center;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(2) {
+  text-align: center;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) {
+  text-align: center;
+  color: #6f6f6f;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .member-1-color,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .member-2-color {
+  font-weight: 600;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .member-1-color i,
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .member-2-color i {
+  margin-right: 5px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .text-muted {
+  font-weight: 600;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-last-child(1) .text-muted i {
+  margin-right: 5px;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(1):nth-last-child(7) {
+  /* Team Member */
+  text-align: left;
+}
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(2):nth-last-child(6),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(3):nth-last-child(5),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(4):nth-last-child(4),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(5):nth-last-child(3),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(6):nth-last-child(2),
+.head-to-head-page .head-to-head-tables .table tbody tr td:nth-child(7):nth-last-child(1) {
+  /* Actions */
+  text-align: center;
+}
+.head-to-head-page .no-races-message {
+  padding: 40px 20px;
+}
+.head-to-head-page .no-races-message i {
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+.head-to-head-page .no-races-message h4 {
+  margin-bottom: 15px;
+}
+.head-to-head-page .no-races-message p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.member-navigation-buttons .btn {
+  margin-right: 5px !important;
 }
 
 .temp-adjustment-tool table {

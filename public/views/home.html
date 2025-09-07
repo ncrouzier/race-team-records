@@ -32,7 +32,7 @@
                     <div ng-if="ach.achievements.length === 1">
                         <span ng-switch="ach.achievements[0].name.toLowerCase()">
                             <span ng-switch-when="pb">
-                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new PB of <span class="time">{{::ach.achievements[0].value.time | secondsToTimeString}}</span> with the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> achieved a new {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PB of <span class="time">{{::ach.achievements[0].value.time | secondsToTimeString}}</span> with the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
                             </span>
                             <span ng-switch-when="racecount">
                                 <b><a ui-sref="/members/member({ member: ach.result.members[0].username })"> {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b> ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>!
@@ -50,7 +50,7 @@
                             <li ng-repeat="a in ach.achievements">
                                 <span ng-switch="a.name.toLowerCase()">
                                     <span ng-switch-when="pb">
-                                        Achieved a new PB of <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
+                                        Achieved a new {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PB of <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
                                     </span>
                                     <span ng-switch-when="racecount">
                                         Ran their {{a.value.raceCount | addOrdinalSuffix}} race.

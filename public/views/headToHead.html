@@ -65,15 +65,16 @@
                                                         on-select="loadComparison($item)">
                                                         <ui-select-match
                                                             placeholder="Select team member...">
+                                                            
                                                             {{$select.selected.firstname}}
                                                             {{$select.selected.lastname}}
                                                             ({{$select.selected.count}} races)
                                                         </ui-select-match>
                                                        
-                                                        <ui-select-choices repeat="member in getTeamMembersForDropdown() | memberFilter: $select.search">                                                     
-                                                            <div>
+                                                        <ui-select-choices repeat="member in getTeamMembersForDropdown() | memberFilter: $select.search">                                                                                                           
+                                                            <div ng-class="{'past-member' : member.memberStatus === 'past'}">
                                                                 <strong>{{member.firstname}}
-                                                                    {{member.lastname}}</strong>
+                                                                    {{member.lastname}}</strong> {{member.memberStatus === 'past' ? '(past)' : ''}}
                                                                 <br>
                                                                 <small>{{member.count}} races together</small>
                                                             </div>
@@ -184,7 +185,7 @@
                                                         <tbody>
                                                             <tr ng-repeat="member in getFilteredTeamMembers() track by member._id">
                                                                 <td>
-                                                                    <span class="hoverhand" ng-click="goToMemberDetail(member)"><strong>{{member.firstname}} {{member.lastname}}</strong></span>
+                                                                    <span ng-class="{'past-member' : member.memberStatus === 'past'}" class="hoverhand" ng-click="goToMemberDetail(member)"><strong>{{member.firstname}} {{member.lastname}}</strong> {{member.memberStatus === 'past' ? '(past)' : ''}}</span>
                                                                 </td>
                                                                 <td class="text-center">{{member.count}}</td>
                                                                 <td class="text-center member-1-color">
@@ -237,16 +238,17 @@
                                                     <div class="col-md-4">
                                                         <div class="vs-section">
                                                             <h2 class="text-muted">VS</h2>
-                                                            <div class="ties-count">
-                                                                <h4><strong>{{headToHeadRecord.ties}}</strong></h4>
-                                                                <p>Ties</p>
+                                                            <div class="ties-count" ng-if="headToHeadRecord.ties > 0">
+                                                                <span class="number">{{headToHeadRecord.ties}}</span><span class="text"> Ties</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     
                                                     <!-- Member 2 -->
                                                     <div class="col-md-4">
-                                                        <h3 class="member-2-color">{{member2.firstname}} {{member2.lastname}}</h3>
+                                                        <h3 class="member-2-color hoverhand" tooltip-append-to-body="true" 
+                                                        tooltip-placement="top"
+                                                        uib-tooltip-html="'View head-to-head records for {{member2.firstname}} {{member2.lastname}}'" ng-click="goToMemberHeadToHead(member2)">{{member2.firstname}} {{member2.lastname}}</h3>
                                                         <div class="win-count">
                                                             <h2 class="member-2-color">{{headToHeadRecord.member2Wins}}</h2>
                                                             <p>Wins</p>
@@ -636,7 +638,14 @@
                                                                  </td>
                                                                  <td>
                                                                      <span
-                                                                         ng-if="!race.isTie" class="time">{{formatTime(race.timeDifference)}}</span>
+                                                                         ng-if="!race.isTie" 
+                                                                         class="time"
+                                                                         ng-class="{'ranking-tiebreaker': race.timeDifference === 0}"
+                                                                         uib-tooltip="{{race.timeDifference === 0 ? ('Rankings: ' + member1.firstname + ': ' + (race.member1Result.ranking ? (race.member1Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A') + ', ' + member2.firstname + ': ' + (race.member2Result.ranking ? (race.member2Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A')) : ''}}"
+                                                                         tooltip-append-to-body="true"
+                                                                         tooltip-placement="top">
+                                                                         {{formatTime(race.timeDifference)}}
+                                                                     </span>
                                                                      <span ng-if="race.isTie">-</span>
                                                                  </td>
                                                                  <td>

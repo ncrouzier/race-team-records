@@ -73,7 +73,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             });
 
             // Calculate top team members
-            $scope.calculateTopTeamMembers(raceList);
+            $scope.calculateTopTeamMembers(raceList, allMembers);
 
             $scope.loading = false;
             
@@ -138,7 +138,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 "preload": false
             });
             
-            $scope.calculateTopTeamMembers(raceList);
+            $scope.calculateTopTeamMembers(raceList, allMembers);
             
             // Set the selected comparison member for the dropdown (find the one with count property)
             $scope.selectedComparisonMember = $scope.topTeamMembers.find(tm => tm.username === member2.username) || member2;
@@ -341,13 +341,31 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             
             // Skip if both members are in the same result (same _id)
             if (member1Result && member2Result && member1Result._id !== member2Result._id) {
-                const isTie = member1Result.time === member2Result.time;
+                let isTie = member1Result.time === member2Result.time;
+                let winner = null;
+                
+                if (isTie) {
+                    // Check overall ranking as tiebreaker
+                    const member1Rank = member1Result.ranking ? member1Result.ranking.overallrank : null;
+                    const member2Rank = member2Result.ranking ? member2Result.ranking.overallrank : null;
+                    
+                    if (member1Rank && member2Rank && member1Rank !== member2Rank) {
+                        // Use ranking as tiebreaker (lower rank number = better placement)
+                        isTie = false;
+                        winner = member1Rank < member2Rank ? 'member1' : 'member2';
+                    }
+                    // If ranks are same or missing, keep isTie = true and winner = null
+                } else {
+                    // Different times, determine winner by time
+                    winner = member1Result.time < member2Result.time ? 'member1' : 'member2';
+                }
+                
                 sharedRaces.push({
                     race: member1Result.race,
                     member1Result: member1Result,
                     member2Result: member2Result,
                     timeDifference: isTie ? 0 : Math.abs(member1Result.time - member2Result.time),
-                    winner: isTie ? null : (member1Result.time < member2Result.time ? 'member1' : 'member2'),
+                    winner: winner,
                     isTie: isTie
                 });
             }
@@ -374,7 +392,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     // Selection mode functions
     // Calculate top team members (for selection mode)
-    $scope.calculateTopTeamMembers = function(raceList) {
+    $scope.calculateTopTeamMembers = function(raceList, allMembers) {
         const teamMemberCounts = {};
         const currentMemberId = $scope.member1._id;
 
@@ -413,19 +431,23 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                     result.members.forEach(member => {
                         if (member._id !== currentMemberId) {
                             if (!teamMemberCounts[member._id]) {
+                                // Find the full member data from allMembers to get memberStatus
+                                const fullMemberData = allMembers.find(m => m._id === member._id);
+                                
                                 teamMemberCounts[member._id] = {
                                     _id: member._id,
                                     firstname: member.firstname,
                                     lastname: member.lastname,
                                     username: member.username,
                                     sex: member.sex,
+                                    memberStatus: fullMemberData ? fullMemberData.memberStatus : undefined,
                                     count: 0,
                                     headToHeadRecord: {
                                         wins: 0,
                                         losses: 0,
                                         ties: 0,
                                         winRate: 0
-                                    }
+                                    },
                                 };
                             }
                             teamMemberCounts[member._id].count++;
@@ -437,8 +459,23 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                                 const otherMemberTime = result.time;
                                 
                                 if (currentMemberTime === otherMemberTime) {
-                                    // Tie
-                                    teamMemberCounts[member._id].headToHeadRecord.ties++;
+                                    // Check overall ranking as tiebreaker  
+                                    const currentMemberRank = currentMemberResult.ranking ? currentMemberResult.ranking.overallrank : null;
+                                    const otherMemberRank = result.ranking ? result.ranking.overallrank : null;
+                                    
+                                    if (currentMemberRank && otherMemberRank && currentMemberRank !== otherMemberRank) {
+                                        // Use ranking as tiebreaker (lower rank number = better placement)
+                                        if (currentMemberRank < otherMemberRank) {
+                                            // Current member wins (better ranking)
+                                            teamMemberCounts[member._id].headToHeadRecord.wins++;
+                                        } else {
+                                            // Other member wins (better ranking)
+                                            teamMemberCounts[member._id].headToHeadRecord.losses++;
+                                        }
+                                    } else {
+                                        // True tie (same time and same/no ranking)
+                                        teamMemberCounts[member._id].headToHeadRecord.ties++;
+                                    }
                                 } else if (currentMemberTime < otherMemberTime) {
                                     // Current member wins (faster time)
                                     teamMemberCounts[member._id].headToHeadRecord.wins++;
@@ -548,6 +585,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     $scope.goToMemberDetail = function(member) {
         $state.go('/members/member/bio', { member: member.username });
+    };
+
+    $scope.goToMemberHeadToHead = function(member) {
+        $state.go('/members/member/head-to-head', { member: member.username });
     };
 
     $scope.showTeamMembersList = function(member) {

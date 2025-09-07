@@ -12484,29 +12484,45 @@ footer {
   letter-spacing: 1px;
 }
 .head-to-head-page .vs-section {
-  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 180px;
 }
 .head-to-head-page .vs-section h2 {
   font-size: 36px;
   font-weight: bold;
   color: #999999;
-  margin-bottom: 30px;
+  margin: 0;
+  line-height: 1;
+}
+@media (max-width: 992px) {
+  .head-to-head-page .vs-section {
+    min-height: 0px;
+  }
 }
 .head-to-head-page .vs-section .ties-count {
-  margin: 20px 0;
+  margin-top: 10px;
+  font-size: 20px;
 }
-.head-to-head-page .vs-section .ties-count h4 {
-  font-size: 32px;
+.head-to-head-page .vs-section .ties-count .number {
   font-weight: bold;
   margin: 0;
   color: #E99002;
 }
-.head-to-head-page .vs-section .ties-count p {
-  font-size: 14px;
+.head-to-head-page .vs-section .ties-count .text {
   color: #6f6f6f;
   margin: 5px 0;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+@media (max-width: 992px) {
+  .head-to-head-page .vs-section .ties-count {
+    font-size: 14px;
+    margin-top: 0px;
+  }
 }
 .head-to-head-page .member-1-color {
   color: #27ae60 !important;
@@ -12634,7 +12650,7 @@ footer {
 .head-to-head-page .head-to-head-tables .table thead th:nth-child(1):nth-last-child(7) {
   /* Team Member */
   text-align: left;
-  min-width: 150px;
+  min-width: 215px;
 }
 .head-to-head-page .head-to-head-tables .table thead th:nth-child(2):nth-last-child(6) {
   /* Races Together */
@@ -12820,6 +12836,16 @@ footer {
 }
 .member-navigation-buttons .btn {
   margin-right: 5px !important;
+}
+.ranking-tiebreaker {
+  position: relative;
+  cursor: help;
+}
+.ranking-tiebreaker::after {
+  content: '🏆';
+  margin-left: 4px;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 .temp-adjustment-tool table {

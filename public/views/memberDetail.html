@@ -10,7 +10,7 @@
                 </div>
                 
                 <!-- View Toggle Buttons -->
-                <div class="row text-center" style="margin-bottom: 20px;">
+                <div class="row text-center member-navigation-buttons" style="margin-bottom: 20px;">
                     <div class="btn-group" role="group">
                         <a ui-sref="/members/member/bio({member: currentMember.username})" 
                            class="btn btn-primary active">
@@ -19,6 +19,10 @@
                         <a ui-sref="/members/member/stats({member: currentMember.username})" 
                            class="btn btn-primary">
                             <i class="fa fa-bar-chart"></i> Statistics
+                        </a>
+                        <a ui-sref="/members/member/head-to-head({member: currentMember.username})" 
+                           class="btn btn-primary">
+                            <i class="fa fa-trophy"></i> Head-to-Head
                         </a>
                     </div>
                 </div>

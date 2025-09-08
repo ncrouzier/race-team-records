@@ -242,7 +242,16 @@
                     <div class="selected-items">
                         <span class="selected-item" ng-repeat="member in filters.selectedMembers">
                             {{member.firstname}} {{member.lastname}}
-                            <span ng-if="member.ranking" class="ranking-info">ranked: {{member.ranking}}<span ng-if="member.ranking % 10 == 1 && member.ranking != 11">st</span><span ng-if="member.ranking % 10 == 2 && member.ranking != 12">nd</span><span ng-if="member.ranking % 10 == 3 && member.ranking != 13">rd</span><span ng-if="(member.ranking % 10 > 3 || member.ranking % 10 == 0) || (member.ranking >= 11 && member.ranking <= 13)">th</span></span>
+                            <span ng-if="member.ranking" class="ranking-info hoverhand" ng-click="editMemberRanking(member)" 
+                                  uib-tooltip="Click to edit ranking filter" tooltip-placement="top">
+                                ranked: {{member.ranking}}
+                                <span ng-if="!member.ranking.includes('-')">
+                                    <span ng-if="member.ranking % 10 == 1 && member.ranking != 11">st</span>
+                                    <span ng-if="member.ranking % 10 == 2 && member.ranking != 12">nd</span>
+                                    <span ng-if="member.ranking % 10 == 3 && member.ranking != 13">rd</span>
+                                    <span ng-if="(member.ranking % 10 > 3 || member.ranking % 10 == 0) || (member.ranking >= 11 && member.ranking <= 13)">th</span>
+                                </span>
+                            </span>
                             <i class="fa fa-times" ng-click="removeMemberFromFilter(member._id)"></i>
                         </span>
                     </div>

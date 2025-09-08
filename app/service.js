@@ -654,7 +654,6 @@ module.exports = {
                             source: "computed"
                         };
                         pbMap.set(pbKey, newPB);
-                        
                         resultAchievements.push({
                             name: "pb",
                             text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
@@ -679,7 +678,6 @@ module.exports = {
                         source: "computed"
                     };
                     pbMap.set(pbKey, newPB);
-                    
                     resultAchievements.push({
                         name: "pb",
                         text: member.firstname + "'s new " + result.race.racetype.name + " (" + getSurfaceText(result.race.racetype.surface) + ") personal best with the team!",
@@ -1504,7 +1502,7 @@ function getSurfaceText(surface) {
     const surfaceMap = new Map([
         ['road', 'road'],
         ['track', 'track'],
-        ['cross country', 'trail'],
+        ['trail', 'trail'],
         ['ultra', 'ultra'],
         ['multiple', 'multi sport'],
         ['pool', 'pool'],

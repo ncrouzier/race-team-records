@@ -10,7 +10,7 @@
                 </div>
                 
                 <!-- View Toggle Buttons -->
-                <div class="row text-center" style="margin-bottom: 20px;">
+                <div class="row text-center member-navigation-buttons" style="margin-bottom: 20px;">
                     <div class="btn-group" role="group">
                         <a ui-sref="/members/member/bio({member: currentMember.username})" 
                            class="btn btn-primary">
@@ -19,6 +19,10 @@
                         <a ui-sref="/members/member/stats({member: currentMember.username})" 
                            class="btn btn-primary active">
                             <i class="fa fa-bar-chart"></i> Statistics
+                        </a>
+                        <a ui-sref="/members/member/head-to-head({member: currentMember.username})" 
+                           class="btn btn-primary">
+                            <i class="fa fa-trophy"></i> Head-to-Head
                         </a>
                     </div>
                 </div>
@@ -41,13 +45,13 @@
                                         <div class="panel-body">
                                             <div class="row">
                                                 <div class="col-sm-4">
-                                                    <div class="stat-box text-center">
+                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({members:[{username: currentMember.username}]})">
                                                         <div class="stat-number">{{memberStats.totalRaces}}</div>
                                                         <div class="stat-label">Total Races</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
-                                                    <div class="stat-box text-center">
+                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], year: getCurrentYear()})">
                                                         <div class="stat-number">{{memberStats.racesThisYear}}</div>
                                                         <div class="stat-label">Races This Year</div>
                                                     </div>
@@ -199,7 +203,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
-                                                    <div class="stat-box text-center">
+                                                    <div class="stat-box text-center hoverhand" ng-click="goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1-3'}]})">
                                                         <div class="stat-number">{{memberStats.top3Finishes}}</div>
                                                         <div class="stat-label">Top 3 Finishes</div>
                                                     </div>
@@ -285,12 +289,57 @@
                                 </div>
                             </div>
 
+                            <!-- Top Team Members -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-users"></i> Top Team Members Raced With</h4>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div class="team-members-stats">
+                                                <div class="team-member-item" 
+                                                     dir-paginate="member in memberStats.topTeamMembers | itemsPerPage: 10 track by $index"
+                                                     pagination-id="team-member-pagination">
+                                                    <div class="team-member-name">
+                                                        <a class="hoverhand" ui-sref="/members/member({ member: member.username })">                                                                                                                     
+                                                            {{member.firstname}} {{member.lastname}}
+                                                        </a>
+                                                    </div>
+                                                    <div class="team-member-count"> 
+                                                        <span ng-click="goToResultsWithQuery({members:[{username: currentMember.username}, {username: member.username}]})" 
+                                                        class="hoverhand" 
+                                                        title="View all races where {{currentMember.firstname}} {{currentMember.lastname}} and {{member.firstname}} {{member.lastname}} both participated">{{member.count}} races together</span>
+                                                        <br>
+                                                        <a ui-sref="/members/member/head-to-head-compare({member: currentMember.username, member2: member.username})" 
+                                                           class="btn btn-xs btn-primary" 
+                                                           title="Compare {{currentMember.firstname}} {{currentMember.lastname}} vs {{member.firstname}} {{member.lastname}} head-to-head">
+                                                            <i class="fa fa-trophy"></i> Head-to-Head
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Pagination Controls -->
+                                            <div class="text-center" ng-show="memberStats.topTeamMembers.length > 10">
+                                                <dir-pagination-controls 
+                                                    pagination-id="team-member-pagination"
+                                                    boundary-links="true" 
+                                                    direction-links="true" 
+                                                    max-size="5">
+                                                </dir-pagination-controls>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Age Grade Performance Chart -->
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
-                                            <h4><i class="fa fa-line-chart"></i> Best Time Performance Over Time</h4>
+                                            <h4><i class="fa fa-line-chart"></i>Performances Over Time</h4>
                                         </div>
                                         <div class="panel-body">
                                             <member-best-time-chart 

@@ -1597,6 +1597,35 @@ footer {
     }
 }
 
+.team-members-stats {
+    .team-member-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .team-member-name {
+            
+            font-weight: 600;
+            color: @gray-dark;
+        }
+
+        .team-member-count {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+    }
+}
+
 .trend-stat {
     text-align: center;
     padding: 20px;
@@ -4719,7 +4748,7 @@ footer {
 
 // Gender Filter Styles
 .gender-filter-container {
-    display: flex;
+    display: contents;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -6205,3 +6234,642 @@ footer {
   .searchclear:hover {
     color: #333;
   }
+
+// Head-to-Head Comparison Styles
+.head-to-head-page {
+  .page-header {
+    margin-bottom: 30px;
+    
+    h1 {
+      color: @brand-primary;
+      margin-bottom: 10px;
+    }
+    
+    .lead {
+      color: @gray;
+      font-size: 18px;
+    }
+  }
+  
+  .member-card {
+    .panel-heading {
+      h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+    }
+    
+    .panel-body {
+      p {
+        margin-bottom: 8px;
+      }
+      
+      .label {
+        font-size: 11px;
+      }
+    }
+  }
+  
+  .head-to-head-record {
+    .well {
+      margin-bottom: 0;
+      text-align: center;
+      
+      h3 {
+        margin: 0 0 5px 0;
+        font-size: 32px;
+        font-weight: bold;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: @gray;
+      }
+    }
+    
+    .well-primary {
+      background-color: @brand-primary;
+      border-color: @brand-primary;
+      color: white;
+    }
+    
+    .well-info {
+      background-color: @brand-info;
+      border-color: @brand-info;
+      color: white;
+    }
+    
+    .well-warning {
+      background-color: @brand-warning;
+      border-color: @brand-warning;
+      color: white;
+    }
+  }
+  
+  .comparison-table {
+    .table {
+      th {
+        background-color: @gray-lighter;
+        font-weight: 600;
+      }
+      
+      td {
+        vertical-align: middle;
+      }
+      
+      .text-primary {
+        color: @brand-primary;
+        font-weight: 600;
+      }
+      
+      .text-info {
+        color: @brand-info;
+        font-weight: 600;
+      }
+      
+      .text-muted {
+        color: @gray;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .shared-races-table {
+    .table {
+      th {
+        background-color: @gray-lighter;
+        font-weight: 600;
+      }
+      
+      tbody tr.success {
+        background-color: lighten(@brand-success, 45%);
+      }
+      
+      tbody tr.info {
+        background-color: lighten(@brand-info, 45%);
+      }
+      
+      tbody tr.warning {
+        background-color: lighten(@brand-warning, 45%);
+      }
+      
+      .time-difference {
+        font-weight: 600;
+      }
+      
+      .age-grade {
+        font-size: 11px;
+        color: @gray;
+      }
+    }
+  }
+  
+  .team-member-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid @gray-lighter;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .team-member-name {
+      flex: 1;
+      
+      a {
+        color: @brand-primary;
+        text-decoration: none;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+    
+    .team-member-count {
+      text-align: right;
+      
+      .btn-xs {
+        margin-top: 5px;
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+    }
+  }
+
+  // Simplified Head-to-Head styling
+  .win-count {
+    margin: 20px 0;
+    
+    h2 {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    p {
+      font-size: 16px;
+      color: @gray;
+      margin: 5px 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+
+  .vs-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    min-height: 180px;
+    
+    h2 {
+      font-size: 36px;
+      font-weight: bold;
+      color: @gray-light;
+      margin: 0;
+      line-height: 1;
+    }   
+    
+    // Responsive: reduce min-height on small screens
+    @media (max-width: 992px) {
+      min-height: 0px;
+    }
+    
+    .ties-count {
+        margin-top: 10px;
+        font-size: 20px;
+        font-size: 20px;
+        .number {        
+        font-weight: bold;
+        margin: 0;
+        color: @brand-warning;
+        }
+      
+       .text{
+        
+        color: @gray;
+        margin: 5px 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      @media (max-width: 992px) {
+        font-size: 14px;
+        margin-top: 0px;
+      }
+    }
+  }
+
+  // Member-specific colors used throughout the page
+  .member-1-color {
+    color: #27ae60 !important; // Green for member 1
+  }
+  
+  .member-2-color {
+    color: #e74c3c !important; // Red for member 2
+  }
+  
+  .member-1-bg {
+    background-color: rgba(39, 174, 96, 0.1) !important;
+    border-left: 4px solid #27ae60 !important;
+  }
+  
+  .member-2-bg {
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    border-left: 4px solid #e74c3c !important;
+  }
+
+  // Statistics comparison table styling
+  .comparison-table {
+    .table {
+      // Highlight winning data cells
+      tbody tr {
+        td:nth-child(2), td:nth-child(3) {
+          &.winning-cell {
+            font-weight: bold;
+            font-size: 16px;
+          }
+        }
+      }
+    }
+  }
+
+  // Panel heading with content layout
+  .panel-heading-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    
+    h4 {
+      margin: 0;
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .gender-filter-container {
+      flex-shrink: 0;
+      
+      .btn-group {
+        .btn {
+          border-radius: 20px;
+          
+          font-size: 12px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          border: 2px solid;
+          margin-right: 5px;
+          
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+          }
+          
+          &.btn-outline-primary {
+            border-color: #005a73;
+            background: #005a73;
+            color: white;
+            
+            &:hover {
+              background: #005a73;
+              color: white;
+            }
+          }
+          
+          &.btn-primary {
+            background: #005a73;
+            border-color: white;
+            color: white;
+            
+            &:hover {
+              background: #005a73;
+              border-color: white;;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Head-to-head race comparison tables styling
+  .head-to-head-tables {
+    .table {
+      border: 1px solid @table-border-color;
+      border-radius: @border-radius-base;
+      overflow: hidden;
+      
+      thead {
+        background: linear-gradient(135deg, @brand-primary 0%, darken(@brand-primary, 10%) 100%);
+        
+        th {
+          border: none;
+          color: #6f6f6f;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 15px 12px;
+          font-size: 13px;
+          text-align: center;
+          vertical-align: middle;
+          
+          // Race comparison table columns (8 columns)
+          &:first-child {
+            text-align: center;
+            width: 60px;
+          }
+          
+          &:nth-child(2) {
+            width: 100px;
+          }
+          
+          &:nth-child(3) {
+            text-align: left;
+            min-width: 200px;
+          }
+          
+          &:nth-child(4) {
+            width: 100px;
+          }
+          
+          &:nth-child(5),
+          &:nth-child(6) {
+            width: 120px;
+          }
+          
+          &:nth-child(7) {
+            width: 100px;
+          }
+          
+          &:nth-child(8) {
+            width: 100px;
+          }
+          
+          // Statistics comparison table columns (4 columns)
+          &:only-child {
+            text-align: left;
+            min-width: 200px;
+          }
+          
+          &:nth-last-child(3) {
+            text-align: center;
+            width: 120px;
+          }
+          
+          &:nth-last-child(2) {
+            text-align: center;
+            width: 120px;
+          }
+          
+          &:nth-last-child(1) {
+            text-align: center;
+            width: 100px;
+          }
+
+          // Team Members Overview table (7 columns) - specific widths
+          // Only apply these when we have exactly 7 columns
+          &:nth-child(1):nth-last-child(7) { /* Team Member */
+            text-align: left;
+            min-width: 215px;
+            // width: auto;
+          }
+          &:nth-child(2):nth-last-child(6) { /* Races Together */
+            width: 100px;
+            text-align: center;
+          }
+          &:nth-child(3):nth-last-child(5) { /* Wins */
+            width: 80px;
+            text-align: center;
+          }
+          &:nth-child(4):nth-last-child(4) { /* Losses */
+            width: 80px;
+            text-align: center;
+          }
+          &:nth-child(5):nth-last-child(3) { /* Ties */
+            width: 60px;
+            text-align: center;
+          }
+          &:nth-child(6):nth-last-child(2) { /* Win Rate */
+            width: 80px;
+            text-align: center;
+          }
+          &:nth-child(7):nth-last-child(1) { /* Actions */
+            width: 100px;
+            text-align: center;
+          }
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: all 0.2s ease;
+          
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          
+          // Tie background styling
+          &.warning {
+            background-color: rgba(255, 193, 7, 0.1) !important;
+            border-left: 4px solid #ffc107 !important;
+          }
+          
+          td {
+            padding: 12px;
+            vertical-align: middle;
+            border-top: 1px solid @table-border-color;
+            
+            &:first-child {
+              text-align: center;
+              font-weight: 600;
+              color: #6f6f6f;
+              font-size: 16px;
+            }
+            
+            &:nth-child(2) {
+              color: #6f6f6f;
+            }
+            
+            &:nth-child(3) {
+              text-align: left;
+              
+              a {
+                color: @brand-primary;
+                text-decoration: none;
+                font-weight: 500;
+                
+                &:hover {
+                  color: darken(@brand-primary, 15%);
+                  text-decoration: underline;
+                }
+              }
+            }
+            
+            &:nth-child(4) {
+              color: #6f6f6f;
+            }
+            
+            &:nth-child(5),
+            &:nth-child(6) {
+              text-align: center;
+              color: #6f6f6f;
+              
+              .time {
+                font-size: 16px;
+                font-weight: 600;
+                color: #6f6f6f;
+              }
+              
+              small {
+                color: #6f6f6f;
+                font-size: 12px;
+              }
+            }
+            
+            &:nth-child(7) {
+              text-align: center;
+              color: #6f6f6f;
+              
+              .time {
+                font-size: 14px;
+                font-weight: 600;
+                color: #6f6f6f;
+              }
+            }
+            
+            &:nth-child(8) {
+              text-align: center;
+              
+              .member-1-color,
+              .member-2-color {
+                font-weight: 600;
+                
+                i {
+                  margin-right: 5px;
+                }
+              }
+              
+              .text-warning {
+                font-weight: 600;
+                
+                i {
+                  margin-right: 5px;
+                }
+              }
+            }
+            
+            // Statistics comparison table cells (4 columns)
+            &:only-child {
+              text-align: left;
+              color: #6f6f6f;
+              font-weight: 500;
+            }
+            
+            &:nth-last-child(3) {
+              text-align: center;
+              color: #6f6f6f;
+            }
+            
+            &:nth-last-child(2) {
+              text-align: center;
+              color: #6f6f6f;
+            }
+            
+            &:nth-last-child(1) {
+              text-align: center;
+              color: #6f6f6f;
+              
+              .member-1-color,
+              .member-2-color {
+                font-weight: 600;
+                
+                i {
+                  margin-right: 5px;
+                }
+              }
+              
+              .text-muted {
+                font-weight: 600;
+                
+                i {
+                  margin-right: 5px;
+                }
+              }
+            }
+
+            // Team Members Overview table (7 columns) - specific alignment
+            &:nth-child(1):nth-last-child(7) { /* Team Member */
+              text-align: left;
+            }
+            &:nth-child(2):nth-last-child(6), /* Races Together */
+            &:nth-child(3):nth-last-child(5), /* Wins */
+            &:nth-child(4):nth-last-child(4), /* Losses */
+            &:nth-child(5):nth-last-child(3), /* Ties */
+            &:nth-child(6):nth-last-child(2), /* Win Rate */
+            &:nth-child(7):nth-last-child(1) { /* Actions */
+              text-align: center;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .no-races-message {
+    padding: 40px 20px;
+    
+    i {
+      margin-bottom: 20px;
+      opacity: 0.6;
+    }
+    
+    h4 {
+      margin-bottom: 15px;
+    }
+    
+    p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  
+
+}
+
+  .member-navigation-buttons {
+      .btn {
+       margin-right: 5px !important;
+     }
+   }
+
+   // Ranking tiebreaker styling
+   .ranking-tiebreaker {
+     position: relative;
+     cursor: help;
+     
+     &::after {
+       content: '🏆';
+       margin-left: 4px;
+       font-size: 12px;
+       opacity: 0.7;
+     }
+   }

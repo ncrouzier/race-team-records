@@ -8,19 +8,38 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     $scope.currentMember = null;
     $scope.memberStats = null;
     $scope.loading = true;
-
+    if (!$scope.$$phase) {
+        $scope.$apply();
+    }
     // Navigate back to member list
     $scope.goToMemberList = function() {
         $state.go('/members');
     };
 
+    // Get current year for dynamic year filtering
+    $scope.getCurrentYear = function() {
+        return new Date().getFullYear();
+    };
+
+    
+
     // Load member data for stats
     $scope.loadMemberStats = async function(member_param) { 
-       if (member_param === undefined) return;
+        if (member_param === undefined) return;
 
-       $scope.currentMember = null;
-       $scope.memberStats = null;
-       $scope.loading = true;
+        //load the race list
+        var raceList = [];
+        raceList = await ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        });
+
+        $scope.currentMember = null;
+        $scope.memberStats = null;
+        $scope.loading = true;
+        if (!$scope.$$phase) {
+            $scope.$apply();
+        }
 
         // get the member details if this is just a "light member object"
         let fullMember;
@@ -30,12 +49,37 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             fullMember = member_param;
         }
            
-        ResultsService.getResults({
-            sort: '-race.racedate -race.order',
-            member: {_id :fullMember._id}
-        }).then(function(results) {
-            $scope.currentMember = fullMember;
-            $scope.currentMemberResultList = results; 
+        // Use cached race results and extract member results
+        ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        }).then(function(raceList) {
+            // Extract results for the current member from the cached race data
+            $scope.currentMemberResultList = [];
+            
+            raceList.forEach(race => {
+                if (race.results && race.results.length > 0) {
+                    race.results.forEach(result => {
+                        if (result.members) {
+                            result.members.forEach(member => {
+                                if (member._id === fullMember._id) {
+                                    $scope.currentMemberResultList.push({
+                                        ...result,
+                                        race: race
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Sort by race date
+            $scope.currentMemberResultList.sort((a, b) => new Date(b.race.racedate) - new Date(a.race.racedate));
+            
+            $scope.currentMember = fullMember;           
+
+            const results = $scope.currentMemberResultList; 
 
             // get racetypes from these results
             $scope.racetypesList = Object.values($scope.currentMemberResultList.reduce((racetypes, result) => {
@@ -47,8 +91,11 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             }, {})).sort((a, b) => a.meters - b.meters);
 
             // Calculate member statistics
-            $scope.calculateMemberStats(results);
+            $scope.calculateMemberStats(results,raceList);
             $scope.loading = false;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
 
             $analytics.eventTrack('viewMemberStats', {
                 category: 'Member',
@@ -58,7 +105,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     };
 
     // Calculate comprehensive statistics for the current member
-    $scope.calculateMemberStats = function(results) {
+    $scope.calculateMemberStats = function(results,raceList) {
         if (!$scope.currentMember || !results) {
             return;
         }
@@ -122,9 +169,18 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                     category = 'other';
                     name = 'Other';
                 } else {
-                    // Use the racetype name for categorization
-                    category = raceType.name;
-                    name = raceType.name;
+                    // Special handling for metric track distances
+                    if (raceType.name === '5000m') {
+                        category = '5k';
+                        name = '5k';
+                    } else if (raceType.name === '10000m') {
+                        category = '10k';
+                        name = '10k';
+                    } else {
+                        // Use the racetype name for categorization
+                        category = raceType.name;
+                        name = raceType.name;
+                    }
                 }
             } else {
                 // Non-running races (other surfaces, etc.)
@@ -171,13 +227,13 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
 
             // Track rankings
             if (result.ranking) {
-                if (result.ranking.overallrank === 1 || result.ranking.genderrank === 1) {
+                if (result.ranking.overallrank && result.ranking.overallrank === 1 || result.ranking.genderrank && result.ranking.genderrank === 1) {
                     $scope.memberStats.wins++;
                 }
-                if (result.ranking.agerank === 1) {
+                if (result.ranking.agerank && result.ranking.agerank === 1) {
                     $scope.memberStats.ageGroupWins++;
                 }
-                if (result.ranking.overallrank <= 3 || result.ranking.genderrank  <=3) {
+                if (result.ranking.overallrank && result.ranking.overallrank <= 3 || result.ranking.genderrank && result.ranking.genderrank  <=3) {
                     $scope.memberStats.top3Finishes++;
                 }
             }
@@ -242,6 +298,72 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             displayFlag: location.displayFlag,
             count: location.count
         })).sort((a, b) => b.count - a.count);
+
+        // Calculate top team members raced with
+        $scope.calculateTopTeamMembers = function(results, raceList) {
+            const startTime = performance.now();
+            const teamMemberCounts = {};
+            const currentMemberId = $scope.currentMember._id;
+
+            // Go through all races to find team members
+            raceList.forEach(race => {
+                if (!race.results || race.results.length === 0) {
+                    return; // Skip races with no results
+                }
+
+                // Early exit: Check if current member participated in this race
+                let currentMemberInRace = false;
+                for (let i = 0; i < race.results.length; i++) {
+                    const result = race.results[i];
+                    if (result.members) {
+                        for (let j = 0; j < result.members.length; j++) {
+                            if (result.members[j]._id === currentMemberId) {
+                                currentMemberInRace = true;
+                                break; // Found current member, no need to check further
+                            }
+                        }
+                        if (currentMemberInRace) break; // Exit outer loop too
+                    }
+                }
+
+                // Skip this race entirely if current member didn't participate
+                if (!currentMemberInRace) {
+                    return;
+                }
+
+                // Count all other team members in this race
+                race.results.forEach(result => {
+                    if (result.members) {
+                        result.members.forEach(member => {
+                            if (member._id !== currentMemberId) {
+                                if (!teamMemberCounts[member._id]) {
+                                    teamMemberCounts[member._id] = {
+                                        _id: member._id,
+                                        firstname: member.firstname,
+                                        lastname: member.lastname,
+                                        username: member.username,
+                                        count: 0
+                                    };
+                                }
+                                teamMemberCounts[member._id].count++;
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Convert to array and sort by count
+            $scope.memberStats.topTeamMembers = Object.values(teamMemberCounts)
+                .sort((a, b) => b.count - a.count);
+                 // Top 10
+
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+           
+        };
+
+        // Calculate top team members
+        $scope.calculateTopTeamMembers(results, raceList);
     };
     
     // Navigation functions for stats links
@@ -252,7 +374,6 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     };
 
     $scope.goToResultsWithLocationQuery = function(members, countries, states) {
-        // Only navigate if we have at least a racername and either country or state
         if (members && (countries || states)) {
             var queryParams = { members: members };
             if (countries) queryParams.countries = countries;
@@ -283,8 +404,11 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
     async function initialLoad() {
         if ($stateParams.member) {
             try {
-                // Get member directly by username using the updated API
-                const member = await MembersService.getMember($stateParams.member);
+                // Load all members with cache support
+                const allMembers = await MembersService.getMembersWithCacheSupport();
+                
+                // Find the current member
+                const member = allMembers.find(m => m.username === $stateParams.member);
                 if (member) {
                     $scope.loadMemberStats(member);
                 } else {

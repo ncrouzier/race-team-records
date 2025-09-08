@@ -35,6 +35,38 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.racesList.sort(customRaceSort($scope.racesList, $scope.sortCriteria, $scope.sortDirection));
     };
 
+    // Helper function to check if a ranking is within a specified range
+    function isRankingInRange(actualRank, rankingFilter) {
+        if (!actualRank || !rankingFilter) {
+            return false;
+        }
+        
+        // Convert to string to handle both numbers and strings
+        var filterStr = String(rankingFilter).trim();
+        
+        // Check if it's a range (contains dash)
+        if (filterStr.includes('-')) {
+            var parts = filterStr.split('-');
+            if (parts.length === 2) {
+                var minRank = parseInt(parts[0].trim());
+                var maxRank = parseInt(parts[1].trim());
+                
+                // Validate the range
+                if (!isNaN(minRank) && !isNaN(maxRank) && minRank <= maxRank) {
+                    return actualRank >= minRank && actualRank <= maxRank;
+                }
+            }
+        } else {
+            // Single number comparison
+            var targetRank = parseInt(filterStr);
+            if (!isNaN(targetRank)) {
+                return actualRank === targetRank;
+            }
+        }
+        
+        return false;
+    }
+
     function customRaceSort(arr, field, order) {
         return (race1, race2) => {
            
@@ -441,14 +473,25 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                 var raceDate = new Date(race.racedate);
                 
                 if ($scope.filters.dateFrom) {
-                    var fromDate = new Date($scope.filters.dateFrom);
+                    // Ensure dateFrom is treated as UTC (start of day)
+                    var fromDate = new Date(Date.UTC(
+                        new Date($scope.filters.dateFrom).getFullYear(),
+                        new Date($scope.filters.dateFrom).getMonth(),
+                        new Date($scope.filters.dateFrom).getDate()
+                    ));
                     if (raceDate < fromDate) {
                         return false;
                     }
                 }
 
                 if ($scope.filters.dateTo) {
-                    var toDate = new Date($scope.filters.dateTo);
+                    // Ensure dateTo is treated as UTC (end of day)
+                    var toDate = new Date(Date.UTC(
+                        new Date($scope.filters.dateTo).getFullYear(),
+                        new Date($scope.filters.dateTo).getMonth(),
+                        new Date($scope.filters.dateTo).getDate(),
+                        23, 59, 59, 999
+                    ));
                     if (raceDate > toDate) {
                         return false;
                     }
@@ -528,7 +571,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                                         if (result.ranking){
                                             raceResultsMap[member._id].push({
                                                 overallRank: result.ranking.overallrank,
-                                                    genderRank: result.ranking.genderrank
+                                                genderRank: result.ranking.genderrank
                                                 });
                                         }
                                     }
@@ -553,8 +596,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                             
                             // Check if any result meets the ranking requirement
                             return memberResults.some(function(result) {
-                                return result.overallRank == selectedMember.ranking || 
-                                       result.genderRank == selectedMember.ranking;
+                                return isRankingInRange(result.overallRank, selectedMember.ranking) || 
+                                       isRankingInRange(result.genderRank, selectedMember.ranking);
                             });
                         }
                         
@@ -1076,7 +1119,16 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                             }
                         });
                     } else {
-                        let matchingRaceTypes = $scope.availableRaceTypes.filter(rt => rt.name === searchParams.distance);
+                        let matchingRaceTypes = $scope.availableRaceTypes.filter(rt => {
+                            // Handle metric distance matching
+                            if (searchParams.distance === '5k' && rt.name === '5000m') {
+                                return true;
+                            } else if (searchParams.distance === '10k' && rt.name === '10000m') {
+                                return true;
+                            } else {
+                                return rt.name === searchParams.distance;
+                            }
+                        });
                         matchingRaceTypes.forEach(raceType => {
                             $scope.filters.raceTypes.push(raceType);
                         });
@@ -1085,8 +1137,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                    
                 }
                 if (searchParams.year) {
-                    $scope.filters.dateFrom = new Date(Date.UTC(searchParams.year, 0, 1));
-                    $scope.filters.dateTo = new Date(Date.UTC(searchParams.year, 11, 31));
+                    // Create Date objects in local timezone for proper display in date inputs
+                    $scope.filters.dateFrom = new Date(searchParams.year, 0, 1); // January 1st
+                    $scope.filters.dateTo = new Date(searchParams.year, 11, 31); // December 31st
                 }
                 
                 // Show advanced filters panel since we're using advanced search

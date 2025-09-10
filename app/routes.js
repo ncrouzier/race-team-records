@@ -2273,8 +2273,7 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
     app.delete('/api/racetypes/:racetype_id', service.isAdminLoggedIn, async function(req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
-            const result = await RaceType.deleteOne({ _id: req.params.racetype_id });
-            console.log("Deleted:", result);
+            await RaceType.deleteOne({ _id: req.params.racetype_id });
             await service.invalidateSystemInfoCache();
             res.end('{"success" : "Racetype deleted successfully", "status" : 200}');    
           } catch (raceTypedeleteOneErr) {

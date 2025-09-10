@@ -2271,16 +2271,15 @@ app.get('/updateResultsUpdateDatesAndCreatedAt', service.isAdminLoggedIn, async 
 
     // delete a racetype
     app.delete('/api/racetypes/:racetype_id', service.isAdminLoggedIn, async function(req, res) {
-        try{
-            RaceType.deleteOne({
-                _id: req.params.racetype_id
-            }, async function(err, racetype) {           
-               await service.invalidateSystemInfoCache();
-                res.end('{"success" : "Racetype deleted successfully", "status" : 200}');            
-            });
-        }catch(raceTypedeleteOneErr){
-            res.send(raceTypedeleteOneErr);
-        }
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const result = await RaceType.deleteOne({ _id: req.params.racetype_id });
+            console.log("Deleted:", result);
+            await service.invalidateSystemInfoCache();
+            res.end('{"success" : "Racetype deleted successfully", "status" : 200}');    
+          } catch (raceTypedeleteOneErr) {
+            res.send(raceTypedeleteOneErr);              
+        }       
     });
 
     // MAIL

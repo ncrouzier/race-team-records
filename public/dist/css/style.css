@@ -11081,7 +11081,6 @@ footer {
   }
 }
 .gender-filter-container {
-  display: contents;
   align-items: center;
   justify-content: center;
   gap: 12px;
@@ -11093,6 +11092,9 @@ footer {
   position: absolute;
   bottom: 10px;
   right: 10px;
+}
+.gender-filter-container .race-modal-gf {
+  display: flex;
 }
 .gender-filter-container .btn-group .btn {
   border-radius: 4px;
@@ -12557,6 +12559,7 @@ footer {
 }
 .head-to-head-page .panel-heading-content .gender-filter-container {
   flex-shrink: 0;
+  display: contents;
 }
 .head-to-head-page .panel-heading-content .gender-filter-container .btn-group .btn {
   border-radius: 20px;

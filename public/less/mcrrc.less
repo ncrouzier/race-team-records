@@ -4748,7 +4748,6 @@ footer {
 
 // Gender Filter Styles
 .gender-filter-container {
-    display: contents;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -4760,7 +4759,11 @@ footer {
     position: absolute;
     bottom: 10px;
     right: 10px;
-    
+   
+    .race-modal-gf{
+        display: flex;
+    }
+
     .btn-group {
         .btn {
             border-radius: 4px;
@@ -6514,6 +6517,7 @@ footer {
     
     .gender-filter-container {
       flex-shrink: 0;
+      display: contents;
       
       .btn-group {
         .btn {

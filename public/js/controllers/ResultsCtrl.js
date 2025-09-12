@@ -297,21 +297,23 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
     $scope.onDistanceMinChange = function() {
         // Ensure min doesn't exceed max
-        if ($scope.filters.distanceMin > $scope.filters.distanceMax) {
-            $scope.filters.distanceMin = $scope.filters.distanceMax;
+        if ($scope.filters.distanceMinUI > $scope.filters.distanceMaxUI) {
+            // $scope.filters.distanceMin = $scope.filters.distanceMax;
         }
+        $scope.filters.distanceMin = $scope.filters.distanceMinUI;
         $scope.applyFilters();
     };
 
     $scope.onDistanceMaxChange = function() {
         // Ensure max doesn't go below min
-        if ($scope.filters.distanceMax < $scope.filters.distanceMin) {
-            $scope.filters.distanceMax = $scope.filters.distanceMin;
+        if ($scope.filters.distanceMaxUI < $scope.filters.distanceMinUI) {
+            $scope.filters.distanceMax = $scope.filters.distanceMinUI;
         }
         // Ensure max doesn't exceed the actual max distance
-        if ($scope.filters.distanceMax > $scope.distanceRange.max) {
+        if ($scope.filters.distanceMaxUI > $scope.distanceRange.max) {
             $scope.filters.distanceMax = $scope.distanceRange.max;
         }
+        $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
         $scope.applyFilters();
     };
 
@@ -342,8 +344,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                 distanceSlider.noUiSlider.on('update', function (values, handle) {
                     if (!$scope.$$phase) {
                         $scope.$apply(function() {
-                            $scope.filters.distanceMin = parseFloat(values[0]);
-                            $scope.filters.distanceMax = parseFloat(values[1]);
+                            $scope.filters.distanceMinUI = parseFloat(values[0]);
+                            $scope.filters.distanceMaxUI = parseFloat(values[1]);
+                            $scope.filters.distanceMin = $scope.filters.distanceMinUI;
+                            $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
                             $scope.applyFilters();
                         });
                     }
@@ -363,27 +367,35 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     // Handle min distance input change
     $scope.onDistanceMinInputChange = function() {
         // Ensure min doesn't exceed max
-        if ($scope.filters.distanceMin > $scope.filters.distanceMax) {
+        if ($scope.filters.distanceMinUI > $scope.filters.distanceMaxUI) {
+            $scope.filters.distanceMinUI = $scope.filters.distanceMaxUI;
             $scope.filters.distanceMin = $scope.filters.distanceMax;
         }
         // Ensure min is not negative
-        if ($scope.filters.distanceMin < 0) {
+        if ($scope.filters.distanceMinUI < 0) {
+            $scope.filters.distanceMinUI = 0;
             $scope.filters.distanceMin = 0;
         }
+
+        $scope.filters.distanceMin = $scope.filters.distanceMinUI;
         $scope.updateSliderFromInputs();
         $scope.applyFilters();
     };
 
     // Handle max distance input change
     $scope.onDistanceMaxInputChange = function() {
+
         // Ensure max doesn't go below min
-        if ($scope.filters.distanceMax < $scope.filters.distanceMin) {
-            $scope.filters.distanceMax = $scope.filters.distanceMin;
+        if ($scope.filters.distanceMaxUI < $scope.filters.distanceMinUI) {
+            //$scope.filters.distanceMax = $scope.filters.distanceMin;
+            return;
         }
         // Ensure max doesn't exceed the actual max distance
-        if ($scope.filters.distanceMax > $scope.distanceRange.max) {
-            $scope.filters.distanceMax = $scope.distanceRange.max;
+        if ($scope.filters.distanceMaxUI > $scope.distanceRange.max) {
+            $scope.filters.distanceMaxUI = $scope.distanceRange.max;     
+             $scope.filters.distanceMax = $scope.distanceRange.max;            
         }
+        $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
         $scope.updateSliderFromInputs();
         $scope.applyFilters();
     };
@@ -444,27 +456,44 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             $scope.filteredRacesList = [];
             return;
         }
-
         $scope.filteredRacesList = $scope.racesList.filter(function(race) {
             // Original search query filter (always active)
             if ($scope.searchQuery) {
                 var searchLower = $scope.searchQuery.toLowerCase();
-                var raceMatches = race.racename.toLowerCase().includes(searchLower) ||
-                                (race.location.country && race.location.country.toLowerCase().includes(searchLower)) ||
-                                (race.location.state && race.location.state.toLowerCase().includes(searchLower)) ||
-                                race.racetype.name.toLowerCase().includes(searchLower);
-                
-                var resultMatches = race.results.some(function(result) {
-                    return result.members.some(function(member) {
-                        return (member.firstname && member.firstname.toLowerCase().includes(searchLower)) ||
-                               (member.lastname && member.lastname.toLowerCase().includes(searchLower)) ||
-                               (member.username && member.username.toLowerCase().includes(searchLower));
+
+                // Special case: birthday search
+                if (searchLower === "hasbirthday") {
+                    var birthdayMatches = race.results.some(function (result) {
+                        var res = result.achievements && result.achievements.some(function (achievement) {
+                            return achievement.name === "birthday";
+                        });
+                        return res;
                     });
-                });
-                
-                if (!raceMatches && !resultMatches) {
-                    return false;
+
+                    if (!birthdayMatches) {
+                        return false;
+                    }
+                } else {
+                    // Regular search logic
+                    var raceMatches = race.racename.toLowerCase().includes(searchLower) ||
+                        (race.location.country && race.location.country.toLowerCase().includes(searchLower)) ||
+                        (race.location.state && race.location.state.toLowerCase().includes(searchLower)) ||
+                        race.racetype.name.toLowerCase().includes(searchLower);
+
+                    var resultMatches = race.results.some(function (result) {
+                        return result.members.some(function (member) {
+                            return (member.firstname && member.firstname.toLowerCase().includes(searchLower)) ||
+                                (member.lastname && member.lastname.toLowerCase().includes(searchLower)) ||
+                                (member.username && member.username.toLowerCase().includes(searchLower));
+                        });
+                    });
+
+                    if (!raceMatches && !resultMatches) {
+                        return false;
+                    }
                 }
+               
+                
             }
 
             // Advanced filters (only if advanced filters are enabled)
@@ -907,7 +936,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         });
         $scope.applyFilters();
     };
-
+ 
     // Add member to filter list
     $scope.addMemberToFilter = function(selectedMember) {
         if (selectedMember && selectedMember._id) {

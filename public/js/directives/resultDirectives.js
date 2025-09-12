@@ -40,6 +40,7 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
             $scope.raceCounts = $scope.result.achievements.filter(x => x.name === "raceCount");
             $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
             $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");
+            $scope.birthdays = $scope.result.achievements.filter(x => x.name === "birthday");
           }
 
           if ($scope.race.customOptions !== undefined){
@@ -47,14 +48,15 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
             $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
           }
           
-          var d1= new Date($scope.race.racedate);
-          var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
-          $scope.isbirthdayRace = false;
-          $scope.result.members.forEach(function(member) {
-              if(isSameDay(new Date(member.dateofbirth),raceDate)){
-                  $scope.isbirthdayRace = true;
-              }
-          });
+          // var d1= new Date($scope.race.racedate);
+          // var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
+          // $scope.isbirthdayRace = false;
+          // $scope.result.members.forEach(function(member) {
+          //     if(isSameDay(new Date(member.dateofbirth),raceDate)){
+          //         $scope.isbirthdayRace = true;
+          //     }
+          // });
+
           $scope.isThanksgiving = false;
           if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
             if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
@@ -70,10 +72,10 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
         
 
         },
-        template: '<span ng-if="raceCounts" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true"><div class="pbBox">🎖️</div></span>' +
-          '<span ng-if="raceCounts" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true"><div class="pbBox">🧨</div></span>' +
+        template: '<span ng-if="ags" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true"><div class="pbBox">🎖️</div></span>' +
+          '<span ng-if="pbs" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true"><div class="pbBox">🧨</div></span>' +
           '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text" tooltip-append-to-body="true"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
-          '<span class="hoverhand" uib-tooltip="Birthday Race!" tooltip-append-to-body="true" ng-if="isbirthdayRace">🎂</span>' +
+          '<span ng-if="birthdays" ng-repeat="birthday in birthdays track by $index" class="hoverhand" uib-tooltip-html="birthday.text" tooltip-append-to-body="true">🎂</span>' +
           '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
           '<span class="hoverhand" uib-tooltip="Fourth of July Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +   
           '<span ng-if="raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +

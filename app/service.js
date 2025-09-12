@@ -192,8 +192,8 @@ module.exports = {
         // OPTIMIZATION: Use bulk processing for single member
         await this.updateMemberStatsBulk([member._id]);
         return;
-        await this.updatePBsandAchivementsOptimized(member);
-        await this.updateTeamRequirementStatsOptimized(member);
+        // await this.updatePBsandAchivementsOptimized(member);
+        // await this.updateTeamRequirementStatsOptimized(member);
     },
 
     updateMemberStatsBulk: async function (memberIds) {
@@ -621,6 +621,24 @@ module.exports = {
         let raceIndex = 0;
         for (const result of allResults) {
             const resultAchievements = [];
+
+            // Check if this result is on the member's birthday
+            if (member.dateofbirth) {
+                const raceDate = new Date(result.race.racedate);
+                const memberBirthday = new Date(member.dateofbirth);
+                
+                // Check if race date matches member's birthday (month and day) using UTC
+                if (raceDate.getUTCMonth() === memberBirthday.getUTCMonth() && 
+                    raceDate.getUTCDate() === memberBirthday.getUTCDate()) {
+                    resultAchievements.push({
+                        name: "birthday",
+                        text: member.firstname + " ran on their birthday! 🎂",
+                        value: { 
+                            memberId: new mongoose.Types.ObjectId(member._id)
+                        }
+                    });
+                }
+            }
             
             // Check if this result is a race count milestone
             if (raceNumberSet.has(raceIndex + 1)) {
@@ -713,6 +731,8 @@ module.exports = {
                     achievement.value.memberId.toString() === memberIdStr) return true;
                 if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
                     achievement.value.memberId.toString() === memberIdStr) return true;
+                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return true;
                 return false;
             });
             
@@ -722,6 +742,8 @@ module.exports = {
                 if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
                     achievement.value.memberId.toString() === memberIdStr) return false;
                 if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
+                    achievement.value.memberId.toString() === memberIdStr) return false;
+                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId && 
                     achievement.value.memberId.toString() === memberIdStr) return false;
                 return true;
             });
@@ -1297,12 +1319,8 @@ module.exports = {
             
             // OPTIMIZATION: Use bulk team requirement stats update
             await this.updateTeamRequirementStatsBulk(memberIds);
-            
-            // Note: updateMembersInResults is commented out as it was in the original
-            // await this.updateMembersInResultsBulk(memberIds);
-            
-            // Note: Location achievements are commented out as they were in the original
-            // await this.updateAllLocationAchievements();
+            // await this.updateMemberStatsBulk(memberIds);
+            // console.log("startUpUpdate completed");
             
         } catch (error) {
             console.error('❌ Error in startUpUpdate:', error);

@@ -91,7 +91,7 @@
                                                 </label>
                                                 <input type="number" 
                                                        class="distance-input" 
-                                                       ng-model="filters.distanceMin" 
+                                                       ng-model="filters.distanceMinUI" 
                                                        ng-change="onDistanceMinInputChange()"
                                                        min="0" 
                                                        step="0.1"
@@ -104,7 +104,7 @@
                                                 </label>
                                                 <input type="number" 
                                                        class="distance-input" 
-                                                       ng-model="filters.distanceMax" 
+                                                       ng-model="filters.distanceMaxUI" 
                                                        ng-change="onDistanceMaxInputChange()"
                                                        min="0" 
                                                        step="0.1"
@@ -280,7 +280,7 @@
             <!-- Race list (only show when not loading and no error) -->
             <race-list 
                 ng-if="!loadingStates.races && !loadingError"
-                races-list="showAdvancedFilters ? filteredRacesList : racesList"
+                races-list="filteredRacesList"
                 search-query="searchQuery"
                 results-table-properties="resultsTableProperties"
                 user="user"

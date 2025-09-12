@@ -1637,26 +1637,21 @@ app.get('/updatePbs', service.isAdminLoggedIn, async function(req, res) {
 
 app.get('/updatePBsandAchivements', service.isAdminLoggedIn, async function(req, res) {
     res.setHeader("Content-Type", "application/json");
-    try{
-        const clear = ((req.query.clear+'').toLowerCase() === 'true')
-        let memberQuery = Member.find();
-        memberQuery = memberQuery.sort("lastname");
-        let pbs = [];
-        memberQuery.exec().then(async members => {            
-                if (members) {                
-                    for (let member of members) {
-                        pbs.push({
-                            "member": member.firstname + " " + member.lastname,
-                            "results": await service.updatePBsandAchivements(member, clear)
-                        });                           
-                    }
-                   await service.invalidateSystemInfoCache();
-                    res.end('{"success" : "Pbs updated successfully", "status" : 200 , "achievements" : '+JSON.stringify(pbs)+'}');
-                }            
-        });
-
+    try{       
+        const members = await Member.find().select('_id firstname memberStatus teamRequirementStats');
+            
+            if (members.length === 0) {
+                return;
+            }
+            
+            // Extract member IDs for bulk processing
+            const memberIds = members.map(member => member._id);
+            
+            // OPTIMIZATION: Use bulk team requirement stats update
+            await service.updatePBsandAchivementsBulk(memberIds);
+            res.end('{"success" : "Pbs and achievements updated successfully", "status" : 200}');
     }catch(err){
-        res.end('{"error" : "Pbs not updated", "status" : 500, "error" : "'+err+'"}');
+        res.end('{"error" : "Pbs and achievements not updated", "status" : 500, "error" : "'+err+'"}');
     }
 });
 

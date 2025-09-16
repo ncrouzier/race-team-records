@@ -48,8 +48,8 @@ app.directive('resultIcon', ['UtilsService', function(UtilsService) {
             $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
           }
           
-          // var d1= new Date($scope.race.racedate);
-          // var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
+           var d1= new Date($scope.race.racedate);
+           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
           // $scope.isbirthdayRace = false;
           // $scope.result.members.forEach(function(member) {
           //     if(isSameDay(new Date(member.dateofbirth),raceDate)){

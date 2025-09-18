@@ -265,7 +265,7 @@ angular.module('mcrrcApp').directive('raceAchievements', ['UtilsService', functi
                     return result.agegrade && result.agegrade >= 90;
                 });
                 if (excellentAgeGrades.length > 0) {
-                    achievements.push({type: 'nationalClass', icon: 'ageworld fa fa-star', tooltip: 'National Class age grade performance'});
+                    achievements.push({type: 'nationalClass', icon: 'ageworld fa fa-star', tooltip: 'World Class age grade performance'});
                 }
                 
                 // New location achievement

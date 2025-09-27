@@ -146,17 +146,108 @@
             </div>
         </div>
 
+        <!-- Results Section -->
+        <div class="custom-options-section">
+            <div class="section-header collapsible" ng-click="toggleResults()">
+                <h4>
+                    <i class="fa" ng-class="resultsCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                    Results <span class="item-count">({{raceResults ? raceResults.length : 0}})</span>
+                </h4>
+            </div>
+            <div class="results-content" ng-show="!resultsCollapsed">
+                <div class="loading-indicator" ng-if="loadingResults">
+                    <i class="fa fa-spinner fa-spin"></i> Loading results...
+                </div>
+                <div class="results-table" ng-if="raceResults && raceResults.length > 0">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Time</th>
+                                    <th>Time Details</th>
+                                    <th>Overall</th>
+                                    <th>Gender</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="result in raceResults">                                    
+                                    <td>{{result.members[0].firstname}} {{result.members[0].lastname}}</td>
+                                    <td><span class="resultTime">{{result.time | secondsToTimeString}}</span></td>
+                                    <td class="agegradeCell customtime nowrap">
+                                        <div class="input-group input-group-sm" style="width: 100px;">
+                                            <input type="number" min="0" style="width: 29px;" ng-model="result.timeExp.hours"
+                                                only-digits class=" text-left" ng-change="updateTime(result)"
+                                                placeholder="0">:<input type="number" min="0" style="width: 29px;"
+                                                ng-model="result.timeExp.minutes" only-digits-for-min-sec class="text-left"
+                                                ng-change="updateTime(result)" placeholder="0">:<input type="number" min="0"
+                                                style="width: 29px;" ng-model="result.timeExp.seconds" only-digits-for-min-sec
+                                                class="text-left" ng-change="updateTime(result)" placeholder="0">.<input
+                                                type="number" min="0" style="width: 29px;" ng-model="result.timeExp.centiseconds"
+                                                only-digits-for-min-sec class="text-left" ng-change="updateTime(result)"
+                                                placeholder="0">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm" style="width: 120px;">
+                                            <input type="text" ng-model="result.ranking.overallrank" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                            <span>/</span>
+                                            <input type="text" ng-model="result.ranking.overalltotal" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm" style="width: 120px;">
+                                            <input type="text" ng-model="result.ranking.genderrank" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                            <span>/</span>
+                                            <input type="text" ng-model="result.ranking.gendertotal" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm" style="width: 120px;">
+                                            <input type="text" ng-model="result.ranking.agerank" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                            <span>/</span>
+                                            <input type="text" ng-model="result.ranking.agetotal" only-digits
+                                                class="form-inline input-md text-left" style="width: 50px;"
+                                                ng-change="markResultsModified()">
+                                        </div>
+                                    </td>                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="no-results-message" ng-if="!loadingResults && (!raceResults || raceResults.length === 0)">
+                    <p class="text-muted">No results found for this race.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom Options Section -->
         <div class="custom-options-section">
-            <div class="section-header">
-                <h4>Custom Options</h4>
+            <div class="section-header collapsible" ng-click="toggleCustomOptions()">
+                <h4>
+                    <i class="fa" ng-class="customOptionsCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                    Custom Options <span class="item-count">({{race.customOptions ? race.customOptions.length : 0}})</span>
+                </h4>
                 <button type="button" 
                         class="btn btn-sm btn-success" 
-                        ng-click="addCustomOption()">
+                        ng-click="addCustomOption(); $event.stopPropagation()">
                     <i class="fa fa-plus"></i> Add Custom Option
                 </button>
             </div>
-            <div class="custom-option-item" ng-repeat="option in race.customOptions track by $index">
+            <div class="custom-options-content" ng-show="!customOptionsCollapsed">
+                <div class="custom-option-item" ng-repeat="option in race.customOptions track by $index">
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group">
@@ -196,8 +287,9 @@
                     </div>
                 </div>
             </div>
-            <div class="no-items-message" ng-if="!race.customOptions || race.customOptions.length === 0">
-                <p class="text-muted">No custom options added yet. Click "Add Custom Option" to get started.</p>
+                <div class="no-items-message" ng-if="!race.customOptions || race.customOptions.length === 0">
+                    <p class="text-muted">No custom options added yet. Click "Add Custom Option" to get started.</p>
+                </div>
             </div>
         </div>
 
@@ -206,7 +298,7 @@
             <div class="section-header collapsible" ng-click="toggleAchievements()">
                 <h4>
                     <i class="fa" ng-class="achievementsCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
-                    Achievements
+                    Achievements <span class="item-count">({{race.achievements ? race.achievements.length : 0}})</span>
                 </h4>
                 <button type="button" 
                         class="btn btn-sm btn-success" 

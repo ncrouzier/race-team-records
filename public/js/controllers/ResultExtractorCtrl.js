@@ -15,13 +15,13 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         $scope.processedResults = [];
         $scope.currentTeamMembers = [];
         $scope.isLoading = false;
-        $scope.formData.raceDate  = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0)); // Set today's date
+        $scope.formData.raceDate  = null;//new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0)); // Set today's date
         $scope.url = '';   
         $scope.htmlSource = '';  // Add htmlSource variable
         $scope.raceType = null;        
         $scope.formData.location = {
             country: 'USA',
-            state: 'MD'
+            state: null
         };
         $scope.formData.isRecordEligible = true;
         $scope.distanceName = '';

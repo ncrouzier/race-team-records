@@ -1967,7 +1967,9 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.states = [];
     $scope.autoconvert = true;
     $scope.opened = false;
-    $scope.achievementsCollapsed = false;
+    $scope.achievementsCollapsed = true;
+    $scope.customOptionsCollapsed = true;
+    $scope.resultsCollapsed = true;
     
     // Load racetypes
     ResultsService.getRaceTypes().then(function(racetypes) {
@@ -1983,8 +1985,52 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         $scope.states = states;
     });
 
-   
+    // Initialize results-related variables
+    $scope.raceResults = [];
+    $scope.loadingResults = false;
+    $scope.resultsModified = false;
     
+    // Load results when modal opens
+    $scope.loadRaceResults = function() {
+        if (!$scope.race._id) {
+            console.log('No race ID available');
+            return;
+        }
+        
+        $scope.loadingResults = true;
+        var filters = {
+            raceid: $scope.race._id        
+        };
+        // Use getResults to fetch results for this race
+        ResultsService.getResults({filters:filters}).then(function(results) {
+            $scope.raceResults = results;
+            
+            // Initialize timeExp for each result
+            $scope.raceResults.forEach(function(result) {
+                if (result.time) {
+                    result.timeExp = {
+                        hours: Math.floor(result.time / 360000),
+                        minutes: Math.floor(((result.time % 8640000) % 360000) / 6000),
+                        seconds: Math.floor((((result.time % 8640000) % 360000) % 6000) / 100),
+                        centiseconds: Math.floor((((result.time % 8640000) % 360000) % 6000) % 100)
+                    };
+                }
+            });
+            $scope.loadingResults = false;
+        }).catch(function(error) {
+            console.error('Error loading race results:', error);
+            $scope.loadingResults = false;
+        });
+    };
+    
+    // Auto-load results when modal opens
+    $scope.loadRaceResults();
+
+    // Function to mark results as modified
+    $scope.markResultsModified = function() {
+        $scope.resultsModified = true;
+    };
+       
     // Helper functions
     $scope.getRaceTypeClass = function(surface) {
         if (surface !== undefined) {
@@ -2081,6 +2127,42 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         $scope.achievementsCollapsed = !$scope.achievementsCollapsed;
     };
     
+    $scope.toggleCustomOptions = function() {
+        $scope.customOptionsCollapsed = !$scope.customOptionsCollapsed;
+    };
+    
+    $scope.toggleResults = function() {
+        $scope.resultsCollapsed = !$scope.resultsCollapsed;
+    };
+    
+    
+    
+    // Delete a single result
+    $scope.deleteResult = function(result, index) {
+        if (confirm('Are you sure you want to delete this result?')) {
+            ResultsService.deleteResult(result._id).then(function() {
+                $scope.raceResults.splice(index, 1);
+            }).catch(function(error) {
+                console.error('Error deleting result:', error);
+            });
+        }
+    };
+
+    $scope.updateTime = function(result) {
+        // Ensure all time components are numbers
+        result.timeExp.hours = parseInt(result.timeExp.hours) || 0;
+        result.timeExp.minutes = parseInt(result.timeExp.minutes) || 0;
+        result.timeExp.seconds = parseInt(result.timeExp.seconds) || 0;
+        result.timeExp.centiseconds = parseInt(result.timeExp.centiseconds) || 0;
+
+        // Calculate total time in centiseconds
+        result.time = (result.timeExp.hours * 3600 + 
+                      result.timeExp.minutes * 60 + 
+                      result.timeExp.seconds) * 100 + 
+                      result.timeExp.centiseconds;
+        $scope.markResultsModified();
+    };
+    
     $scope.save = function() {
         
         // Process all achievement values before saving
@@ -2096,8 +2178,45 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
                 $scope.updateCustomOptionValue(index);
             });
         }
-
-        $uibModalInstance.close($scope.race);
+       
+        // Save the race first
+        ResultsService.updateRace($scope.race).then(function(updatedRace) {
+            
+            // If results were loaded and modified, save them after race is saved
+            if ($scope.resultsModified && $scope.raceResults && $scope.raceResults.length > 0) {
+                // Prepare results for bulk update
+                var resultsToUpdate = $scope.raceResults.map(function(result) {
+                    return {
+                        _id: result._id,
+                        time: result.time,
+                        ranking: result.ranking,
+                        members: result.members,
+                        legs: result.legs,
+                        comments: result.comments,
+                        resultlink: result.resultlink,
+                        isRecordEligible: result.isRecordEligible,
+                        customOptions: result.customOptions,
+                        achievements: result.achievements
+                    };
+                });
+                
+                // Update results in bulk, then close modal
+                ResultsService.updateResultsBulk(resultsToUpdate).then(function(response) {
+                    updatedRace.results = response.results;
+                    $uibModalInstance.close(updatedRace);
+                }).catch(function(error) {
+                    console.error('Error updating results:', error);
+                    // Still close the modal even if results update fails
+                    $uibModalInstance.close(updatedRace);
+                });
+            } else {
+                // No results to update, just close the modal
+                $uibModalInstance.close(updatedRace);
+            }
+        }).catch(function(error) {
+            console.error('Error saving race:', error);
+            // Don't close modal if race save fails
+        });
     };
     
     $scope.cancel = function() {

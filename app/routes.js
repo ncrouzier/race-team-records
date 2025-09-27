@@ -532,7 +532,6 @@ module.exports = async function(app, qs, passport, async, _) {
         const limit = parseInt(req.query.limit);
 
         let query = Result.find();
-
         let filters;
         if (req.query.filters) {
             //filters means we are in record mode (I think)
@@ -751,12 +750,95 @@ module.exports = async function(app, qs, passport, async, _) {
 
     });
 
-   
-
+    // Bulk update existing results
+    app.put('/api/results/bulk', service.isAdminLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const { results } = req.body;
+            
+            if (!results || !Array.isArray(results) || results.length === 0) {
+                return res.status(400).json({ error: 'Results array is required and must not be empty' });
+            }
+            
+            const updatedResults = [];
+            
+            // Process each result
+            for (const resultData of results) {
+                try {
+                    if (!resultData._id) {
+                        throw new Error('Result ID is required for updates');
+                    }
+                    
+                    // Find the existing result
+                    const existingResult = await Result.findById(resultData._id);
+                    if (!existingResult) {
+                        throw new Error(`Result with ID ${resultData._id} not found`);
+                    }
+                    
+                    // Update the result with new data
+                    const updatedResult = await Result.findByIdAndUpdate(
+                        resultData._id,
+                        {
+                            time: resultData.time,
+                            ranking: resultData.ranking,
+                            members: resultData.members,
+                            legs: resultData.legs,
+                            comments: resultData.comments,
+                            resultlink: resultData.resultlink,
+                            isRecordEligible: resultData.isRecordEligible,
+                            customOptions: resultData.customOptions,
+                            achievements: resultData.achievements
+                        },
+                        { new: true }
+                    );
+                    
+                    if (updatedResult) {
+                        updatedResults.push(updatedResult);
+                    }
+                    
+                } catch (resultError) {
+                    console.error(`Error updating result ${resultData._id}:`, resultError);
+                    // Continue with other results even if one fails
+                }
+            }
+            
+            // Update member stats for all affected members
+            const memberIds = new Set();
+            updatedResults.forEach(result => {
+                result.members.forEach(member => {
+                    memberIds.add(member._id.toString());
+                });
+            });
+            
+            // Update stats for each unique member
+            for (const memberId of memberIds) {
+                try {
+                    let member = await Member.findById(memberId);        
+                    await service.updateMemberStats(member);
+                } catch (memberError) {
+                    console.error('Error updating member stats:', memberError);
+                }
+            }
+            
+            // Invalidate cache 
+            await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
+            
+            res.json({
+                success: true,
+                message: `Successfully updated ${updatedResults.length} results`,
+                updatedCount: updatedResults.length,
+                totalRequested: results.length,
+                results: updatedResults
+            });
+            
+        } catch (error) {
+            console.error('Bulk result update error:', error);
+            res.status(500).json({ error: 'Failed to update bulk results', details: error.message });
+        }
+    });
 
     //update a result
     app.put('/api/results/:result_id', service.isAdminLoggedIn, async function(req, res) {
-
         let members = [];
         for (const m of req.body.members) {
             let member = await Member.findById(m._id);               
@@ -903,19 +985,25 @@ module.exports = async function(app, qs, passport, async, _) {
             if (!race) {
                 return res.status(400).json({ error: 'Race information is required' });
             }
+            let existingRace = null;
+            if (race._id) {
+                existingRace = await Race.findById(race._id);
+            }
             
-            // Check if race exists or create it
-            let existingRace = await Race.findOne({
-                'racename': race.racename,
-                'isMultisport': race.isMultisport,
-                'distanceName': race.distanceName,
-                'racedate': race.racedate,
-                'location.country': race.location.country,
-                'location.state': race.location.state,
-                'racetype._id': race.racetype._id,
-                'order': race.order
-            });
-            
+            // No ID?, check if race exists or create it
+            if(!existingRace){
+                existingRace = await Race.findOne({
+                    'racename': race.racename,
+                    'isMultisport': race.isMultisport,
+                    'distanceName': race.distanceName,
+                    'racedate': race.racedate,
+                    'location.country': race.location.country,
+                    'location.state': race.location.state,
+                    'racetype._id': race.racetype._id,
+                    'order': race.order
+                });
+            }
+
             let raceToUse = existingRace;
             if (!existingRace) {
                 raceToUse = await Race.create({

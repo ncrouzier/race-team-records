@@ -145,6 +145,17 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     /**
+     * Update multiple existing results in bulk
+     * @param {Array} resultsToUpdate - Array of results to update
+     * @return {Promise} - Promise that resolves with the updated results
+     */
+    factory.updateResultsBulk = function(resultsToUpdate) {
+        return Restangular.all('results/bulk').customPUT({
+            results: resultsToUpdate
+        });
+    };
+
+    /**
      * Save multiple results with bulk endpoint
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
@@ -689,7 +700,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             });
                         
         return modalInstance.result.then(function(updatedRace) {
-            return factory.updateRace(updatedRace);
+            return updatedRace;
+            // return factory.updateRace(updatedRace);
         }, function() {
             return null;
         });

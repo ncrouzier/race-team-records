@@ -56,7 +56,7 @@
                                     <div class="col-md-12">
                                         <div class="well well-sm">
                                             <div class="row">
-                                                <div class="col-md-8">
+                                                <div class="col-sm-8">
                                                     <label for="teamMemberSelect" class="control-label">
                                                         <i class="fa fa-users"></i> Compare with:
                                                     </label>
@@ -68,7 +68,8 @@
                                                             
                                                             {{$select.selected.firstname}}
                                                             {{$select.selected.lastname}}
-                                                            ({{$select.selected.count}} races)
+                                                            <span ng-if="!ageGradeMode">({{$select.selected.count}} races)</span>
+                                                            <span ng-if="ageGradeMode">({{$select.selected.ageGradeCount}} age-graded races)</span>
                                                         </ui-select-match>
                                                        
                                                         <ui-select-choices repeat="member in getTeamMembersForDropdown() | memberFilter: $select.search">                                                                                                           
@@ -76,7 +77,9 @@
                                                                 <strong>{{member.firstname}}
                                                                     {{member.lastname}}</strong> {{member.memberStatus === 'past' ? '(past)' : ''}}
                                                                 <br>
-                                                                <small>{{member.count}} races together</small>
+                                                                <small ng-if="!ageGradeMode">{{member.count}} races together</small>
+                                                                
+                                                                <small ng-if="ageGradeMode">{{member.ageGradeCount}} age-graded races together</small>
                                                             </div>
                                                         </ui-select-choices>
                                                     </ui-select>
@@ -85,12 +88,31 @@
                                                             class="btn btn-sm btn-primary" 
                                                             ng-click="showTeamMembersList(member1)">
                                                         <i class="fa fa-list"></i> View All Team Members
-                                                    </button>
+                                                    </button>                                                   
                                                 </div>
-                                                <div class="col-md-4 text-right">
-                                                    <small class="text-muted">
-                                                        {{member1.firstname}} has raced with {{topTeamMembers.length}} team members
-                                                    </small>
+                                                <div class="col-sm-4 text-right" >
+                                                    <div class="age-grade-mode-toggle btn-group" role="group" style="margin-bottom: 10px;">
+                                                        <button style="margin-right: 5px" type="button" 
+                                                                class="btn btn-sm" 
+                                                                ng-class="{'activated': !ageGradeMode, 'deactivated': ageGradeMode}"
+                                                                ng-click="toggleAgeGradeMode(false)"
+                                                                tooltip-append-to-body="true" 
+                                                                tooltip-placement="top"
+                                                                uib-tooltip-html="Switch to regular time-based comparison">
+                                                            <i class="fa fa-clock-o"></i>
+                                                            Regular Mode
+                                                        </button>
+                                                        <button type="button" 
+                                                                class="btn btn-sm" 
+                                                                ng-class="{'activated': ageGradeMode, 'deactivated': !ageGradeMode}"
+                                                                ng-click="toggleAgeGradeMode(true)"
+                                                                tooltip-append-to-body="true" 
+                                                                tooltip-placement="top"
+                                                                uib-tooltip-html="Switch to age grade-based comparison">
+                                                            <i class="fa fa-percent"></i>
+                                                             Age Grade Mode
+                                                        </button>
+                                                    </div>                                                   
                                                 </div>
                                             </div>
                                         </div>
@@ -103,7 +125,7 @@
                                         <div class="panel panel-default shared-races-table">
                                             <div class="panel-heading">
                                                 <div class="panel-heading-content">
-                                                    <h4><i class="fa fa-users"></i> Head-to-Head Records vs Team Members</h4>
+                                                    <h4><i class="fa fa-users"></i> Head-to-Head Records vs Team Members  ({{topTeamMembers.length}}) </h4>
                                                     <!-- Gender Filter -->
                                                     <div class="gender-filter-container">
                                                         <div class="btn-group" role="group">
@@ -221,7 +243,10 @@
                                     <div class="col-md-12">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
-                                                <h4><i class="fa fa-trophy"></i> Head-to-Head Record</h4>
+                                                <h4><i class="fa fa-trophy"></i> 
+                                                    <span ng-if="!ageGradeMode">Head-to-Head Record</span>
+                                                    <span ng-if="ageGradeMode">Head-to-Head Record for Age-Graded Races</span>
+                                                </h4>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row text-center" ng-if="sharedRaces.length > 0">
@@ -591,8 +616,10 @@
                                 <div class="row" ng-if="member2 && sharedRaces.length > 0">
                                     <div class="col-md-12">
                                         <div class="panel panel-default shared-races-table">
-                                            <div class="panel-heading">
-                                                <h4><i class="fa fa-flag-checkered"></i> Races They Both Participated In
+                                            <div class="panel-heading">                                                
+                                                <h4><i class="fa fa-flag-checkered"></i> 
+                                                    <span ng-if="!ageGradeMode">Races They Both Participated In</span>
+                                                    <span ng-if="ageGradeMode">Age-Graded Races They Both Participated In</span>                                                    
                                                 </h4>
                                             </div>
                                             <div class="panel-body">
@@ -606,7 +633,8 @@
                                                                 <th>Distance</th>
                                                                 <th class="member-1-color">{{member1.firstname}}</th>
                                                                 <th class="member-2-color">{{member2.firstname}}</th>
-                                                                <th>Margin</th>
+                                                                <th ng-if="!ageGradeMode">Margin</th>
+                                                                <th ng-if="ageGradeMode">Age Grade Diff</th>
                                                                 <th>Winner</th>
                                                             </tr>
                                                         </thead>
@@ -623,18 +651,30 @@
                                                                  </td>
                                                                  <td>{{race.race.distanceName || race.race.racetype.name}}</td>
                                                                  <td>
-                                                                     <strong class="time">{{formatTime(race.member1Result.time)}}</strong>
-                                                                     <br>
-                                                                     <small
-                                                                         ng-if="race.member1Result.agegrade">({{race.member1Result.agegrade
-                                                                         | number:1}}%)</small>
+                                                                     <div ng-if="!ageGradeMode">
+                                                                         <strong class="time">{{formatTime(race.member1Result.time)}}</strong>
+                                                                         <br>
+                                                                         <small ng-if="race.member1Result.agegrade">({{race.member1Result.agegrade | number:1}}%)</small>
+                                                                     </div>
+                                                                     <div ng-if="ageGradeMode">
+                                                                         <strong class="time" ng-if="race.member1Result.agegrade">{{race.member1Result.agegrade | number:1}}%</strong>
+                                                                         <strong class="time" ng-if="!race.member1Result.agegrade">N/A</strong>
+                                                                         <br>
+                                                                         <small>{{formatTime(race.member1Result.time)}}</small>
+                                                                     </div>
                                                                  </td>
                                                                  <td>
-                                                                     <strong class="time">{{formatTime(race.member2Result.time)}}</strong>
-                                                                     <br>
-                                                                     <small
-                                                                         ng-if="race.member2Result.agegrade">({{race.member2Result.agegrade
-                                                                         | number:1}}%)</small>
+                                                                     <div ng-if="!ageGradeMode">
+                                                                         <strong class="time">{{formatTime(race.member2Result.time)}}</strong>
+                                                                         <br>
+                                                                         <small ng-if="race.member2Result.agegrade">({{race.member2Result.agegrade | number:1}}%)</small>
+                                                                     </div>
+                                                                     <div ng-if="ageGradeMode">
+                                                                         <strong class="time" ng-if="race.member2Result.agegrade">{{race.member2Result.agegrade | number:1}}%</strong>
+                                                                         <strong class="time" ng-if="!race.member2Result.agegrade">N/A</strong>
+                                                                         <br>
+                                                                         <small>{{formatTime(race.member2Result.time)}}</small>
+                                                                     </div>
                                                                  </td>
                                                                  <td>
                                                                      <span
@@ -644,7 +684,8 @@
                                                                          uib-tooltip="{{race.timeDifference === 0 ? ('Rankings: ' + member1.firstname + ': ' + (race.member1Result.ranking ? (race.member1Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A') + ', ' + member2.firstname + ': ' + (race.member2Result.ranking ? (race.member2Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A')) : ''}}"
                                                                          tooltip-append-to-body="true"
                                                                          tooltip-placement="top">
-                                                                         {{formatTime(race.timeDifference)}}
+                                                                         <span ng-if="!ageGradeMode">{{formatTime(race.timeDifference)}}</span>
+                                                                         <span ng-if="ageGradeMode">{{race.timeDifference | number:1}}%</span>
                                                                      </span>
                                                                      <span ng-if="race.isTie">-</span>
                                                                  </td>

@@ -6895,3 +6895,105 @@ footer {
        }
     }
    }
+
+   // Fix datepicker z-index to appear above modals
+   .uib-datepicker-popup.dropdown-menu {
+    z-index: 1060 !important;
+   }
+
+   // =====================================
+   // REQUIREMENTS PAGE STYLES ============
+   // =====================================
+
+   .requirements-summary {
+    margin-bottom: 20px;
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .col-md-3 {
+        display: flex;
+    }
+
+    .stat-box {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        p.requirements-text {
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .text-muted-custom {
+            color: #999;
+        }
+    }
+   }
+
+   .requirements-content {
+    .panel-body {
+        &.no-padding {
+            padding: 0;
+        }
+
+        .loading-container,
+        .empty-container {
+            padding: 40px;
+        }
+    }
+
+    table {
+        th.sortable {
+            cursor: pointer;
+        }
+
+        td {
+            .status-icon {
+                margin-left: 5px;
+            }
+
+            .text-muted-custom {
+                color: #999;
+            }
+        }
+    }
+   }
+
+   // Status row backgrounds
+   .status-complete {
+    background-color: #d4edda !important;
+   }
+
+   .status-partial {
+    background-color: #fff3cd !important;
+   }
+
+   .status-incomplete {
+    background-color: #f8d7da !important;
+   }
+
+   // Status badges
+   .status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+
+    &.status-complete {
+        background-color: #43ac6a;
+        color: #43ac6a;
+    }
+
+    &.status-partial {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    &.status-incomplete {
+        background-color: #dc3545;
+        color: #f04124;
+    }
+   }

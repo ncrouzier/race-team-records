@@ -9,6 +9,7 @@ var systeminfoSchema = mongoose.Schema({
     raceUpdate        : Date,
     racetypeUpdate        : Date,
     memberUpdate        : Date,
+    volunteerJobUpdate  : Date,
     createdAt: Date,
     updatedAt: Date
 });
@@ -23,6 +24,7 @@ systeminfoSchema.pre('save', function(next, done) {
         this.race = Date.now();
         this.racetypeUpdate = Date.now();
         this.memberUpdate = Date.now();
+        this.volunteerJobUpdate = Date.now();
     }
     this.updatedAt = Date.now();
     next();

@@ -759,8 +759,8 @@ module.exports = async function(app, qs, passport, async, _) {
                 dateTo = new Date();
             }
 
-            // Determine if volunteer requirement applies (2026 and later)
-            const volunteerRequirementApplies = yearNum >= 2026;
+            // Volunteer jobs always count toward the race requirement (all years)
+            const volunteerRequirementApplies = true;
 
             // Get all members with their membership dates
             const allMembers = await Member.find({})
@@ -804,14 +804,16 @@ module.exports = async function(app, qs, passport, async, _) {
                 });
 
                 // Calculate if requirements are met
-                const meetsRaceRequirement = raceCount >= 8;
+                // Volunteer jobs count toward the 8-race requirement (all years)
+                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= 8;
                 const meetsAgeGradeRequirement = maxAgeGrade >= 70;
+
+                // Volunteer requirement is no longer separate - it contributes to race count
+                // Keep this for backward compatibility but it's not used in overall calculation
                 const meetsVolunteerRequirement = volunteerJobCount >= 2;
 
-                // All requirements met depends on whether volunteer requirement applies
-                const meetsAllRequirements = volunteerRequirementApplies
-                    ? (meetsRaceRequirement && meetsAgeGradeRequirement && meetsVolunteerRequirement)
-                    : (meetsRaceRequirement && meetsAgeGradeRequirement);
+                // All requirements met: combined race+volunteer count >= 8 AND age grade >= 70%
+                const meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
 
                 // Check if member joined or left during the year
                 let joinedDuringYear = false;

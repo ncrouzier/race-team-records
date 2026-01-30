@@ -40,14 +40,8 @@
                 <div class="stat-box">
                     <h4>Requirements</h4>
                     <p class="requirements-text">
-                        <i class="fa fa-check-circle text-success"></i> 8+ races<br>
-                        <i class="fa fa-check-circle text-success"></i> 70%+ age grade<br>
-                        <span ng-if="volunteerRequirementApplies">
-                            <i class="fa fa-check-circle text-success"></i> 2+ volunteer jobs
-                        </span>
-                        <span ng-if="!volunteerRequirementApplies" class="text-muted-custom">
-                            <i class="fa fa-info-circle"></i> Volunteer jobs (N/A for {{selectedYear}})
-                        </span>
+                        <i class="fa fa-check-circle text-success"></i> 8+ races (volunteer jobs count)<br>
+                        <i class="fa fa-check-circle text-success"></i> 70%+ age grade
                     </p>
                 </div>
             </div>
@@ -79,7 +73,7 @@
                                     ng-class="{'fa-sort-up': sortBy === 'member.lastname' && !sortReverse, 'fa-sort-down': sortBy === 'member.lastname' && sortReverse}"></i>
                             </th>
                             <th ng-click="setSortBy('raceCount')" class="sortable">
-                                Races (≥8)
+                                Races
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'raceCount' && !sortReverse, 'fa-sort-down': sortBy === 'raceCount' && sortReverse}"></i>
                             </th>
@@ -89,8 +83,7 @@
                                     ng-class="{'fa-sort-up': sortBy === 'maxAgeGrade' && !sortReverse, 'fa-sort-down': sortBy === 'maxAgeGrade' && sortReverse}"></i>
                             </th>
                             <th ng-click="setSortBy('volunteerJobCount')" class="sortable">
-                                <span ng-if="volunteerRequirementApplies">Volunteer Jobs (≥2)</span>
-                                <span ng-if="!volunteerRequirementApplies">Volunteer Jobs</span>
+                                Volunteer Jobs (count as races)
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'volunteerJobCount' && !sortReverse, 'fa-sort-down': sortBy === 'volunteerJobCount' && sortReverse}"></i>
                             </th>
@@ -118,6 +111,9 @@
                                     <i class="fa"
                                         ng-class="{'fa-check-circle': req.meetsRaceRequirement, 'fa-times-circle': !req.meetsRaceRequirement}"></i>
                                     {{req.raceCount}}
+                                    <span ng-if="req.volunteerJobCount > 0" class="text-muted">
+                                        + {{req.volunteerJobCount}} = {{req.raceCount + req.volunteerJobCount}}
+                                    </span>
                                 </span>
                             </td>
                             <td>
@@ -129,15 +125,7 @@
                                 </span>
                             </td>
                             <td>
-                                <span ng-if="req.volunteerRequirementApplies"
-                                    ng-class="{'text-success': req.meetsVolunteerRequirement, 'text-danger': !req.meetsVolunteerRequirement}">
-                                    <i class="fa"
-                                        ng-class="{'fa-check-circle': req.meetsVolunteerRequirement, 'fa-times-circle': !req.meetsVolunteerRequirement}"></i>
-                                    {{req.volunteerJobCount}}
-                                </span>
-                                <span ng-if="!req.volunteerRequirementApplies" class="text-muted-custom">
-                                    {{req.volunteerJobCount}} <small>(N/A)</small>
-                                </span>
+                                {{req.volunteerJobCount}}
                             </td>
                             <td>
                                 <span class="status-badge" ng-class="getStatusClass(req)">

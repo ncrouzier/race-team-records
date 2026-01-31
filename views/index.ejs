@@ -83,7 +83,7 @@
 									class="fa fa-users"></i></a></li>
 						<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
 									class="fa fa-bar-chart"></i></a></li>
-						<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist') || $state.includes('/requirements'))}"
+						<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
 								uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
@@ -95,8 +95,6 @@
 									ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}">
 									<a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a>
 								</li>
-								<li ng-class="{active: $state.includes('/requirements')}"><a
-										ui-sref="/requirements">Member Requirements</a></li>
 							</ul>
 						</li>
 						<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
@@ -149,7 +147,7 @@
 										class="fa fa-users"></i></a></li>
 							<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
 										class="fa fa-bar-chart"></i></a></li>
-							<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist') || $state.includes('/requirements'))}"
+							<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
 								class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 								<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
 									uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
@@ -161,8 +159,7 @@
 										ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}">
 										<a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a>
 									</li>
-									<li ng-class="{active: $state.includes('/requirements')}"><a
-											ui-sref="/requirements">Requirements</a></li>
+
 								</ul>
 							</li>
 							<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img

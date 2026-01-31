@@ -189,6 +189,28 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
                         $scope.sortBy = ['-statusValue', '-raceCount', '-maxAgeGrade', '-volunteerJobCount'];
                     }
                     $scope.sortReverse = false; // Don't use reverse flag with array sort
+                } else if (field === 'volunteerJobCount') {
+                    // Special handling for volunteer jobs sorting with secondary criteria
+                    var currentlySortingByVolunteer = Array.isArray($scope.sortBy) &&
+                        ($scope.sortBy[0] === '-volunteerJobCount' ||
+                            $scope.sortBy[0] === 'volunteerJobCount');
+
+                    if (currentlySortingByVolunteer) {
+                        // Toggle between most-first and least-first
+                        if ($scope.sortBy[0] === '-volunteerJobCount') {
+                            // Currently most-first, switch to least-first
+                            // Sort by least volunteer jobs, then least races, then lowest age grade
+                            $scope.sortBy = ['volunteerJobCount', 'raceCount', 'maxAgeGrade'];
+                        } else {
+                            // Currently least-first, switch to most-first
+                            // Sort by most volunteer jobs, then most races, then highest age grade
+                            $scope.sortBy = ['-volunteerJobCount', '-raceCount', '-maxAgeGrade'];
+                        }
+                    } else {
+                        // First time sorting by volunteer jobs, default to most-first
+                        $scope.sortBy = ['-volunteerJobCount', '-raceCount', '-maxAgeGrade'];
+                    }
+                    $scope.sortReverse = false; // Don't use reverse flag with array sort
                 } else {
                     // Standard single-field sorting
                     if ($scope.sortBy === field) {

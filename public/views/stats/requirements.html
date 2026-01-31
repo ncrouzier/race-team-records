@@ -1,4 +1,26 @@
 <div class="jumbotron">
+
+    <!-- Navigation -->
+    <ul class="nav nav-tabs">
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/team">Team Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/us-map">US Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/world-map">World Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/requirements">Team Requirements</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
+            <a ui-sref="/stats/participation">Participation Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
+            <a ui-sref="/stats/members">Team Members Stats</a>
+        </li>
+    </ul>
     <!-- Header -->
     <div class="requirements-header">
         <div class="row">
@@ -85,7 +107,7 @@
                             <th ng-click="setSortBy('volunteerJobCount')" class="sortable">
                                 Volunteer Jobs
                                 <i class="fa"
-                                    ng-class="{'fa-sort-up': sortBy === 'volunteerJobCount' && !sortReverse, 'fa-sort-down': sortBy === 'volunteerJobCount' && sortReverse}"></i>
+                                    ng-class="{'fa-sort-up': sortBy[0] === '-volunteerJobCount' || (sortBy === 'volunteerJobCount' && !sortReverse), 'fa-sort-down': sortBy[0] === 'volunteerJobCount' || (sortBy === 'volunteerJobCount' && sortReverse)}"></i>
                             </th>
                             <th ng-click="setSortBy('meetsAllRequirements')" class="sortable">
                                 Status
@@ -113,9 +135,6 @@
                                     <i class="fa"
                                         ng-class="{'fa-check-circle': req.meetsRaceRequirement, 'fa-times-circle': !req.meetsRaceRequirement}"></i>
                                     {{req.raceCount}}
-                                    <span ng-if="req.volunteerJobCount > 0" class="text-muted">
-                                        + {{req.volunteerJobCount}} = {{req.raceCount + req.volunteerJobCount}}
-                                    </span>
                                 </span>
                             </td>
                             <td>
@@ -128,8 +147,8 @@
                             </td>
                             <td>
                                 <span ng-if="req.volunteerJobCount > 0"
-                                      ng-click="showVolunteerJobsModal(req.member, req.volunteerJobCount)"
-                                      class="hoverhand text-primary">
+                                    ng-click="showVolunteerJobsModal(req.member, req.volunteerJobCount)"
+                                    class="hoverhand text-primary">
                                     {{req.volunteerJobCount}}
                                 </span>
                                 <span ng-if="req.volunteerJobCount === 0">
@@ -139,6 +158,10 @@
                             <td>
                                 <span class="status-badge" ng-class="getStatusClass(req)">
                                     {{getStatusText(req)}}
+                                </span>
+                                <span ng-if="req.volunteerJobCount > 0" class="text-muted">
+                                    ({{req.raceCount}} + {{req.volunteerJobCount}} = {{req.raceCount +
+                                    req.volunteerJobCount}})
                                 </span>
                             </td>
                         </tr>

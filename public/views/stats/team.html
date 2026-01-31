@@ -11,27 +11,31 @@
             <a ui-sref="/stats/world-map">World Races Map</a>
         </li>
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/requirements">Team Requirements</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'user'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
             <a ui-sref="/stats/members">Team Members Stats</a>
         </li>
     </ul>
 
     <!-- Team Stats Content -->
     <div class="row text-left">
-        <div class="col-md-9" >
+        <div class="col-md-9">
 
         </div>
-        <div class="col-md-3" >
+        <div class="col-md-3">
             <div style="float:right;">
-                <ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2" style="min-width: 60px;">{{yearsList}}
+                <ui-select ng-model="miscStats.year" ng-change="getMiscStats()" theme="select2"
+                    style="min-width: 60px;">{{yearsList}}
                     <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
                     <ui-select-choices repeat="year in yearsList">
                         <div ng-bind="year"></div>
                     </ui-select-choices>
                 </ui-select>
-               
+
             </div>
         </div>
     </div>
@@ -40,7 +44,7 @@
         <i class="fa fa-spinner fa-spin fa-3x"></i>
         <p style="margin-top: 15px;">Loading team statistics...</p>
     </div>
-    
+
     <!-- Content when not loading -->
     <div ng-if="!loadingStates.miscStats">
         <div class="row">
@@ -89,13 +93,10 @@
                                 </div>
                             </li>
                             <li class="list-group-item text-left" style="border: none;">
-                              <div class="panel-body">
-                                <d3-pie-chart 
-                                  data="teamRaceTypeBreakdown" 
-                                  width="350" 
-                                  height="250"
-                                  on-slice-click="goToResultsWithQuery({distance: data.name, year: miscStats.year !== 'All Time' ? miscStats.year : undefined})">
-                                </d3-pie-chart>
+                                <div class="panel-body">
+                                    <d3-pie-chart data="teamRaceTypeBreakdown" width="350" height="250"
+                                        on-slice-click="goToResultsWithQuery({distance: data.name, year: miscStats.year !== 'All Time' ? miscStats.year : undefined})">
+                                    </d3-pie-chart>
                             </li>
                         </ul>
                     </div>
@@ -108,11 +109,19 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="race in miscStats.bestTurnout track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="race in miscStats.bestTurnout track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent" ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>
-                                        <br><small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}} <span ng-if="race.location.state !== null" ng-bind-html="'(' + race.location.state + ')'"></span><span ng-if="race.location.state === null" ng-bind-html="'(' + race.location.country + ')'"></span></small>
+                                        <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent"
+                                                ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>
+                                        <br><small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}}
+                                            <span ng-if="race.location.state !== null"
+                                                ng-bind-html="'(' + race.location.state + ')'"></span><span
+                                                ng-if="race.location.state === null"
+                                                ng-bind-html="'(' + race.location.country + ')'"></span></small>
                                     </div>
                                     <div class="col-sm-4 text-right">
                                         {{race.teamMembers}} members
@@ -132,14 +141,24 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small>{{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years racing</small>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <br><small>{{member.avgRacesPerYear}} avg/year, {{member.yearsRacing}} years
+                                            racing</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})" class="hoverhandandunderline" uib-tooltip="View all results for {{member.name}}" tooltip-placement="left">{{member.races}} races</a><span class="hoverhand" uib-tooltip="({{member.parkrunRaces}} parkrun races)" tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
+                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})"
+                                            class="hoverhandandunderline"
+                                            uib-tooltip="View all results for {{member.name}}"
+                                            tooltip-placement="left">{{member.races}} races</a><span class="hoverhand"
+                                            uib-tooltip="({{member.parkrunRaces}} parkrun races)"
+                                            tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
                                     </div>
                                 </div>
                             </li>
@@ -154,11 +173,17 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.mostTraveled track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.mostTraveled track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small>{{member.uniqueCountries}} {{member.uniqueCountries === 1 ? 'country' : 'countries'}}, {{member.uniqueStates}} {{member.uniqueStates === 1 ? 'state' : 'states'}}</small>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <br><small>{{member.uniqueCountries}} {{member.uniqueCountries === 1 ? 'country'
+                                            : 'countries'}}, {{member.uniqueStates}} {{member.uniqueStates === 1 ?
+                                            'state' : 'states'}}</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
                                         {{member.uniqueLocations}} locations
@@ -179,11 +204,16 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.mostMiles track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.mostMiles track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small>{{member.races}} races, {{member.avgMilesPerRace}} avg miles/race</small>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <br><small>{{member.races}} races, {{member.avgMilesPerRace}} avg
+                                            miles/race</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
                                         {{member.miles}} miles
@@ -194,7 +224,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
@@ -202,14 +232,20 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.mostWins track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.mostWins track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
                                         <br><small>{{member.races}} total races</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username, ranking: '1'}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})" class="hoverhandandunderline" title="View all wins for {{member.name}}">{{member.wins}} wins</a>
+                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username, ranking: '1'}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})"
+                                            class="hoverhandandunderline"
+                                            title="View all wins for {{member.name}}">{{member.wins}} wins</a>
                                     </div>
                                 </div>
                             </li>
@@ -227,11 +263,17 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.bestAgeGrades track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.bestAgeGrades track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small><span class="hoverhandandunderline resultEvent" ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span> (avg: {{member.avgAgeGrade}}%)</small>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <br><small><span class="hoverhandandunderline resultEvent"
+                                                ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span>
+                                            (avg: {{member.avgAgeGrade}}%)</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
                                         {{member.bestAgeGrade}}%
@@ -242,7 +284,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
@@ -250,10 +292,14 @@
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
-                            <li class="list-group-item text-left" ng-repeat="member in miscStats.mostConsistent track by $index" style="border: none;" ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <li class="list-group-item text-left"
+                                ng-repeat="member in miscStats.mostConsistent track by $index" style="border: none;"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
-                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
+                                        <strong>{{$index + 1}}. <a
+                                                ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
                                         <br><small>{{member.races}} races over {{member.yearsRacing}} years</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
@@ -267,4 +313,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

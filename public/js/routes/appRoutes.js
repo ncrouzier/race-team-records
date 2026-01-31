@@ -152,12 +152,12 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/volunteerJobs.html');
                 gtag('event', 'page_view');
             }
-        }).state('/requirements', {
-            url: "/requirements",
-            templateUrl: "views/requirements.html",
+        }).state('/stats/requirements', {
+            url: "/stats/requirements",
+            templateUrl: "views/stats/requirements.html",
             controller: 'RequirementsController',
             onEnter: function () {
-                gtag('set', 'page_path', '/requirements.html');
+                gtag('set', 'page_path', '/stats/requirements.html');
                 gtag('event', 'page_view');
             }
         }).state('/records', {

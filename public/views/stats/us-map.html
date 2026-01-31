@@ -11,9 +11,12 @@
             <a ui-sref="/stats/world-map">World Races Map</a>
         </li>
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/requirements">Requirements</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'user'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
             <a ui-sref="/stats/members">Team Members Stats</a>
         </li>
     </ul>
@@ -41,8 +44,11 @@
                         <tbody>
                             <tr ng-repeat="state in stateStats track by $index">
                                 <td>{{$index+1}}</td>
-                                <td><img ng-src="{{state.flag}}" alt="State flag" style="width: 20px; height: 15px;" onerror="this.style.display='none'"> {{state.name}} ({{state.code}})</td>
-                                <td><a ng-click="goToResultsWithQuery({ states: [state.code]})" class="hoverhandandunderline" uib-tooltip="View all results in {{state.name}}" tooltip-placement="left">{{state.count}}</a></td>
+                                <td><img ng-src="{{state.flag}}" alt="State flag" style="width: 20px; height: 15px;"
+                                        onerror="this.style.display='none'"> {{state.name}} ({{state.code}})</td>
+                                <td><a ng-click="goToResultsWithQuery({ states: [state.code]})"
+                                        class="hoverhandandunderline" uib-tooltip="View all results in {{state.name}}"
+                                        tooltip-placement="left">{{state.count}}</a></td>
                             </tr>
                         </tbody>
                     </table>
@@ -50,4 +56,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

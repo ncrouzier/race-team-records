@@ -78,12 +78,12 @@
                                     ng-class="{'fa-sort-up': sortBy === 'raceCount' && !sortReverse, 'fa-sort-down': sortBy === 'raceCount' && sortReverse}"></i>
                             </th>
                             <th ng-click="setSortBy('maxAgeGrade')" class="sortable">
-                                Best Age Grade (≥70%)
+                                Best Age Grade
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'maxAgeGrade' && !sortReverse, 'fa-sort-down': sortBy === 'maxAgeGrade' && sortReverse}"></i>
                             </th>
                             <th ng-click="setSortBy('volunteerJobCount')" class="sortable">
-                                Volunteer Jobs (count as races)
+                                Volunteer Jobs
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'volunteerJobCount' && !sortReverse, 'fa-sort-down': sortBy === 'volunteerJobCount' && sortReverse}"></i>
                             </th>
@@ -107,6 +107,8 @@
                             </td>
                             <td>
                                 <span
+                                    ng-click="goToResultsWithQuery({members:[{username: req.member.username}], year: selectedYear})"
+                                    class="hoverhand"
                                     ng-class="{'text-success': req.meetsRaceRequirement, 'text-danger': !req.meetsRaceRequirement}">
                                     <i class="fa"
                                         ng-class="{'fa-check-circle': req.meetsRaceRequirement, 'fa-times-circle': !req.meetsRaceRequirement}"></i>
@@ -125,7 +127,14 @@
                                 </span>
                             </td>
                             <td>
-                                {{req.volunteerJobCount}}
+                                <span ng-if="req.volunteerJobCount > 0"
+                                      ng-click="showVolunteerJobsModal(req.member, req.volunteerJobCount)"
+                                      class="hoverhand text-primary">
+                                    {{req.volunteerJobCount}}
+                                </span>
+                                <span ng-if="req.volunteerJobCount === 0">
+                                    0
+                                </span>
                             </td>
                             <td>
                                 <span class="status-badge" ng-class="getStatusClass(req)">

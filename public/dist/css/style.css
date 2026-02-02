@@ -12848,6 +12848,84 @@ footer {
   font-size: 12px;
   opacity: 0.7;
 }
+.age-grade-mode-toggle .btn.activated {
+  color: #fff;
+  background-color: #005a73;
+  border-color: #005a73;
+}
+.age-grade-mode-toggle .btn.deactivated {
+  color: #6c757d;
+  border-color: #6c757d;
+  opacity: 0.6;
+}
+.uib-datepicker-popup.dropdown-menu {
+  z-index: 1060 !important;
+}
+.requirements-summary {
+  margin-bottom: 20px;
+}
+.requirements-summary .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.requirements-summary .col-md-3 {
+  display: flex;
+}
+.requirements-summary .stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.requirements-summary .stat-box p.requirements-text {
+  font-size: 14px;
+  margin: 0;
+}
+.requirements-summary .stat-box .text-muted-custom {
+  color: #999;
+}
+.requirements-content .panel-body.no-padding {
+  padding: 0;
+}
+.requirements-content .panel-body .loading-container,
+.requirements-content .panel-body .empty-container {
+  padding: 40px;
+}
+.requirements-content table th.sortable {
+  cursor: pointer;
+}
+.requirements-content table td .status-icon {
+  margin-left: 5px;
+}
+.requirements-content table td .text-muted-custom {
+  color: #999;
+}
+.status-complete {
+  background-color: #d4edda !important;
+}
+.status-partial {
+  background-color: #fff3cd !important;
+}
+.status-incomplete {
+  background-color: #f8d7da !important;
+}
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+.status-badge.status-complete {
+  background-color: #43ac6a;
+  color: #43ac6a;
+}
+.status-badge.status-partial {
+  background-color: #ffc107;
+  color: #000;
+}
+.status-badge.status-incomplete {
+  background-color: #dc3545;
+  color: #f04124;
+}
 
 .temp-adjustment-tool table {
   border-collapse: separate;

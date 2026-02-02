@@ -19,12 +19,14 @@ module.exports = async function(app, qs, passport, async, _) {
                     this.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
                     this.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
                     this.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
+                    this.set('X-Volunteer-Job-Update', systemInfo.volunteerJobUpdate ? systemInfo.volunteerJobUpdate.toISOString() : '');
                     // Calculate overall update
                     const dates = [
                         systemInfo.resultUpdate,
                         systemInfo.raceUpdate,
                         systemInfo.racetypeUpdate,
-                        systemInfo.memberUpdate
+                        systemInfo.memberUpdate,
+                        systemInfo.volunteerJobUpdate
                     ].filter(date => date);
                     
                     if (dates.length > 0) {
@@ -146,6 +148,7 @@ module.exports = async function(app, qs, passport, async, _) {
     const Result = require('./models/result');
     const Race = require('./models/race');
     const AgeGrading = require('./models/agegrading');
+    const VolunteerJob = require('./models/volunteerjob');
 
 
     // =====================================
@@ -485,13 +488,49 @@ module.exports = async function(app, qs, passport, async, _) {
                 await Result.bulkWrite(resultBulkOperations);
             }
 
+            // Find all volunteer jobs for this member and update embedded member info
+            const volunteerJobs = await VolunteerJob.find({ 'member._id': member._id });
+            const volunteerJobBulkOperations = [];
+
+            for (const job of volunteerJobs) {
+                // Check if any member info actually changed
+                const memberInfoChanged =
+                    job.member.firstname !== member.firstname ||
+                    job.member.lastname !== member.lastname ||
+                    job.member.username !== member.username ||
+                    job.member.sex !== member.sex ||
+                    job.member.dateofbirth.getTime() !== member.dateofbirth.getTime();
+
+                if (memberInfoChanged) {
+                    volunteerJobBulkOperations.push({
+                        updateOne: {
+                            filter: { _id: job._id },
+                            update: {
+                                $set: {
+                                    'member.firstname': member.firstname,
+                                    'member.lastname': member.lastname,
+                                    'member.username': member.username,
+                                    'member.sex': member.sex,
+                                    'member.dateofbirth': member.dateofbirth
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Execute volunteer job updates
+            if (volunteerJobBulkOperations.length > 0) {
+                await VolunteerJob.bulkWrite(volunteerJobBulkOperations);
+            }
+
             // Update member stats using bulk operations
             await service.updateMemberStatsBulk([member._id]);
-            
+
             await service.updateSystemInfoAndInvalidateSystemInfoCache("results");
-            
-            res.json({ 
-                success: "Member updated successfully, number of results updated: " + resultBulkOperations.length, 
+
+            res.json({
+                success: "Member updated successfully, results updated: " + resultBulkOperations.length + ", volunteer jobs updated: " + volunteerJobBulkOperations.length,
                 status: 200
             });
             
@@ -519,6 +558,308 @@ module.exports = async function(app, qs, passport, async, _) {
             res.send(MemberDeleteOneErr);
         }
         
+    });
+
+
+    // =====================================
+    // VOLUNTEER JOBS ======================
+    // =====================================
+
+    // get all volunteer jobs
+    app.get('/api/volunteerjobs', function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+
+        const filters = req.query.filters;
+        const sort = req.query.sort;
+        const limit = parseInt(req.query.limit);
+
+        let query = VolunteerJob.find();
+
+        if (filters) {
+            if (filters.memberId) {
+                query = query.where('member._id').equals(filters.memberId);
+            }
+            if (filters.eventName) {
+                query = query.regex('eventName', new RegExp(filters.eventName, 'i'));
+            }
+            if (filters.dateFrom) {
+                query = query.where('jobDate').gte(new Date(filters.dateFrom));
+            }
+            if (filters.dateTo) {
+                query = query.where('jobDate').lte(new Date(filters.dateTo));
+            }
+        }
+
+        if (sort) {
+            query = query.sort(sort);
+        }
+        if (limit) {
+            query = query.limit(limit);
+        }
+
+        try {
+            query.exec().then(jobs => {
+                res.json(jobs);
+            });
+        } catch(err) {
+            res.send(err);
+        }
+    });
+
+    // get a single volunteer job
+    app.get('/api/volunteerjobs/:job_id', function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            VolunteerJob.findOne({
+                _id: req.params.job_id
+            }).then(job => {
+                if (job) {
+                    res.json(job);
+                } else {
+                    res.status(404).json({ error: 'Volunteer job not found' });
+                }
+            });
+        } catch(err) {
+            res.send(err);
+        }
+    });
+
+    // get all volunteer jobs for a member
+    app.get('/api/members/:member_id/volunteerjobs', function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        const sort = req.query.sort || '-jobDate';
+
+        try {
+            let query = VolunteerJob.find({
+                'member._id': req.params.member_id
+            });
+
+            if (sort) {
+                query = query.sort(sort);
+            }
+
+            query.exec().then(jobs => {
+                res.json(jobs);
+            });
+        } catch(err) {
+            res.send(err);
+        }
+    });
+
+    // create a volunteer job
+    app.post('/api/volunteerjobs', service.isAdminLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            // Validate that member exists
+            const member = await Member.findById(req.body.member._id);
+            if (!member) {
+                return res.status(400).json({ error: 'Member not found' });
+            }
+
+            // Create volunteer job with embedded member info
+            const volunteerJob = await VolunteerJob.create({
+                member: {
+                    _id: member._id,
+                    firstname: member.firstname,
+                    lastname: member.lastname,
+                    username: member.username,
+                    sex: member.sex,
+                    dateofbirth: member.dateofbirth
+                },
+                jobDate: req.body.jobDate,
+                eventName: req.body.eventName,
+                description: req.body.description
+            });
+
+            await service.invalidateSystemInfoCache();
+            res.json({ success: 'Volunteer job created successfully', job: volunteerJob });
+        } catch(err) {
+            res.status(400).send(err);
+        }
+    });
+
+    // update a volunteer job
+    app.put('/api/volunteerjobs/:job_id', service.isAdminLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const job = await VolunteerJob.findById(req.params.job_id);
+
+            if (!job) {
+                return res.status(404).json({ error: 'Volunteer job not found' });
+            }
+
+            // Update fields if provided
+            if (req.body.jobDate) job.jobDate = req.body.jobDate;
+            if (req.body.eventName) job.eventName = req.body.eventName;
+            if (req.body.description) job.description = req.body.description;
+
+            // If member is being updated, validate and update
+            if (req.body.member && req.body.member._id) {
+                const member = await Member.findById(req.body.member._id);
+                if (!member) {
+                    return res.status(400).json({ error: 'Member not found' });
+                }
+                job.member = {
+                    _id: member._id,
+                    firstname: member.firstname,
+                    lastname: member.lastname,
+                    username: member.username,
+                    sex: member.sex,
+                    dateofbirth: member.dateofbirth
+                };
+            }
+
+            await job.save();
+            await service.invalidateSystemInfoCache();
+            res.json({ success: 'Volunteer job updated successfully', job: job });
+        } catch(err) {
+            res.status(400).send(err);
+        }
+    });
+
+    // delete a volunteer job
+    app.delete('/api/volunteerjobs/:job_id', service.isAdminLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const deleteResult = await VolunteerJob.deleteOne({
+                _id: req.params.job_id
+            });
+
+            if (deleteResult.deletedCount === 1) {
+                await service.invalidateSystemInfoCache();
+                res.json({ success: 'Volunteer job deleted successfully' });
+            } else {
+                res.status(404).json({ error: 'Volunteer job not found' });
+            }
+        } catch(err) {
+            res.status(400).send(err);
+        }
+    });
+
+
+    // =====================================
+    // REQUIREMENTS ========================
+    // =====================================
+
+    // get team requirements for a year
+    app.get('/api/requirements/:year', service.isUserLoggedIn, async function(req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const year = req.params.year;
+            const isAllTime = year === 'all';
+
+            let dateFrom, dateTo, yearNum;
+            if (!isAllTime) {
+                yearNum = parseInt(year);
+                dateFrom = new Date(Date.UTC(yearNum, 0, 1, 0, 0, 0, 0));
+                dateTo = new Date(Date.UTC(yearNum + 1, 0, 1, 0, 0, 0, 0));
+            } else {
+                yearNum = new Date().getFullYear();
+                dateFrom = new Date(Date.UTC(2013, 0, 1, 0, 0, 0, 0));
+                dateTo = new Date();
+            }
+
+            // Volunteer jobs always count toward the race requirement (all years)
+            const volunteerRequirementApplies = true;
+
+            // Get all members with their membership dates
+            const allMembers = await Member.find({})
+                .select('_id firstname lastname username membershipDates')
+                .lean();
+
+            // Filter members who were active during the selected year
+            const members = allMembers.filter(member => {
+                if (!member.membershipDates || member.membershipDates.length === 0) {
+                    return false;
+                }
+
+                // Check if any membership period overlaps with the year
+                return member.membershipDates.some(period => {
+                    const periodStart = new Date(period.start);
+                    const periodEnd = period.end ? new Date(period.end) : new Date(9999, 11, 31); // Ongoing if no end date
+
+                    // Member is active if period overlaps with the year
+                    return periodStart < dateTo && periodEnd >= dateFrom;
+                });
+            });
+
+            // For each member, calculate requirements
+            const requirementsData = [];
+
+            for (const member of members) {
+                // Query race count and max age grade
+                const results = await Result.find({
+                    'members._id': member._id,
+                    'race.racedate': { $gte: dateFrom, $lt: dateTo }
+                }).select('agegrade');
+
+                const raceCount = results.length;
+                const ageGrades = results.map(r => r.agegrade || 0).filter(ag => ag > 0);
+                const maxAgeGrade = ageGrades.length > 0 ? Math.max(...ageGrades) : 0;
+
+                // Query volunteer jobs count
+                const volunteerJobCount = await VolunteerJob.countDocuments({
+                    'member._id': member._id,
+                    jobDate: { $gte: dateFrom, $lt: dateTo }
+                });
+
+                // Calculate if requirements are met
+                // Volunteer jobs count toward the 8-race requirement (all years)
+                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= 8;
+                const meetsAgeGradeRequirement = maxAgeGrade >= 70;
+
+                // Volunteer requirement is no longer separate - it contributes to race count
+                // Keep this for backward compatibility but it's not used in overall calculation
+                const meetsVolunteerRequirement = volunteerJobCount >= 2;
+
+                // All requirements met: combined race+volunteer count >= 8 AND age grade >= 70%
+                const meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
+
+                // Check if member joined or left during the year
+                let joinedDuringYear = false;
+                let leftDuringYear = false;
+
+                if (member.membershipDates && member.membershipDates.length > 0) {
+                    // Check if any membership period started during the year
+                    joinedDuringYear = member.membershipDates.some(period => {
+                        const periodStart = new Date(period.start);
+                        return periodStart >= dateFrom && periodStart < dateTo;
+                    });
+
+                    // Check if any membership period ended during the year (not ongoing)
+                    leftDuringYear = member.membershipDates.some(period => {
+                        if (!period.end) return false; // Ongoing membership
+                        const periodEnd = new Date(period.end);
+                        return periodEnd >= dateFrom && periodEnd < dateTo;
+                    });
+                }
+
+                requirementsData.push({
+                    member: {
+                        _id: member._id,
+                        firstname: member.firstname,
+                        lastname: member.lastname,
+                        username: member.username
+                    },
+                    raceCount: raceCount,
+                    maxAgeGrade: maxAgeGrade,
+                    volunteerJobCount: volunteerJobCount,
+                    meetsRaceRequirement: meetsRaceRequirement,
+                    meetsAgeGradeRequirement: meetsAgeGradeRequirement,
+                    meetsVolunteerRequirement: meetsVolunteerRequirement,
+                    meetsAllRequirements: meetsAllRequirements,
+                    volunteerRequirementApplies: volunteerRequirementApplies,
+                    joinedDuringYear: joinedDuringYear,
+                    leftDuringYear: leftDuringYear
+                });
+            }
+
+            res.json(requirementsData);
+
+        } catch (error) {
+            console.error('Error fetching requirements:', error);
+            res.status(500).json({ error: 'Error fetching requirements data' });
+        }
     });
 
 

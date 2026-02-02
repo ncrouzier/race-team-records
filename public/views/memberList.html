@@ -1,76 +1,153 @@
 <div class="jumbotron">
     <div class="row btn-row">
         <div class="col-md-3 col-sm-3 btn-col-member">
-            <span>Search members:</span><i class="hoverhand fa fa-user-plus" style="color:#03C03C;" ng-if="user.role == 'admin' " ng-click="showAddMemberModal()" title="Add member"></i>
+            <span>Search members:</span><i class="hoverhand fa fa-user-plus" style="color:#03C03C;"
+                ng-if="user.role == 'admin' " ng-click="showAddMemberModal()" title="Add member"></i>
             <br>
-                <ui-select class="member-ui-select" name="memberselect" ng-model="membersList[$index]" on-select="onSelectMember($item, $model)" theme="select2" required>
-                    <ui-select-match placeholder="Select a member">{{$select.selected.firstname}} {{$select.selected.lastname}}</ui-select-match>
-                    <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
-                        <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
-                        <small>{{member.dateofbirth | categoryFilter}}  {{member.sex}} </small>
-                    </ui-select-choices>
-                </ui-select>
+            <ui-select class="member-ui-select" name="memberselect" ng-model="membersList[$index]"
+                on-select="onSelectMember($item, $model)" theme="select2" required>
+                <ui-select-match placeholder="Select a member">{{$select.selected.firstname}}
+                    {{$select.selected.lastname}}</ui-select-match>
+                <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                    <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                    <small>{{member.dateofbirth | categoryFilter}} {{member.sex}} </small>
+                </ui-select-choices>
+            </ui-select>
         </div>
         <div class="col-md-3 col-sm-3 btn-col-member">
             <span>Gender:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'Male'">Men</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'Female'">Women</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()" uib-btn-radio="'.*'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()"
+                    uib-btn-radio="'Male'">Men</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()"
+                    uib-btn-radio="'Female'">Women</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.sex" ng-change="getMembers()"
+                    uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
         <div class="col-md-3 col-sm-3 btn-col-member">
             <span>Category:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'Open'">Open</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'Master'">Master</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()" uib-btn-radio="'.*'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()"
+                    uib-btn-radio="'Open'">Open</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()"
+                    uib-btn-radio="'Master'">Master</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.category" ng-change="getMembers()"
+                    uib-btn-radio="'.*'">Both</label>
             </div>
         </div>
         <div class="col-md-3 col-sm-3 btn-col-member">
             <span>Member Status:</span>
             <br>
             <div class="btn-group">
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'current'">Current</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'past'">Past</label>
-                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()" uib-btn-radio="'all'">Both</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()"
+                    uib-btn-radio="'current'">Current</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()"
+                    uib-btn-radio="'past'">Past</label>
+                <label class="btn-member btn btn-primary" ng-model="paramModel.memberStatus" ng-change="getMembers()"
+                    uib-btn-radio="'all'">Both</label>
             </div>
-        </div>        
+        </div>
     </div>
-    <div ng-if="user.role == 'admin' || user.role == 'user'" class="row btn-row">
+    <div ng-if="user.role == 'admin'" class="row btn-row">
         <small>
-        <div class="col-md-3 col-sm-3 btn-col-member">
-            <span>Show team requirements progress:</span>              
-            <div class="btn-group">
-                <button style="font-size: 12px; padding: 0px;" type="button" class="btn btn-primary" ng-model="paramModel.showTeamRequirementProgress" uib-btn-checkbox btn-checkbox-true="true" btn-checkbox-false="false">
-                    {{paramModel.showTeamRequirementProgress? "ON" :"OFF"}}
-                </button>
+            <div class="col-md-3 col-sm-3 btn-col-member">
+                <span>Show team requirements progress:</span>
+                <div class="btn-group">
+                    <button style="font-size: 12px; padding: 0px;" type="button" class="btn btn-primary"
+                        ng-model="paramModel.showTeamRequirementProgress" uib-btn-checkbox btn-checkbox-true="true"
+                        btn-checkbox-false="false">
+                        {{paramModel.showTeamRequirementProgress? "ON" :"OFF"}}
+                    </button>
+                </div>
             </div>
-        </div>  
-    </small>      
+        </small>
     </div>
     <div class="row">
         <div class="col-sm-12">
-        <table class = "memberListTable">
-            <thead>
-                <tr style="font-size:15px; font-weight: bold; line-height: 33px;">
-                <th class="memberListHeader"><span title="Under 40">Open Men </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[0]) | unsafe" ng-if="paramModel.memberStatus === 'current' && (user.role == 'admin' || user.role == 'user') && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[0]).length}}/{{memberListcolumns[0].length}})</span></th>
-                <th class="memberListHeader"> <span title="Under 40">Open Women </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[1]) | unsafe" ng-if="paramModel.memberStatus === 'current' && (user.role == 'admin' || user.role == 'user') && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[1]).length}}/{{memberListcolumns[1].length}})</span></th>
-                <th class="memberListHeader"> <span title="40 and over">Masters Men </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[2]) | unsafe" ng-if="paramModel.memberStatus === 'current' && (user.role == 'admin' || user.role == 'user') && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[2]).length}}/{{memberListcolumns[2].length}})</span></th>
-                <th class="memberListHeader"> <span title="40 and over">Masters Women </span><span class="hoverhand" uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[3]) | unsafe" ng-if="paramModel.memberStatus === 'current' && (user.role == 'admin' || user.role == 'user') && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[3]).length}}/{{memberListcolumns[3].length}})</span></th>
-                </tr>   
-            </thead>
-            <tbody>         
-                <tr style="font-size:15px; " ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">                       
-                    <td ng-if="memberListcolumns[0][$index]" ng-click="setMember(memberListcolumns[0][$index])" class="memberListCell hoverhand"><span class="hoverhand" >{{memberListcolumns[0][$index].firstname}} {{memberListcolumns[0][$index].lastname}}</span> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/stats({member: memberListcolumns[0][$index].username})" class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/head-to-head({member: memberListcolumns[0][$index].username})" class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats" member="memberListcolumns[0][$index]"></team-requirements></td><td ng-if="!memberListcolumns[0][$index]"></td>
-                    <td ng-if="memberListcolumns[1][$index]" ng-click="setMember(memberListcolumns[1][$index])" class="memberListCell hoverhand"><span class="hoverhand" >{{memberListcolumns[1][$index].firstname}} {{memberListcolumns[1][$index].lastname}}</span> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/stats({member: memberListcolumns[1][$index].username})" class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/head-to-head({member: memberListcolumns[1][$index].username})" class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats" member="memberListcolumns[1][$index]"></team-requirements></td><td ng-if="!memberListcolumns[1][$index]"></td>
-                    <td ng-if="memberListcolumns[2][$index]" ng-click="setMember(memberListcolumns[2][$index])" class="memberListCell hoverhand"><span class="hoverhand" >{{memberListcolumns[2][$index].firstname}} {{memberListcolumns[2][$index].lastname}}</span> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/stats({member: memberListcolumns[2][$index].username})" class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/head-to-head({member: memberListcolumns[2][$index].username})" class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats" member="memberListcolumns[2][$index]"></team-requirements></td><td ng-if="!memberListcolumns[2][$index]"></td>
-                    <td ng-if="memberListcolumns[3][$index]" ng-click="setMember(memberListcolumns[3][$index])" class="memberListCell hoverhand"><span class="hoverhand" >{{memberListcolumns[3][$index].firstname}} {{memberListcolumns[3][$index].lastname}}</span> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/stats({member: memberListcolumns[3][$index].username})" class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a ng-click="$event.stopPropagation()" ng-if="user.role == 'admin' || user.role == 'user'" ui-sref="/members/member/head-to-head({member: memberListcolumns[3][$index].username})" class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[3][$index].teamRequirementStats" member="memberListcolumns[3][$index]"></team-requirements></td><td ng-if="!memberListcolumns[3][$index]"></td>              
-                  </tr>                    
+            <table class="memberListTable">
+                <thead>
+                    <tr style="font-size:15px; font-weight: bold; line-height: 33px;">
+                        <th class="memberListHeader"><span title="Under 40">Open Men </span><span class="hoverhand"
+                                uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[0]) | unsafe"
+                                ng-if="paramModel.memberStatus === 'current' && user.role == 'admin' && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[0]).length}}/{{memberListcolumns[0].length}})</span>
+                        </th>
+                        <th class="memberListHeader"> <span title="Under 40">Open Women </span><span class="hoverhand"
+                                uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[1]) | unsafe"
+                                ng-if="paramModel.memberStatus === 'current' && user.role == 'admin' && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[1]).length}}/{{memberListcolumns[1].length}})</span>
+                        </th>
+                        <th class="memberListHeader"> <span title="40 and over">Masters Men </span><span
+                                class="hoverhand"
+                                uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[2]) | unsafe"
+                                ng-if="paramModel.memberStatus === 'current' && user.role == 'admin' && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[2]).length}}/{{memberListcolumns[2].length}})</span>
+                        </th>
+                        <th class="memberListHeader"> <span title="40 and over">Masters Women </span><span
+                                class="hoverhand"
+                                uib-tooltip-html="getMemberHeaderTooltip(memberListcolumns[3]) | unsafe"
+                                ng-if="paramModel.memberStatus === 'current' && user.role == 'admin' && paramModel.showTeamRequirementProgress">({{getListOfMembersWithRequirementFulfilled(memberListcolumns[3]).length}}/{{memberListcolumns[3].length}})</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="font-size:15px; "
+                        ng-repeat="x in [].constructor(getMaxColumnSize(memberListcolumns)) track by $index">
+                        <td ng-if="memberListcolumns[0][$index]" ng-click="setMember(memberListcolumns[0][$index])"
+                            class="memberListCell hoverhand"><span
+                                class="hoverhand">{{memberListcolumns[0][$index].firstname}}
+                                {{memberListcolumns[0][$index].lastname}}</span> <a ng-click="$event.stopPropagation()"
+                                ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/stats({member: memberListcolumns[0][$index].username})"
+                                class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a
+                                ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/head-to-head({member: memberListcolumns[0][$index].username})"
+                                class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
+                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats"
+                                member="memberListcolumns[0][$index]"></team-requirements></td>
+                        <td ng-if="!memberListcolumns[0][$index]"></td>
+                        <td ng-if="memberListcolumns[1][$index]" ng-click="setMember(memberListcolumns[1][$index])"
+                            class="memberListCell hoverhand"><span
+                                class="hoverhand">{{memberListcolumns[1][$index].firstname}}
+                                {{memberListcolumns[1][$index].lastname}}</span> <a ng-click="$event.stopPropagation()"
+                                ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/stats({member: memberListcolumns[1][$index].username})"
+                                class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a
+                                ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/head-to-head({member: memberListcolumns[1][$index].username})"
+                                class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
+                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats"
+                                member="memberListcolumns[1][$index]"></team-requirements></td>
+                        <td ng-if="!memberListcolumns[1][$index]"></td>
+                        <td ng-if="memberListcolumns[2][$index]" ng-click="setMember(memberListcolumns[2][$index])"
+                            class="memberListCell hoverhand"><span
+                                class="hoverhand">{{memberListcolumns[2][$index].firstname}}
+                                {{memberListcolumns[2][$index].lastname}}</span> <a ng-click="$event.stopPropagation()"
+                                ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/stats({member: memberListcolumns[2][$index].username})"
+                                class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a
+                                ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/head-to-head({member: memberListcolumns[2][$index].username})"
+                                class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
+                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats"
+                                member="memberListcolumns[2][$index]"></team-requirements></td>
+                        <td ng-if="!memberListcolumns[2][$index]"></td>
+                        <td ng-if="memberListcolumns[3][$index]" ng-click="setMember(memberListcolumns[3][$index])"
+                            class="memberListCell hoverhand"><span
+                                class="hoverhand">{{memberListcolumns[3][$index].firstname}}
+                                {{memberListcolumns[3][$index].lastname}}</span> <a ng-click="$event.stopPropagation()"
+                                ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/stats({member: memberListcolumns[3][$index].username})"
+                                class="hoverhand"><i class="fa fa-bar-chart"></i></a> <a
+                                ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
+                                ui-sref="/members/member/head-to-head({member: memberListcolumns[3][$index].username})"
+                                class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
+                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[3][$index].teamRequirementStats"
+                                member="memberListcolumns[3][$index]"></team-requirements></td>
+                        <td ng-if="!memberListcolumns[3][$index]"></td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
-</div> 
+</div>

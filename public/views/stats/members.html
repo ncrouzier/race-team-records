@@ -41,7 +41,7 @@
         <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
         <p class="loading-text">Loading team members statistics...</p>
     </div>
-    
+
     <!-- Content when not loading -->
     <div ng-if="!loadingStates.attendanceStats">
         <!-- Upcoming Birthdays Section -->
@@ -52,12 +52,11 @@
                 </div>
                 <div class="panel-body">
                     <div class="birthdays-list">
-                        <div ng-repeat="m in membersList | filter:{memberStatus:'current'} | orderBy:'fromNow' | limitTo:5" 
-                             class="birthday-item">
+                        <div ng-repeat="m in membersList | filter:{memberStatus:'current'} | orderBy:'fromNow' | limitTo:5"
+                            class="birthday-item">
                             <i class="fa fa-gift"></i>
-                            <a ui-sref="/members({ member: m.firstname+m.lastname })" class="member-link">
-                                {{m.firstname}} {{m.lastname}}
-                            </a>
+                            <a class="member-link" ui-sref="/members/member({ member: m.username })">{{m.firstname}}
+                                {{m.lastname}}</a>
                             <span class="birthday-info">
                                 will be {{(m | memberAgeFilter)+1}} on {{m.dateofbirth | date:'MM/dd': 'UTC' }}
                             </span>
@@ -84,47 +83,54 @@
                                 <tr class="table-header">
                                     <th class="rank-column">#</th>
                                     <th class="member-column">
-                                        <a href="" ng-click="field='firstname'; reverseSort = !reverseSort" class="sortable-header">
+                                        <a href="" ng-click="field='firstname'; reverseSort = !reverseSort"
+                                            class="sortable-header">
                                             <i class="fa fa-user"></i> Member
-                                            <i ng-show="field == 'firstname'" 
-                                               ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="field == 'firstname'"
+                                                ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="age-column">
-                                        <a href="" ng-click="field='age'; reverseSort = !reverseSort" class="sortable-header">
+                                        <a href="" ng-click="field='age'; reverseSort = !reverseSort"
+                                            class="sortable-header">
                                             <i class="fa fa-birthday-cake"></i> Age
-                                            <i ng-show="field == 'age'" 
-                                               ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="field == 'age'"
+                                                ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="dob-column">
-                                        <a href="" ng-click="field='dateofbirth'; reverseSort = !reverseSort" class="sortable-header">
+                                        <a href="" ng-click="field='dateofbirth'; reverseSort = !reverseSort"
+                                            class="sortable-header">
                                             <i class="fa fa-calendar"></i> Date of Birth
-                                            <i ng-show="field == 'dateofbirth'" 
-                                               ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="field == 'dateofbirth'"
+                                                ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="status-column">
-                                        <a href="" ng-click="field='status'; reverseSort = !reverseSort" class="sortable-header">
+                                        <a href="" ng-click="field='status'; reverseSort = !reverseSort"
+                                            class="sortable-header">
                                             <i class="fa fa-info-circle"></i> Status
-                                            <i ng-show="field == 'status'" 
-                                               ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="field == 'status'"
+                                                ng-class="reverseSort ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                         <div class="status-filters">
                                             <label class="status-filter">
-                                                <input type="radio" ng-model="statusChoice" ng-value="none" name="rdoResult">
+                                                <input type="radio" ng-model="statusChoice" ng-value="none"
+                                                    name="rdoResult">
                                                 <span>All</span>
                                             </label>
                                             <label class="status-filter">
-                                                <input type="radio" ng-model="statusChoice" ng-value="current" name="rdoResult">
+                                                <input type="radio" ng-model="statusChoice" ng-value="current"
+                                                    name="rdoResult">
                                                 <span>Current</span>
                                             </label>
                                             <label class="status-filter">
-                                                <input type="radio" ng-model="statusChoice" ng-value="past" name="rdoResult">
+                                                <input type="radio" ng-model="statusChoice" ng-value="past"
+                                                    name="rdoResult">
                                                 <span>Past</span>
                                             </label>
                                         </div>
@@ -132,16 +138,18 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-class="m.memberStatus === 'past' ? 'past-member-row' : 'active-member-row'" 
+                                <tr ng-class="m.memberStatus === 'past' ? 'past-member-row' : 'active-member-row'"
                                     ng-repeat="m in membersList | filter:statusChoice | sortMembers:field:reverseSort track by $index"
                                     class="member-row">
                                     <td class="rank-cell">
                                         <span class="rank-number">{{$index+1}}</span>
                                     </td>
                                     <td class="member-cell">
-                                        <a ui-sref="/members({ member: m.username })" 
-                                           ng-class="m.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
-                                           class="member-link">
+
+
+                                        <a ui-sref="/members/member({ member: m.username })"
+                                            ng-class="m.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
+                                            class="member-link">
                                             <i class="fa fa-user-circle"></i>
                                             {{m.firstname}} {{m.lastname}}
                                         </a>
@@ -165,4 +173,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

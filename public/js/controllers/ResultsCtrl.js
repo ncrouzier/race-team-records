@@ -2016,6 +2016,17 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
                     };
                 }
             });
+
+            // Sort results by time (fastest first)
+            $scope.raceResults.sort(function(result1, result2) {
+                if (result1.time < result2.time) {
+                    return -1;
+                } else if (result1.time > result2.time) {
+                    return 1;
+                }
+                return 0;
+            });
+
             $scope.loadingResults = false;
         }).catch(function(error) {
             console.error('Error loading race results:', error);

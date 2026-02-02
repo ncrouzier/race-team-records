@@ -1,0 +1,62 @@
+<div class="jumbotron">
+    <!-- Volunteer Jobs Content -->
+    <div class="racetypes-content">
+        <div class="panel panel-default">
+            <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0;"><i class="fa fa-list"></i> All Volunteer Jobs</h4>
+                <div class="header-actions" ng-if="user.role == 'admin'">
+                    <button class="btn btn-success" ng-click="showAddVolunteerJobModal()" style="font-weight: 600;">
+                        <i class="fa fa-plus-circle"></i> Add Volunteer Job
+                    </button>
+                </div>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Event Name</th>
+                            <th>Job Date</th>
+                            <th>Description</th>
+                            <th ng-if="user.role == 'admin'" style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-if="volunteerJobsList.length === 0">
+                            <td colspan="5" class="text-center text-muted" style="padding: 40px;">
+                                <i class="fa fa-info-circle"></i> No volunteer jobs recorded yet.
+                                <span ng-if="user.role == 'admin'">Click "Add Volunteer Job" to create the first
+                                    one.</span>
+                            </td>
+                        </tr>
+                        <tr ng-repeat="job in volunteerJobsList | orderBy:'-jobDate'">
+                            <td>
+                                <a ui-sref="/members({member: job.member.username})">
+                                    {{job.member.firstname}} {{job.member.lastname}}
+                                </a>
+                                <i ng-show="job.member.sex == 'Male'" class="fa fa-mars" title="Men"
+                                    style="margin-left: 5px;"></i>
+                                <i ng-show="job.member.sex == 'Female'" class="fa fa-venus" title="Women"
+                                    style="margin-left: 5px;"></i>
+                            </td>
+                            <td>{{job.eventName}}</td>
+                            <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
+                            <td>{{job.description}}</td>
+                            <td ng-if="user.role == 'admin'" class="text-center">
+                                <button class="btn btn-sm btn-outline-primary"
+                                    ng-click="retrieveVolunteerJobForEdit(job)" title="Edit volunteer job"
+                                    style="margin-right: 5px;">
+                                    <i class="fa fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" ng-click="removeVolunteerJob(job)"
+                                    title="Remove volunteer job">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

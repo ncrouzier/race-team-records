@@ -90,9 +90,7 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
     // });
 
     $scope.logout = function() {
-        $http.get("/api/logout").success(function() {
-        }).error(function(data) {
-        });
+        window.location.href = '/logout';
     };
 
 }]);

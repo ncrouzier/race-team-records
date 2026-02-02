@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', function($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', function($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService  ) {
     
     $scope.loading = true;
     $scope.member1 = null;
@@ -21,6 +21,28 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     
     // Gender filter for team members table
     $scope.teamMemberGenderFilter = null; // null = all, 'Male' = male only, 'Female' = female only
+    
+    // Age grade mode toggle - load from localStorage or default to false
+    $scope.ageGradeMode = localStorageService.get('headToHeadAgeGradeMode') || false;
+    
+    // Toggle age grade mode
+    $scope.toggleAgeGradeMode = function(ageGradeMode) {
+        $scope.ageGradeMode = ageGradeMode;
+        
+        // Save the mode to localStorage
+        localStorageService.set('headToHeadAgeGradeMode', $scope.ageGradeMode);
+        
+        // Reload comparison data when mode changes
+        if ($scope.member1 && $scope.member2) {
+            $scope.loadComparison();
+        }
+        
+        // Recalculate team members head-to-head records for the overview table
+        if ($scope.member1 && $scope.topTeamMembers && $scope.topTeamMembers.length > 0) {
+            // We need to reload the race data to recalculate team members
+            $scope.loadHeadToHeadData();
+        }
+    };
     
     // Load head-to-head data
     $scope.loadHeadToHeadData = async function() {
@@ -341,30 +363,60 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             
             // Skip if both members are in the same result (same _id)
             if (member1Result && member2Result && member1Result._id !== member2Result._id) {
-                let isTie = member1Result.time === member2Result.time;
+                let isTie = false;
                 let winner = null;
                 
-                if (isTie) {
-                    // Check overall ranking as tiebreaker
-                    const member1Rank = member1Result.ranking ? member1Result.ranking.overallrank : null;
-                    const member2Rank = member2Result.ranking ? member2Result.ranking.overallrank : null;
+                if ($scope.ageGradeMode) {
+                    // Age grade mode: compare age grades
+                    const member1AgeGrade = member1Result.agegrade;
+                    const member2AgeGrade = member2Result.agegrade;
                     
-                    if (member1Rank && member2Rank && member1Rank !== member2Rank) {
-                        // Use ranking as tiebreaker (lower rank number = better placement)
-                        isTie = false;
-                        winner = member1Rank < member2Rank ? 'member1' : 'member2';
+                    // Only include races where both members have age grade data
+                    if (member1AgeGrade && member2AgeGrade) {
+                        isTie = member1AgeGrade === member2AgeGrade;
+                        
+                        if (isTie) {
+                            // In age grade mode, if age grades are tied, use time as tiebreaker
+                            if (member1Result.time !== member2Result.time) {
+                                isTie = false;
+                                winner = member1Result.time < member2Result.time ? 'member1' : 'member2';
+                            }
+                        } else {
+                            // Higher age grade wins
+                            winner = member1AgeGrade > member2AgeGrade ? 'member1' : 'member2';
+                        }
+                    } else {
+                        // Skip this race if either member doesn't have age grade data
+                        return;
                     }
-                    // If ranks are same or missing, keep isTie = true and winner = null
                 } else {
-                    // Different times, determine winner by time
-                    winner = member1Result.time < member2Result.time ? 'member1' : 'member2';
+                    // Regular mode: compare times
+                    isTie = member1Result.time === member2Result.time;
+                    
+                    if (isTie) {
+                        // Check overall ranking as tiebreaker
+                        const member1Rank = member1Result.ranking ? member1Result.ranking.overallrank : null;
+                        const member2Rank = member2Result.ranking ? member2Result.ranking.overallrank : null;
+                        
+                        if (member1Rank && member2Rank && member1Rank !== member2Rank) {
+                            // Use ranking as tiebreaker (lower rank number = better placement)
+                            isTie = false;
+                            winner = member1Rank < member2Rank ? 'member1' : 'member2';
+                        }
+                        // If ranks are same or missing, keep isTie = true and winner = null
+                    } else {
+                        // Different times, determine winner by time
+                        winner = member1Result.time < member2Result.time ? 'member1' : 'member2';
+                    }
                 }
                 
                 sharedRaces.push({
                     race: member1Result.race,
                     member1Result: member1Result,
                     member2Result: member2Result,
-                    timeDifference: isTie ? 0 : Math.abs(member1Result.time - member2Result.time),
+                    timeDifference: isTie ? 0 : ($scope.ageGradeMode ? 
+                        Math.abs(member1Result.agegrade - member2Result.agegrade) : 
+                        Math.abs(member1Result.time - member2Result.time)),
                     winner: winner,
                     isTie: isTie
                 });
@@ -442,6 +494,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                                     sex: member.sex,
                                     memberStatus: fullMemberData ? fullMemberData.memberStatus : undefined,
                                     count: 0,
+                                    ageGradeCount: 0,
                                     headToHeadRecord: {
                                         wins: 0,
                                         losses: 0,
@@ -452,36 +505,72 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                             }
                             teamMemberCounts[member._id].count++;
 
+                            
+
                             // Calculate head-to-head result for this race
                             // Skip if both members are in the same result (same _id)
                             if (currentMemberResult._id !== result._id) {
-                                const currentMemberTime = currentMemberResult.time;
-                                const otherMemberTime = result.time;
-                                
-                                if (currentMemberTime === otherMemberTime) {
-                                    // Check overall ranking as tiebreaker  
-                                    const currentMemberRank = currentMemberResult.ranking ? currentMemberResult.ranking.overallrank : null;
-                                    const otherMemberRank = result.ranking ? result.ranking.overallrank : null;
+                                if ($scope.ageGradeMode) {
+                                    // Age grade mode: compare age grades
+                                    const currentMemberAgeGrade = currentMemberResult.agegrade;
+                                    const otherMemberAgeGrade = result.agegrade;
                                     
-                                    if (currentMemberRank && otherMemberRank && currentMemberRank !== otherMemberRank) {
-                                        // Use ranking as tiebreaker (lower rank number = better placement)
-                                        if (currentMemberRank < otherMemberRank) {
-                                            // Current member wins (better ranking)
+                                    // Only include races where both members have age grade data
+                                    if (currentMemberAgeGrade && otherMemberAgeGrade) {
+                                        teamMemberCounts[member._id].ageGradeCount++;
+                                        if (currentMemberAgeGrade === otherMemberAgeGrade) {
+                                            // Age grades are tied, use time as tiebreaker
+                                            if (currentMemberResult.time !== result.time) {
+                                                if (currentMemberResult.time < result.time) {
+                                                    // Current member wins (faster time)
+                                                    teamMemberCounts[member._id].headToHeadRecord.wins++;
+                                                } else {
+                                                    // Other member wins (faster time)
+                                                    teamMemberCounts[member._id].headToHeadRecord.losses++;
+                                                }
+                                            } else {
+                                                // True tie (same age grade and same time)
+                                                teamMemberCounts[member._id].headToHeadRecord.ties++;
+                                            }
+                                        } else if (currentMemberAgeGrade > otherMemberAgeGrade) {
+                                            // Current member wins (higher age grade)
                                             teamMemberCounts[member._id].headToHeadRecord.wins++;
                                         } else {
-                                            // Other member wins (better ranking)
+                                            // Other member wins (higher age grade)
                                             teamMemberCounts[member._id].headToHeadRecord.losses++;
                                         }
-                                    } else {
-                                        // True tie (same time and same/no ranking)
-                                        teamMemberCounts[member._id].headToHeadRecord.ties++;
                                     }
-                                } else if (currentMemberTime < otherMemberTime) {
-                                    // Current member wins (faster time)
-                                    teamMemberCounts[member._id].headToHeadRecord.wins++;
+                                    // Skip this race if either member doesn't have age grade data
                                 } else {
-                                    // Other member wins (faster time)
-                                    teamMemberCounts[member._id].headToHeadRecord.losses++;
+                                    // Regular mode: compare times
+                                    const currentMemberTime = currentMemberResult.time;
+                                    const otherMemberTime = result.time;
+                                    
+                                    if (currentMemberTime === otherMemberTime) {
+                                        // Check overall ranking as tiebreaker  
+                                        const currentMemberRank = currentMemberResult.ranking ? currentMemberResult.ranking.overallrank : null;
+                                        const otherMemberRank = result.ranking ? result.ranking.overallrank : null;
+                                        
+                                        if (currentMemberRank && otherMemberRank && currentMemberRank !== otherMemberRank) {
+                                            // Use ranking as tiebreaker (lower rank number = better placement)
+                                            if (currentMemberRank < otherMemberRank) {
+                                                // Current member wins (better ranking)
+                                                teamMemberCounts[member._id].headToHeadRecord.wins++;
+                                            } else {
+                                                // Other member wins (better ranking)
+                                                teamMemberCounts[member._id].headToHeadRecord.losses++;
+                                            }
+                                        } else {
+                                            // True tie (same time and same/no ranking)
+                                            teamMemberCounts[member._id].headToHeadRecord.ties++;
+                                        }
+                                    } else if (currentMemberTime < otherMemberTime) {
+                                        // Current member wins (faster time)
+                                        teamMemberCounts[member._id].headToHeadRecord.wins++;
+                                    } else {
+                                        // Other member wins (faster time)
+                                        teamMemberCounts[member._id].headToHeadRecord.losses++;
+                                    }
                                 }
                             }
                         }
@@ -491,11 +580,20 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
         });
 
         // Calculate win rates and convert to array
-        $scope.topTeamMembers = Object.values(teamMemberCounts).map(member => {
-            const totalRaces = member.headToHeadRecord.wins + member.headToHeadRecord.losses + member.headToHeadRecord.ties;
-            member.headToHeadRecord.winRate = totalRaces > 0 ? (member.headToHeadRecord.wins / totalRaces) * 100 : 0;
-            return member;
-        });
+        $scope.topTeamMembers = Object.values(teamMemberCounts)
+            .filter(member => {
+                // In age grade mode, only include members who have age-graded races
+                if ($scope.ageGradeMode) {
+                    return member.ageGradeCount > 0;
+                }
+                // In regular mode, include all members
+                return true;
+            })
+            .map(member => {
+                const totalRaces = member.headToHeadRecord.wins + member.headToHeadRecord.losses + member.headToHeadRecord.ties;
+                member.headToHeadRecord.winRate = totalRaces > 0 ? (member.headToHeadRecord.wins / totalRaces) * 100 : 0;
+                return member;
+            });
 
         // Initialize sorted array with default sort (by wins descending)
         $scope.sortTeamMembers();
@@ -510,6 +608,22 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             $scope.teamMemberSortDirection = false; // Default to descending
         }
         $scope.sortTeamMembers();
+    };
+
+    // Get team members for dropdown (filtered by gender and mode)
+    $scope.getTeamMembersForDropdown = function() {
+        if (!$scope.topTeamMembers) {
+            return [];
+        }
+        
+        let filteredMembers = $scope.topTeamMembers;
+        
+        // Apply gender filter
+        if ($scope.teamMemberGenderFilter) {
+            filteredMembers = filteredMembers.filter(member => member.sex === $scope.teamMemberGenderFilter);
+        }
+        
+        return filteredMembers;
     };
 
     // Apply sorting to team members

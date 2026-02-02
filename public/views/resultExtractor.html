@@ -13,12 +13,12 @@
                         </div>
                         <div class="col-md-6">
                             <label for="htmlSourceInput">Parkrun HTML Source Code</label>
-                            <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource" 
+                            <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource"
                                 placeholder="Paste Parkrun HTML source code here" rows="5" ng-disabled="url"></textarea>
                         </div>
                     </div>
                 </div>
-                
+
                 <button type="submit" class="btn btn-primary" ng-disabled="!url && !htmlSource">
                     Load Table
                 </button>
@@ -34,12 +34,15 @@
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">
                         <tr>
-                            <th ng-repeat="header in tableHeaders track by $index" class="header text-center align-middle" ng-hide="isColumnHidden(header)" ng-click="hideColumn(header)" >
+                            <th ng-repeat="header in tableHeaders track by $index"
+                                class="header text-center align-middle" ng-hide="isColumnHidden(header)"
+                                ng-click="hideColumn(header)">
                                 {{header}}
                             </th>
                         </tr>
                         <tr>
-                            <th ng-repeat="header in tableHeaders track by $index" class="text-center" ng-hide="isColumnHidden(header)">
+                            <th ng-repeat="header in tableHeaders track by $index" class="text-center"
+                                ng-hide="isColumnHidden(header)">
                                 <select class="form-control form-control-sm" ng-model="columnMapping[header]">
                                     <option value="">??</option>
                                     <option ng-repeat="field in mappableFields" value="{{field.value}}">
@@ -50,8 +53,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="row in tableData.slice(0, 5)" class="align-middle" ng-class="{'bg-white': $even, 'bg-light': $odd}">
-                            <td ng-repeat="header in tableHeaders track by $index" class="text-center" ng-class="{'bg-white': $parent.$even, 'bg-light': $parent.$odd}" ng-hide="isColumnHidden(header)">
+                        <tr ng-repeat="row in tableData.slice(0, 5)" class="align-middle"
+                            ng-class="{'bg-white': $even, 'bg-light': $odd}">
+                            <td ng-repeat="header in tableHeaders track by $index" class="text-center"
+                                ng-class="{'bg-white': $parent.$even, 'bg-light': $parent.$odd}"
+                                ng-hide="isColumnHidden(header)">
                                 {{row[header]}}
                             </td>
                         </tr>
@@ -66,15 +72,20 @@
                         <input type="text" class="form-control" ng-model="formData.raceName" required>
                     </div>
                     <div class="col-md-6">
-                    <label>Race Date:</label>                  
-                        <p class="input-group" >
-                          <input type="text" ng-class="{'redbg': isOlderDateCheck(formData.racedate),  '' : !isOlderDateCheck(formData.racedate)}" name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.raceDate" ng-model-options="{timezone: 'utc'}" is-open="formData.opened" min-date="'2013-01-01'" max-date="'3015-06-22'"
-                            required close-text="Close" />
-                          <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                        <label>Race Date:</label>
+                        <p class="input-group">
+                            <input type="text"
+                                ng-class="{'redbg': isOlderDateCheck(formData.racedate),  '' : !isOlderDateCheck(formData.racedate)}"
+                                name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd"
+                                ng-model="formData.raceDate" ng-model-options="{timezone: 'utc'}"
+                                is-open="formData.opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required
+                                close-text="Close" />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-default" ng-click="open($event)"><i
+                                        class="glyphicon glyphicon-calendar"></i></button>
                             </span>
                         </p>
-                      </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -193,9 +204,8 @@
         </div>
         <div class="alert alert-info" ng-if="!canProcess().canProcess" ng-bind-html="canProcess().message">
         </div>
-        <button class="btn btn-success" ng-click="processResults()"
-            ng-disabled="!canProcess().canProcess">
-            Process Results  <span ng-show="processedResults.length >0">- {{processedResults.length}}</span>
+        <button class="btn btn-success" ng-click="processResults()" ng-disabled="!canProcess().canProcess">
+            Process Results <span ng-show="processedResults.length >0">- {{processedResults.length}}</span>
         </button>
     </div>
 
@@ -203,7 +213,7 @@
     <div class="fetched-data card mt-4" ng-if="processedResults.length > 0">
         <div class="card-body">
             <h4 class="card-title mb-3">Processed Results</h4>
-    
+
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -234,9 +244,9 @@
                                         ng-change="updateTime(result)" placeholder="0">:<input type="number" min="0"
                                         style="width: 29px;" ng-model="result.timeExp.seconds" only-digits-for-min-sec
                                         class="text-left" ng-change="updateTime(result)" placeholder="0">.<input
-                                        type="number" min="0" style="width: 29px;" ng-model="result.timeExp.centiseconds"
-                                        only-digits-for-min-sec class="text-left" ng-change="updateTime(result)"
-                                        placeholder="0">
+                                        type="number" min="0" style="width: 29px;"
+                                        ng-model="result.timeExp.centiseconds" only-digits-for-Centisec
+                                        class="text-left" ng-change="updateTime(result)" placeholder="0">
                                 </div>
                             </td>
                             <td>
@@ -275,7 +285,7 @@
                     </tbody>
                 </table>
             </div>
-    
+
             <div class="row mb-3">
                 <div class="col-md-6">
                     <button class="btn btn-default" ng-click="selectAll()">Select All</button>
@@ -287,7 +297,8 @@
                             <i class="fa fa-spinner fa-spin"></i>
                             <span class="saving-text">{{savingMessage}}</span>
                         </div>
-                        <button class="btn btn-primary" ng-click="saveResults()" ng-disabled="isLoading || !hasSelectedResults()">
+                        <button class="btn btn-primary" ng-click="saveResults()"
+                            ng-disabled="isLoading || !hasSelectedResults()">
                             {{isLoading ? 'Saving...' : 'Save Selected Results'}}
                         </button>
                     </div>
@@ -296,4 +307,3 @@
         </div>
     </div>
 </div>
-

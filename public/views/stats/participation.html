@@ -11,9 +11,12 @@
             <a ui-sref="/stats/world-map">World Races Map</a>
         </li>
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/requirements">Team Requirements</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'user'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
             <a ui-sref="/stats/members">Team Members Stats</a>
         </li>
     </ul>
@@ -47,10 +50,10 @@
                     <div class="col-md-4">
                         <label class="control-label">From:</label>
                         <div class="input-group">
-                            <input type="text" class="form-control"
-                                uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsStart"
-                                ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsStartPicker.opened"
-                                min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" 
+                            <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
+                                ng-model="partdates.participationStatsStart" ng-change="selectDate()"
+                                ng-model-options="{timezone: 'utc'}" is-open="participationStatsStartPicker.opened"
+                                min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close"
                                 placeholder="Start date" />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default"
@@ -60,24 +63,24 @@
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-4">
                         <label class="control-label">To:</label>
                         <div class="input-group">
-                            <input type="text" class="form-control"
-                                uib-datepicker-popup="yyyy-MM-dd" ng-model="partdates.participationStatsEnd"
-                                ng-change="selectDate()" ng-model-options="{timezone: 'utc'}" is-open="participationStatsEndPicker.opened"
-                                min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close" 
+                            <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
+                                ng-model="partdates.participationStatsEnd" ng-change="selectDate()"
+                                ng-model-options="{timezone: 'utc'}" is-open="participationStatsEndPicker.opened"
+                                min-date="'2013-01-01'" max-date="'3015-01-01'" close-text="Close"
                                 placeholder="End date" />
                             <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" 
+                                <button type="button" class="btn btn-default"
                                     ng-click="openParticipationStatsEndPicker($event)">
                                     <i class="fa fa-calendar"></i>
                                 </button>
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-4">
                         <label class="control-label">&nbsp;</label>
                         <div class="date-range-info">
@@ -91,13 +94,13 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Loading spinner for Participation Stats -->
     <div ng-if="loadingStates.participationStats" class="text-center loading-container">
         <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
         <p class="loading-text">Loading participation statistics...</p>
     </div>
-    
+
     <!-- Content when not loading -->
     <div ng-if="!loadingStates.participationStats">
         <div class="participation-table-container">
@@ -112,53 +115,59 @@
                                 <tr class="table-header">
                                     <th class="rank-column">#</th>
                                     <th class="member-column">
-                                        <a href="" ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation" class="sortable-header">
+                                        <a href=""
+                                            ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation"
+                                            class="sortable-header">
                                             <i class="fa fa-user"></i> Member
-                                            <i ng-show="fieldParticipation == 'firstname'" 
-                                               ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="fieldParticipation == 'firstname'"
+                                                ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="age-column">
-                                        <a href="" ng-click="fieldParticipation='age'; reverseSortParticipation = !reverseSortParticipation" class="sortable-header">
+                                        <a href=""
+                                            ng-click="fieldParticipation='age'; reverseSortParticipation = !reverseSortParticipation"
+                                            class="sortable-header">
                                             <i class="fa fa-birthday-cake"></i> Age
-                                            <i ng-show="fieldParticipation == 'age'" 
-                                               ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="fieldParticipation == 'age'"
+                                                ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="races-column">
-                                        <a href="" ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation" class="sortable-header">
+                                        <a href=""
+                                            ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation"
+                                            class="sortable-header">
                                             <i class="fa fa-flag-checkered"></i> Races
-                                            <i ng-show="fieldParticipation == 'numberofraces'" 
-                                               ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="fieldParticipation == 'numberofraces'"
+                                                ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                     <th class="agegrade-column">
-                                        <a href="" ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation" class="sortable-header">
+                                        <a href=""
+                                            ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation"
+                                            class="sortable-header">
                                             <i class="fa fa-star"></i> Best AG%
-                                            <i ng-show="fieldParticipation == 'maxage'" 
-                                               ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'" 
-                                               class="fa sort-icon"></i>
+                                            <i ng-show="fieldParticipation == 'maxage'"
+                                                ng-class="reverseSortParticipation ? 'fa-sort-desc' : 'fa-sort-asc'"
+                                                class="fa sort-icon"></i>
                                         </a>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-class="r.memberStatus === 'past' ? 'past-member-row' : 'active-member-row'" 
+                                <tr ng-class="r.memberStatus === 'past' ? 'past-member-row' : 'active-member-row'"
                                     ng-repeat="r in participationStats | sortMembers:fieldParticipation:reverseSortParticipation track by $index"
                                     class="member-row">
                                     <td class="rank-cell">
                                         <span class="rank-number">{{$index+1}}</span>
                                     </td>
                                     <td class="member-cell">
-                                        <a ui-sref="/members({ member: r.username })" 
-                                           ng-class="r.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
-                                           class="member-link">
-                                            <i class="fa fa-user-circle"></i>
-                                            {{r.firstname}} {{r.lastname}}
-                                        </a>
+                                        <a ng-class="r.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
+                                            class="member-link"
+                                            ui-sref="/members/member({ member: r.username })">{{r.firstname}}
+                                            {{r.lastname}}</a>
                                     </td>
                                     <td class="age-cell">
                                         <span class="age-value">{{r | memberAgeFilter}}</span>
@@ -167,8 +176,8 @@
                                         <span class="races-count">{{r.numberofraces}}</span>
                                     </td>
                                     <td class="agegrade-cell">
-                                        <span class="agegrade-value hoverhandandunderline resultEvent" 
-                                              ng-click="showRaceFromRaceIdModal(r.maxRaceId)">
+                                        <span class="agegrade-value hoverhandandunderline resultEvent"
+                                            ng-click="showRaceFromRaceIdModal(r.maxRaceId)">
                                             {{r.max}}%
                                             <span ng-if="r.max<70" class="emoji">😬</span>
                                         </span>
@@ -181,4 +190,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

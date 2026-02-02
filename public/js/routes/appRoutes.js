@@ -1,8 +1,8 @@
-angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvider, $locationProvider) {
+angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
     //
     $locationProvider.html5Mode({
         enabled: true,
-        requireBase: true, 
+        requireBase: true,
         rewriteLinks: false
     });
     // For any unmatched url, redirect to /state1
@@ -14,15 +14,15 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/",
             templateUrl: "views/home.html",
             controller: 'HomeController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/home.html');
-                gtag('event', 'page_view');  
+                gtag('event', 'page_view');
             }
         }).state('/members', {
             url: "/members?member",
             templateUrl: "views/memberList.html",
             controller: 'MembersController',
-            redirectTo: function(transition) {
+            redirectTo: function (transition) {
                 //backward compatibility
                 var member = transition.params().member;
                 if (member) {
@@ -30,7 +30,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
                 }
                 return null; // No redirect, stay on current state
             },
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/members.html');
                 gtag('event', 'page_view');
             }
@@ -40,7 +40,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             params: {
                 member: null,
             },
-            redirectTo: function(transition) {
+            redirectTo: function (transition) {
                 var member = transition.params().member;
                 return transition.router.stateService.target('/members/member/bio', { member: member });
             }
@@ -52,7 +52,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             },
             templateUrl: "views/memberDetail.html",
             controller: 'MembersController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/memberDetail.html');
                 gtag('event', 'page_view');
             }
@@ -64,7 +64,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             },
             templateUrl: "views/memberStats.html",
             controller: 'MemberStatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/memberStats.html');
                 gtag('event', 'page_view');
             }
@@ -77,7 +77,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             },
             templateUrl: "views/headToHead.html",
             controller: 'HeadToHeadController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');
                 gtag('event', 'page_view');
             }
@@ -89,7 +89,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             },
             templateUrl: "views/headToHead.html",
             controller: 'HeadToHeadController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');
                 gtag('event', 'page_view');
             }
@@ -103,7 +103,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             },
             templateUrl: "views/headToHead.html",
             controller: 'HeadToHeadController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/headToHead.html');
                 gtag('event', 'page_view');
             }
@@ -115,14 +115,14 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             params: {
                 search: null
             },
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/results.html');
                 gtag('event', 'page_view');
             }
-        }).state('/about', {  
+        }).state('/about', {
             url: '/about',
-            templateUrl: 'views/about.html',          
-        })        
+            templateUrl: 'views/about.html',
+        })
         .state('/races', {
             url: '/races/:raceId',
             templateUrl: 'views/results.html',
@@ -144,11 +144,27 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/racetypes",
             templateUrl: "views/racetypes.html",
             controller: 'RaceTypeController'
+        }).state('/volunteer-jobs', {
+            url: "/volunteer-jobs",
+            templateUrl: "views/volunteerJobs.html",
+            controller: 'VolunteerJobsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/volunteerJobs.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/stats/requirements', {
+            url: "/stats/requirements",
+            templateUrl: "views/stats/requirements.html",
+            controller: 'RequirementsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/stats/requirements.html');
+                gtag('event', 'page_view');
+            }
         }).state('/records', {
             url: "/records",
             templateUrl: "views/records.html",
             controller: 'RecordsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/records.html');
                 gtag('event', 'page_view');
             }
@@ -159,7 +175,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/stats/team",
             templateUrl: "views/stats/team.html",
             controller: 'StatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/stats/team.html');
                 gtag('event', 'page_view');
             }
@@ -167,7 +183,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/stats/us-map",
             templateUrl: "views/stats/us-map.html",
             controller: 'StatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/stats/us-map.html');
                 gtag('event', 'page_view');
             }
@@ -175,7 +191,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/stats/world-map",
             templateUrl: "views/stats/world-map.html",
             controller: 'StatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/stats/world-map.html');
                 gtag('event', 'page_view');
             }
@@ -183,7 +199,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/stats/participation",
             templateUrl: "views/stats/participation.html",
             controller: 'StatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/stats/participation.html');
                 gtag('event', 'page_view');
             }
@@ -191,7 +207,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/stats/members",
             templateUrl: "views/stats/members.html",
             controller: 'StatsController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/stats/members.html');
                 gtag('event', 'page_view');
             }
@@ -202,7 +218,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/tools/agegrade",
             templateUrl: "views/agegrade.html",
             controller: 'AgeGradeController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/agegrade.html');
                 gtag('event', 'page_view');
             }
@@ -210,7 +226,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/tools/paceAdjustment",
             templateUrl: "views/tempAdjustment.html",
             controller: 'TempAdjustmentController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/tempAdjustment.html');
                 gtag('event', 'page_view');
             }
@@ -219,11 +235,11 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             templateUrl: "views/resultExtractor.html",
             controller: 'ResultExtractorController',
             resolve: {
-                auth: function(AuthService) {
+                auth: function (AuthService) {
                     return AuthService.isLoggedIn();
                 }
             },
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/resultExtractor.html');
                 gtag('event', 'page_view');
             }
@@ -246,7 +262,7 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/contact",
             templateUrl: "views/contact.html",
             controller: 'ContactController',
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/contact.html');
                 gtag('event', 'page_view');
             }
@@ -258,11 +274,15 @@ angular.module('appRoutes', []).config(function($stateProvider, $urlRouterProvid
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",
             controller: 'TableReportController'
-        }).state('/submit', {
+        }).state('/submitresult', {
             url: "http://bit.ly/reportresult"
-        }).state('/instagram', {
+        })
+        .state('/submitvolunteer', {
+            url: "http://bit.ly/submitvolunteer"
+        })
+        .state('/instagram', {
             url: "https://www.instagram.com/mcrrc_racing",
-            onEnter: function() {
+            onEnter: function () {
                 gtag('set', 'page_path', '/instagram');
                 gtag('event', 'page_view');
             }

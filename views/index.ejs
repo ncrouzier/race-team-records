@@ -1,8 +1,9 @@
 <!doctype html>
 <html ng-app="mcrrcApp">
+
 <head>
 	<base href="/">
-	<title>MCRRC Racing Team</title>	
+	<title>MCRRC Racing Team</title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -10,157 +11,236 @@
 	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 	<!-- <script src="https://unpkg.com/dexie@4.0.5/dist/dexie.js"></script> -->
-    <!-- Use EJS variable for script path -->
-    <script src="<%= scriptPath %>"></script>
+	<!-- Use EJS variable for script path -->
+	<script src="<%= scriptPath %>"></script>
 
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HBYX9M5YQ"></script>
 	<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
 
-  gtag('config', 'G-2HBYX9M5YQ');
-</script>
+		gtag('config', 'G-2HBYX9M5YQ');
+	</script>
 	<meta property="og:title" content="MCRRC Racing Team" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="http://raceteam.mcrrc.org" />
 	<meta property="og:image" content="http://raceteam.mcrrc.org/images/ogimage.jpg" />
-  <meta property="og:description" content="MCRRC Racing Team Site: Members bios, race results and records." />
-	<link rel="image_src" href="http://mcrrc-ncrouzier.rhcloud.com/images/topcover2.jpg" / ><!--formatted-->
-	<link rel="image_src" href="https://www.mcrrc.org/wp-content/uploads/2015/08/MontgomeryCountyWebReady-post3.png" / ><!--formatted-->
-	<meta name="description" content="MCRRC Racing Team Site: Members bios and race results. http://raceteam.mcrrc.org" /><!--formatted-->
+	<meta property="og:description" content="MCRRC Racing Team Site: Members bios, race results and records." />
+	<link rel="image_src" href="http://mcrrc-ncrouzier.rhcloud.com/images/topcover2.jpg" /><!--formatted-->
+	<link rel="image_src" href="https://www.mcrrc.org/wp-content/uploads/2015/08/MontgomeryCountyWebReady-post3.png" />
+	<!--formatted-->
+	<meta name="description"
+		content="MCRRC Racing Team Site: Members bios and race results. http://raceteam.mcrrc.org" /><!--formatted-->
 </head>
+
 <body ng-controller="MainController">
 	<div class="container">
-		
-			<div ng-class="getbg" class="row navimg" style="position: relative" >
-				<!-- <div class="titleContainer" >
+
+		<div ng-class="getbg" class="row navimg" style="position: relative">
+			<!-- <div class="titleContainer" >
 					<div  class="titleBox"><div class="titleTop" >Montgomery County Road Runners</div><div class="titleBottom" >RACING TEAM</div></div>					
 				</div> -->
 			<div class="">
 				<div class="logo-stats">
-					<span ng-cloak ng-if="milesRaced"><a ui-sref="/stats">{{milesRaced}} miles raced in {{currentYear}}!</a></span>
+					<span ng-cloak ng-if="milesRaced"><a ui-sref="/stats">{{milesRaced}} miles raced in
+							{{currentYear}}!</a></span>
 				</div>
 			</div>
-      <div class="birthdaytext" ng-if="birthdays.length >0" ng-cloak>
-           <span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a  ui-sref="/members/member({ member: m.username}) ">{{m.firstname}} {{m.lastname}}</a><span ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2"> and </span></span>!🎂</span>
-      </div>
+			<div class="birthdaytext" ng-if="birthdays.length >0" ng-cloak>
+				<span>🎂Happy Birthday <span ng-repeat="m in birthdays track by $index"><a
+							ui-sref="/members/member({ member: m.username}) ">{{m.firstname}} {{m.lastname}}</a><span
+							ng-if="birthdays.length >1 && $index < birthdays.length-2">, </span> <span
+							ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2">
+							and </span></span>!🎂</span>
+			</div>
 			<div class="copyrightrow">
-			     <span ng-bind-html="getcr"></span>
-		  </div>
+				<span ng-bind-html="getcr"></span>
+			</div>
 		</div>
 
 
 		<!-- HEADER -->
-		<nav class="navbar navbar-inverse" >
+		<nav class="navbar navbar-inverse">
 			<div class="navbar-header">
 
-	        <button type="button" title="Navigation button" class="navbar-toggle" ng-init="navCollapsed = true" ng-click="navCollapsed = !navCollapsed">
-	          <span class="icon-bar"></span>
-	          <span class="icon-bar"></span>
-	          <span class="icon-bar"></span>
-	        </button>
-	      </div>
-	      <div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'">
-			<% if (user && user.role === 'admin') { %>
-				<ul class="nav navbar-nav">
-					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
-					</ul>
-					</li>
-          			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
-					<!-- <li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>{{open}} -->
+				<button type="button" title="Navigation button" class="navbar-toggle" ng-init="navCollapsed = true"
+					ng-click="navCollapsed = !navCollapsed">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+			</div>
+			<div class="collapse navbar-collapse" ng-class="!navCollapsed && 'in'">
+				<% if (user && user.role==='admin' ) { %>
+					<ul class="nav navbar-nav">
+						<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
+						<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i
+									class="fa fa-trophy"></i></a></li>
+						<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
+								ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+						<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
+									class="fa fa-users"></i></a></li>
+						<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
+									class="fa fa-bar-chart"></i></a></li>
+						<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
+							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
+							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+								uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu" uib-dropdown-menu>
+								<li ng-class="{active: $state.includes('/tools/agegrade')}"><a
+										ui-sref="/tools/agegrade">Age Grade</a></li>
+								<li
+									ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}">
+									<a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a>
+								</li>
+							</ul>
+						</li>
+						<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
+									ng-src="/images/instagramicon.svg" width="13" height="100%"></a></li>
+						<!-- <li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li>{{open}} -->
 
-					<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-				  	    <a href class="uib-dropdown-toggle" uib-dropdown-toggle>
-				        Admin tools <span class="caret"></span>
-				      </a>
-				      <ul class="dropdown-menu" uib-dropdown-menu>
-				        <li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
-						<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a ui-sref="/tools/resultExtractor">Result Extractor</a></li>
-				        <li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
-				       	<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
-				       	<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a></li>
-				      </ul>
-				    </li>
+						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}"
+							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
+							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
+								Admin tools <span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu" uib-dropdown-menu>
+								<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a>
+								</li>
+								<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a
+										ui-sref="/tools/resultExtractor">Result Extractor</a></li>
+								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
+										Types</a></li>
+								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
+										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
+								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
+										Report</a></li>
+								<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a>
+								</li>
+							</ul>
+						</li>
 
-				</ul>
-				<ul class="nav navbar-nav nav-submit-admin">
-					<!-- <li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li> -->
-					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-				        <%= user.username %> <span class="caret"></span>
-				      </a>
-				      <ul class="dropdown-menu" uib-dropdown-menu>
-				        <li><a ui-sref="/profile">Profile</a></li>
-				        <li><a href="/logout">Logout</a></li>
-				      </ul>
-				    </li>
-				</ul>
-			<%}else if (user && user.role === 'user') { %>
-				<ul class="nav navbar-nav">
-					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
 					</ul>
-					</li>
-          			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>								
-				</ul>
-				<ul class="nav navbar-nav nav-submit-admin">
-					<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-				  	    <a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-				        <%= user.username %> <span class="caret"></span>
-				      </a>
-				      <ul class="dropdown-menu" uib-dropdown-menu>
-				        <li><a ng-click="logout()">Logout</a></li>
-				      </ul>
-				    </li>
-				</ul>
+					<ul class="nav navbar-nav nav-submit-admin">
+						<!-- <li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li> -->
+						<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown
+							on-toggle="toggled(open)">
+							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
+								<%= user.username %> <span class="caret"></span>
+							</a>
+							<ul class="dropdown-menu" uib-dropdown-menu>
+								<li><a ui-sref="/profile">Profile</a></li>
+								<li><a href="/logout">Logout</a></li>
+							</ul>
+						</li>
+					</ul>
+					<%}else if (user && user.role==='user' ) { %>
+						<ul class="nav navbar-nav">
+							<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
+							<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i
+										class="fa fa-trophy"></i></a></li>
+							<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
+									ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+							<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
+										class="fa fa-users"></i></a></li>
+							<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
+										class="fa fa-bar-chart"></i></a></li>
+							<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
+								class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
+								<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+									uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
+								</a>
+								<ul class="dropdown-menu" uib-dropdown-menu>
+									<li ng-class="{active: $state.includes('/tools/agegrade')}"><a
+											ui-sref="/tools/agegrade">Age Grade</a></li>
+									<li
+										ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}">
+										<a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a>
+									</li>
 
-			<%}else{ %>
-				<ul class="nav navbar-nav" >
-					<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-					<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i class="fa fa-trophy"></i></a></li>
-					<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
-					<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i class="fa fa-users"></i></a></li>
-					<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i class="fa fa-bar-chart"></i></a></li>
-					<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}" class="uib-dropdown" uib-dropdown  on-toggle="toggled(open)">
-						<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu" uib-dropdown-menu>
-						<li ng-class="{active: $state.includes('/tools/agegrade')}"><a ui-sref="/tools/agegrade">Age Grade</a></li>
-						<li ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}"><a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a></li>
-					</ul>
-					</li>
-         			<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img ng-src="/images/instagramicon.svg"  width="13" height="100%"></a></li>
-					<!-- <li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li> -->
-				</ul>
-				<ul class="nav navbar-nav nav-submit-admin">
-					<li><a class="submitmenu" ui-sref="/submit" target="_blank">Submit Result <i class="fa fa-plus-circle"></i></a></li>
-				</ul>
-			<%}%>
+								</ul>
+							</li>
+							<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
+										ng-src="/images/instagramicon.svg" width="13" height="100%"></a></li>
+						</ul>
+						<ul class="nav navbar-nav nav-submit-admin">
+							<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown
+								on-toggle="toggled(open)">
+								<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+									uib-dropdown-toggle>
+									<%= user.username %> <span class="caret"></span>
+								</a>
+								<ul class="dropdown-menu" uib-dropdown-menu>
+									<li><a ng-click="logout()">Logout</a></li>
+								</ul>
+							</li>
+						</ul>
+
+						<%}else{ %>
+							<ul class="nav navbar-nav">
+								<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
+								<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records
+										<i class="fa fa-trophy"></i></a></li>
+								<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
+										ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+								<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members
+										<i class="fa fa-users"></i></a></li>
+								<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
+											class="fa fa-bar-chart"></i></a></li>
+								<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
+									class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
+									<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+										uib-dropdown-toggle>Tools <i class="fa fa-wrench"></i> <span
+											class="caret"></span>
+									</a>
+									<ul class="dropdown-menu" uib-dropdown-menu>
+										<li ng-class="{active: $state.includes('/tools/agegrade')}"><a
+												ui-sref="/tools/agegrade">Age Grade</a></li>
+										<li
+											ng-class="{active: $state.includes('/tools/paceAdjustment') || $state.includes('/moist')}">
+											<a ui-sref="/tools/paceAdjustment">Temperature + Dew Point adjustment</a>
+										</li>
+									</ul>
+								</li>
+								<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
+											ng-src="/images/instagramicon.svg" width="13" height="100%"></a></li>
+								<!-- <li ng-class="{active: $state.includes('/gallery')}"><a ui-sref="/gallery">Photo Gallery <i class="fa fa-camera"></i></a></li> -->
+							</ul>
+							<ul class="nav navbar-nav nav-submit-admin">
+								<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
+									class="uib-dropdown " uib-dropdown on-toggle="toggled(open)">
+									<a href style="padding:12px 5px 12px 5px;" class=" submitmenu uib-dropdown-toggle"
+										uib-dropdown-toggle>Submit <i class="fa fa-edit"></i> <span
+											class="caret"></span>
+									</a>
+									<ul class="dropdown-menu" uib-dropdown-menu>
+										<li><a class="submitmenu" ui-sref="/submitresult" target="_blank">Submit a
+												Result</a></li>
+										<li><a class="submitmenu" ui-sref="/submitvolunteer" target="_blank">Submit a
+												Volunteer Job</a></li>
+									</ul>
+								</li>
+							</ul>
+							<%}%>
 			</div><!-- /.navbar-collapse -->
 		</nav>
 
 		<div ui-view></div>
-		<footer><div class="row"><div class="col-sm-5 text-left">Site by <a class="hoverhand" ui-sref="/members({ member: 'NicolasCrouzier'})">Nicolas Crouzier</a>. <span class="">Want to support the site and its creator? <a class="bold red" href="https://www.paypal.com/donate/?business=KN2D558FKKYQQ&no_recurring=1&item_name=Support+the+maintenance+of+the+team+result+site+by+buying+me+a+coffee+or+helping+me+pay+Strava+premium+membership!+Thank+you!&currency_code=USD">Buy me a coffee!</a></span></div><div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">login</a></div><div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a title="Montgomery County Road Runners Club" href="http://www.mcrrc.org" target="_blank">MCRRC</a></div></div></footer>
+		<footer>
+			<div class="row">
+				<div class="col-sm-5 text-left">Site by <a class="hoverhand"
+						ui-sref="/members({ member: 'NicolasCrouzier'})">Nicolas Crouzier</a>. <span class="">Want to
+						support the site and its creator? <a class="bold red"
+							href="https://www.paypal.com/donate/?business=KN2D558FKKYQQ&no_recurring=1&item_name=Support+the+maintenance+of+the+team+result+site+by+buying+me+a+coffee+or+helping+me+pay+Strava+premium+membership!+Thank+you!&currency_code=USD">Buy
+							me a coffee!</a></span></div>
+				<div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">login</a></div>
+				<div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a
+						title="Montgomery County Road Runners Club" href="http://www.mcrrc.org"
+						target="_blank">MCRRC</a></div>
+			</div>
+		</footer>
 	</div>
 </body>
 

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q','localStorageService','$state','NotificationService', 'DexieService', 'MemoryCacheService', function(Restangular, SystemService, $uibModal, $q, localStorageService, $state,NotificationService, DexieService, MemoryCacheService) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q', 'localStorageService', '$state', 'NotificationService', 'DexieService', 'MemoryCacheService', function (Restangular, SystemService, $uibModal, $q, localStorageService, $state, NotificationService, DexieService, MemoryCacheService) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -29,26 +29,26 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {string} resultId - The ID of the result to retrieve
      * @return {Promise} - Promise that resolves with the result object
      */
-    factory.getResultById = function(resultId) {
-        if (resultId){
-            return Restangular.one("results",resultId).get().then(
-                function(result) {
+    factory.getResultById = function (resultId) {
+        if (resultId) {
+            return Restangular.one("results", resultId).get().then(
+                function (result) {
                     return result;
                 },
-                function(res) {
+                function (res) {
                     NotificationService.showNotifiction(false, "Error while retrieving result.");
                     console.log('Error: ' + res.status);
                     return null;
                 }
             );
-        }else{
+        } else {
             return null;
         }
-        
+
     };
 
-    async function getKey(db,key) {
-        var  results = await db.get(key);            
+    async function getKey(db, key) {
+        var results = await db.get(key);
         return results;
     }
 
@@ -93,8 +93,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
 
 
     //retrieve results
-    factory.getResults = function(params) {
-        return results.getList(params).then(function(results) {
+    factory.getResults = function (params) {
+        return results.getList(params).then(function (results) {
             return results;
         });
     };
@@ -105,18 +105,18 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Array} resultsList - the list of results to add the new result to
      * @return {Promise} - the promise of the created result
      */
-    factory.createResult = async function(result) {
+    factory.createResult = async function (result) {
         //post the result to the database
         return results.post(result).then(
-            function(r) {
+            function (r) {
                 //simple success notification
-                NotificationService.showNotifiction(true,"Result created successfully!");
-           
+                NotificationService.showNotifiction(true, "Result created successfully!");
+
                 //return the created result
                 return r;
             },
-            function(res) {
-                NotificationService.showNotifiction(false,"Error while creating result.");
+            function (res) {
+                NotificationService.showNotifiction(false, "Error while creating result.");
                 console.log('Error: ' + res.status);
             }
         );
@@ -127,7 +127,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Object} result - Result to save
      * @return {Promise} - Promise that resolves with the saved result
      */
-    factory.saveSingleResult = function(result) {
+    factory.saveSingleResult = function (result) {
         return results.post(result);
     };
 
@@ -137,7 +137,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Object} race - Race information
      * @return {Promise} - Promise that resolves with the saved results
      */
-    factory.saveResultsBulk = function(resultsToSave, race) {
+    factory.saveResultsBulk = function (resultsToSave, race) {
         return Restangular.all('results/bulk').post({
             results: resultsToSave,
             race: race
@@ -149,7 +149,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Array} resultsToUpdate - Array of results to update
      * @return {Promise} - Promise that resolves with the updated results
      */
-    factory.updateResultsBulk = function(resultsToUpdate) {
+    factory.updateResultsBulk = function (resultsToUpdate) {
         return Restangular.all('results/bulk').customPUT({
             results: resultsToUpdate
         });
@@ -160,21 +160,21 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
      */
-    factory.saveResults = function(resultsToSave) {
+    factory.saveResults = function (resultsToSave) {
         // Extract race information from the first result
         var race = null;
         if (resultsToSave.length > 0 && resultsToSave[0].race) {
             race = resultsToSave[0].race;
         }
-        
+
         if (!race) {
             NotificationService.showNotifiction(false, "No race information found in results");
             return $q.reject(new Error("No race information found"));
         }
-        
+
         // Save all results in one bulk request
         return factory.saveResultsBulk(resultsToSave, race).then(
-            function(response) {
+            function (response) {
                 if (response.success) {
                     NotificationService.showNotifiction(true, response.message || response.createdCount + " results saved successfully!");
                     return resultsToSave; // Return the original results array
@@ -183,7 +183,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     return $q.reject(new Error(response.message || "Bulk save failed"));
                 }
             },
-            function(error) {
+            function (error) {
                 var errorMessage = "Failed to save results";
                 if (error.data && error.data.error) {
                     errorMessage = error.data.error;
@@ -197,30 +197,30 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     //edit a result
-    factory.editResult = function(result) {
+    factory.editResult = function (result) {
         return result.save().then(
-            function(r) {
-                NotificationService.showNotifiction(true,"Result edited successfully!");                
-                return r;                
+            function (r) {
+                NotificationService.showNotifiction(true, "Result edited successfully!");
+                return r;
             },
-            function(res) {
-                NotificationService.showNotifiction(false,"Error while editing result.");
+            function (res) {
+                NotificationService.showNotifiction(false, "Error while editing result.");
                 console.log('Error: ' + res.status);
             }
         );
     };
 
     ///delete a result
-    factory.deleteResult = function(result) {
-        if (!isRestangularized(result)){
+    factory.deleteResult = function (result) {
+        if (!isRestangularized(result)) {
             result = Restangular.restangularizeElement(null, result, 'results');
         }
         return result.remove().then(
-            function() {
-                NotificationService.showNotifiction(true,"Result deleted successfully!");
+            function () {
+                NotificationService.showNotifiction(true, "Result deleted successfully!");
             },
-            function(res) {
-                NotificationService.showNotifiction(false,"Error while deleting result!");
+            function (res) {
+                NotificationService.showNotifiction(false, "Error while deleting result!");
                 console.log('Error: ' + res.status);
             });
     };
@@ -229,11 +229,11 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // RESULTS MODALS ======================
     // =====================================
 
-    factory.showAddResultModal = function(resultParam, onResultCreatedCallback) {
+    factory.showAddResultModal = function (resultParam, onResultCreatedCallback) {
         var modalPromise;
-        if (resultParam && resultParam._id){
+        if (resultParam && resultParam._id) {
             // This is for duplicating. It gets a result first.
-            modalPromise = factory.getResultById(resultParam._id).then(function(result) {
+            modalPromise = factory.getResultById(resultParam._id).then(function (result) {
                 return $uibModal.open({
                     templateUrl: 'views/modals/resultModal.html',
                     controller: 'ResultModalInstanceController',
@@ -241,17 +241,17 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     backdrop: 'static',
                     resolve: {
                         editmode: false,
-                        result: function() {
+                        result: function () {
                             return result;
                         },
-                        onResultCreated: function() {
+                        onResultCreated: function () {
                             return onResultCreatedCallback;
                         }
                     }
                 }).result; // .result is the promise we want
             });
-        }else{
-             // This is for a new result.
+        } else {
+            // This is for a new result.
             modalPromise = $uibModal.open({
                 templateUrl: 'views/modals/resultModal.html',
                 controller: 'ResultModalInstanceController',
@@ -259,10 +259,10 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 backdrop: 'static',
                 resolve: {
                     editmode: false,
-                    result: function() {
+                    result: function () {
                         return null;
                     },
-                    onResultCreated: function() {
+                    onResultCreated: function () {
                         return onResultCreatedCallback;
                     }
                 }
@@ -271,9 +271,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return modalPromise;
     };
 
-    factory.retrieveResultForEdit = function(resultParam) {
+    factory.retrieveResultForEdit = function (resultParam) {
         return factory.getResultById(resultParam._id).then(
-            function(result) {
+            function (result) {
                 return $uibModal.open({
                     templateUrl: 'views/modals/resultModal.html',
                     controller: 'ResultModalInstanceController',
@@ -281,32 +281,32 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     backdrop: 'static',
                     resolve: {
                         editmode: true,
-                        result: function() {
+                        result: function () {
                             return result;
                         },
-                        onResultCreated: function() {
+                        onResultCreated: function () {
                             return null;
                         }
                     }
                 }).result;
-        });
+            });
     };
 
-    factory.showResultDetailsModal = function(result,race) {
-            var modalInstance = $uibModal.open({
-                templateUrl: 'views/modals/resultDetailsModal.html',
-                controller: 'ResultDetailslInstanceController',
-                size: 'lg',
-                resolve: {
-                    result: result,
-                    race: race
-                }
-            });
-            return modalInstance.result.then(function() {
-                return null;
-            }, function() {
-                return null;
-            });
+    factory.showResultDetailsModal = function (result, race) {
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/resultDetailsModal.html',
+            controller: 'ResultDetailslInstanceController',
+            size: 'lg',
+            resolve: {
+                result: result,
+                race: race
+            }
+        });
+        return modalInstance.result.then(function () {
+            return null;
+        }, function () {
+            return null;
+        });
     };
 
     // =====================================
@@ -314,30 +314,30 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // =====================================
 
 
-    factory.getRaces = function(params) {
-        return races.getList(params).then(function(races) {
+    factory.getRaces = function (params) {
+        return races.getList(params).then(function (races) {
             return races;
         });
     };
 
-    factory.getRacesInfos = function(params) {
+    factory.getRacesInfos = function (params) {
         return Restangular.one('raceinfos').get(params).then(
-            function(races) {
+            function (races) {
                 return races;
             },
-            function(res) {
+            function (res) {
                 console.error('Error in getRacesInfos:', res.status);
                 throw res; // Re-throw the error to ensure the promise is rejected
             });
     };
 
-    factory.deleteRace = function(raceinfo) {
-        return Restangular.one('raceinfos',raceinfo._id).remove().then(
-            function() {
-                NotificationService.showNotifiction(true,"Race deleted successfully!");
+    factory.deleteRace = function (raceinfo) {
+        return Restangular.one('raceinfos', raceinfo._id).remove().then(
+            function () {
+                NotificationService.showNotifiction(true, "Race deleted successfully!");
             },
-            function(res) {
-                NotificationService.showNotifiction(false,"Error while deleting race!");
+            function (res) {
+                NotificationService.showNotifiction(false, "Error while deleting race!");
                 console.log('Error: ' + res.status);
             });
     };
@@ -346,32 +346,34 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         try {
             var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
                 return sysinfo;
-            }).catch(function(error) {
+            }).catch(function (error) {
                 console.log("error", error);
                 throw error;
             });
             var date = new Date(sysinfo.overallUpdate);
 
             var db = DexieService;
-           
+
             // console.log("date++", date,sysinfo.overallUpdate);
             try {
                 await db.open();
             } catch (error) {
                 throw error;
             }
-            
+
             var cache, key;
-            if (params.type === "last30"){
+            if (params.type === "last30") {
                 key = "last30";
-            }else{
+            } else if (params.type === "last60") {
+                key = "last60";
+            } else {
                 key = "current";
             }
             // Use params as part of the memory cache key for more granularity
             var memKey = key + ':' + JSON.stringify(params || {});
-            
+
             // Check in-memory cache first using MemoryCacheService
-        
+
             // console.log("memKey", memKey);  
             var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKey);
             // console.log("memCacheEntry", memCacheEntry);
@@ -379,15 +381,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 // console.log("using cache");
                 return $q.resolve(memCacheEntry.data);
             }
-            
+
             //try to get the data from the database
             try {
-                cache = await getKey(db.races,key);
+                cache = await getKey(db.races, key);
             } catch (error) {
                 // Continue to API call even if IndexedDB fails
                 cache = undefined;
             }
-           
+
             // Parse the cache date properly since it's stored as a JSON string
             let cacheDate;
             if (cache && cache.date) {
@@ -409,20 +411,20 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                             var jsonDate = JSON.stringify(date);
                             db.races.put({ instance: key, date: jsonDate, data: JSON.stringify(resultsFromDatabase) }).then(function () {
                                 // IndexedDB saved successfully
-                            }).catch(function(error) {
+                            }).catch(function (error) {
                                 // Don't throw here, just log the error
                             });
                         } catch (error) {
                             // Don't throw here, just log the error
                         }
                     }
-                    
+
                     // Update memory cache via MemoryCacheService
                     var cacheData = { date: date, data: resultsFromDatabase };
                     // console.log("setting memcache after database call", memKey, cacheData);
                     MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
                     return resultsFromDatabase;
-                }).catch(function(error) {
+                }).catch(function (error) {
                     throw error;
                 });
             } else {
@@ -447,12 +449,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
 
-    factory.showRaceFromResultModal = function(raceId,fromStateParams) {
+    factory.showRaceFromResultModal = function (raceId, fromStateParams) {
         return Restangular.one('raceinfos').get({
             limit: 1,
             raceId: raceId
         }).then(
-            function(races) {
+            function (races) {
                 if (races.length === 1) {
                     var modalInstance = $uibModal.open({
                         templateUrl: 'views/modals/raceModal.html',
@@ -463,27 +465,27 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                             fromStateParams: fromStateParams
                         }
                     });
-                    modalInstance.result.then(function() {
-                    }, function() {
+                    modalInstance.result.then(function () {
+                    }, function () {
                         //  if ($state.current.url === '/races/:raceId'){
                         //     $state.go('^');
                         //  }
-                        
+
                     });
                 }
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             }
         );
     };
 
-    factory.showRaceFromRaceIdModal = function(raceId,fromStateParams) {
+    factory.showRaceFromRaceIdModal = function (raceId, fromStateParams) {
         return Restangular.one('raceinfos').get({
             limit: 1,
             raceId: raceId
         }).then(
-            function(races) {
+            function (races) {
                 if (races.length === 1) {
                     var modalInstance = $uibModal.open({
                         templateUrl: 'views/modals/raceModal.html',
@@ -494,35 +496,35 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                             fromStateParams: fromStateParams
                         }
                     });
-                    modalInstance.result.then(function() {
-                    }, function() {});
+                    modalInstance.result.then(function () {
+                    }, function () { });
                 }
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
 
-    factory.showRaceModal = function(raceinfo,fromStateParams) {
-            modalInstance = $uibModal.open({
-                templateUrl: 'views/modals/raceModal.html',
-                controller: 'RaceModalInstanceController',
-                size: 'lg',
-                resolve: {
-                    raceinfo: raceinfo,
-                    fromStateParams: fromStateParams
-                }
-            });
-            
-            return modalInstance.result.then(function() {
-                return null;
-            }, function() {
-                return null;
-            });
+    factory.showRaceModal = function (raceinfo, fromStateParams) {
+        modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/raceModal.html',
+            controller: 'RaceModalInstanceController',
+            size: 'lg',
+            resolve: {
+                raceinfo: raceinfo,
+                fromStateParams: fromStateParams
+            }
+        });
+
+        return modalInstance.result.then(function () {
+            return null;
+        }, function () {
+            return null;
+        });
     };
 
-    
+
 
 
 
@@ -531,31 +533,31 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // =====================================
 
     //retrieve racetypes
-    factory.getRaceTypes = function(params) {
-        return racetypes.getList(params).then(function(racetypes) {
+    factory.getRaceTypes = function (params) {
+        return racetypes.getList(params).then(function (racetypes) {
             return racetypes;
         });
     };
 
     //retrieve a racetype by id
-    factory.createRaceType = function(racetype) {
+    factory.createRaceType = function (racetype) {
         return racetypes.post(racetype).then(
-            function(racetypes) {},
-            function(res) {
+            function (racetypes) { },
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
     //edit a racetype
-    factory.editRaceType = function(racetype) {
+    factory.editRaceType = function (racetype) {
         racetype.save();
     };
 
     //delete a racetype
-    factory.deleteRaceType = function(racetype) {
+    factory.deleteRaceType = function (racetype) {
         return racetype.remove().then(
-            function() {},
-            function(res) {
+            function () { },
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
@@ -564,7 +566,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // RACETYPE MODALS =====================
     // =====================================
 
-    factory.showAddRaceTypeModal = function() {
+    factory.showAddRaceTypeModal = function () {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/raceTypeModal.html',
             controller: 'RaceTypeModalInstanceController',
@@ -574,30 +576,30 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             }
         });
 
-        return modalInstance.result.then(function(racetype) {
+        return modalInstance.result.then(function (racetype) {
             factory.createRaceType(racetype);
             return racetype;
-        }, function() {
+        }, function () {
             return null;
         });
     };
 
-    factory.retrieveRaceTypeForEdit = function(racetype) {
+    factory.retrieveRaceTypeForEdit = function (racetype) {
         if (racetype) {
             var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/raceTypeModal.html',
                 controller: 'RaceTypeModalInstanceController',
                 size: 'lg',
                 resolve: {
-                    racetype: function() {
+                    racetype: function () {
                         return racetype;
                     }
                 }
             });
 
-            return modalInstance.result.then(function(racetype) {
+            return modalInstance.result.then(function (racetype) {
                 factory.editRaceType(racetype);
-            }, function() {
+            }, function () {
                 return null;
             });
         }
@@ -608,13 +610,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // =====================================
     // PDF API =====================
     // =====================================
-    factory.getResultsForPdf = function(params) {
+    factory.getResultsForPdf = function (params) {
 
         return Restangular.one('pdfreport').get(params).then(
-            function(results) {
+            function (results) {
                 return results;
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             });
 
@@ -624,12 +626,12 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // =====================================
     // STATS API =====================
     // =====================================
-    factory.getMilesRaced = function(params) {
+    factory.getMilesRaced = function (params) {
         return Restangular.one('milesraced').get(params).then(
-            function(sum) {
+            function (sum) {
                 return sum;
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             });
 
@@ -640,13 +642,13 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // =====================================
 
     // Get a single race by ID
-    factory.getRaceById = function(raceId) {
+    factory.getRaceById = function (raceId) {
         if (raceId) {
             return Restangular.one("races", raceId).get().then(
-                function(race) {
+                function (race) {
                     return race;
                 },
-                function(res) {
+                function (res) {
                     NotificationService.showNotifiction(false, "Error while retrieving race.");
                     console.log('Error: ' + res.status);
                     return null;
@@ -658,15 +660,15 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     // Update a race
-    factory.updateRace = function(race) {
+    factory.updateRace = function (race) {
         if (race && race._id) {
             return Restangular.one("races", race._id).customPUT(race).then(
-                function(updatedRace) {
+                function (updatedRace) {
                     NotificationService.showNotifiction(true, "Race updated successfully.");
                     // System info will be updated by backend, triggering automatic cache invalidation
                     return updatedRace;
                 },
-                function(res) {
+                function (res) {
                     NotificationService.showNotifiction(false, "Error while updating race.");
                     console.log('Error: ' + res.status);
                     return null;
@@ -682,9 +684,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // RACE MODALS =====================
     // =====================================
 
-    factory.showEditRaceModal = function(raceInput) {
+    factory.showEditRaceModal = function (raceInput) {
         return factory.getRaceById(raceInput._id).then(
-            function(race) {
+            function (race) {
                 var modalInstance = $uibModal.open({
                     templateUrl: 'views/modals/raceEditModal.html',
                     controller: 'RaceEditModalInstanceController',
@@ -692,24 +694,24 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     windowClass: 'race-edit-modal-class',
                     backdrop: 'static',
                     resolve: {
-                        race: function() {
+                        race: function () {
                             return race;
                         }
                     }
-                    
+
+                });
+
+                return modalInstance.result.then(function (updatedRace) {
+                    return updatedRace;
+                    // return factory.updateRace(updatedRace);
+                }, function () {
+                    return null;
+                });
             });
-                        
-        return modalInstance.result.then(function(updatedRace) {
-            return updatedRace;
-            // return factory.updateRace(updatedRace);
-        }, function() {
-            return null;
-        });
-    });
     };
     // Get race types for dropdown
-    factory.getRaceTypes = function() {
-        return racetypes.getList().then(function(racetypes) {
+    factory.getRaceTypes = function () {
+        return racetypes.getList().then(function (racetypes) {
             return racetypes;
         });
     };

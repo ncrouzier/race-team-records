@@ -12328,7 +12328,7 @@ footer {
   padding: 10px !important;
 }
 .uib-datepicker-popup.dropdown-menu .btn {
-  margin-left: 5px ;
+  margin-left: 5px;
 }
 .input-wrapper {
   position: relative;
@@ -12525,18 +12525,25 @@ footer {
   }
 }
 .head-to-head-page .member-1-color {
-  color: #27ae60 !important;
+  color: #f27030 !important;
 }
 .head-to-head-page .member-2-color {
-  color: #e74c3c !important;
+  color: #003566 !important;
+}
+.head-to-head-page .member-tie-color {
+  color: grey !important;
 }
 .head-to-head-page .member-1-bg {
-  background-color: rgba(39, 174, 96, 0.1) !important;
-  border-left: 4px solid #27ae60 !important;
+  background-color: rgba(242, 112, 48, 0.1) !important;
+  border-left: 4px solid #f27030 !important;
 }
 .head-to-head-page .member-2-bg {
-  background-color: rgba(231, 76, 60, 0.1) !important;
-  border-left: 4px solid #e74c3c !important;
+  background-color: rgba(0, 53, 102, 0.1) !important;
+  border-left: 4px solid #003566 !important;
+}
+.head-to-head-page .member-tie-bg {
+  background-color: rgba(128, 128, 128, 0.1) !important;
+  border-left: 4px solid grey !important;
 }
 .head-to-head-page .comparison-table .table tbody tr td:nth-child(2).winning-cell,
 .head-to-head-page .comparison-table .table tbody tr td:nth-child(3).winning-cell {

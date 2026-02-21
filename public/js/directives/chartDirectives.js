@@ -795,4 +795,186 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
             });
         }
     };
-}]); 
+}]);
+
+angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function($timeout) {
+    return {
+        restrict: 'E',
+        scope: {
+            data: '=',
+            member1Name: '=',
+            member2Name: '=',
+            colors: '='
+        },
+        template: '<div style="position: relative; height: 300px;"><canvas></canvas></div>',
+        link: function(scope, element, attrs) {
+            var chart = null;
+            var canvas = element.find('canvas')[0];
+
+            function buildChart() {
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+
+                if (!scope.data || !scope.data.labels || scope.data.labels.length === 0) {
+                    return;
+                }
+
+                var labels = scope.data.labels;
+                var m1Wins = scope.data.member1Wins;
+                var m2Wins = scope.data.member2Wins;
+                var ties = scope.data.ties;
+
+                // Calculate percentages for 100% stacked bar
+                var m1Pct = [];
+                var m2Pct = [];
+                var tiesPct = [];
+                for (var i = 0; i < labels.length; i++) {
+                    var total = m1Wins[i] + m2Wins[i] + ties[i];
+                    m1Pct.push(total > 0 ? (m1Wins[i] / total) * 100 : 0);
+                    m2Pct.push(total > 0 ? (m2Wins[i] / total) * 100 : 0);
+                    tiesPct.push(total > 0 ? (ties[i] / total) * 100 : 0);
+                }
+
+                var member1Color = scope.colors ? scope.colors.member1 : '#008cba';
+                var member2Color = scope.colors ? scope.colors.member2 : '#ee8d5e';
+                var tieColor = scope.colors ? scope.colors.tie : 'grey';
+
+                var datasets = [
+                    {
+                        label: scope.member1Name + ' Wins',
+                        data: m1Pct,
+                        backgroundColor: member1Color,
+                        _rawData: m1Wins
+                    },
+                    {
+                        label: scope.member2Name + ' Wins',
+                        data: m2Pct,
+                        backgroundColor: member2Color,
+                        _rawData: m2Wins
+                    }
+                ];
+
+                // Only add ties dataset if there are any
+                var hasTies = ties.some(function(t) { return t > 0; });
+                if (hasTies) {
+                    datasets.push({
+                        label: 'Ties',
+                        data: tiesPct,
+                        backgroundColor: tieColor,
+                        _rawData: ties
+                    });
+                }
+
+                // Custom plugin to draw bar labels and 50% line
+                var barLabelsPlugin = {
+                    id: 'h2hBarLabels',
+                    afterDraw: function(chartInstance) {
+                        var ctx = chartInstance.ctx;
+                        ctx.save();
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        var yScale = chartInstance.scales.y;
+                        var lineY = yScale.getPixelForValue(50);
+                        var textHeight = 14; // approximate height of the label
+                        var safeZone = textHeight / 2 + 3; // half text height + padding
+
+                        chartInstance.data.datasets.forEach(function(dataset, dsIndex) {
+                            var meta = chartInstance.getDatasetMeta(dsIndex);
+                            meta.data.forEach(function(bar, index) {
+                                var raw = dataset._rawData[index];
+                                if (raw > 0) {
+                                    var barHeight = bar.height;
+                                    // Only show label if bar is tall enough
+                                    if (barHeight > 16) {
+                                        var labelY = bar.y + barHeight / 2;
+                                        // Push label away from 50% line if it would overlap
+                                        if (Math.abs(labelY - lineY) < safeZone) {
+                                            // Bar top is above the line → push label up, otherwise push down
+                                            if (bar.y < lineY) {
+                                                labelY = lineY - safeZone;
+                                            } else {
+                                                labelY = lineY + safeZone;
+                                            }
+                                        }
+                                        ctx.fillStyle = '#fff';
+                                        ctx.fillText(raw, bar.x, labelY);
+                                    }
+                                }
+                            });
+                        });
+
+                        // Draw 50% dotted horizontal line
+                        ctx.beginPath();
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+                        ctx.lineWidth = 1.5;
+                        ctx.moveTo(chartInstance.chartArea.left, lineY);
+                        ctx.lineTo(chartInstance.chartArea.right, lineY);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                };
+
+                chart = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.map(String),
+                        datasets: datasets
+                    },
+                    plugins: [barLabelsPlugin],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        var raw = context.dataset._rawData[context.dataIndex];
+                                        var pct = context.parsed.y.toFixed(0);
+                                        return context.dataset.label + ': ' + raw + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true
+                            },
+                            y: {
+                                stacked: true,
+                                min: 0,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            scope.$watch('data', function(newVal) {
+                if (newVal) {
+                    $timeout(function() {
+                        buildChart();
+                    }, 100);
+                }
+            });
+
+            scope.$on('$destroy', function() {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+        }
+    };
+}]);

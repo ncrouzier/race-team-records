@@ -51,7 +51,7 @@
                                     </div>
                                 </div>
 
-                                                                <!-- Team Members Selection (Always visible for changing comparison) -->
+                                <!-- Team Members Selection (Always visible for changing comparison) -->
                                 <div class="row">
                                     <div class="col-md-12">
                                         <div class="well well-sm">
@@ -60,59 +60,80 @@
                                                     <label for="teamMemberSelect" class="control-label">
                                                         <i class="fa fa-users"></i> Compare with:
                                                     </label>
-                                                    <ui-select ng-model="selectedComparisonMember"
-                                                        theme="select2" style="min-width: 250px;"
-                                                        on-select="loadComparison($item)">
-                                                        <ui-select-match
-                                                            placeholder="Select team member...">
-                                                            
+                                                    <ui-select ng-model="selectedComparisonMember" theme="select2"
+                                                        style="min-width: 250px;" on-select="loadComparison($item)">
+                                                        <ui-select-match placeholder="Select team member...">
+
                                                             {{$select.selected.firstname}}
                                                             {{$select.selected.lastname}}
-                                                            <span ng-if="!ageGradeMode">({{$select.selected.count}} races)</span>
-                                                            <span ng-if="ageGradeMode">({{$select.selected.ageGradeCount}} age-graded races)</span>
+                                                            <span ng-if="!ageGradeMode">({{$select.selected.count}}
+                                                                races)</span>
+                                                            <span
+                                                                ng-if="ageGradeMode">({{$select.selected.ageGradeCount}}
+                                                                age-graded races)</span>
                                                         </ui-select-match>
-                                                       
-                                                        <ui-select-choices repeat="member in getTeamMembersForDropdown() | memberFilter: $select.search">                                                                                                           
-                                                            <div ng-class="{'past-member' : member.memberStatus === 'past'}">
+
+                                                        <ui-select-choices
+                                                            repeat="member in getTeamMembersForDropdown() | memberFilter: $select.search">
+                                                            <div
+                                                                ng-class="{'past-member' : member.memberStatus === 'past'}">
                                                                 <strong>{{member.firstname}}
-                                                                    {{member.lastname}}</strong> {{member.memberStatus === 'past' ? '(past)' : ''}}
+                                                                    {{member.lastname}}</strong> {{member.memberStatus
+                                                                === 'past' ? '(past)' : ''}}
                                                                 <br>
-                                                                <small ng-if="!ageGradeMode">{{member.count}} races together</small>
-                                                                
-                                                                <small ng-if="ageGradeMode">{{member.ageGradeCount}} age-graded races together</small>
+                                                                <small ng-if="!ageGradeMode">{{member.count}} races
+                                                                    together</small>
+
+                                                                <small ng-if="ageGradeMode">{{member.ageGradeCount}}
+                                                                    age-graded races together</small>
                                                             </div>
                                                         </ui-select-choices>
                                                     </ui-select>
-                                                    <button type="button" 
-                                                            ng-if="member2 && topTeamMembers && topTeamMembers.length > 0"
-                                                            class="btn btn-sm btn-primary" 
-                                                            ng-click="showTeamMembersList(member1)">
+                                                    <button type="button"
+                                                        ng-if="member2 && topTeamMembers && topTeamMembers.length > 0"
+                                                        class="btn btn-sm btn-primary"
+                                                        ng-click="showTeamMembersList(member1)">
                                                         <i class="fa fa-list"></i> View All Team Members
-                                                    </button>                                                   
+                                                    </button>
                                                 </div>
-                                                <div class="col-sm-4 text-right" >
-                                                    <div class="age-grade-mode-toggle btn-group" role="group" style="margin-bottom: 10px;">
-                                                        <button style="margin-right: 5px" type="button" 
-                                                                class="btn btn-sm" 
-                                                                ng-class="{'activated': !ageGradeMode, 'deactivated': ageGradeMode}"
-                                                                ng-click="toggleAgeGradeMode(false)"
-                                                                tooltip-append-to-body="true" 
-                                                                tooltip-placement="top"
-                                                                uib-tooltip-html="'Switch to regular time-based comparison'">
+                                                <div class="col-sm-4 text-right">
+                                                    <div class="age-grade-mode-toggle btn-group" role="group"
+                                                        style="margin-bottom: 10px;">
+                                                        <button style="margin-right: 5px" type="button"
+                                                            class="btn btn-sm"
+                                                            ng-class="{'activated': !ageGradeMode, 'deactivated': ageGradeMode}"
+                                                            ng-click="toggleAgeGradeMode(false)"
+                                                            tooltip-append-to-body="true" tooltip-placement="top"
+                                                            uib-tooltip-html="'Switch to regular time-based comparison'">
                                                             <i class="fa fa-clock-o"></i>
                                                             Regular Mode
                                                         </button>
-                                                        <button type="button" 
-                                                                class="btn btn-sm" 
-                                                                ng-class="{'activated': ageGradeMode, 'deactivated': !ageGradeMode}"
-                                                                ng-click="toggleAgeGradeMode(true)"
-                                                                tooltip-append-to-body="true" 
-                                                                tooltip-placement="top"
-                                                                uib-tooltip-html="'Switch to age grade-based comparison'">
+                                                        <button type="button" class="btn btn-sm"
+                                                            ng-class="{'activated': ageGradeMode, 'deactivated': !ageGradeMode}"
+                                                            ng-click="toggleAgeGradeMode(true)"
+                                                            tooltip-append-to-body="true" tooltip-placement="top"
+                                                            uib-tooltip-html="'Switch to age grade-based comparison'">
                                                             <i class="fa fa-percent"></i>
-                                                             Age Grade Mode
+                                                            Age Grade Mode
                                                         </button>
-                                                    </div>                                                   
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 text-right">
+                                                    <!-- Year Filter -->
+                                                    <label class="control-label" style="margin-right: 5px;">
+                                                        <i class="fa fa-calendar"></i> Year:
+                                                    </label>
+                                                    <ui-select ng-model="yearFilter.selected" ng-change="onYearChange()"
+                                                        theme="select2" style="min-width: 90px;">
+                                                        <ui-select-match
+                                                            placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                                                        <ui-select-choices repeat="year in yearsList">
+                                                            <div ng-bind="year"></div>
+                                                        </ui-select-choices>
+                                                    </ui-select>
                                                 </div>
                                             </div>
                                         </div>
@@ -125,38 +146,35 @@
                                         <div class="panel panel-default shared-races-table">
                                             <div class="panel-heading">
                                                 <div class="panel-heading-content">
-                                                    <h4><i class="fa fa-users"></i> Head-to-Head Records vs Team Members  ({{topTeamMembers.length}}) </h4>
+                                                    <h4><i class="fa fa-users"></i> Head-to-Head Records vs Team Members
+                                                        - {{yearFilter.selected}}
+                                                        ({{topTeamMembers.length}}) </h4>
                                                     <!-- Gender Filter -->
                                                     <div class="gender-filter-container">
                                                         <div class="btn-group" role="group">
-                                                            <button type="button" 
-                                                                    class="btn btn-sm" 
-                                                                    ng-class="{'btn-primary': !teamMemberGenderFilter, 'btn-outline-primary': teamMemberGenderFilter}"
-                                                                    ng-click="setTeamMemberGenderFilter(null)">
+                                                            <button type="button" class="btn btn-sm"
+                                                                ng-class="{'btn-primary': !teamMemberGenderFilter, 'btn-outline-primary': teamMemberGenderFilter}"
+                                                                ng-click="setTeamMemberGenderFilter(null)">
                                                                 <i class="fa fa-users"></i>
                                                                 All Members
                                                             </button>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm" 
-                                                                    ng-class="{'btn-primary': teamMemberGenderFilter === 'Female', 'btn-outline-primary': teamMemberGenderFilter !== 'Female'}"
-                                                                    ng-click="setTeamMemberGenderFilter('Female')"
-                                                                    tooltip-append-to-body="true" 
-                                                                    tooltip-placement="top"
-                                                                    uib-tooltip-html="'Show only female team members'">
+                                                            <button type="button" class="btn btn-sm"
+                                                                ng-class="{'btn-primary': teamMemberGenderFilter === 'Female', 'btn-outline-primary': teamMemberGenderFilter !== 'Female'}"
+                                                                ng-click="setTeamMemberGenderFilter('Female')"
+                                                                tooltip-append-to-body="true" tooltip-placement="top"
+                                                                uib-tooltip-html="'Show only female team members'">
                                                                 <i class="fa fa-venus"></i>
                                                                 Women Only
                                                             </button>
-                                                            <button type="button" 
-                                                                    class="btn btn-sm" 
-                                                                    ng-class="{'btn-primary': teamMemberGenderFilter === 'Male', 'btn-outline-primary': teamMemberGenderFilter !== 'Male'}"
-                                                                    ng-click="setTeamMemberGenderFilter('Male')"
-                                                                    tooltip-append-to-body="true" 
-                                                                    tooltip-placement="top"
-                                                                    uib-tooltip-html="'Show only male team members'">
+                                                            <button type="button" class="btn btn-sm"
+                                                                ng-class="{'btn-primary': teamMemberGenderFilter === 'Male', 'btn-outline-primary': teamMemberGenderFilter !== 'Male'}"
+                                                                ng-click="setTeamMemberGenderFilter('Male')"
+                                                                tooltip-append-to-body="true" tooltip-placement="top"
+                                                                uib-tooltip-html="'Show only male team members'">
                                                                 <i class="fa fa-mars"></i>
                                                                 Men Only
                                                             </button>
-                                                        </div>           
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -165,49 +183,68 @@
                                                     <table class="table">
                                                         <thead>
                                                             <tr>
-                                                                <th ng-click="sortTeamMembersBy('firstname')" class="hoverhand">
+                                                                <th ng-click="sortTeamMembersBy('firstname')"
+                                                                    class="hoverhand">
                                                                     Team Member
-                                                                    <i ng-if="teamMemberSortCriteria === 'firstname'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'firstname'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'firstname'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'firstname'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
-                                                                <th ng-click="sortTeamMembersBy('count')" class="hoverhand text-center">
+                                                                <th ng-click="sortTeamMembersBy('count')"
+                                                                    class="hoverhand text-center">
                                                                     Races Together
-                                                                    <i ng-if="teamMemberSortCriteria === 'count'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'count'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'count'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'count'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
-                                                                <th ng-click="sortTeamMembersBy('wins')" class="hoverhand member-1-color text-center">
+                                                                <th ng-click="sortTeamMembersBy('wins')"
+                                                                    class="hoverhand member-1-color text-center">
                                                                     {{member1.firstname}} Wins
-                                                                    <i ng-if="teamMemberSortCriteria === 'wins'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'wins'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'wins'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'wins'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
-                                                                <th ng-click="sortTeamMembersBy('losses')" class="hoverhand member-2-color text-center">
+                                                                <th ng-click="sortTeamMembersBy('losses')"
+                                                                    class="hoverhand member-2-color text-center">
                                                                     {{member1.firstname}} Losses
-                                                                    <i ng-if="teamMemberSortCriteria === 'losses'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'losses'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'losses'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'losses'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
-                                                                <th ng-click="sortTeamMembersBy('ties')" class="hoverhand text-center">
+                                                                <th ng-click="sortTeamMembersBy('ties')"
+                                                                    class="hoverhand text-center">
                                                                     Ties
-                                                                    <i ng-if="teamMemberSortCriteria === 'ties'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'ties'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'ties'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'ties'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
-                                                                <th ng-click="sortTeamMembersBy('winRate')" class="hoverhand text-center">
+                                                                <th ng-click="sortTeamMembersBy('winRate')"
+                                                                    class="hoverhand text-center">
                                                                     Win Rate
-                                                                    <i ng-if="teamMemberSortCriteria === 'winRate'" 
-                                                                       class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
-                                                                    <i ng-if="teamMemberSortCriteria !== 'winRate'" class="fa fa-sort"></i>
+                                                                    <i ng-if="teamMemberSortCriteria === 'winRate'"
+                                                                        class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
+                                                                    <i ng-if="teamMemberSortCriteria !== 'winRate'"
+                                                                        class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th class="text-center">Actions</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            <tr ng-repeat="member in getFilteredTeamMembers() track by member._id">
+                                                            <tr
+                                                                ng-repeat="member in getFilteredTeamMembers() track by member._id">
                                                                 <td>
-                                                                    <span ng-class="{'past-member' : member.memberStatus === 'past'}" class="hoverhand" ng-click="goToMemberDetail(member)"><strong>{{member.firstname}} {{member.lastname}}</strong> {{member.memberStatus === 'past' ? '(past)' : ''}}</span>
+                                                                    <span
+                                                                        ng-class="{'past-member' : member.memberStatus === 'past'}"
+                                                                        class="hoverhand"
+                                                                        ng-click="goToMemberDetail(member)"><strong>{{member.firstname}}
+                                                                            {{member.lastname}}</strong>
+                                                                        {{member.memberStatus === 'past' ? '(past)' :
+                                                                        ''}}</span>
                                                                 </td>
                                                                 <td class="text-center">{{member.count}}</td>
                                                                 <td class="text-center member-1-color">
@@ -220,12 +257,13 @@
                                                                     <strong>{{member.headToHeadRecord.ties}}</strong>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <strong>{{member.headToHeadRecord.winRate | number:1}}%</strong>
+                                                                    <strong>{{member.headToHeadRecord.winRate |
+                                                                        number:1}}%</strong>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <button class="btn btn-primary btn-sm" 
-                                                                            ng-click="loadComparison(member)"
-                                                                            title="Compare head-to-head">
+                                                                    <button class="btn btn-primary btn-sm"
+                                                                        ng-click="loadComparison(member)"
+                                                                        title="Compare head-to-head">
                                                                         <i class="fa fa-trophy"></i> Compare
                                                                     </button>
                                                                 </td>
@@ -238,49 +276,72 @@
                                     </div>
                                 </div>
 
+                                <!-- No Team Members for Selected Year (Selection Mode) -->
+                                <div class="row"
+                                    ng-if="!member2 && topTeamMembers && topTeamMembers.length === 0 && !loading">
+                                    <div class="col-md-12 text-center" style="padding: 30px;">
+                                        <i class="fa fa-calendar-times-o fa-3x text-muted"></i>
+                                        <h4 class="text-muted" ng-if="yearFilter.selected !== 'All Time'">
+                                            No head-to-head records found for {{yearFilter.selected}}.
+                                        </h4>
+                                        <h4 class="text-muted" ng-if="yearFilter.selected === 'All Time'">
+                                            No head-to-head records found.
+                                        </h4>
+                                    </div>
+                                </div>
+
                                 <!-- Simplified Head-to-Head Panel -->
                                 <div class="row" ng-if="member2">
                                     <div class="col-md-12">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
-                                                <h4><i class="fa fa-trophy"></i> 
-                                                    <span ng-if="!ageGradeMode">Head-to-Head Record</span>
-                                                    <span ng-if="ageGradeMode">Head-to-Head Record for Age-Graded Races</span>
+                                                <h4><i class="fa fa-trophy"></i>
+                                                    <span ng-if="!ageGradeMode">Head-to-Head Record -
+                                                        {{yearFilter.selected}}</span>
+                                                    <span ng-if="ageGradeMode">Head-to-Head Record for Age-Graded
+                                                        Races - {{yearFilter.selected}}</span>
                                                 </h4>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row text-center" ng-if="sharedRaces.length > 0">
                                                     <!-- Member 1 -->
                                                     <div class="col-md-4">
-                                                        <h3 class="member-1-color">{{member1.firstname}} {{member1.lastname}}</h3>
+                                                        <h3 class="member-1-color">{{member1.firstname}}
+                                                            {{member1.lastname}}</h3>
                                                         <div class="win-count">
-                                                            <h2 class="member-1-color">{{headToHeadRecord.member1Wins}}</h2>
+                                                            <h2 class="member-1-color">{{headToHeadRecord.member1Wins}}
+                                                            </h2>
                                                             <p>Wins</p>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- VS and Ties -->
                                                     <div class="col-md-4">
                                                         <div class="vs-section">
                                                             <h2 class="text-muted">VS</h2>
                                                             <div class="ties-count" ng-if="headToHeadRecord.ties > 0">
-                                                                <span class="number">{{headToHeadRecord.ties}}</span><span class="text"> Ties</span>
+                                                                <span
+                                                                    class=" member-tie-color number">{{headToHeadRecord.ties}}</span><span
+                                                                    class="text"> Ties</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <!-- Member 2 -->
                                                     <div class="col-md-4">
-                                                        <h3 class="member-2-color hoverhand" tooltip-append-to-body="true" 
-                                                        tooltip-placement="top"
-                                                        uib-tooltip-html="'View head-to-head records for {{member2.firstname}} {{member2.lastname}}'" ng-click="goToMemberHeadToHead(member2)">{{member2.firstname}} {{member2.lastname}}</h3>
+                                                        <h3 class="member-2-color hoverhand"
+                                                            tooltip-append-to-body="true" tooltip-placement="top"
+                                                            uib-tooltip-html="'View head-to-head records for {{member2.firstname}} {{member2.lastname}}'"
+                                                            ng-click="goToMemberHeadToHead(member2)">
+                                                            {{member2.firstname}} {{member2.lastname}}</h3>
                                                         <div class="win-count">
-                                                            <h2 class="member-2-color">{{headToHeadRecord.member2Wins}}</h2>
+                                                            <h2 class="member-2-color">{{headToHeadRecord.member2Wins}}
+                                                            </h2>
                                                             <p>Wins</p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <!-- No Shared Races Message -->
                                                 <div class="row" ng-if="sharedRaces.length === 0">
                                                     <div class="col-md-12">
@@ -288,12 +349,39 @@
                                                             <div class="no-races-message">
                                                                 <i class="fa fa-users fa-3x text-muted"></i>
                                                                 <h4 class="text-muted">No Head-to-Head Yet!</h4>
-                                                                <p class="text-muted">{{member1.firstname}} and {{member2.firstname}} haven't raced together yet.</p>
-                                                                <p class="text-muted">Maybe they'll meet at the next race! 🏃‍♂️🏃‍♀️</p>
+                                                                <p class="text-muted"
+                                                                    ng-if="yearFilter.selected === 'All Time'">
+                                                                    {{member1.firstname}} and {{member2.firstname}}
+                                                                    haven't raced together yet.</p>
+                                                                <p class="text-muted"
+                                                                    ng-if="yearFilter.selected !== 'All Time'">
+                                                                    {{member1.firstname}} and {{member2.firstname}}
+                                                                    didn't race together in {{yearFilter.selected}}.</p>
+                                                                <p class="text-muted"
+                                                                    ng-if="yearFilter.selected === 'All Time'">Maybe
+                                                                    they'll meet at the next race! 🏃‍♂️🏃‍♀️</p>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Yearly Head-to-Head Bar Chart (All Time only) -->
+                                <div class="row"
+                                    ng-if="member2 && yearFilter.selected === 'All Time' && yearlyHeadToHeadData">
+                                    <div class="col-md-12">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h4><i class="fa fa-bar-chart"></i> Head-to-Head by Year</h4>
+                                            </div>
+                                            <div class="panel-body">
+                                                <head-to-head-bar-chart data="yearlyHeadToHeadData"
+                                                    member1-name="member1.firstname" member2-name="member2.firstname"
+                                                    colors="h2hColors">
+                                                </head-to-head-bar-chart>
                                             </div>
                                         </div>
                                     </div>
@@ -320,9 +408,11 @@
                                                         <tbody>
                                                             <tr>
                                                                 <td><strong>Total Races</strong></td>
-                                                                <td class="text-center" ng-class="{'winning-cell': comparisonStats.member1.totalRaces > comparisonStats.member2.totalRaces}">
+                                                                <td class="text-center"
+                                                                    ng-class="{'winning-cell': comparisonStats.member1.totalRaces > comparisonStats.member2.totalRaces}">
                                                                     {{comparisonStats.member1.totalRaces}}</td>
-                                                                <td class="text-center" ng-class="{'winning-cell': comparisonStats.member2.totalRaces > comparisonStats.member1.totalRaces}">
+                                                                <td class="text-center"
+                                                                    ng-class="{'winning-cell': comparisonStats.member2.totalRaces > comparisonStats.member1.totalRaces}">
                                                                     {{comparisonStats.member2.totalRaces}}</td>
                                                                 <td class="text-center">
                                                                     <span
@@ -339,7 +429,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.totalRaces === comparisonStats.member2.totalRaces"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -367,7 +457,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.yearsRacing === comparisonStats.member2.yearsRacing"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -397,7 +487,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.avgRacesPerYear === comparisonStats.member2.avgRacesPerYear"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -406,10 +496,14 @@
                                                                 <td><strong>Total Wins</strong></td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.wins > comparisonStats.member2.wins}">
-                                                                    <span class="hoverhand" ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1'}]})">{{comparisonStats.member1.wins}}</span></td>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1'}]})">{{comparisonStats.member1.wins}}</span>
+                                                                </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.wins > comparisonStats.member1.wins}">
-                                                                    <span class="hoverhand" ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1'}]})">{{comparisonStats.member2.wins}}</span></td>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1'}]})">{{comparisonStats.member2.wins}}</span>
+                                                                </td>
                                                                 <td class="text-center">
                                                                     <span
                                                                         ng-if="comparisonStats.member1.wins > comparisonStats.member2.wins"
@@ -425,7 +519,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.wins === comparisonStats.member2.wins"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -434,10 +528,14 @@
                                                                 <td><strong>Top 3 Finishes</strong></td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.top3Finishes > comparisonStats.member2.top3Finishes}">
-                                                                    <span class="hoverhand" ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1-3'}]})">{{comparisonStats.member1.top3Finishes}}</span></td>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1-3'}]})">{{comparisonStats.member1.top3Finishes}}</span>
+                                                                </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.top3Finishes > comparisonStats.member1.top3Finishes}">
-                                                                    <span class="hoverhand" ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1-3'}]})">{{comparisonStats.member2.top3Finishes}}</span></td>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1-3'}]})">{{comparisonStats.member2.top3Finishes}}</span>
+                                                                </td>
                                                                 <td class="text-center">
                                                                     <span
                                                                         ng-if="comparisonStats.member1.top3Finishes > comparisonStats.member2.top3Finishes"
@@ -453,7 +551,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.top3Finishes === comparisonStats.member2.top3Finishes"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -462,11 +560,15 @@
                                                                 <td><strong>Best Age Grade</strong></td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.bestAgeGrade > comparisonStats.member2.bestAgeGrade}">
-                                                                    <span class="hoverhand" ng-click="showRaceModal(comparisonStats.member1.bestAgeGradeRace)">{{comparisonStats.member1.bestAgeGrade | number:1}}%</span>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="showRaceModal(comparisonStats.member1.bestAgeGradeRace)">{{comparisonStats.member1.bestAgeGrade
+                                                                        | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.bestAgeGrade > comparisonStats.member1.bestAgeGrade}">
-                                                                    <span class="hoverhand" ng-click="showRaceModal(comparisonStats.member2.bestAgeGradeRace)">{{comparisonStats.member2.bestAgeGrade | number:1}}%</span>
+                                                                    <span class="hoverhand"
+                                                                        ng-click="showRaceModal(comparisonStats.member2.bestAgeGradeRace)">{{comparisonStats.member2.bestAgeGrade
+                                                                        | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
@@ -483,7 +585,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.bestAgeGrade === comparisonStats.member2.bestAgeGrade"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -513,7 +615,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.avgAgeGrade === comparisonStats.member2.avgAgeGrade"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -543,7 +645,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.totalMiles === comparisonStats.member2.totalMiles"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -571,7 +673,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.uniqueStates === comparisonStats.member2.uniqueStates"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -599,7 +701,7 @@
                                                                     </span>
                                                                     <span
                                                                         ng-if="comparisonStats.member1.uniqueCountries === comparisonStats.member2.uniqueCountries"
-                                                                        class="text-warning">
+                                                                        class="member-tie-color">
                                                                         <i class="fa fa-equals"></i> Tie
                                                                     </span>
                                                                 </td>
@@ -616,10 +718,11 @@
                                 <div class="row" ng-if="member2 && sharedRaces.length > 0">
                                     <div class="col-md-12">
                                         <div class="panel panel-default shared-races-table">
-                                            <div class="panel-heading">                                                
-                                                <h4><i class="fa fa-flag-checkered"></i> 
+                                            <div class="panel-heading">
+                                                <h4><i class="fa fa-flag-checkered"></i>
                                                     <span ng-if="!ageGradeMode">Races They Both Participated In</span>
-                                                    <span ng-if="ageGradeMode">Age-Graded Races They Both Participated In</span>                                                    
+                                                    <span ng-if="ageGradeMode">Age-Graded Races They Both Participated
+                                                        In</span>
                                                 </h4>
                                             </div>
                                             <div class="panel-body">
@@ -640,70 +743,83 @@
                                                         </thead>
                                                         <tbody>
                                                             <tr ng-repeat="race in sharedRaces track by $index"
-                                                                ng-class="race.winner === 'member1' ? 'member-1-bg' : (race.winner === 'member2' ? 'member-2-bg' : 'warning')">
-                                                                                                                                 <td>{{sharedRaces.length - $index}}</td>
-                                                                 <td>{{formatDate(race.race.racedate)}}</td>
-                                                                 <td>
-                                                                     <a ng-click="showRaceModal(race.race)"
-                                                                         class="hoverhand">
-                                                                         {{race.race.racename}}
-                                                                     </a>
-                                                                 </td>
-                                                                 <td>{{race.race.distanceName || race.race.racetype.name}}</td>
-                                                                 <td>
-                                                                     <div ng-if="!ageGradeMode">
-                                                                         <strong class="time">{{formatTime(race.member1Result.time)}}</strong>
-                                                                         <br>
-                                                                         <small ng-if="race.member1Result.agegrade">({{race.member1Result.agegrade | number:1}}%)</small>
-                                                                     </div>
-                                                                     <div ng-if="ageGradeMode">
-                                                                         <strong class="time" ng-if="race.member1Result.agegrade">{{race.member1Result.agegrade | number:1}}%</strong>
-                                                                         <strong class="time" ng-if="!race.member1Result.agegrade">N/A</strong>
-                                                                         <br>
-                                                                         <small>{{formatTime(race.member1Result.time)}}</small>
-                                                                     </div>
-                                                                 </td>
-                                                                 <td>
-                                                                     <div ng-if="!ageGradeMode">
-                                                                         <strong class="time">{{formatTime(race.member2Result.time)}}</strong>
-                                                                         <br>
-                                                                         <small ng-if="race.member2Result.agegrade">({{race.member2Result.agegrade | number:1}}%)</small>
-                                                                     </div>
-                                                                     <div ng-if="ageGradeMode">
-                                                                         <strong class="time" ng-if="race.member2Result.agegrade">{{race.member2Result.agegrade | number:1}}%</strong>
-                                                                         <strong class="time" ng-if="!race.member2Result.agegrade">N/A</strong>
-                                                                         <br>
-                                                                         <small>{{formatTime(race.member2Result.time)}}</small>
-                                                                     </div>
-                                                                 </td>
-                                                                 <td>
-                                                                     <span
-                                                                         ng-if="!race.isTie" 
-                                                                         class="time"
-                                                                         ng-class="{'ranking-tiebreaker': race.timeDifference === 0}"
-                                                                         uib-tooltip="{{race.timeDifference === 0 ? ('Rankings: ' + member1.firstname + ': ' + (race.member1Result.ranking ? (race.member1Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A') + ', ' + member2.firstname + ': ' + (race.member2Result.ranking ? (race.member2Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A')) : ''}}"
-                                                                         tooltip-append-to-body="true"
-                                                                         tooltip-placement="top">
-                                                                         <span ng-if="!ageGradeMode">{{formatTime(race.timeDifference)}}</span>
-                                                                         <span ng-if="ageGradeMode">{{race.timeDifference | number:1}}%</span>
-                                                                     </span>
-                                                                     <span ng-if="race.isTie">-</span>
-                                                                 </td>
-                                                                 <td>
-                                                                     <span ng-if="race.winner === 'member1'"
-                                                                         class="member-1-color">
-                                                                         <i class="fa fa-trophy"></i>
-                                                                         {{member1.firstname}}
-                                                                     </span>
-                                                                     <span ng-if="race.winner === 'member2'"
-                                                                         class="member-2-color">
-                                                                         <i class="fa fa-trophy"></i>
-                                                                         {{member2.firstname}}
-                                                                     </span>
-                                                                     <span ng-if="race.isTie" class="text-warning">
-                                                                         <i class="fa fa-equals"></i> Tie
-                                                                     </span>
-                                                                 </td>
+                                                                ng-class="race.winner === 'member1' ? 'member-1-bg' : (race.winner === 'member2' ? 'member-2-bg' : 'member-tie-bg')">
+                                                                <td>{{sharedRaces.length - $index}}</td>
+                                                                <td>{{formatDate(race.race.racedate)}}</td>
+                                                                <td>
+                                                                    <a ng-click="showRaceModal(race.race)"
+                                                                        class="hoverhand">
+                                                                        {{race.race.racename}}
+                                                                    </a>
+                                                                </td>
+                                                                <td>{{race.race.distanceName ||
+                                                                    race.race.racetype.name}}</td>
+                                                                <td>
+                                                                    <div ng-if="!ageGradeMode">
+                                                                        <strong
+                                                                            class="time">{{formatTime(race.member1Result.time)}}</strong>
+                                                                        <br>
+                                                                        <small
+                                                                            ng-if="race.member1Result.agegrade">({{race.member1Result.agegrade
+                                                                            | number:1}}%)</small>
+                                                                    </div>
+                                                                    <div ng-if="ageGradeMode">
+                                                                        <strong class="time"
+                                                                            ng-if="race.member1Result.agegrade">{{race.member1Result.agegrade
+                                                                            | number:1}}%</strong>
+                                                                        <strong class="time"
+                                                                            ng-if="!race.member1Result.agegrade">N/A</strong>
+                                                                        <br>
+                                                                        <small>{{formatTime(race.member1Result.time)}}</small>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div ng-if="!ageGradeMode">
+                                                                        <strong
+                                                                            class="time">{{formatTime(race.member2Result.time)}}</strong>
+                                                                        <br>
+                                                                        <small
+                                                                            ng-if="race.member2Result.agegrade">({{race.member2Result.agegrade
+                                                                            | number:1}}%)</small>
+                                                                    </div>
+                                                                    <div ng-if="ageGradeMode">
+                                                                        <strong class="time"
+                                                                            ng-if="race.member2Result.agegrade">{{race.member2Result.agegrade
+                                                                            | number:1}}%</strong>
+                                                                        <strong class="time"
+                                                                            ng-if="!race.member2Result.agegrade">N/A</strong>
+                                                                        <br>
+                                                                        <small>{{formatTime(race.member2Result.time)}}</small>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span ng-if="!race.isTie" class="time"
+                                                                        ng-class="{'ranking-tiebreaker': race.timeDifference === 0}"
+                                                                        uib-tooltip="{{race.timeDifference === 0 ? ('Rankings: ' + member1.firstname + ': ' + (race.member1Result.ranking ? (race.member1Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A') + ', ' + member2.firstname + ': ' + (race.member2Result.ranking ? (race.member2Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A')) : ''}}"
+                                                                        tooltip-append-to-body="true"
+                                                                        tooltip-placement="top">
+                                                                        <span
+                                                                            ng-if="!ageGradeMode">{{formatTime(race.timeDifference)}}</span>
+                                                                        <span ng-if="ageGradeMode">{{race.timeDifference
+                                                                            | number:1}}%</span>
+                                                                    </span>
+                                                                    <span ng-if="race.isTie">-</span>
+                                                                </td>
+                                                                <td>
+                                                                    <span ng-if="race.winner === 'member1'"
+                                                                        class="member-1-color">
+                                                                        <i class="fa fa-trophy"></i>
+                                                                        {{member1.firstname}}
+                                                                    </span>
+                                                                    <span ng-if="race.winner === 'member2'"
+                                                                        class="member-2-color">
+                                                                        <i class="fa fa-trophy"></i>
+                                                                        {{member2.firstname}}
+                                                                    </span>
+                                                                    <span ng-if="race.isTie" class="member-tie-color">
+                                                                        <i class="fa fa-equals"></i> Tie
+                                                                    </span>
+                                                                </td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
@@ -717,8 +833,8 @@
                             </div>
                         </div>
 
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>

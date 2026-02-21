@@ -1,5 +1,24 @@
 angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', function($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService  ) {
     
+    // Read head-to-head colors from CSS (defined by LESS variables @h2h-member1-color, @h2h-member2-color, @h2h-tie-color)
+    function getCssColor(className) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'head-to-head-page';
+        wrapper.style.display = 'none';
+        var el = document.createElement('div');
+        el.className = className;
+        wrapper.appendChild(el);
+        document.body.appendChild(wrapper);
+        var color = window.getComputedStyle(el).color;
+        document.body.removeChild(wrapper);
+        return color;
+    }
+    $scope.h2hColors = {
+        member1: getCssColor('member-1-color'),
+        member2: getCssColor('member-2-color'),
+        tie: getCssColor('member-tie-color')
+    };
+
     $scope.loading = true;
     $scope.member1 = null;
     $scope.member2 = null;
@@ -24,23 +43,166 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     
     // Age grade mode toggle - load from localStorage or default to false
     $scope.ageGradeMode = localStorageService.get('headToHeadAgeGradeMode') || false;
+
+    // Year filter (use object property to avoid AngularJS child scope issues with ui-select)
+    $scope.yearFilter = { selected: 'All Time' };
+    $scope.yearsList = ['All Time'];
+
+    // Cached unfiltered data for year/filter changes without re-fetching
+    $scope._cachedRaceList = null;
+    $scope._cachedAllMembers = null;
     
     // Toggle age grade mode
     $scope.toggleAgeGradeMode = function(ageGradeMode) {
         $scope.ageGradeMode = ageGradeMode;
-        
+
         // Save the mode to localStorage
         localStorageService.set('headToHeadAgeGradeMode', $scope.ageGradeMode);
-        
-        // Reload comparison data when mode changes
-        if ($scope.member1 && $scope.member2) {
-            $scope.loadComparison();
+
+        // Use cached data if available, otherwise reload
+        if ($scope._cachedRaceList && $scope._cachedAllMembers) {
+            var filteredRaceList = $scope.filterRaceListByYear($scope._cachedRaceList);
+
+            if ($scope.member1 && $scope.member2) {
+                $scope.recalculateComparison(filteredRaceList);
+            }
+
+            if ($scope.member1) {
+                $scope.calculateTopTeamMembers(filteredRaceList, $scope._cachedAllMembers);
+            }
+
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+        } else {
+            // Fallback: reload from service if cache is not available
+            if ($scope.member1 && $scope.member2) {
+                $scope.loadComparison();
+            }
+            if ($scope.member1 && $scope.topTeamMembers && $scope.topTeamMembers.length > 0) {
+                $scope.loadHeadToHeadData();
+            }
         }
-        
-        // Recalculate team members head-to-head records for the overview table
-        if ($scope.member1 && $scope.topTeamMembers && $scope.topTeamMembers.length > 0) {
-            // We need to reload the race data to recalculate team members
-            $scope.loadHeadToHeadData();
+    };
+
+    // Build years list from races where member1 has results
+    $scope.buildYearsList = function(raceList) {
+        var yearsSet = {};
+        var memberId = $scope.member1._id;
+        raceList.forEach(function(race) {
+            if (race.results && race.results.length > 0) {
+                for (var i = 0; i < race.results.length; i++) {
+                    var result = race.results[i];
+                    if (result.members) {
+                        for (var j = 0; j < result.members.length; j++) {
+                            if (result.members[j]._id === memberId) {
+                                yearsSet[new Date(race.racedate).getUTCFullYear()] = true;
+                                return; // found member in this race, move to next race
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        var years = Object.keys(yearsSet).map(Number).sort(function(a, b) { return b - a; });
+        $scope.yearsList = ['All Time'].concat(years);
+    };
+
+    // Filter race list by selected year
+    $scope.filterRaceListByYear = function(raceList) {
+        if ($scope.yearFilter.selected === 'All Time') return raceList;
+        var selectedYear = parseInt($scope.yearFilter.selected);
+        return raceList.filter(function(race) {
+            return new Date(race.racedate).getUTCFullYear() === selectedYear;
+        });
+    };
+
+    // Recalculate comparison data from a (possibly year-filtered) race list
+    $scope.recalculateComparison = function(raceList) {
+        $scope.member1Results = [];
+        $scope.member2Results = [];
+
+        raceList.forEach(function(race) {
+            if (race.results && race.results.length > 0) {
+                race.results.forEach(function(result) {
+                    if (result.members) {
+                        result.members.forEach(function(member) {
+                            if (member._id === $scope.member1._id) {
+                                $scope.member1Results.push({
+                                    ...result,
+                                    race: race
+                                });
+                            }
+                            if (member._id === $scope.member2._id) {
+                                $scope.member2Results.push({
+                                    ...result,
+                                    race: race
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        $scope.comparisonStats = $scope.calculateComparisonStats($scope.member1Results, $scope.member2Results);
+        $scope.sharedRaces = $scope.findSharedRaces($scope.member1Results, $scope.member2Results);
+        $scope.calculateHeadToHeadRecord();
+        $scope.buildYearlyHeadToHeadData();
+    };
+
+    // Build yearly win/loss breakdown from sharedRaces for the stacked bar chart
+    $scope.yearlyHeadToHeadData = null;
+    $scope.buildYearlyHeadToHeadData = function() {
+        if (!$scope.sharedRaces || $scope.sharedRaces.length === 0) {
+            $scope.yearlyHeadToHeadData = null;
+            return;
+        }
+
+        var yearMap = {};
+        $scope.sharedRaces.forEach(function(race) {
+            var year = new Date(race.race.racedate).getUTCFullYear();
+            if (!yearMap[year]) {
+                yearMap[year] = { member1Wins: 0, member2Wins: 0, ties: 0 };
+            }
+            if (race.isTie) {
+                yearMap[year].ties++;
+            } else if (race.winner === 'member1') {
+                yearMap[year].member1Wins++;
+            } else {
+                yearMap[year].member2Wins++;
+            }
+        });
+
+        var years = Object.keys(yearMap).map(Number).sort(function(a, b) { return a - b; });
+        $scope.yearlyHeadToHeadData = {
+            labels: years,
+            member1Wins: years.map(function(y) { return yearMap[y].member1Wins; }),
+            member2Wins: years.map(function(y) { return yearMap[y].member2Wins; }),
+            ties: years.map(function(y) { return yearMap[y].ties; })
+        };
+    };
+
+    // Handle year filter change
+    $scope.onYearChange = function() {
+        if ($scope._cachedRaceList && $scope._cachedAllMembers) {
+            var filteredRaceList = $scope.filterRaceListByYear($scope._cachedRaceList);
+
+            if ($scope.member1) {
+                $scope.calculateTopTeamMembers(filteredRaceList, $scope._cachedAllMembers);
+            }
+
+            if ($scope.member1 && $scope.member2) {
+                $scope.recalculateComparison(filteredRaceList);
+                // Update the selected comparison member reference from recalculated topTeamMembers
+                $scope.selectedComparisonMember = $scope.topTeamMembers.find(function(tm) {
+                    return tm.username === $scope.member2.username;
+                }) || $scope.member2;
+            }
+
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
         }
     };
     
@@ -94,8 +256,18 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 "preload": false
             });
 
-            // Calculate top team members
-            $scope.calculateTopTeamMembers(raceList, allMembers);
+            // Cache the full unfiltered data for year/filter changes
+            $scope._cachedRaceList = raceList;
+            $scope._cachedAllMembers = allMembers;
+
+            // Build years list from member's actual race data
+            $scope.buildYearsList(raceList);
+
+            // Apply year filter before calculations
+            var filteredRaceList = $scope.filterRaceListByYear(raceList);
+
+            // Calculate top team members using filtered data
+            $scope.calculateTopTeamMembers(filteredRaceList, allMembers);
 
             $scope.loading = false;
             
@@ -159,44 +331,24 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 "sort": '-racedate -order racename',
                 "preload": false
             });
-            
-            $scope.calculateTopTeamMembers(raceList, allMembers);
-            
+
+            // Cache the full unfiltered data for year/filter changes
+            $scope._cachedRaceList = raceList;
+            $scope._cachedAllMembers = allMembers;
+
+            // Build years list from member's actual race data
+            $scope.buildYearsList(raceList);
+
+            // Apply year filter
+            var filteredRaceList = $scope.filterRaceListByYear(raceList);
+
+            $scope.calculateTopTeamMembers(filteredRaceList, allMembers);
+
             // Set the selected comparison member for the dropdown (find the one with count property)
             $scope.selectedComparisonMember = $scope.topTeamMembers.find(tm => tm.username === member2.username) || member2;
 
-            // Use the cached full race results instead of loading individual member results
-            // Extract results for both members from the full races data
-            $scope.member1Results = [];
-            $scope.member2Results = [];
-            
-            raceList.forEach(race => {
-                if (race.results && race.results.length > 0) {
-                    race.results.forEach(result => {
-                        if (result.members) {
-                            result.members.forEach(member => {
-                                if (member._id === member1._id) {
-                                    $scope.member1Results.push({
-                                        ...result,
-                                        race: race
-                                    });
-                                }
-                                if (member._id === member2._id) {
-                                    $scope.member2Results.push({
-                                        ...result,
-                                        race: race
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-
-            // Calculate comparison statistics
-            $scope.comparisonStats = $scope.calculateComparisonStats($scope.member1Results, $scope.member2Results);
-            $scope.sharedRaces = $scope.findSharedRaces($scope.member1Results, $scope.member2Results);
-            $scope.calculateHeadToHeadRecord();
+            // Calculate comparison data using filtered race list
+            $scope.recalculateComparison(filteredRaceList);
 
             // Clear the timeout since we completed successfully
             clearTimeout(timeoutId);

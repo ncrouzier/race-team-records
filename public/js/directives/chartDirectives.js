@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', function($timeout) {
+angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', function ($timeout) {
     return {
         restrict: 'E',
         scope: {
@@ -45,16 +45,16 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                     </div>
                 </div>
             </div>`,
-        link: function(scope, element, attrs) {
+        link: function (scope, element, attrs) {
             var chart = null;
             scope.selectedRaceType = null;
             scope.availableRaceTypes = [];
             scope.showAgeGradeLines = true; // Default to showing age grade lines
             scope.performanceMode = 'all'; // Default to all performances
-            
+
             // Track removed points for temporary removal
             scope.removedPoints = new Set();
-            
+
             // Constants
             var AGE_GRADE_LEVELS = {
                 REGIONAL: 70,
@@ -70,34 +70,34 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                 if (chart) {
                     chart.destroy();
                 }
-                
+
                 var ctx = document.getElementById('bestTimeChart');
                 if (!ctx) {
                     return;
                 }
-                
+
                 // Get years with data for the selected race type
                 var selectedRaceTypeId = scope.selectedRaceType ? scope.selectedRaceType._id : null;
                 var years = getYearsWithData(selectedRaceTypeId);
-                
+
                 // Cache all results data to avoid multiple calls
                 var allResultsData = getAllResultsForRaceType(selectedRaceTypeId);
                 var timeData, ageGradeData;
-                
+
                 if (scope.performanceMode === 'best') {
                     // Best performance per year mode
-                    timeData = years.map(function(year) {
+                    timeData = years.map(function (year) {
                         return getBestTimeForYearAndRaceType(year, selectedRaceTypeId, allResultsData);
                     });
-                    ageGradeData = years.map(function(year) {
+                    ageGradeData = years.map(function (year) {
                         return getMaxAgeGradeForYearAndRaceType(year, selectedRaceTypeId, allResultsData);
                     });
                 } else {
                     // All performances mode - get all results ordered by date
                     timeData = [];
                     ageGradeData = [];
-                    
-                    allResultsData.forEach(function(result, index) {
+
+                    allResultsData.forEach(function (result, index) {
                         // Skip removed points
                         if (!scope.removedPoints.has(index)) {
                             timeData.push(result.time);
@@ -105,12 +105,12 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     });
                 }
-                
+
                 // Check if any age grade data is available
-                var hasAgeGradeData = ageGradeData.some(function(value) {
+                var hasAgeGradeData = ageGradeData.some(function (value) {
                     return value !== null && value !== undefined;
                 });
-                
+
                 // Create datasets array
                 var datasets = [{
                     label: (scope.selectedRaceType ? scope.selectedRaceType.name : '') + (scope.performanceMode === 'best' ? ' Best Time' : ' Time'),
@@ -125,7 +125,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                     yAxisID: 'y',
                     spanGaps: false
                 }];
-                
+
                 // Only add age grade dataset if data is available
                 if (hasAgeGradeData) {
                     datasets.push({
@@ -141,22 +141,22 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         yAxisID: 'y1',
                         spanGaps: false
                     });
-                    
+
                     // Add horizontal reference lines for age grade levels (only if toggle is enabled)
                     if (scope.showAgeGradeLines) {
-                        var minAgeGrade = Math.min(...ageGradeData.filter(function(value) {
+                        var minAgeGrade = Math.min(...ageGradeData.filter(function (value) {
                             return value !== null && value !== undefined;
                         }));
-                        var maxAgeGrade = Math.max(...ageGradeData.filter(function(value) {
+                        var maxAgeGrade = Math.max(...ageGradeData.filter(function (value) {
                             return value !== null && value !== undefined;
                         }));
                         var minAxis = Math.floor(Math.max(0, minAgeGrade - 10));
-                        
+
                         // Add age grade reference lines
                         addAgeGradeReferenceLines(datasets, ageGradeData, minAxis);
                     }
                 }
-                
+
                 // Prepare labels based on mode
                 var labels;
                 if (scope.performanceMode === 'best') {
@@ -166,8 +166,8 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                     var allResultsLabels = getAllResultsForRaceType(selectedRaceTypeId);
                     var seenYears = new Set();
                     labels = [];
-                    
-                    allResultsLabels.forEach(function(result, index) {
+
+                    allResultsLabels.forEach(function (result, index) {
                         // Skip removed points
                         if (!scope.removedPoints.has(index)) {
                             var year = result.date.getUTCFullYear();
@@ -180,7 +180,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     });
                 }
-                
+
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -206,32 +206,32 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                     usePointStyle: true,
                                     padding: 20
                                 },
-                                onClick: function(e, legendItem, legend) {
+                                onClick: function (e, legendItem, legend) {
                                     var index = legendItem.datasetIndex;
                                     var ci = legend.chart;
                                     var meta = ci.getDatasetMeta(index);
-                                    
+
                                     // Toggle dataset visibility
                                     meta.hidden = !meta.hidden;
-                                    
+
                                     // Update axis visibility based on dataset visibility
                                     updateAxisVisibility(ci);
-                                    
+
                                     ci.update();
                                 }
                             },
                             tooltip: {
                                 mode: 'index',
                                 intersect: false,
-                                filter: function(tooltipItem) {
+                                filter: function (tooltipItem) {
                                     // Filter out age grade level lines from tooltip
                                     var label = tooltipItem.dataset.label;
-                                    return !label.includes('Regional Level') && 
-                                           !label.includes('National Level') && 
-                                           !label.includes('World Level');
+                                    return !label.includes('Regional Level') &&
+                                        !label.includes('National Level') &&
+                                        !label.includes('World Level');
                                 },
                                 callbacks: {
-                                    title: function(context) {
+                                    title: function (context) {
                                         if (scope.performanceMode === 'best') {
                                             return 'Year: ' + context[0].label;
                                         } else {
@@ -240,18 +240,18 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                             // Calculate the original index accounting for removed points
                                             var originalIndex = 0;
                                             var currentIndex = 0;
-                                            
+
                                             while (currentIndex <= context[0].dataIndex && originalIndex < allResultsData.length) {
                                                 if (!scope.removedPoints.has(originalIndex)) {
                                                     currentIndex++;
                                                 }
                                                 originalIndex++;
                                             }
-                                            
+
                                             if (originalIndex > 0) {
                                                 originalIndex--; // Adjust for the final increment
                                             }
-                                            
+
                                             if (allResultsData && allResultsData[originalIndex]) {
                                                 var result = allResultsData[originalIndex];
                                                 var dateStr = result.date.toLocaleDateString();
@@ -260,7 +260,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                             return context[0].label;
                                         }
                                     },
-                                    label: function(context) {
+                                    label: function (context) {
                                         var value = context.parsed.y;
                                         if (value === null || value === undefined) {
                                             return context.dataset.label + ': No data';
@@ -306,7 +306,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                 },
                                 reverse: true, // Invert the axis so faster times are at the top
                                 ticks: {
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         if (value === null || value === undefined) {
                                             return '';
                                         }
@@ -324,9 +324,9 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                     text: 'Age Grade (%)',
                                     color: '#e74c3c' // Red color to match age grade line
                                 },
-                                min: function(context) {
+                                min: function (context) {
                                     // Find the minimum age grade value in the data
-                                    var minAgeGrade = Math.min(...ageGradeData.filter(function(value) {
+                                    var minAgeGrade = Math.min(...ageGradeData.filter(function (value) {
                                         return value !== null && value !== undefined;
                                     }));
                                     // Return minimum age grade minus 10%, rounded to nearest percentage, but not less than 0
@@ -335,7 +335,7 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                 },
                                 max: 100,
                                 ticks: {
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         return value + '%';
                                     },
                                     color: '#e74c3c' // Red color to match age grade line
@@ -350,23 +350,23 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                             axis: 'x',
                             intersect: false
                         },
-                        onClick: function(event, elements) {
+                        onClick: function (event, elements) {
                             if (elements.length > 0) {
                                 var element = elements[0];
                                 var datasetIndex = element.datasetIndex;
                                 var dataIndex = element.index;
-                                
+
                                 // Only allow removal of actual data points (not reference lines)
                                 if (datasetIndex === 0 || datasetIndex === 1) { // Time or Age Grade datasets
                                     if (scope.performanceMode === 'best') {
                                         // In best mode, we need to find the year and remove all results for that year
                                         var years = getYearsWithData(selectedRaceTypeId);
-                                        
+
                                         if (dataIndex < years.length) {
                                             var yearToRemove = years[dataIndex];
-                                            
+
                                             // Find all results for this year and race type, and add them to removed points
-                                            allResultsData.forEach(function(result, index) {
+                                            allResultsData.forEach(function (result, index) {
                                                 var resultYear = result.date.getUTCFullYear();
                                                 if (resultYear === yearToRemove) {
                                                     scope.removedPoints.add(index);
@@ -377,24 +377,24 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                                         // All performances mode - calculate the original index in the full dataset
                                         var originalIndex = 0;
                                         var currentIndex = 0;
-                                        
+
                                         while (currentIndex <= dataIndex && originalIndex < allResultsData.length) {
                                             if (!scope.removedPoints.has(originalIndex)) {
                                                 currentIndex++;
                                             }
                                             originalIndex++;
                                         }
-                                        
+
                                         if (originalIndex > 0) {
                                             originalIndex--; // Adjust for the final increment
                                         }
-                                        
+
                                         // Add to removed points set
                                         scope.removedPoints.add(originalIndex);
                                     }
-                                    
+
                                     // Update the chart
-                                    $timeout(function() {
+                                    $timeout(function () {
                                         initializeChart();
                                     }, 100);
                                 }
@@ -402,17 +402,17 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     }
                 });
-                
+
                 // Initialize axis visibility based on current dataset visibility
                 updateAxisVisibility(chart);
             }
-            
+
             function updateAxisVisibility(chart) {
                 var timeDatasetVisible = false;
                 var ageGradeDatasetVisible = false;
-                
+
                 // Check which datasets are visible
-                chart.data.datasets.forEach(function(dataset, index) {
+                chart.data.datasets.forEach(function (dataset, index) {
                     var meta = chart.getDatasetMeta(index);
                     if (!meta.hidden) {
                         if (dataset.yAxisID === 'y') {
@@ -422,38 +422,38 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     }
                 });
-                
+
                 // Update time axis visibility
                 if (chart.options.scales.y) {
                     chart.options.scales.y.display = timeDatasetVisible;
                 }
-                
+
                 // Update age grade axis visibility
                 if (chart.options.scales.y1) {
                     chart.options.scales.y1.display = ageGradeDatasetVisible;
                 }
-                
+
                 // Update age grade reference lines visibility
-                chart.data.datasets.forEach(function(dataset, index) {
+                chart.data.datasets.forEach(function (dataset, index) {
                     var meta = chart.getDatasetMeta(index);
                     if (dataset.label && dataset.label.includes('Level')) {
                         meta.hidden = !ageGradeDatasetVisible;
                     }
                 });
             }
-            
+
             function addAgeGradeReferenceLines(datasets, ageGradeData, minAxis) {
                 var referenceLines = [
                     { level: AGE_GRADE_LEVELS.REGIONAL, label: 'Regional Level (70%)', color: '#cd7f32' },
                     { level: AGE_GRADE_LEVELS.NATIONAL, label: 'National Level (80%)', color: '#c0c0c0' },
                     { level: AGE_GRADE_LEVELS.WORLD, label: 'World Level (90%)', color: '#ffd700' }
                 ];
-                
-                referenceLines.forEach(function(line) {
+
+                referenceLines.forEach(function (line) {
                     if (line.level >= minAxis) {
                         datasets.push({
                             label: line.label,
-                            data: ageGradeData.map(function() { return line.level; }),
+                            data: ageGradeData.map(function () { return line.level; }),
                             borderColor: line.color,
                             backgroundColor: 'transparent',
                             borderWidth: 1,
@@ -468,59 +468,59 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                     }
                 });
             }
-            
+
             function getYearsWithData(selectedRaceTypeId) {
                 if (!scope.raceTypeBreakdown || !scope.raceTypeBreakdown.yearly || !selectedRaceTypeId) {
                     return [];
                 }
-                
+
                 var yearsWithData = [];
-                
-                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function(year) {
+
+                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function (year) {
                     var yearData = scope.raceTypeBreakdown.yearly[year];
                     var hasDataForRaceType = false;
-                    
-                    Object.keys(yearData).forEach(function(category) {
+
+                    Object.keys(yearData).forEach(function (category) {
                         var raceTypeData = yearData[category];
                         if (raceTypeData.results && raceTypeData.results.length > 0) {
-                            raceTypeData.results.forEach(function(result) {
+                            raceTypeData.results.forEach(function (result) {
                                 if (result.race && result.race.racetype && result.race.racetype._id === selectedRaceTypeId) {
                                     hasDataForRaceType = true;
                                 }
                             });
                         }
                     });
-                    
+
                     if (hasDataForRaceType) {
                         yearsWithData.push(parseInt(year));
                     }
                 });
-                
+
                 return yearsWithData.sort();
             }
-            
+
             function getAvailableRaceTypes() {
                 if (!scope.raceTypeBreakdown || !scope.raceTypeBreakdown.yearly) {
                     return [];
                 }
-                
+
                 var raceTypeYears = {};
-                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function(year) {
+                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function (year) {
                     var yearData = scope.raceTypeBreakdown.yearly[year];
-                    Object.keys(yearData).forEach(function(category) {
+                    Object.keys(yearData).forEach(function (category) {
                         var raceTypeData = yearData[category];
                         if (raceTypeData.results && raceTypeData.results.length > 0) {
-                            raceTypeData.results.forEach(function(result) {
+                            raceTypeData.results.forEach(function (result) {
                                 if (result.race && result.race.racetype && result.race.racetype._id) {
                                     var raceType = result.race.racetype;
-                                    
+
                                     // Exclude race types that contain "odd", "multisport", or non-running surfaces
                                     var excludeKeywords = ['odd', 'multisport'];
                                     var excludeSurfaces = ['open water', 'pool', 'other'];
-                                    var shouldExclude = excludeKeywords.some(function(keyword) {
+                                    var shouldExclude = excludeKeywords.some(function (keyword) {
                                         return raceType.name.toLowerCase().includes(keyword);
                                     }) || excludeSurfaces.includes(raceType.surface);
-                                    
+
                                     if (!shouldExclude) {
                                         if (!raceTypeYears[raceType._id]) {
                                             raceTypeYears[raceType._id] = {
@@ -537,15 +537,15 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     });
                 });
-                
+
                 // Count total results for each race type while processing
                 var raceTypeResults = {};
-                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function(year) {
+                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function (year) {
                     var yearData = scope.raceTypeBreakdown.yearly[year];
-                    Object.keys(yearData).forEach(function(category) {
+                    Object.keys(yearData).forEach(function (category) {
                         var raceTypeData = yearData[category];
                         if (raceTypeData.results && raceTypeData.results.length > 0) {
-                            raceTypeData.results.forEach(function(result) {
+                            raceTypeData.results.forEach(function (result) {
                                 if (result.race && result.race.racetype && result.race.racetype._id) {
                                     var raceTypeId = result.race.racetype._id;
                                     if (!raceTypeResults[raceTypeId]) {
@@ -557,16 +557,16 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     });
                 });
-                
+
                 // Convert to array with display names and sort by distance
-                var raceTypeArray = Object.values(raceTypeYears).map(function(data) {
+                var raceTypeArray = Object.values(raceTypeYears).map(function (data) {
                     var yearsCount = data.years.size;
                     var raceType = data.raceType;
                     var totalResults = raceTypeResults[raceType._id] || 0;
-                    
+
                     var displayCount = scope.performanceMode === 'all' ? totalResults : yearsCount;
                     var displayLabel = scope.performanceMode === 'all' ? 'result' + (totalResults !== 1 ? 's' : '') : 'year' + (yearsCount > 1 ? 's' : '');
-                    
+
                     return {
                         _id: raceType._id,
                         name: raceType.name,
@@ -577,42 +577,42 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         meters: raceType.meters,
                         surface: raceType.surface
                     };
-                }).sort(function(a, b) {
+                }).sort(function (a, b) {
                     // Sort by distance length (meters)
                     return a.meters - b.meters;
                 });
-                
+
                 return raceTypeArray;
             }
-            
+
             function createResultLookupMap(allResultsData) {
                 var lookupMap = new Map();
-                allResultsData.forEach(function(result, index) {
+                allResultsData.forEach(function (result, index) {
                     var key = result.time + '_' + result.date.getTime() + '_' + result.raceName;
                     lookupMap.set(key, index);
                 });
                 return lookupMap;
             }
-            
+
             function isResultRemoved(result, allResultsData, lookupMap) {
                 var key = parseFloat(result.time) + '_' + new Date(result.race.racedate).getTime() + '_' + result.race.racename;
                 var index = lookupMap.get(key);
                 return index !== undefined && scope.removedPoints.has(index);
             }
-            
+
             function getBestTimeForYearAndRaceType(year, raceTypeId, allResultsData) {
                 if (!scope.raceTypeBreakdown || !scope.raceTypeBreakdown.yearly || !scope.raceTypeBreakdown.yearly[year]) {
                     return null;
                 }
-                
+
                 var yearData = scope.raceTypeBreakdown.yearly[year];
                 var bestTime = null;
                 var lookupMap = createResultLookupMap(allResultsData);
-                
-                Object.keys(yearData).forEach(function(category) {
+
+                Object.keys(yearData).forEach(function (category) {
                     var raceTypeData = yearData[category];
                     if (raceTypeData.results && raceTypeData.results.length > 0) {
-                        raceTypeData.results.forEach(function(result) {
+                        raceTypeData.results.forEach(function (result) {
                             if (result.race && result.race.racetype && result.race.racetype._id === raceTypeId) {
                                 if (!isResultRemoved(result, allResultsData, lookupMap)) {
                                     var timeInCentiseconds = parseFloat(result.time);
@@ -626,23 +626,23 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         });
                     }
                 });
-                
+
                 return bestTime;
             }
-            
+
             function getAllResultsForRaceType(raceTypeId) {
                 if (!scope.raceTypeBreakdown || !scope.raceTypeBreakdown.yearly) {
                     return [];
                 }
-                
+
                 var allResults = [];
-                
-                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function(year) {
+
+                Object.keys(scope.raceTypeBreakdown.yearly).forEach(function (year) {
                     var yearData = scope.raceTypeBreakdown.yearly[year];
-                    Object.keys(yearData).forEach(function(category) {
+                    Object.keys(yearData).forEach(function (category) {
                         var raceTypeData = yearData[category];
                         if (raceTypeData.results && raceTypeData.results.length > 0) {
-                            raceTypeData.results.forEach(function(result) {
+                            raceTypeData.results.forEach(function (result) {
                                 if (result.race && result.race.racetype && result.race.racetype._id === raceTypeId) {
                                     var timeInCentiseconds = parseFloat(result.time);
                                     if (timeInCentiseconds && timeInCentiseconds > 0) {
@@ -658,28 +658,28 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         }
                     });
                 });
-                
+
                 // Sort by date (oldest to newest)
-                return allResults.sort(function(a, b) {
+                return allResults.sort(function (a, b) {
                     return a.date - b.date;
                 });
             }
-            
 
-            
+
+
             function getMaxAgeGradeForYearAndRaceType(year, raceTypeId, allResultsData) {
                 if (!scope.raceTypeBreakdown || !scope.raceTypeBreakdown.yearly || !scope.raceTypeBreakdown.yearly[year]) {
                     return null;
                 }
-                
+
                 var yearData = scope.raceTypeBreakdown.yearly[year];
                 var maxAgeGrade = null;
                 var lookupMap = createResultLookupMap(allResultsData);
-                
-                Object.keys(yearData).forEach(function(category) {
+
+                Object.keys(yearData).forEach(function (category) {
                     var raceTypeData = yearData[category];
                     if (raceTypeData.results && raceTypeData.results.length > 0) {
-                        raceTypeData.results.forEach(function(result) {
+                        raceTypeData.results.forEach(function (result) {
                             if (result.race && result.race.racetype && result.race.racetype._id === raceTypeId) {
                                 if (!isResultRemoved(result, allResultsData, lookupMap)) {
                                     var ageGrade = parseFloat(result.agegrade);
@@ -693,92 +693,92 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                         });
                     }
                 });
-                
+
                 return maxAgeGrade;
             }
-            
 
-            
 
-            
+
+
+
             function formatTime(centiseconds) {
                 if (!centiseconds || centiseconds <= 0) {
                     return 'No data';
                 }
-                
+
                 // Convert centiseconds to seconds
                 var totalSeconds = Math.floor(centiseconds / TIME_CONSTANTS.CENTISECONDS_PER_SECOND);
                 var hours = Math.floor(totalSeconds / TIME_CONSTANTS.SECONDS_PER_HOUR);
                 var minutes = Math.floor((totalSeconds % TIME_CONSTANTS.SECONDS_PER_HOUR) / TIME_CONSTANTS.SECONDS_PER_MINUTE);
                 var secs = totalSeconds % TIME_CONSTANTS.SECONDS_PER_MINUTE;
-                
+
                 if (hours > 0) {
                     return hours + ':' + (minutes < 10 ? '0' : '') + minutes + ':' + (secs < 10 ? '0' : '') + secs;
                 } else {
                     return minutes + ':' + (secs < 10 ? '0' : '') + secs;
                 }
             }
-            
-            scope.updateChart = function() {
+
+            scope.updateChart = function () {
                 if (scope.selectedRaceType && scope.selectedRaceType._id) {
                     // Clear removed points when switching race types or modes
                     scope.removedPoints.clear();
-                    $timeout(function() {
+                    $timeout(function () {
                         initializeChart();
                     }, 100);
                 }
             };
-            
-            scope.reloadChart = function() {
+
+            scope.reloadChart = function () {
                 if (scope.selectedRaceType && scope.selectedRaceType._id) {
                     // Clear removed points and reload chart
                     scope.removedPoints.clear();
-                    $timeout(function() {
+                    $timeout(function () {
                         initializeChart();
                     }, 100);
                 }
             };
-            
-            scope.onRaceTypeSelect = function(item, model) {
+
+            scope.onRaceTypeSelect = function (item, model) {
                 scope.selectedRaceType = item;
                 scope.updateChart();
             };
-            
-            
-            
-            scope.getRaceTypeClass = function(s){
-                if (s !== undefined){
-                    return s.replace(/ /g, '')+'-col';
+
+
+
+            scope.getRaceTypeClass = function (s) {
+                if (s !== undefined) {
+                    return s.replace(/ /g, '') + '-col';
                 }
             };
-            
 
-            
+
+
             // Watch for changes in the data
-            scope.$watch('raceTypeBreakdown', function(newVal, oldVal) {
+            scope.$watch('raceTypeBreakdown', function (newVal, oldVal) {
                 if (newVal && newVal.yearly && newVal !== oldVal) {
                     scope.availableRaceTypes = getAvailableRaceTypes();
                     if (scope.availableRaceTypes.length > 0 && !scope.selectedRaceType) {
                         // Find the race type with the most results
-                        var raceTypeWithMostResults = scope.availableRaceTypes.reduce(function(prev, current) {
+                        var raceTypeWithMostResults = scope.availableRaceTypes.reduce(function (prev, current) {
                             return (prev.totalResults > current.totalResults) ? prev : current;
                         });
                         scope.selectedRaceType = raceTypeWithMostResults;
                         scope.removedPoints.clear(); // Clear removed points for new race type
-                        $timeout(function() {
+                        $timeout(function () {
                             initializeChart();
                         }, 100);
                     }
                 }
             }, true);
-            
+
             // Initialize chart when directive is ready
-            $timeout(function() {
+            $timeout(function () {
                 if (scope.raceTypeBreakdown && scope.raceTypeBreakdown.yearly) {
                     scope.availableRaceTypes = getAvailableRaceTypes();
                     if (scope.availableRaceTypes.length > 0) {
                         // Find the race type with the most results
-                        var raceTypeWithMostResults = scope.availableRaceTypes.reduce(function(prev, current) {
+                        var raceTypeWithMostResults = scope.availableRaceTypes.reduce(function (prev, current) {
                             return (prev.totalResults > current.totalResults) ? prev : current;
                         });
                         scope.selectedRaceType = raceTypeWithMostResults;
@@ -786,9 +786,9 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
                     }
                 }
             }, 200);
-            
+
             // Clean up chart when directive is destroyed
-            scope.$on('$destroy', function() {
+            scope.$on('$destroy', function () {
                 if (chart) {
                     chart.destroy();
                 }
@@ -797,7 +797,91 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
     };
 }]);
 
-angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function($timeout) {
+angular.module('mcrrcApp').directive('parkrunYearlyChart', ['$timeout', function ($timeout) {
+    return {
+        restrict: 'E',
+        scope: {
+            data: '=',
+            onBarClick: '&'
+        },
+        template: '<div style="position: relative; height: 250px;"><canvas></canvas></div>',
+        link: function (scope, element) {
+            var chart = null;
+
+            function renderChart() {
+                if (!scope.data || scope.data.length === 0) return;
+
+                var canvas = element.find('canvas')[0];
+                var ctx = canvas.getContext('2d');
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                var labels = scope.data.map(function (d) { return d.year; });
+                var counts = scope.data.map(function (d) { return d.count; });
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Parkruns Attended',
+                            data: counts,
+                            backgroundColor: '#00ceae',
+                            borderColor: '#00ceae',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: function (event, elements) {
+                            if (elements.length > 0 && scope.onBarClick) {
+                                var index = elements[0].index;
+                                var year = labels[index];
+                                scope.$apply(function () {
+                                    scope.onBarClick({ year: year });
+                                });
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return context.parsed.y + ' parkruns';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            scope.$watchCollection('data', function (newVal) {
+                if (newVal && newVal.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$on('$destroy', function () {
+                if (chart) chart.destroy();
+            });
+        }
+    };
+}]);
+
+angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function ($timeout) {
     return {
         restrict: 'E',
         scope: {
@@ -807,7 +891,7 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
             colors: '='
         },
         template: '<div style="position: relative; height: 300px;"><canvas></canvas></div>',
-        link: function(scope, element, attrs) {
+        link: function (scope, element, attrs) {
             var chart = null;
             var canvas = element.find('canvas')[0];
 
@@ -857,7 +941,7 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                 ];
 
                 // Only add ties dataset if there are any
-                var hasTies = ties.some(function(t) { return t > 0; });
+                var hasTies = ties.some(function (t) { return t > 0; });
                 if (hasTies) {
                     datasets.push({
                         label: 'Ties',
@@ -870,7 +954,7 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                 // Custom plugin to draw bar labels and 50% line
                 var barLabelsPlugin = {
                     id: 'h2hBarLabels',
-                    afterDraw: function(chartInstance) {
+                    afterDraw: function (chartInstance) {
                         var ctx = chartInstance.ctx;
                         ctx.save();
                         ctx.font = 'bold 12px Arial';
@@ -882,9 +966,9 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                         var textHeight = 14; // approximate height of the label
                         var safeZone = textHeight / 2 + 3; // half text height + padding
 
-                        chartInstance.data.datasets.forEach(function(dataset, dsIndex) {
+                        chartInstance.data.datasets.forEach(function (dataset, dsIndex) {
                             var meta = chartInstance.getDatasetMeta(dsIndex);
-                            meta.data.forEach(function(bar, index) {
+                            meta.data.forEach(function (bar, index) {
                                 var raw = dataset._rawData[index];
                                 if (raw > 0) {
                                     var barHeight = bar.height;
@@ -935,7 +1019,7 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: function(context) {
+                                    label: function (context) {
                                         var raw = context.dataset._rawData[context.dataIndex];
                                         var pct = context.parsed.y.toFixed(0);
                                         return context.dataset.label + ': ' + raw + ' (' + pct + '%)';
@@ -952,7 +1036,7 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                                 min: 0,
                                 max: 100,
                                 ticks: {
-                                    callback: function(value) {
+                                    callback: function (value) {
                                         return value + '%';
                                     }
                                 }
@@ -962,15 +1046,15 @@ angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function
                 });
             }
 
-            scope.$watch('data', function(newVal) {
+            scope.$watch('data', function (newVal) {
                 if (newVal) {
-                    $timeout(function() {
+                    $timeout(function () {
                         buildChart();
                     }, 100);
                 }
             });
 
-            scope.$on('$destroy', function() {
+            scope.$on('$destroy', function () {
                 if (chart) {
                     chart.destroy();
                 }

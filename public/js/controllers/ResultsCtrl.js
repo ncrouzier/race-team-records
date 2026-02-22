@@ -1170,6 +1170,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                     $scope.filters.dateFrom = new Date(searchParams.year, 0, 1); // January 1st
                     $scope.filters.dateTo = new Date(searchParams.year, 11, 31); // December 31st
                 }
+                if (searchParams.query) {
+                    $scope.searchQuery = searchParams.query;
+                }
                 
                 // Show advanced filters panel since we're using advanced search
                 $scope.filterPanelExpanded = true;

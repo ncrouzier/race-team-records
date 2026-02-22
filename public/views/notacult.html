@@ -1,0 +1,439 @@
+<style>
+    /* ===== parkrun-style overrides for #notacult page ===== */
+    .parkrun-page {
+        background-color: #f2f2f2;
+        font-family: 'Montserrat', sans-serif;
+        padding-bottom: 40px;
+    }
+
+    /* Hero banner */
+    .parkrun-hero {
+        background-color: #2b233d;
+        padding: 40px 20px 30px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .parkrun-hero h1 {
+        color: #ffffff;
+        font-size: 42px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        margin: 0 0 8px;
+    }
+
+    .parkrun-hero p {
+        color: #00ceae;
+        font-size: 16px;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* Summary stat boxes */
+    .parkrun-stat-box {
+        background: #ffffff;
+        border-radius: 4px;
+        padding: 20px 10px;
+        text-align: center;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .parkrun-stat-box h2 {
+        color: #2b233d;
+        font-size: 36px;
+        font-weight: 700;
+        margin: 0 0 6px;
+    }
+
+    .parkrun-stat-box p {
+        color: #666;
+        font-size: 13px;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .parkrun-stat-box p i {
+        color: #00ceae;
+        margin-right: 4px;
+    }
+
+    /* Panels */
+    .parkrun-card {
+        background: #ffffff;
+        border-radius: 4px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .parkrun-card-header {
+        background-color: #2b233d;
+        padding: 14px 18px;
+    }
+
+    .parkrun-card-header h4 {
+        color: #ffffff;
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .parkrun-card-header h4 i {
+        color: #00ceae;
+        margin-right: 6px;
+    }
+
+    .parkrun-card-header small {
+        color: #a095b8;
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+    }
+
+    /* List rows */
+    .parkrun-list-item {
+        padding: 12px 18px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .parkrun-list-item:last-child {
+        border-bottom: none;
+    }
+
+    .parkrun-list-item:hover {
+        background-color: #f7f7f7;
+    }
+
+    .parkrun-pos {
+        color: #2b233d;
+        font-size: 20px;
+        font-weight: 700;
+        /* min-width: 32px; */
+        display: inline-block;
+    }
+
+    .parkrun-list-item .text-right {
+        color: #2b233d;
+        font-weight: 600;
+    }
+
+    .parkrun-list-item a {
+        color: #2b233d;
+    }
+
+    .parkrun-list-item a:hover {
+        color: #00ceae;
+        text-decoration: none;
+    }
+
+    .parkrun-list-item small {
+        color: #888;
+        font-size: 12px;
+    }
+
+    /* Gender filter buttons */
+    .parkrun-card-header .btn-group .btn {
+        border: none;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 10px;
+    }
+
+    .parkrun-card-header .btn-group .btn-primary {
+        background-color: #00ceae;
+        color: #ffffff;
+    }
+
+    .parkrun-card-header .btn-group .btn-default {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+    }
+
+    .parkrun-card-header .btn-group .btn-default:hover {
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Spinner */
+    .parkrun-spinner {
+        padding: 60px;
+        text-align: center;
+        color: #2b233d;
+    }
+
+    .parkrun-spinner i {
+        color: #00ceae;
+    }
+
+    /* Chart panel body */
+    .parkrun-chart-body {
+        padding: 20px;
+        background: #ffffff;
+    }
+</style>
+
+<div class="jumbotron parkrun-page">
+
+    <!-- Hero Banner -->
+    <div class="parkrun-hero">
+        <h1>#notacult</h1>
+        <p>Stats for our members lost in denial</p>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div ng-if="loading" class="parkrun-spinner">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <p style="margin-top: 15px;">Counting Saturday mornings...</p>
+    </div>
+
+    <!-- No Data Message -->
+    <div ng-if="!loading && teamStats.totalParkruns === 0" class="parkrun-spinner">
+        <i class="fa fa-tree fa-3x" style="color: #00ceae;"></i>
+        <h3 style="color: #2b233d; margin-top: 12px;">No parkrun data found.</h3>
+        <p style="color: #888;">The cult hasn't started yet.</p>
+    </div>
+
+    <div ng-if="!loading && teamStats.totalParkruns > 0">
+        <!-- Team Summary -->
+        <div class="row" style="margin-bottom: 10px;">
+            <div class="col-sm-3">
+                <div class="parkrun-stat-box">
+                    <h2>{{teamStats.totalParkruns}}</h2>
+                    <p><i class="fa fa-flag-checkered"></i> Total parkruns</p>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="parkrun-stat-box">
+                    <h2>{{teamStats.uniqueParkrunners}}</h2>
+                    <p><i class="fa fa-users"></i> Parkrunners</p>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="parkrun-stat-box">
+                    <h2>{{teamStats.totalMiles}}</h2>
+                    <p><i class="fa fa-road"></i> Miles</p>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="parkrun-stat-box">
+                    <h2>{{teamStats.uniqueLocations}}</h2>
+                    <p><i class="fa fa-map-marker"></i> Locations</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: Most Active Cult Members + Most Popular parkruns -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-heart"></i> Most Active Cult Members</h4>
+                        <small>Most parkruns completed</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="member in theDedicated track by member._id"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline"
+                                            ng-click="goToMember(member)">{{member.firstname}}
+                                            {{member.lastname}}</a></strong>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    <a class="hoverhandandunderline"
+                                        ng-click="goToResultsWithQuery({members:[{username: member.username}], query: 'parkrun'})"
+                                        title="View parkrun results for {{member.firstname}} {{member.lastname}}">{{member.count}}
+                                        parkruns</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-map-marker"></i> Most Popular parkruns</h4>
+                        <small>Team's favourite locations</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="parkrun in popularParkruns track by parkrun.name"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline"
+                                            ng-click="goToResultsWithQuery({query: parkrun.name})">{{parkrun.name}}</a></strong>
+                                </div>
+                                <div class="col-sm-6 text-right"><a class="hoverhandandunderline"
+                                        ng-click="goToResultsWithQuery({query: parkrun.name})">
+                                        {{parkrun.count}} visits ({{parkrun.uniqueMembers}} members)</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Saturday Morning Roll Call + parkrun Tourists -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-group"></i> Saturday Morning Roll Call</h4>
+                        <small>Biggest team parkrun gatherings</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="run in biggestGroupRuns track by run.race._id"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline resultEvent"
+                                            ng-click="showRaceModal(run.race)">{{run.racename}}</a></strong>
+                                    <br><small>{{run.date | date:'M/d/yyyy':'UTC'}} </small>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{run.count}} members
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-plane"></i> parkrun Tourists</h4>
+                        <small>Most unique parkrun locations</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="member in parkrunTourists track by member._id"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline"
+                                            ng-click="goToMember(member)">{{member.firstname}}
+                                            {{member.lastname}}</a></strong>
+                                    <br><small>
+                                        <a ng-repeat="flag in member.flags" class="hoverhand" style="margin-right: 3px;"
+                                            ng-click="goToResultsWithQuery({members:[{username: member.username}], query: flag.location})"
+                                            title="{{flag.location}}">
+                                            <img ng-if="flag.type === 'state'" ng-src="{{flag.src}}"
+                                                alt="{{flag.location}}"
+                                                style="width: 16px; height: auto; vertical-align: middle; border: 1px solid #ccc;">
+                                            <span ng-if="flag.type === 'country'">{{flag.emoji}}</span>
+                                        </a>
+                                    </small>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.locationCount}} locations
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Speed Demons + Most Wins -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-trophy"></i> Most Wins / Not a Race</h4>
+                        <small>Overall or gender wins at parkruns</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="member in mostWins track by member._id"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline"
+                                            ng-click="goToMember(member)">{{member.firstname}}
+                                            {{member.lastname}}</a></strong>
+                                    <br><small>{{member.count}} parkruns</small>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    <a class="hoverhandandunderline"
+                                        ng-click="goToResultsWithQuery({members:[{username: member.username, ranking: '1'}], query: 'parkrun'})"
+                                        title="View all wins for {{member.firstname}} {{member.lastname}}">{{member.wins}}
+                                        wins</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4 style="display: flex; align-items: center; justify-content: space-between; margin: 0;">
+                            <span><i class="fa fa-bolt"></i> Speed Demons</span>
+                            <span class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm"
+                                    ng-class="{'btn-primary': !speedDemonGenderFilter, 'btn-default': speedDemonGenderFilter}"
+                                    ng-click="setSpeedDemonGenderFilter(null)">
+                                    <i class="fa fa-users"></i> All
+                                </button>
+                                <button type="button" class="btn btn-sm"
+                                    ng-class="{'btn-primary': speedDemonGenderFilter === 'Female', 'btn-default': speedDemonGenderFilter !== 'Female'}"
+                                    ng-click="setSpeedDemonGenderFilter('Female')">
+                                    <i class="fa fa-venus"></i> Women
+                                </button>
+                            </span>
+                        </h4>
+                        <small>Fastest parkrun personal bests</small>
+                    </div>
+                    <div>
+                        <div class="parkrun-list-item" ng-repeat="member in speedDemons track by member._id"
+                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                            <div class="row">
+                                <div class="col-sm-8">
+                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <strong><a class="hoverhandandunderline"
+                                            ng-click="goToMember(member)">{{member.firstname}}
+                                            {{member.lastname}}</a></strong>
+                                    <br><small><span class="hoverhandandunderline resultEvent"
+                                            ng-click="showRaceModal(member.bestTimeRace)">{{member.bestTimeRace.racename}}</span>
+                                        - {{member.bestTimeRace.racedate | date:'M/d/yyyy':'UTC'}}</small>
+                                </div>
+                                <div class="col-sm-4 text-right">
+                                    {{member.bestTime | secondsToTimeString}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Row 4: parkruns Attended by Year -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="parkrun-card">
+                    <div class="parkrun-card-header">
+                        <h4><i class="fa fa-line-chart"></i> parkruns Attended by Year</h4>
+                    </div>
+                    <div class="parkrun-chart-body">
+                        <parkrun-yearly-chart data="yearlyBreakdown"
+                            on-bar-click="goToResultsWithQuery({query: 'parkrun', year: year})"></parkrun-yearly-chart>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

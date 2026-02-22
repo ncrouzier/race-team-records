@@ -286,6 +286,11 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/instagram');
                 gtag('event', 'page_view');
             }
+        })
+        .state('/notacult', {
+            url: "/notacult",
+            templateUrl: "views/notacult.html",
+            controller: 'ParkrunStatsController'
         });
 
 });

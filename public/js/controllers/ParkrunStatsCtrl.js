@@ -6,6 +6,8 @@ angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'Resu
     $scope.speedDemons = [];
     $scope.parkrunTourists = [];
     $scope.popularParkruns = [];
+    $scope.popularParkrunsPage = 1;
+    $scope.popularParkrunsPageSize = 10;
     $scope.yearlyBreakdown = [];
     $scope.biggestGroupRuns = [];
     $scope.mostWins = [];
@@ -54,7 +56,16 @@ angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'Resu
                 locationSet[locationName] = true;
 
                 if (!parkrunLocationMap[locationName]) {
-                    parkrunLocationMap[locationName] = { count: 0, members: {} };
+                    var locFlag = null;
+                    var locFlagLabel = '';
+                    if (race.location && race.location.state && race.location.country === 'USA') {
+                        locFlag = { type: 'state', src: UtilsService.getStateFlag(race.location.state) };
+                        locFlagLabel = race.location.state;
+                    } else if (race.location && race.location.country) {
+                        locFlag = { type: 'country', emoji: UtilsService.getCountryFlag(race.location.country) };
+                        locFlagLabel = race.location.country;
+                    }
+                    parkrunLocationMap[locationName] = { count: 0, members: {}, flag: locFlag, flagLabel: locFlagLabel };
                 }
 
                 var raceMembers = [];
@@ -180,16 +191,20 @@ angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'Resu
                 return b.locationCount - a.locationCount;
             }).slice(0, 10);
 
-            // Most Popular Parkruns
+            // Most Popular Parkruns (all locations, paginated in the view)
             $scope.popularParkruns = Object.keys(parkrunLocationMap).map(function(name) {
                 return {
                     name: name,
                     count: parkrunLocationMap[name].count,
-                    uniqueMembers: Object.keys(parkrunLocationMap[name].members).length
+                    uniqueMembers: Object.keys(parkrunLocationMap[name].members).length,
+                    flag: parkrunLocationMap[name].flag,
+                    flagLabel: parkrunLocationMap[name].flagLabel
                 };
             }).sort(function(a, b) {
                 return b.count - a.count;
-            }).slice(0, 10);
+            });
+            $scope.popularParkrunsTotalPages = Math.ceil($scope.popularParkruns.length / $scope.popularParkrunsPageSize);
+            $scope.popularParkrunsPage = 1;
 
             // Yearly breakdown - count parkrun races attended, not individual results
             var years = Object.keys(raceYearMap).map(Number).sort(function(a, b) { return a - b; });
@@ -223,6 +238,13 @@ angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'Resu
             $scope.speedDemons = allSpeedDemons.filter(function(m) {
                 return m.sex === gender;
             }).slice(0, 10);
+        }
+    };
+
+    // Popular Parkruns pagination
+    $scope.popularParkrunsGoToPage = function(page) {
+        if (page >= 1 && page <= $scope.popularParkrunsTotalPages) {
+            $scope.popularParkrunsPage = page;
         }
     };
 

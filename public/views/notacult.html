@@ -205,19 +205,19 @@
             <div class="col-sm-3">
                 <div class="parkrun-stat-box">
                     <h2>{{teamStats.totalParkruns}}</h2>
-                    <p><i class="fa fa-flag-checkered"></i> Total parkruns</p>
+                    <p><i class="fa fa-flag-checkered"></i> Total parkrun results</p>
                 </div>
             </div>
             <div class="col-sm-3">
                 <div class="parkrun-stat-box">
                     <h2>{{teamStats.uniqueParkrunners}}</h2>
-                    <p><i class="fa fa-users"></i> Parkrunners</p>
+                    <p><i class="fa fa-users"></i> Cult members</p>
                 </div>
             </div>
             <div class="col-sm-3">
                 <div class="parkrun-stat-box">
                     <h2>{{teamStats.totalMiles}}</h2>
-                    <p><i class="fa fa-road"></i> Miles</p>
+                    <p><i class="fa fa-road"></i> Miles raced</p>
                 </div>
             </div>
             <div class="col-sm-3">
@@ -264,20 +264,42 @@
                         <small>Team's favourite locations</small>
                     </div>
                     <div>
-                        <div class="parkrun-list-item" ng-repeat="parkrun in popularParkruns track by parkrun.name"
+                        <div class="parkrun-list-item"
+                            ng-repeat="parkrun in popularParkruns | limitTo:popularParkrunsPageSize:(popularParkrunsPage - 1) * popularParkrunsPageSize track by parkrun.name"
                             ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                             <div class="row">
                                 <div class="col-sm-6">
-                                    <span class="parkrun-pos">{{$index + 1}}.</span>
+                                    <span class="parkrun-pos">{{$index + 1 + (popularParkrunsPage - 1) *
+                                        popularParkrunsPageSize}}.</span>
                                     <strong><a class="hoverhandandunderline"
                                             ng-click="goToResultsWithQuery({query: parkrun.name})">{{parkrun.name}}</a></strong>
+                                    <img ng-if="parkrun.flag.type === 'state'" ng-src="{{parkrun.flag.src}}"
+                                        alt="{{parkrun.flagLabel}}" title="{{parkrun.flagLabel}}"
+                                        style="width: 16px; height: auto; vertical-align: middle; margin-left: 4px; border: 1px solid #ccc;">
+                                    <span ng-if="parkrun.flag.type === 'country'" title="{{parkrun.flagLabel}}"
+                                        style="margin-left: 4px;">{{parkrun.flag.emoji}}</span>
                                 </div>
                                 <div class="col-sm-6 text-right"><a class="hoverhandandunderline"
                                         ng-click="goToResultsWithQuery({query: parkrun.name})">
-                                        {{parkrun.count}} visits ({{parkrun.uniqueMembers}} members)</a>
+                                        {{parkrun.count}} results ({{parkrun.uniqueMembers}} members)</a>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    <div ng-if="popularParkrunsTotalPages > 1"
+                        style="padding: 10px 18px; text-align: center; border-top: 1px solid #f0f0f0;">
+                        <button class="btn btn-sm btn-default" ng-disabled="popularParkrunsPage === 1"
+                            ng-click="popularParkrunsGoToPage(popularParkrunsPage - 1)">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <span style="margin: 0 10px; color: #2b233d; font-weight: 600;">
+                            Page {{popularParkrunsPage}} of {{popularParkrunsTotalPages}}
+                        </span>
+                        <button class="btn btn-sm btn-default"
+                            ng-disabled="popularParkrunsPage === popularParkrunsTotalPages"
+                            ng-click="popularParkrunsGoToPage(popularParkrunsPage + 1)">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -345,7 +367,7 @@
             </div>
         </div>
 
-        <!-- Row 3: Speed Demons + Most Wins -->
+        <!-- Row 3: Speed Cultists + Most Wins -->
         <div class="row">
             <div class="col-md-6">
                 <div class="parkrun-card">
@@ -379,7 +401,7 @@
                 <div class="parkrun-card">
                     <div class="parkrun-card-header">
                         <h4 style="display: flex; align-items: center; justify-content: space-between; margin: 0;">
-                            <span><i class="fa fa-bolt"></i> Speed Demons</span>
+                            <span><i class="fa fa-bolt"></i> Speed Cultists</span>
                             <span class="btn-group" role="group">
                                 <button type="button" class="btn btn-sm"
                                     ng-class="{'btn-primary': !speedDemonGenderFilter, 'btn-default': speedDemonGenderFilter}"

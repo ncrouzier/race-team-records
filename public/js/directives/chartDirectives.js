@@ -836,6 +836,9 @@ angular.module('mcrrcApp').directive('parkrunYearlyChart', ['$timeout', function
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        onHover: function (event, elements) {
+                            event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                        },
                         onClick: function (event, elements) {
                             if (elements.length > 0 && scope.onBarClick) {
                                 var index = elements[0].index;

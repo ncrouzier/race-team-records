@@ -60,7 +60,7 @@
                         <span> had the following achievements at </span>
                         <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>:
                         <ul>
-                            <li ng-repeat="a in ach.achievements">
+                            <li ng-repeat="a in ach.achievements" ng-if="a.name.toLowerCase() !== 'birthday'">
                                 <span ng-switch="a.name.toLowerCase()">
                                     <span ng-switch-when="pb">
                                         Achieved a new {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of

@@ -11,6 +11,8 @@
 	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 	<!-- <script src="https://unpkg.com/dexie@4.0.5/dist/dexie.js"></script> -->
 	<!-- Use EJS variable for script path -->
 	<script src="<%= scriptPath %>"></script>
@@ -44,7 +46,11 @@
 				</div> -->
 			<div class="">
 				<div class="logo-stats">
-					<span ng-cloak ng-if="milesRaced"><a ui-sref="/stats">{{milesRaced}} miles raced in
+					<span tooltip-append-to-body="true" tooltip-placement="bottom"
+						uib-tooltip-html="'View Progress Map'" ng-cloak ng-if="milesRaced"><a
+							ui-sref="/stats/progress-map"><img src="/images/route.svg"
+								style="width: 1em; height: 1em; vertical-align: top;">
+							{{milesRaced}} miles raced in
 							{{currentYear}}!</a></span>
 				</div>
 			</div>

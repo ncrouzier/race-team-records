@@ -41,7 +41,7 @@
                                 <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
                                         {{::ach.result.members[0].firstname}}
                                         {{::ach.result.members[0].lastname}}</a></b> ran their
-                                {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race at <b><a
+                                {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race with the team at <b><a
                                         class="hoverhand" ng-click="showRaceModal(ach.race)">
                                         {{::ach.race.racename}}</a></b>!
                             </span>
@@ -67,7 +67,7 @@
                                         <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
                                     </span>
                                     <span ng-switch-when="racecount">
-                                        Ran their {{a.value.raceCount | addOrdinalSuffix}} race.
+                                        Ran their {{a.value.raceCount | addOrdinalSuffix}} race with the team.
                                     </span>
                                     <span ng-switch-when="agegrade">
                                         Achieved a new age grade performance best of {{::a.value.agegrade}}%.

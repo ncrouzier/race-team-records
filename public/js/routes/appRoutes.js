@@ -211,6 +211,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/stats/members.html');
                 gtag('event', 'page_view');
             }
+        }).state('/stats/progress-map', {
+            url: "/stats/progress-map",
+            templateUrl: "views/stats/progress-map.html",
+            controller: 'ProgressMapController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/stats/progress-map.html');
+                gtag('event', 'page_view');
+            }
         }).state('/tools', {
             url: "/tools",
             redirectTo: '/tools/agegrade'

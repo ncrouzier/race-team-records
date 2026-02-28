@@ -1,0 +1,316 @@
+<div class="jumbotron">
+    <!-- Navigation -->
+    <ul class="nav nav-tabs">
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/team">Team Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/us-map">US Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/world-map">World Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/progress-map">Progress Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
+            <a ui-sref="/stats/requirements">Team Requirements</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
+            <a ui-sref="/stats/participation">Participation Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
+            <a ui-sref="/stats/members">Team Members Stats</a>
+        </li>
+    </ul>
+
+    <!-- Header -->
+    <div class="row text-left" style="margin-top: 15px;">
+        <div class="col-sm-6">
+            <h2><img src="/images/route.svg" style="width: 1em; height: 1em; vertical-align: top;"> Team Progress Map
+            </h2>
+            <div class="text-muted">{{filter.route.description}}</div>
+        </div>
+        <div class="col-sm-6 text-right" style="margin-top: 20px;">
+            <div style="display: inline-block; vertical-align: top; margin-left: 10px;">
+                <ui-select ng-model="filter.year" ng-change="onYearChange()" theme="select2" style="min-width: 100px;">
+                    <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
+                    <ui-select-choices repeat="year in yearsList">
+                        <div ng-bind="year"></div>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+            <div style="display: inline-block; vertical-align: top;">
+                <ui-select ng-model="filter.route" ng-change="onRouteChange()" theme="select2"
+                    style="min-width: 200px;">
+                    <ui-select-match placeholder="Select a route">{{$select.selected.name}}</ui-select-match>
+                    <ui-select-choices repeat="route in routesList">
+                        <div ng-bind="route.name"></div>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div ng-if="loading" class="text-center" style="padding: 50px;">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <p style="margin-top: 15px;">Loading progress map...</p>
+    </div>
+
+    <!-- Content when loaded -->
+    <div ng-if="!loading">
+        <!-- Summary stats row -->
+        <div class="row" style="margin-bottom: 15px;">
+            <div class="col-sm-3 col-xs-6">
+                <div class="panel panel-default text-center">
+                    <div class="panel-body">
+                        <h3 style="margin: 5px 0;">{{totalTeamMiles | number:0}}</h3>
+                        <p class="text-muted" style="margin: 0;">Team Miles</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3 col-xs-6">
+                <div class="panel panel-default text-center">
+                    <div class="panel-body">
+                        <h3 style="margin: 5px 0;">{{totalRouteMiles | number:0}}</h3>
+                        <p class="text-muted" style="margin: 0;">Route Miles</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 col-xs-4">
+                <div class="panel panel-default text-center">
+                    <div class="panel-body">
+                        <h3 style="margin: 5px 0;">{{progressPercent}}%</h3>
+                        <p class="text-muted" style="margin: 0;">Progress</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 col-xs-4">
+                <div class="panel panel-default text-center">
+                    <div class="panel-body">
+                        <h3 style="margin: 5px 0;">{{(waypoints | filter:{reached:true, isStart:false}).length}} /
+                            {{waypoints.length - 1}}
+                        </h3>
+                        <p class="text-muted" style="margin: 0;">Waypoints Reached</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 col-xs-4">
+                <div class="panel panel-default text-center">
+                    <div class="panel-body">
+                        <h3 style="margin: 5px 0;">{{segments.length}}</h3>
+                        <p class="text-muted" style="margin: 0;">Races</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress" style="height: 25px; margin-bottom: 15px;">
+            <div class="progress-bar" role="progressbar" ng-style="{'width': progressPercent + '%'}"
+                ng-class="{'progress-bar-success': reachedEnd, 'progress-bar-info': !reachedEnd}">
+                {{progressPercent}}%
+            </div>
+        </div>
+
+        <!-- Next waypoint info box -->
+        <div ng-if="nextWaypoint && !reachedEnd" class="alert alert-info"
+            style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <i class="fa fa-compass"></i>
+                <strong>Next waypoint:</strong> {{nextWaypoint.name}}
+                &mdash; {{nextWaypoint.milesRemaining | number:0}} miles to go
+            </div>
+            <button class="btn btn-sm btn-info" ng-click="centerOnWaypoint(nextWaypoint)">
+                <i class="fa fa-crosshairs"></i> Show on map
+            </button>
+        </div>
+
+        <!-- Reached end celebration -->
+        <div ng-if="reachedEnd" class="alert alert-success text-center">
+            <strong><i class="fa fa-trophy"></i> The team has visited all waypoints!</strong>
+            Total team miles ({{totalTeamMiles | number:0}}) exceeded the route distance
+            ({{totalRouteMiles | number:0}} miles).
+        </div>
+
+        <!-- Empty state -->
+        <div ng-if="segments.length === 0" class="alert alert-info text-center">
+            No races found for {{filter.year}}. Select a different year.
+        </div>
+
+        <!-- Map mode toggle -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"
+            ng-if="segments.length > 0">
+            <div class="btn-group">
+                <button class="btn btn-sm" ng-class="view.mapMode === 'races' ? 'btn-primary' : 'btn-default'"
+                    ng-click="onMapModeChange('races')">
+                    <i class="fa fa-list"></i> Race Segments
+                </button>
+                <button class="btn btn-sm" ng-class="view.mapMode === 'members' ? 'btn-primary' : 'btn-default'"
+                    ng-click="onMapModeChange('members')">
+                    <i class="fa fa-users"></i> Member Segments
+                </button>
+            </div>
+            <button class="btn btn-sm btn-default" ng-click="resetMap()">
+                <i class="fa fa-arrows-alt"></i> Reset Map
+            </button>
+        </div>
+
+        <!-- The map -->
+        <div progress-map route-data="routeData" segments="segments" waypoints="waypoints"
+            total-team-miles="totalTeamMiles" total-route-miles="totalRouteMiles" reached-end="reachedEnd"
+            on-race-click="showRaceModal(race)" style="min-height: 500px; margin-bottom: 20px;">
+        </div>
+
+        <!-- Table toggle buttons -->
+        <div class="btn-group" style="margin-bottom: 15px;" ng-if="segments.length > 0 || waypoints.length > 0">
+            <button class="btn btn-sm" ng-class="view.table === 'segments' ? 'btn-primary' : 'btn-default'"
+                ng-click="view.table = 'segments'">
+                <i class="fa" ng-class="view.mapMode === 'members' ? 'fa-users' : 'fa-list'"></i>
+                {{view.mapMode === 'members' ? 'Member Segments' : 'Race Segments'}}
+            </button>
+            <button class="btn btn-sm" ng-class="view.table === 'waypoints' ? 'btn-primary' : 'btn-default'"
+                ng-click="view.table = 'waypoints'">
+                <i class="fa fa-map-marker"></i> Waypoints
+            </button>
+        </div>
+
+        <!-- Segments table (race mode or member mode) -->
+        <div class="panel panel-default" ng-if="view.table === 'segments' && segments.length > 0">
+            <div class="panel-heading">
+                <h4 style="margin: 0;" ng-if="view.mapMode !== 'members'"><i class="fa fa-list"></i> Race Segments</h4>
+                <h4 style="margin: 0;" ng-if="view.mapMode === 'members'"><i class="fa fa-users"></i> Member Segments
+                </h4>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <!-- Race segments -->
+                <table ng-if="view.mapMode !== 'members'" class="table table-striped table-condensed"
+                    style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">#</th>
+                            <th style="width: 20px;"></th>
+                            <th>Race</th>
+                            <th>Date</th>
+                            <th>Distance</th>
+                            <th>Members</th>
+                            <th>Team Miles</th>
+                            <th>Cumulative</th>
+                            <th>Waypoints Reached</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="seg in segments | orderBy:'-raceDate' track by $index">
+                            <td>{{segments.length - $index}}</td>
+                            <td><a class="hoverhandandunderline" ng-click="centerOnSegment(seg)"><span
+                                        style="display:inline-block;width:14px;height:14px;background:{{seg.color}};border-radius:2px;"></span></a>
+                            </td>
+                            <td>
+                                <a class="hoverhandandunderline resultEvent" ng-click="showRaceModal(seg.race)">
+                                    {{seg.raceName}}
+                                </a>
+                            </td>
+                            <td>{{seg.raceDate | date:'M/d/yyyy':'UTC'}}</td>
+                            <td>{{seg.raceTypeName}}</td>
+                            <td>{{seg.memberCount}}</td>
+                            <td>{{seg.teamMiles | number:1}}</td>
+                            <td>{{seg.endMile | number:1}}</td>
+                            <td>
+                                <span ng-if="seg.waypointsReached.length > 0">
+                                    <i class="fa fa-map-marker" style="color: #28a745;"></i>
+                                    <span ng-repeat="wp in seg.waypointsReached"><a class="hoverhandandunderline"
+                                            ng-click="centerOnWaypoint(wp)">{{wp.name}}</a>{{$last ? '' :
+                                        ', '}}</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <!-- Member segments -->
+                <table ng-if="view.mapMode === 'members'" class="table table-striped table-condensed"
+                    style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">#</th>
+                            <th style="width: 20px;"></th>
+                            <th>Member</th>
+                            <th>Races</th>
+                            <th>Miles</th>
+                            <th>% of Total</th>
+                            <th>Cumulative</th>
+                            <th>Waypoints Reached</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="seg in memberSegments track by $index">
+                            <td>{{$index + 1}}</td>
+                            <td><a class="hoverhandandunderline" ng-click="centerOnSegment(seg)"><span
+                                        style="display:inline-block;width:14px;height:14px;background:{{seg.color}};border-radius:2px;"></span></a>
+                            </td>
+                            <td>
+                                <a ui-sref="/members/member/bio({ member: seg.username })">
+                                    {{seg.memberName}}
+                                </a>
+                            </td>
+                            <td>{{seg.raceCount}}</td>
+                            <td>{{seg.teamMiles | number:1}}</td>
+                            <td>{{seg.teamMiles / totalTeamMiles * 100 | number:1}}%</td>
+                            <td>{{seg.endMile | number:1}}</td>
+                            <td>
+                                <span ng-if="seg.waypointsReached.length > 0">
+                                    <i class="fa fa-map-marker" style="color: #28a745;"></i>
+                                    <span ng-repeat="wp in seg.waypointsReached"><a class="hoverhandandunderline"
+                                            ng-click="centerOnWaypoint(wp)">{{wp.name}}</a>{{$last ? '' :
+                                        ', '}}</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Waypoints table -->
+        <div class="panel panel-default" ng-if="view.table === 'waypoints' && waypoints.length > 0">
+            <div class="panel-heading">
+                <h4 style="margin: 0;"><i class="fa fa-map-marker"></i> Route Waypoints</h4>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <table class="table table-striped table-condensed" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">#</th>
+                            <th>Waypoint</th>
+                            <th>Mile Marker</th>
+                            <th>Status</th>
+                            <th>Miles Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="wp in waypoints track by wp.order" ng-class="{'success': wp.reached}"
+                            ng-if="!wp.isStart">
+                            <td>{{wp.order}}</td>
+                            <td>
+                                <a class="hoverhandandunderline" ng-click="centerOnWaypoint(wp)">{{wp.name}}</a>
+                            </td>
+                            <td>{{wp.mileMarker | number:0}}</td>
+                            <td>
+                                <span ng-if="wp.reached" class="label label-success">
+                                    <i class="fa fa-check"></i> Reached
+                                </span>
+                                <span ng-if="!wp.reached" class="label label-default">
+                                    Not yet
+                                </span>
+                            </td>
+                            <td>
+                                <span ng-if="!wp.reached">{{wp.milesRemaining | number:0}} mi</span>
+                                <span ng-if="wp.reached" class="text-muted">-</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

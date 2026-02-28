@@ -8140,8 +8140,6 @@ footer {
 }
 .progress-bar {
   width: 100%;
-  height: 15px;
-  background-color: #ccc;
   overflow: hidden;
   position: relative;
 }

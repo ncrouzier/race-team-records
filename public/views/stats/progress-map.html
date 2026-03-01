@@ -100,7 +100,8 @@
                 <div class="panel panel-default text-center">
                     <div class="panel-body">
                         <h3 style="margin: 5px 0;">{{segments.length}}</h3>
-                        <p class="text-muted" style="margin: 0;">{{view.mapMode === 'members' ? 'Members' : 'Races'}}</p>
+                        <p class="text-muted" style="margin: 0;">{{view.mapMode === 'members' ? 'Members' : 'Races'}}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -284,6 +285,7 @@
                             <th>Waypoint</th>
                             <th>Mile Marker</th>
                             <th>Status</th>
+                            <th>{{view.mapMode === 'members' ? 'Reached By' : 'Reached On'}}</th>
                             <th>Miles Remaining</th>
                         </tr>
                     </thead>
@@ -302,6 +304,18 @@
                                 <span ng-if="!wp.reached" class="label label-default">
                                     Not yet
                                 </span>
+                            </td>
+                            <td>
+                                <span ng-if="wp.reached && view.mapMode !== 'members' && wp.reachedByRaceDate"
+                                    tooltip-append-to-body="true" tooltip-placement="right"
+                                    uib-tooltip-html="wp.reachedByRaceName" class="hoverhand">
+                                    {{wp.reachedByRaceDate | date:'M/d/yyyy':'UTC'}}
+                                </span>
+                                <span ng-if="wp.reached && view.mapMode === 'members' && wp.reachedByMemberName">
+                                    <a
+                                        ui-sref="/members/member/bio({ member: wp.reachedByMemberUsername })">{{wp.reachedByMemberName}}</a>
+                                </span>
+                                <span ng-if="!wp.reached" class="text-muted">-</span>
                             </td>
                             <td>
                                 <span ng-if="!wp.reached">{{wp.milesRemaining | number:0}} mi</span>

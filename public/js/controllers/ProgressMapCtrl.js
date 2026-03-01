@@ -378,6 +378,19 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                 $scope.progressPercent = maxRouteMiles > 0 ? Math.min(100, (cumulativeMile / maxRouteMiles * 100)).toFixed(1) : '0.0';
                 $scope.reachedEnd = cumulativeMile >= maxRouteMiles;
 
+                // Build reverse lookup: which race segment reached each waypoint
+                var waypointReachedByRace = {};
+                segments.forEach(function (seg) {
+                    if (seg.waypointsReached) {
+                        seg.waypointsReached.forEach(function (wp) {
+                            waypointReachedByRace[wp.name] = {
+                                raceName: seg.raceName,
+                                raceDate: seg.raceDate
+                            };
+                        });
+                    }
+                });
+
                 // Determine which waypoints have been passed (excluding start at index 0)
                 $scope.nextWaypoint = null;
                 if (routeData.orderedStops) {
@@ -385,7 +398,7 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                         var isStart = (idx === 0);
                         var reached = isStart || cumulativeMile >= stop.mileMarker;
                         var milesRemaining = reached ? 0 : stop.mileMarker - cumulativeMile;
-                        return {
+                        var wp = {
                             order: idx,
                             name: stop.name,
                             lat: stop.lat,
@@ -395,6 +408,12 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                             isStart: isStart,
                             milesRemaining: milesRemaining
                         };
+                        // Attach race info for the race that reached this waypoint
+                        if (reached && !isStart && waypointReachedByRace[stop.name]) {
+                            wp.reachedByRaceName = waypointReachedByRace[stop.name].raceName;
+                            wp.reachedByRaceDate = waypointReachedByRace[stop.name].raceDate;
+                        }
+                        return wp;
                     });
                     // Find the next unreached waypoint (skip start)
                     for (var n = 1; n < $scope.waypoints.length; n++) {
@@ -465,6 +484,26 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                         raceTypeName: member.raceCount + ' races',
                         race: null
                     };
+                });
+
+                // Build reverse lookup: which member segment reached each waypoint
+                var waypointReachedByMember = {};
+                $scope.memberSegments.forEach(function (seg) {
+                    if (seg.waypointsReached) {
+                        seg.waypointsReached.forEach(function (wp) {
+                            waypointReachedByMember[wp.name] = {
+                                memberName: seg.memberName,
+                                username: seg.username
+                            };
+                        });
+                    }
+                });
+                // Attach member info to waypoints
+                $scope.waypoints.forEach(function (wp) {
+                    if (wp.reached && !wp.isStart && waypointReachedByMember[wp.name]) {
+                        wp.reachedByMemberName = waypointReachedByMember[wp.name].memberName;
+                        wp.reachedByMemberUsername = waypointReachedByMember[wp.name].username;
+                    }
                 });
 
                 // Set active segments based on current map mode

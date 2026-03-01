@@ -244,7 +244,14 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                 });
 
                 filteredRaces.sort(function (a, b) {
-                    return new Date(a.racedate) - new Date(b.racedate);
+                    var d = new Date(a.racedate) - new Date(b.racedate);
+                    if (d !== 0) return d;
+                    // Stable tiebreaker: sort by race name, then by _id
+                    var nameA = (a.racename || '').toLowerCase();
+                    var nameB = (b.racename || '').toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return (a._id || '') < (b._id || '') ? -1 : 1;
                 });
 
                 var colors = [
@@ -365,6 +372,7 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                 });
 
                 $scope.raceSegments = segments;
+                $scope.raceSegmentsReversed = segments.slice().reverse();
                 $scope.totalTeamMiles = cumulativeMile;
                 $scope.totalRouteMiles = maxRouteMiles;
                 $scope.progressPercent = maxRouteMiles > 0 ? Math.min(100, (cumulativeMile / maxRouteMiles * 100)).toFixed(1) : '0.0';
@@ -403,7 +411,14 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                     m.percent = cumulativeMile > 0 ? (m.totalMiles / cumulativeMile * 100) : 0;
                     return m;
                 }).sort(function (a, b) {
-                    return b.totalMiles - a.totalMiles;
+                    var d = b.totalMiles - a.totalMiles;
+                    if (d !== 0) return d;
+                    // Stable tiebreaker: sort by name, then by _id
+                    var nameA = ((a.firstname || '') + ' ' + (a.lastname || '')).toLowerCase();
+                    var nameB = ((b.firstname || '') + ' ' + (b.lastname || '')).toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return (a._id || '') < (b._id || '') ? -1 : 1;
                 });
 
                 // Build member-based segments for the map

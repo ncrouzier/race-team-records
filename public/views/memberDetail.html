@@ -6,7 +6,8 @@
                 <!-- Achievement icons -->
                 <div ng-if="currentMember.achievements.length > 0"
                     style="position: absolute; top: 10px; right: 15px; z-index: 1; background:#006484; border-radius: 6px; padding: 4px 6px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span class="hoverhand" ng-repeat="ach in currentMember.achievements" title="{{ach.text}}"
+                    <span class="hoverhand" ng-repeat="ach in currentMember.achievements" tooltip-append-to-body="true"
+                        tooltip-placement="top" uib-tooltip-html="ach.text"
                         style="display: inline-flex; align-items: center;">
                         <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
                             style="height: 32px; vertical-align: top;">

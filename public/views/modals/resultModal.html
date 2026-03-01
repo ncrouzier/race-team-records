@@ -2,7 +2,7 @@
   <h3 ng-show="!editmode" class="modal-title">Add Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
   <h3 ng-show="editmode" class="modal-title">Edit Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
 </div>
-<div class="modal-body">
+<div class="modal-body" style="overflow: visible;">
   <form name="formresult">
  
     <div class="row">
@@ -293,8 +293,41 @@
           </div>                   
         </div>
         <div class="col-md-9">
-          <label class="text-left">JSON custom options:</label>
-          <textarea class="form-control" rows="3" name="customOptions" ng-model="customOptionsString"></textarea>
+          <label class="text-left">Custom Options:</label>
+          <i class="hoverhand fa fa-plus" style="color:#03C03C;" ng-click="addResultCustomOption()" title="Add custom option"></i>
+          <div ng-repeat="option in formData.customOptions track by $index" style="border: 1px solid #ddd; border-radius: 4px; padding: 8px; margin-bottom: 6px; background: #f9f9f9;">
+            <div class="row">
+              <div class="col-sm-3">
+                <label style="font-weight: normal; font-size: 12px;">Name:</label>
+                <div class="input-group">
+                  <div class="input-group-btn" uib-dropdown>
+                    <button type="button" class="btn btn-default btn-sm" uib-dropdown-toggle>
+                      <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" uib-dropdown-menu>
+                      <li><a ng-click="setResultCustomOptionPreset($index, 'resultIcon')">resultIcon</a></li>
+                      <li><a ng-click="setResultCustomOptionPreset($index, 'resultText')">resultText</a></li>
+                    </ul>
+                  </div>
+                  <input type="text" class="form-control input-sm" ng-model="option.name" placeholder="e.g. resultIcon">
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <label style="font-weight: normal; font-size: 12px;">Text (tooltip):</label>
+                <input type="text" class="form-control input-sm" ng-model="option.text" placeholder="Tooltip text">
+              </div>
+              <div class="col-sm-4">
+                <label style="font-weight: normal; font-size: 12px;">Value:</label>
+                <input type="text" class="form-control input-sm" ng-model="option.valueString" ng-change="updateResultCustomOptionValue($index)" placeholder="Value (URL or text)">
+              </div>
+              <div class="col-sm-1">
+                <label style="font-weight: normal; font-size: 12px;">&nbsp;</label>
+                <button type="button" class="btn btn-danger btn-sm" ng-click="removeResultCustomOption($index)" title="Remove" style="display:block;">
+                  <i class="fa fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="modal-result-footer">

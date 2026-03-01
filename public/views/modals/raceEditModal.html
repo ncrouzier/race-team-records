@@ -9,7 +9,7 @@
     </div>
 </div>
 
-<div class="modal-body modern-modal-body">
+<div class="modal-body modern-modal-body" style="overflow: visible;">
     <form name="raceEditForm">
         <div class="row">
             <div class="col-md-4">
@@ -290,7 +290,18 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Option Name</label>
-                                <input type="text" class="form-control" ng-model="option.name">
+                                <div class="input-group">
+                                    <div class="input-group-btn" uib-dropdown>
+                                        <button type="button" class="btn btn-default" uib-dropdown-toggle>
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu" uib-dropdown-menu>
+                                            <li><a ng-click="setRaceCustomOptionPreset($index, 'raceIcon')">raceIcon</a></li>
+                                            <li><a ng-click="setRaceCustomOptionPreset($index, 'raceText')">raceText</a></li>
+                                        </ul>
+                                    </div>
+                                    <input type="text" class="form-control" ng-model="option.name">
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-3">

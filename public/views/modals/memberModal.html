@@ -2,7 +2,7 @@
     <h3 ng-show="editmode" class="modal-title">Edit Member</h3>
     <h3 ng-show="!editmode" class="modal-title">Add Member</h3>
 </div>
-<div class="modal-body">
+<div class="modal-body" style="overflow: visible;">
     <form name="formmember">
         <div class="row">
             <div class="col-sm-6">
@@ -109,6 +109,55 @@
                     </div>
                     <div class="col-sm-2">
                     <img src="{{formData.pictureLink}}" style="max-width:50px;max-height:50px;margin-top:20px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Achievements -->
+        <div class="row" style="margin-top: 10px;">
+            <div class="col-sm-12">
+                <label class="text-left">Achievements:</label>
+                <i class="hoverhand fa fa-plus" style="color:#03C03C;" ng-click="addAchievement()"
+                    title="Add achievement"></i>
+                <div ng-repeat="ach in formData.achievements track by $index"
+                    style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 8px; background: #f9f9f9;">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Name:</label>
+                            <div class="input-group">
+                                <div class="input-group-btn" uib-dropdown>
+                                    <button type="button" class="btn btn-default" uib-dropdown-toggle>
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" uib-dropdown-menu>
+                                        <li><a ng-click="setAchievementPreset($index, 'ROY')">ROY</a></li>
+                                        <li><a ng-click="setAchievementPreset($index, 'MUTROY')">MUTROY</a></li>
+                                    </ul>
+                                </div>
+                                <input type="text" class="form-control" ng-model="ach.name"
+                                    placeholder="e.g. ROY, MUTROY, or custom">
+                            </div>
+                        </div>
+                        <div class="col-sm-5">
+                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Text:</label>
+                            <input type="text" class="form-control" ng-model="ach.text"
+                                placeholder="Description text">
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Icon
+                                Value:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" ng-model="ach.valueJson"
+                                    placeholder='{"icon":"fa-trophy"}'>
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                        ng-click="removeAchievement($index)" title="Remove achievement"
+                                        style="height: 34px;">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

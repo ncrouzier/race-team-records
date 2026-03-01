@@ -369,6 +369,7 @@ module.exports = async function(app, qs, passport, async, _) {
             pictureLink: req.body.pictureLink,
             memberStatus: req.body.memberStatus,
             membershipDates: req.body.membershipDates,
+            achievements: req.body.achievements,
             done: false
         });
         //will be 0 but initialize the fields
@@ -406,6 +407,7 @@ module.exports = async function(app, qs, passport, async, _) {
             member.pictureLink = req.body.pictureLink;
             member.memberStatus = req.body.memberStatus;
             member.membershipDates = req.body.membershipDates;
+            member.achievements = req.body.achievements;
 
             // Save the updated member
             await member.save();

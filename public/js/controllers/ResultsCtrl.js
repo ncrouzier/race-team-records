@@ -1282,9 +1282,24 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           }
 
           if (result.customOptions !== undefined){
-            $scope.customOptionsString = JSON.stringify(deleteIdFromSubdocs(result.customOptions,true));
+            $scope.formData.customOptions = deleteIdFromSubdocs(result.customOptions, true);
+            // Convert values to valueString for display
+            $scope.formData.customOptions.forEach(function(option) {
+              if (option.value !== undefined && option.value !== null) {
+                if (typeof option.value === 'object') {
+                  option.valueString = JSON.stringify(option.value);
+                } else {
+                  option.valueString = String(option.value);
+                }
+              } else {
+                option.valueString = '';
+              }
+            });
           }
-          if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+          if (!$scope.formData.customOptions) {
+            $scope.formData.customOptions = [];
+          }
+          if ($scope.formData.isRecordEligible === false || $scope.formData.customOptions.length > 0){
             $scope.showMore = true;
           }
 
@@ -1313,7 +1328,8 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             });
         }     
         $scope.time = {};
-        if ($scope.formData.isRecordEligible === false || ($scope.customOptionsString !== undefined && $scope.customOptionsString !== "[]")){
+        $scope.formData.customOptions = [];
+        if ($scope.formData.isRecordEligible === false){
             $scope.showMore = true;
         }
       }else{
@@ -1357,6 +1373,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.members[0] = {};
         $scope.nbOfMembers = 1;
         $scope.time = {};
+        $scope.formData.customOptions = [];
 
 
         //Multisports
@@ -1435,8 +1452,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }
 
 
-        if ($scope.customOptionsString !== undefined){
-          $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
+        if ($scope.formData.customOptions) {
+          $scope.formData.customOptions.forEach(function(option, index) {
+            $scope.updateResultCustomOptionValue(index);
+          });
         }
 
         $scope.isSaving = true;
@@ -1512,8 +1531,10 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             $scope.formData.race.racetype.miles = 0;
         }
 
-        if ($scope.customOptionsString !== undefined){
-          $scope.formData.customOptions = JSON.parse($scope.customOptionsString);
+        if ($scope.formData.customOptions) {
+          $scope.formData.customOptions.forEach(function(option, index) {
+            $scope.updateResultCustomOptionValue(index);
+          });
         }
 
         $scope.isSaving = true;
@@ -1522,6 +1543,51 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }).finally(function() {
             $scope.isSaving = false;
         });
+    };
+
+    // Custom options management for result modal
+    $scope.addResultCustomOption = function() {
+        if (!$scope.formData.customOptions) {
+            $scope.formData.customOptions = [];
+        }
+        $scope.formData.customOptions.push({
+            name: '',
+            text: '',
+            value: '',
+            valueString: ''
+        });
+    };
+
+    $scope.removeResultCustomOption = function(index) {
+        $scope.formData.customOptions.splice(index, 1);
+    };
+
+    $scope.updateResultCustomOptionValue = function(index) {
+        var option = $scope.formData.customOptions[index];
+        try {
+            if (option.valueString && option.valueString.trim()) {
+                option.value = JSON.parse(option.valueString);
+            } else {
+                option.value = '';
+            }
+        } catch (e) {
+            option.value = option.valueString;
+        }
+    };
+
+    $scope.setResultCustomOptionPreset = function(index, presetName) {
+        var option = $scope.formData.customOptions[index];
+        var PRESETS = {
+            'resultIcon': { name: 'resultIcon', text: '', value: '' },
+            'resultText': { name: 'resultText', text: '', value: '' }
+        };
+        var preset = PRESETS[presetName];
+        if (preset) {
+            option.name = preset.name;
+            option.text = preset.text;
+            option.value = preset.value;
+            option.valueString = typeof preset.value === 'object' ? JSON.stringify(preset.value) : String(preset.value);
+        }
     };
 
     $scope.cancel = function() {
@@ -1971,7 +2037,7 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.autoconvert = true;
     $scope.opened = false;
     $scope.achievementsCollapsed = true;
-    $scope.customOptionsCollapsed = true;
+    $scope.customOptionsCollapsed = !($scope.race.customOptions && $scope.race.customOptions.length > 0);
     $scope.resultsCollapsed = true;
     
     // Load racetypes
@@ -2130,6 +2196,21 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         } catch (e) {
             // Keep the string value if JSON parsing fails
             option.value = option.valueString;
+        }
+    };
+
+    $scope.setRaceCustomOptionPreset = function(index, presetName) {
+        var option = $scope.race.customOptions[index];
+        var PRESETS = {
+            'raceIcon': { name: 'raceIcon', text: '', value: '' },
+            'raceText': { name: 'raceText', text: '', value: '' }
+        };
+        var preset = PRESETS[presetName];
+        if (preset) {
+            option.name = preset.name;
+            option.text = preset.text;
+            option.value = preset.value;
+            option.valueString = typeof preset.value === 'object' ? JSON.stringify(preset.value) : String(preset.value);
         }
     };
     

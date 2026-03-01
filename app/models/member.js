@@ -19,6 +19,11 @@ var memberSchema = mongoose.Schema({
         end: Date
     }],
     pictureLink: String,
+    achievements: [{
+        name: String,
+        text: String,
+        value: mongoose.Schema.Types.Mixed
+    }],
     personalBests: [{
         result: resultSchema,
         name: String,

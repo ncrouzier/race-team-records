@@ -2006,6 +2006,11 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
         });
     }
     
+    // Ensure photoLinks array exists
+    if (!$scope.race.photoLinks) {
+        $scope.race.photoLinks = [];
+    }
+
     // Ensure location object exists
     if (!$scope.race.location) {
         $scope.race.location = { country: '', state: '' };
@@ -2038,6 +2043,7 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.opened = false;
     $scope.achievementsCollapsed = true;
     $scope.customOptionsCollapsed = !($scope.race.customOptions && $scope.race.customOptions.length > 0);
+    $scope.photoLinksCollapsed = !($scope.race.photoLinks && $scope.race.photoLinks.length > 0);
     $scope.resultsCollapsed = true;
     
     // Load racetypes
@@ -2225,7 +2231,19 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.toggleCustomOptions = function() {
         $scope.customOptionsCollapsed = !$scope.customOptionsCollapsed;
     };
-    
+
+    $scope.togglePhotoLinks = function() {
+        $scope.photoLinksCollapsed = !$scope.photoLinksCollapsed;
+    };
+
+    $scope.addPhotoLink = function() {
+        $scope.race.photoLinks.push({ url: '', label: '' });
+    };
+
+    $scope.removePhotoLink = function(index) {
+        $scope.race.photoLinks.splice(index, 1);
+    };
+
     $scope.toggleResults = function() {
         $scope.resultsCollapsed = !$scope.resultsCollapsed;
     };

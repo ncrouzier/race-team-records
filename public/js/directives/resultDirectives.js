@@ -131,5 +131,41 @@ app.directive('raceIcon', function() {
         '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
         '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
         '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
-    };    
+    };
+});
+
+app.directive('racePhotos', function() {
+    return {
+        scope: {
+            race: '=race'
+        },
+        link: function($scope) {
+            $scope.photoLinks = [];
+            if ($scope.race && $scope.race.photoLinks) {
+                $scope.photoLinks = $scope.race.photoLinks.filter(function(link) {
+                    return link.url && link.url.trim() !== '';
+                });
+            }
+        },
+        template:
+            '<span ng-if="photoLinks.length === 1" style="margin-left: 5px;">' +
+                '<a ng-href="{{photoLinks[0].url}}" target="_blank" class="hoverhand" ' +
+                    'uib-tooltip="{{photoLinks[0].label || \'Photos\'}}" tooltip-append-to-body="true" tooltip-placement="top">' +
+                    '<i class="fa fa-camera race-photos-icon"></i>' +
+                '</a>' +
+            '</span>' +
+            '<span ng-if="photoLinks.length > 1" style="margin-left: 5px; display: inline-block;" uib-dropdown>' +
+                '<a class="hoverhand" uib-dropdown-toggle uib-tooltip="Race Photos" tooltip-append-to-body="true" tooltip-placement="top">' +
+                    '<i class="fa fa-camera race-photos-icon"></i>' +
+                    '<span class="caret" style="margin-left: 2px;"></span>' +
+                '</a>' +
+                '<ul class="dropdown-menu" uib-dropdown-menu>' +
+                    '<li ng-repeat="link in photoLinks track by $index">' +
+                        '<a ng-href="{{link.url}}" target="_blank">' +
+                            '<i class="fa fa-external-link"></i> {{link.label || \'Photos\' }}' +
+                        '</a>' +
+                    '</li>' +
+                '</ul>' +
+            '</span>'
+    };
 });

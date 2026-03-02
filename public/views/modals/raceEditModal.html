@@ -271,6 +271,52 @@
             </div>
         </div>
 
+        <!-- Photo Links Section -->
+        <div class="photo-links-section">
+            <div class="section-header collapsible" ng-click="togglePhotoLinks()">
+                <h4>
+                    <i class="fa" ng-class="photoLinksCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                    Photo Links <span class="item-count">({{race.photoLinks ? race.photoLinks.length : 0}})</span>
+                </h4>
+                <button type="button" class="btn btn-sm btn-success"
+                    ng-click="addPhotoLink(); $event.stopPropagation()">
+                    <i class="fa fa-plus"></i> Add Photo Link
+                </button>
+            </div>
+            <div class="photo-links-content" ng-show="!photoLinksCollapsed">
+                <div class="photo-link-item" ng-repeat="link in race.photoLinks track by $index">
+                    <div class="row">
+                        <div class="col-md-7">
+                            <div class="form-group">
+                                <label>URL</label>
+                                <input type="text" class="form-control" ng-model="link.url"
+                                    placeholder="https://photos.example.com/album">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Label</label>
+                                <input type="text" class="form-control" ng-model="link.label"
+                                    placeholder="Photos">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-danger"
+                                    ng-click="removePhotoLink($index)">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="no-items-message" ng-if="!race.photoLinks || race.photoLinks.length === 0">
+                    <p class="text-muted">No photo links added yet. Click "Add Photo Link" to get started.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Custom Options Section -->
         <div class="custom-options-section">
             <div class="section-header collapsible" ng-click="toggleCustomOptions()">

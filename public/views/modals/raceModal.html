@@ -3,6 +3,7 @@
         <div class="race-title-section">
             <h3 class="race-title">{{raceinfo.racename}}</h3>
             <race-icon race="raceinfo"></race-icon>
+            <race-photos race="raceinfo"></race-photos>
             <button ng-if="user && user.role === 'admin'" 
                     class="btn btn-sm btn-outline-primary edit-race-btn" 
                     ng-click="editRace()"

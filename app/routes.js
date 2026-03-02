@@ -1595,6 +1595,7 @@ module.exports = async function(app, qs, passport, async, _) {
                 raceToUse.location = req.body.location;
                 raceToUse.achievements = req.body.achievements || [];
                 raceToUse.customOptions = req.body.customOptions || [];
+                raceToUse.photoLinks = req.body.photoLinks || [];
                 await raceToUse.save();
             }
 

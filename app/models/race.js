@@ -30,6 +30,10 @@ var raceSchema = mongoose.Schema({
         width:String,
         height:String
       }],
+    photoLinks:[{
+        url: String,
+        label: String
+      }],
     createdAt: Date,
     updatedAt: Date
  

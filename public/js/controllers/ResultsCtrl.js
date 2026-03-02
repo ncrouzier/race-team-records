@@ -2238,6 +2238,7 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
 
     $scope.addPhotoLink = function() {
         $scope.race.photoLinks.push({ url: '', label: '' });
+        $scope.photoLinksCollapsed = false;
     };
 
     $scope.removePhotoLink = function(index) {

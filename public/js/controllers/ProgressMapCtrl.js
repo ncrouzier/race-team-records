@@ -280,9 +280,10 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                 var memberMap = {}; // keyed by member _id
 
                 filteredRaces.forEach(function (race, index) {
-                    if (!race.racetype || race.isMultisport) return;
+                    if (!race.racetype) return;
 
                     var isVariable = race.racetype.isVariable;
+                    var isMultisport = race.isMultisport;
                     var raceMiles = 0;
                     var memberCount = 0;
 
@@ -290,15 +291,21 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                         race.results.forEach(function (result) {
                             if (result.members && result.members.length > 0) {
                                 memberCount += result.members.length;
-                                var milesPerMember = 0;
-                                if (isVariable) {
-                                    milesPerMember = result.miles || 0;
-                                    raceMiles += milesPerMember * result.members.length;
+                                var milesPerResult = 0;
+                                if (result.legs && result.legs.length > 0) {
+                                    result.legs.forEach(function(leg) {
+                                        if (leg.legType === 'run' && leg.miles) {
+                                            milesPerResult += leg.miles;
+                                        }
+                                    });
+                                } else if (isVariable) {
+                                    milesPerResult = result.miles || 0;
                                 } else if (race.racetype.miles) {
-                                    milesPerMember = race.racetype.miles;
-                                    raceMiles += milesPerMember * result.members.length;
+                                    milesPerResult = race.racetype.miles;
                                 }
-                                if (milesPerMember > 0) {
+                                raceMiles += milesPerResult;
+                                if (milesPerResult > 0) {
+                                    var milesPerMember = milesPerResult / result.members.length;
                                     result.members.forEach(function (member) {
                                         if (!memberMap[member._id]) {
                                             memberMap[member._id] = {
@@ -344,9 +351,19 @@ angular.module('mcrrcApp').controller('ProgressMapController',
                         );
                     }
 
-                    // Distance display: show miles for variable, type name for fixed
+                    // Distance display
                     var distanceDisplay = race.racetype.name || '';
-                    if (isVariable) {
+                    if (isMultisport) {
+                        var runLegs = [];
+                        if (race.results && race.results[0] && race.results[0].legs) {
+                            race.results[0].legs.forEach(function(leg) {
+                                if (leg.legType === 'run' && leg.distanceName) {
+                                    runLegs.push(leg.distanceName);
+                                }
+                            });
+                        }
+                        distanceDisplay = runLegs.length === 1 ? runLegs[0] : (runLegs.length > 1 ? 'various' : 'run');
+                    } else if (isVariable) {
                         var perMemberMiles = race.results && race.results[0] ? (race.results[0].miles || 0) : 0;
                         distanceDisplay = perMemberMiles.toFixed(1) + ' mi';
                         if (race.distanceName) {

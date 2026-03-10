@@ -458,8 +458,14 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 stats.raceTypeBreakdown[raceTypeName] = (stats.raceTypeBreakdown[raceTypeName] || 0) + 1;
             }
 
-            // Track miles
-            if (!result.race.isMultisport && result.race.racetype && result.race.racetype.miles) {
+            // Track miles - if result has legs, only count running legs
+            if (result.legs && result.legs.length > 0) {
+                result.legs.forEach(function(leg) {
+                    if (leg.legType === 'run' && leg.miles) {
+                        stats.totalMiles += leg.miles;
+                    }
+                });
+            } else if (result.race.racetype && result.race.racetype.miles) {
                 stats.totalMiles += result.race.racetype.miles;
             }
 

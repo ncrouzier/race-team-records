@@ -171,10 +171,22 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                             memberStats[memberId].parkrunRaces = (memberStats[memberId].parkrunRaces || 0) + 1;
                         }
 
-                        // Count miles (for non-multisport races)
-                        if (!race.isMultisport && race.racetype && race.racetype.miles) {
-                            memberStats[memberId].miles += race.racetype.miles;
-                            memberMiles[memberId] = (memberMiles[memberId] || 0) + race.racetype.miles;
+                        // Count miles - if result has legs, only count running legs
+                        var resultMiles = 0;
+                        if (result.legs && result.legs.length > 0) {
+                            result.legs.forEach(function(leg) {
+                                if (leg.legType === 'run' && leg.miles) {
+                                    resultMiles += leg.miles;
+                                }
+                            });
+                        } else if (race.racetype && race.racetype.isVariable && result.miles) {
+                            resultMiles = result.miles;
+                        } else if (race.racetype && race.racetype.miles) {
+                            resultMiles = race.racetype.miles;
+                        }
+                        if (resultMiles > 0) {
+                            memberStats[memberId].miles += resultMiles;
+                            memberMiles[memberId] = (memberMiles[memberId] || 0) + resultMiles;
                         }
 
                         // Count wins
@@ -341,8 +353,16 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                 race.results.forEach(function(result) {
                     totalResults++;
                     
-                    // Count miles (for non-multisport races)
-                    if (!race.isMultisport && race.racetype && race.racetype.miles) {
+                    // Count miles - if result has legs, only count running legs
+                    if (result.legs && result.legs.length > 0) {
+                        result.legs.forEach(function(leg) {
+                            if (leg.legType === 'run' && leg.miles) {
+                                totalMiles += leg.miles;
+                            }
+                        });
+                    } else if (race.racetype && race.racetype.isVariable && result.miles) {
+                        totalMiles += result.miles;
+                    } else if (race.racetype && race.racetype.miles) {
                         totalMiles += race.racetype.miles;
                     }
                     

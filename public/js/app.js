@@ -39,7 +39,7 @@ app.factory('MyCachingRestService', function(Restangular) {
 });
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', function($scope, AuthService, $state, ResultsService,MembersService,localStorageService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', 'StatsService', function($scope, AuthService, $state, ResultsService,MembersService,localStorageService, StatsService) {
     $scope.$state = $state;
 
     var navBackGround = ["navimg-2", "navimg-3","navimg-4","navimg-5","navimg-6","navimg-7","navimg-8" ];
@@ -55,18 +55,10 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'Auth
     $scope.getcr = navBackGroundCR[random];
 
 
-    var currentYear = new Date().getFullYear();
-    var fromDate = new Date(Date.UTC(currentYear, 0, 1)).getTime();
-    var toDate = new Date().getTime();
+    $scope.currentYear = new Date().getFullYear();
 
-    ResultsService.getMilesRaced({
-        "filters": {
-            "dateFrom": fromDate,
-            "dateTo": toDate
-        }
-    }).then(function(result) {
-        $scope.milesRaced = parseFloat(result.milesRaced).toFixed(2);
-        $scope.currentYear = new Date().getFullYear();
+    StatsService.getStats($scope.currentYear).then(function(stats) {
+        $scope.milesRaced = stats.basicStats.milesRaced;
     });
 
 

@@ -18,7 +18,7 @@
                             <th>Event Name</th>
                             <th>Job Date</th>
                             <th>Description</th>
-                            <th ng-if="user.role == 'admin'" style="width: 100px;">Actions</th>
+                            <th ng-if="user.role == 'admin'" style="width: 120px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -42,16 +42,13 @@
                             <td>{{job.eventName}}</td>
                             <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
                             <td>{{job.description}}</td>
-                            <td ng-if="user.role == 'admin'" class="text-center">
-                                <button class="btn btn-sm btn-outline-primary"
-                                    ng-click="retrieveVolunteerJobForEdit(job)" title="Edit volunteer job"
-                                    style="margin-right: 5px;">
-                                    <i class="fa fa-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" ng-click="removeVolunteerJob(job)"
-                                    title="Remove volunteer job">
-                                    <i class="fa fa-trash"></i>
-                                </button>
+                            <td ng-if="user.role == 'admin'" class="text-center" style="white-space: nowrap;">
+                                <i class="fa fa-pencil hoverhand" ng-click="retrieveVolunteerJobForEdit(job)"
+                                    title="Edit volunteer job" style="margin-right: 8px;"></i>
+                                <i class="fa fa-copy hoverhand" ng-click="duplicateVolunteerJob(job)"
+                                    title="Duplicate volunteer job" style="margin-right: 8px;"></i>
+                                <i class="fa fa-trash hoverhand" ng-click="removeVolunteerJob(job)"
+                                    title="Remove volunteer job"></i>
                             </td>
                         </tr>
                     </tbody>

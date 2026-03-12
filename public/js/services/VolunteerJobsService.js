@@ -37,6 +37,17 @@ angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular
             });
     };
 
+    // Batch create volunteer jobs
+    factory.createVolunteerJobsBatch = function(batchData) {
+        return Restangular.all('volunteerjobs').customPOST(batchData, 'batch').then(
+            function(response) {
+                return response;
+            },
+            function(res) {
+                console.log('Error: ' + res.status);
+            });
+    };
+
     // Edit volunteer job
     factory.editVolunteerJob = function(job) {
         return job.save().then(
@@ -60,35 +71,37 @@ angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular
     // =====================================
     // MODALS ================================
 
-    factory.showAddVolunteerJobModal = function(membersList) {
+    // Add volunteer jobs (supports multiple members)
+    factory.showAddVolunteerJobModal = function(membersList, prefillData) {
         var modalInstance = $uibModal.open({
-            templateUrl: 'views/modals/volunteerJobModal.html',
-            controller: 'VolunteerJobModalInstanceController',
+            templateUrl: 'views/modals/volunteerJobBatchModal.html',
+            controller: 'VolunteerJobAddModalInstanceController',
             size: 'lg',
             backdrop: 'static',
             resolve: {
-                job: function() {
-                    return null;
-                },
                 membersList: function() {
                     return membersList;
+                },
+                prefillData: function() {
+                    return prefillData || null;
                 }
             }
         });
 
-        return modalInstance.result.then(function(jobData) {
-            return factory.createVolunteerJob(jobData).then(function(response) {
-                return response.job;
+        return modalInstance.result.then(function(batchData) {
+            return factory.createVolunteerJobsBatch(batchData).then(function(response) {
+                return response.jobs;
             });
         }, function() {
             return null;
         });
     };
 
+    // Edit a single volunteer job
     factory.retrieveVolunteerJobForEdit = function(job, membersList) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/volunteerJobModal.html',
-            controller: 'VolunteerJobModalInstanceController',
+            controller: 'VolunteerJobEditModalInstanceController',
             size: 'lg',
             backdrop: 'static',
             resolve: {

@@ -682,6 +682,61 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // batch create volunteer jobs
+    app.post('/api/volunteerjobs/batch', service.isAdminLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const { eventName, jobDate, jobs } = req.body;
+
+            if (!eventName || !jobDate) {
+                return res.status(400).json({ error: 'Event name and job date are required' });
+            }
+            if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
+                return res.status(400).json({ error: 'Jobs array is required and must not be empty' });
+            }
+
+            const createdJobs = [];
+
+            for (const jobData of jobs) {
+                try {
+                    const member = await Member.findById(jobData.memberId);
+                    if (!member) {
+                        console.error('Member with ID ' + jobData.memberId + ' not found, skipping');
+                        continue;
+                    }
+
+                    const volunteerJob = await VolunteerJob.create({
+                        member: {
+                            _id: member._id,
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username,
+                            sex: member.sex,
+                            dateofbirth: member.dateofbirth
+                        },
+                        jobDate: jobDate,
+                        eventName: eventName,
+                        description: jobData.description
+                    });
+
+                    createdJobs.push(volunteerJob);
+                } catch (jobError) {
+                    console.error('Error creating volunteer job:', jobError);
+                }
+            }
+
+            await service.invalidateSystemInfoCache();
+            res.json({
+                success: true,
+                jobs: createdJobs,
+                createdCount: createdJobs.length,
+                totalRequested: jobs.length
+            });
+        } catch (err) {
+            res.status(500).json({ error: 'Failed to create batch volunteer jobs' });
+        }
+    });
+
     // update a volunteer job
     app.put('/api/volunteerjobs/:job_id', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");

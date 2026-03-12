@@ -41,11 +41,28 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // =====================================
     // CRUD OPERATIONS =====================
 
-    // Show add modal
+    // Show add modal (supports multiple members)
     $scope.showAddVolunteerJobModal = function() {
-        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function(job) {
-            if (job !== null) {
-                $scope.volunteerJobsList.push(job);
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function(jobs) {
+            if (jobs !== null && Array.isArray(jobs)) {
+                jobs.forEach(function(job) {
+                    $scope.volunteerJobsList.push(job);
+                });
+            }
+        });
+    };
+
+    // Duplicate a volunteer job (opens add modal pre-filled with event name and date)
+    $scope.duplicateVolunteerJob = function(job) {
+        var prefillData = {
+            eventName: job.eventName,
+            jobDate: job.jobDate
+        };
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList, prefillData).then(function(jobs) {
+            if (jobs !== null && Array.isArray(jobs)) {
+                jobs.forEach(function(j) {
+                    $scope.volunteerJobsList.push(j);
+                });
             }
         });
     };
@@ -75,37 +92,93 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
 }]);
 
 // =====================================
-// MODAL INSTANCE CONTROLLER ============
-angular.module('mcrrcApp.results').controller('VolunteerJobModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function($scope, $uibModalInstance, job, membersList) {
+// ADD MODAL INSTANCE CONTROLLER ========
+// Used for both "Add" and "Duplicate" - supports multiple member rows
+angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceController', ['$scope', '$uibModalInstance', 'membersList', 'prefillData', function($scope, $uibModalInstance, membersList, prefillData) {
 
     $scope.membersList = membersList;
-    $scope.editmode = false;
 
-    if (job) {
-        // Edit mode - copy the job data
-        $scope.formData = angular.copy(job);
-        $scope.editmode = true;
+    // Shared fields
+    $scope.formData = {
+        eventName: prefillData && prefillData.eventName ? prefillData.eventName : '',
+        jobDate: prefillData && prefillData.jobDate ? new Date(prefillData.jobDate) : new Date()
+    };
 
-        // Find the member object from membersList that matches the job's member
-        if (job.member && job.member._id) {
-            $scope.formData.member = membersList.find(function(m) {
-                return m._id === job.member._id;
-            }) || job.member;
+    // Dynamic rows
+    $scope.rows = [
+        { member: null, description: '' }
+    ];
+
+    // Date picker controls
+    $scope.opened = false;
+    $scope.open = function($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+
+    $scope.addRow = function() {
+        $scope.rows.push({ member: null, description: '' });
+    };
+
+    $scope.removeRow = function(index) {
+        if ($scope.rows.length > 1) {
+            $scope.rows.splice(index, 1);
         }
+    };
 
-        // Convert date string to Date object for datepicker
-        if ($scope.formData.jobDate) {
-            $scope.formData.jobDate = new Date($scope.formData.jobDate);
+    $scope.isFormValid = function() {
+        if (!$scope.formData.eventName || !$scope.formData.jobDate) {
+            return false;
         }
-    } else {
-        // Add mode - initialize with defaults
-        $scope.formData = {
-            jobDate: new Date(),
-            member: null,
-            eventName: '',
-            description: ''
+        for (var i = 0; i < $scope.rows.length; i++) {
+            if (!$scope.rows[i].member || !$scope.rows[i].description) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    $scope.saveBatch = function() {
+        var batchData = {
+            eventName: $scope.formData.eventName,
+            jobDate: $scope.formData.jobDate,
+            jobs: $scope.rows.map(function(row) {
+                return {
+                    memberId: row.member._id,
+                    description: row.description
+                };
+            })
         };
-        $scope.editmode = false;
+        $uibModalInstance.close(batchData);
+    };
+
+    $scope.cancel = function() {
+        $uibModalInstance.dismiss('cancel');
+    };
+
+}]);
+
+// =====================================
+// EDIT MODAL INSTANCE CONTROLLER =======
+// Used only for editing a single existing volunteer job
+angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function($scope, $uibModalInstance, job, membersList) {
+
+    $scope.membersList = membersList;
+
+    // Copy the job data
+    $scope.formData = angular.copy(job);
+
+    // Find the member object from membersList that matches the job's member
+    if (job.member && job.member._id) {
+        $scope.formData.member = membersList.find(function(m) {
+            return m._id === job.member._id;
+        }) || job.member;
+    }
+
+    // Convert date string to Date object for datepicker
+    if ($scope.formData.jobDate) {
+        $scope.formData.jobDate = new Date($scope.formData.jobDate);
     }
 
     // Date picker controls
@@ -116,18 +189,12 @@ angular.module('mcrrcApp.results').controller('VolunteerJobModalInstanceControll
         $scope.opened = true;
     };
 
-    $scope.addVolunteerJob = function() {
-        $uibModalInstance.close($scope.formData);
-    };
-
     $scope.editVolunteerJob = function() {
         // Update the original job object with new data
-        if (job) {
-            job.member = $scope.formData.member;
-            job.eventName = $scope.formData.eventName;
-            job.jobDate = $scope.formData.jobDate;
-            job.description = $scope.formData.description;
-        }
+        job.member = $scope.formData.member;
+        job.eventName = $scope.formData.eventName;
+        job.jobDate = $scope.formData.jobDate;
+        job.description = $scope.formData.description;
         $uibModalInstance.close(job);
     };
 

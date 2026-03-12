@@ -1,0 +1,97 @@
+<div class="modal-header">
+    <h3 class="modal-title">Add Volunteer Jobs</h3>
+</div>
+<div class="modal-body" style="overflow: visible;">
+    <form name="formBatchVolunteerJob">
+        <!-- Shared fields: Event Name and Job Date -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group"
+                    ng-class="{ 'has-error' : formBatchVolunteerJob.eventName.$invalid && !formBatchVolunteerJob.eventName.$pristine}">
+                    <label class="text-left">Event Name:</label>
+                    <input type="text" name="eventName" class="form-control input-md text-left"
+                        ng-model="formData.eventName" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group"
+                    ng-class="{ 'has-error' : formBatchVolunteerJob.jobDate.$invalid && !formBatchVolunteerJob.jobDate.$pristine}">
+                    <label class="text-left">Job Date:</label>
+                    <p class="input-group">
+                        <input type="text" name="jobDate" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
+                            ng-model="formData.jobDate" ng-model-options="{timezone: 'utc'}"
+                            is-open="opened" min-date="'2013-01-01'" max-date="'3015-01-01'"
+                            datepicker-append-to-body="true"
+                            required close-text="Close" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-click="open($event)">
+                                <i class="glyphicon glyphicon-calendar"></i>
+                            </button>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Repeating member + description rows -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0;">Volunteers ({{rows.length}})</h4>
+            <button type="button" class="btn btn-sm btn-success" ng-click="addRow()">
+                <i class="fa fa-plus"></i> Add Another Volunteer
+            </button>
+        </div>
+
+        <div ng-repeat="row in rows track by $index"
+            style="margin-bottom: 10px; padding: 10px; border: 1px solid #eee; border-radius: 4px; background-color: #fafafa;">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="control-label text-left">Member:</label>
+                        <ui-select ng-model="row.member" theme="select2" style="min-width: 200px;"
+                            append-to-body="true">
+                            <ui-select-match placeholder="Select a member">
+                                {{$select.selected.firstname}} {{$select.selected.lastname}}
+                                <i ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="Men"></i>
+                                <i ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="Women"></i>
+                            </ui-select-match>
+                            <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                                <span ng-class="{'past-member' : member.memberStatus === 'past'}">
+                                    <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search">
+                                    </div>
+                                    <small>
+                                        age: {{member.dateofbirth | ageFilter}}
+                                        gender: <i ng-show="member.sex == 'Male'" class="fa fa-mars" title="Men"></i>
+                                        <i ng-show="member.sex == 'Female'" class="fa fa-venus" title="Women"></i>
+                                        <span ng-if="member.memberStatus === 'past'">(past)</span>
+                                    </small>
+                                </span>
+                            </ui-select-choices>
+                        </ui-select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="text-left">Description:</label>
+                        <input type="text" class="form-control" ng-model="row.description"
+                            placeholder="Job description">
+                    </div>
+                </div>
+                <div class="col-md-1" style="padding-top: 25px;">
+                    <button type="button" class="btn btn-sm btn-danger" ng-click="removeRow($index)"
+                        ng-disabled="rows.length === 1" title="Remove this row">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary"
+        ng-click="saveBatch()" ng-disabled="!isFormValid()">
+        Add Volunteer Jobs
+    </button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>

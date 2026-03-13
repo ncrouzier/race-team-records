@@ -1446,11 +1446,18 @@ module.exports = {
         res.status(401).send("insufficient privileges");
     },
     isUserLoggedIn: function (req, res, next) {
-        // if user is authenticated in the session and has an admin role, carry on
+        // if user is authenticated in the session and has a user or admin role, carry on
         if (req.isAuthenticated() && (req.user.role === 'user' || req.user.role === 'admin')) {
             return next();
         }
         // if they aren't redirect them to the home page
+        res.status(401).send("insufficient privileges");
+    },
+    // route middleware to make sure a user is logged in and is a captain or admin
+    isCaptainOrAdminLoggedIn: function (req, res, next) {
+        if (req.isAuthenticated() && (req.user.role === 'captain' || req.user.role === 'admin')) {
+            return next();
+        }
         res.status(401).send("insufficient privileges");
     },
 

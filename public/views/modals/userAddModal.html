@@ -1,0 +1,72 @@
+<div class="modal-header">
+    <h3 class="modal-title">Add User</h3>
+</div>
+<div class="modal-body" style="overflow: visible;">
+    <form name="formAddUser">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group"
+                    ng-class="{ 'has-error' : formAddUser.username.$invalid && !formAddUser.username.$pristine}">
+                    <label class="text-left">Username:</label>
+                    <input type="text" name="username" class="form-control input-md text-left"
+                        ng-model="formData.username" required>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group"
+                    ng-class="{ 'has-error' : formAddUser.email.$invalid && !formAddUser.email.$pristine}">
+                    <label class="text-left">Email:</label>
+                    <input type="email" name="email" class="form-control input-md text-left"
+                        ng-model="formData.email" required>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group"
+                    ng-class="{ 'has-error' : formAddUser.password.$invalid && !formAddUser.password.$pristine}">
+                    <label class="text-left">Password:</label>
+                    <input type="password" name="password" class="form-control input-md text-left"
+                        ng-model="formData.password" required ng-minlength="4">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="text-left">Role:</label>
+                    <select name="role" class="form-control" ng-model="formData.role"
+                        ng-options="role for role in roleOptions" required>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label class="text-left">Associated Member (optional):</label>
+                    <ui-select ng-model="formData.member" theme="select2" style="min-width: 200px;"
+                        append-to-body="true" allow-clear="true">
+                        <ui-select-match placeholder="Select a member" allow-clear="true">
+                            {{$select.selected.firstname}} {{$select.selected.lastname}}
+                        </ui-select-match>
+                        <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
+                            <span ng-class="{'past-member' : member.memberStatus === 'past'}">
+                                <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search">
+                                </div>
+                                <small>
+                                    <span ng-if="member.memberStatus === 'past'">(past)</span>
+                                </small>
+                            </span>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary"
+        ng-click="createUser()" ng-disabled="formAddUser.$invalid">
+        Create User
+    </button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>

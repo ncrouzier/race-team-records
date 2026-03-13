@@ -7,6 +7,7 @@ var userSchema = mongoose.Schema({
     password     : String,
     role         : String,
     username     : String,
+    member       : { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
     createdAt: Date,
     updatedAt: Date
 });

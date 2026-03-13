@@ -149,6 +149,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const Race = require('./models/race');
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
+    const User = require('./models/user');
 
 
     // =====================================
@@ -570,7 +571,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get all volunteer jobs
-    app.get('/api/volunteerjobs', function (req, res) {
+    app.get('/api/volunteerjobs', service.isCaptainOrAdminLoggedIn, function (req, res) {
         res.setHeader("Content-Type", "application/json");
 
         const filters = req.query.filters;
@@ -611,7 +612,7 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // get a single volunteer job
-    app.get('/api/volunteerjobs/:job_id', function (req, res) {
+    app.get('/api/volunteerjobs/:job_id', service.isCaptainOrAdminLoggedIn, function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
             VolunteerJob.findOne({
@@ -801,7 +802,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get team requirements for a year
-    app.get('/api/requirements/:year', service.isUserLoggedIn, async function (req, res) {
+    app.get('/api/requirements/:year', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
             const year = req.params.year;
@@ -2602,17 +2603,21 @@ module.exports = async function (app, qs, passport, async, _) {
                         $sum: {
                             $cond: {
                                 if: { $gt: [{ $size: { $ifNull: ["$legs", []] } }, 0] },
-                                then: { $sum: {
-                                    $map: {
-                                        input: { $filter: {
-                                            input: "$legs",
-                                            as: "leg",
-                                            cond: { $eq: ["$$leg.legType", "run"] }
-                                        }},
-                                        as: "runLeg",
-                                        in: { $ifNull: ["$$runLeg.miles", 0] }
+                                then: {
+                                    $sum: {
+                                        $map: {
+                                            input: {
+                                                $filter: {
+                                                    input: "$legs",
+                                                    as: "leg",
+                                                    cond: { $eq: ["$$leg.legType", "run"] }
+                                                }
+                                            },
+                                            as: "runLeg",
+                                            in: { $ifNull: ["$$runLeg.miles", 0] }
+                                        }
                                     }
-                                }},
+                                },
                                 else: { $ifNull: ["$race.racetype.miles", 0] }
                             }
                         }
@@ -3297,6 +3302,92 @@ module.exports = async function (app, qs, passport, async, _) {
                 success: false,
                 error: 'Failed to extract table data: ' + error.message
             });
+        }
+    });
+
+    // =====================================
+    // USER MANAGEMENT (admin only) ========
+    // =====================================
+
+    // Get all users
+    app.get('/api/users', service.isAdminLoggedIn, function (req, res) {
+        try {
+            User.find({}, '-password').populate('member', 'firstname lastname username sex memberStatus').sort('username').then(function (users) {
+                res.json(users);
+            });
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Create a user (admin only)
+    app.post('/api/users', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            if (!req.body.email || !req.body.username || !req.body.password) {
+                return res.status(400).json({ error: 'Email, username and password are required' });
+            }
+
+            var existing = await User.findOne({ email: req.body.email });
+            if (existing) {
+                return res.status(400).json({ error: 'A user with that email already exists' });
+            }
+
+            var newUser = new User();
+            newUser.email = req.body.email;
+            newUser.username = req.body.username;
+            newUser.password = newUser.generateHash(req.body.password);
+            newUser.role = req.body.role || 'user';
+            if (req.body.member) newUser.member = req.body.member;
+
+            await newUser.save();
+
+            // Populate member before returning
+            await newUser.populate('member', 'firstname lastname username sex memberStatus');
+            var result = newUser.toObject();
+            delete result.password;
+            res.json(result);
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Update a user (admin only)
+    app.put('/api/users/:user_id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            var user = await User.findById(req.params.user_id);
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            if (req.body.username) user.username = req.body.username;
+            if (req.body.email) user.email = req.body.email;
+            if (req.body.role) user.role = req.body.role;
+            // Allow setting or clearing member association
+            if (req.body.hasOwnProperty('member')) {
+                user.member = req.body.member || null;
+            }
+
+            await user.save();
+
+            await user.populate('member', 'firstname lastname username sex memberStatus');
+            var result = user.toObject();
+            delete result.password;
+            res.json(result);
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Delete a user (admin only)
+    app.delete('/api/users/:user_id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            if (req.params.user_id === req.user._id.toString()) {
+                return res.status(400).json({ error: 'Cannot delete your own account' });
+            }
+            await User.findByIdAndDelete(req.params.user_id);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).send(err);
         }
     });
 

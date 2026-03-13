@@ -8,6 +8,38 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     });
 
     // =====================================
+    // FILTERS =============================
+
+    var currentYear = new Date().getFullYear();
+    $scope.yearsList = ['All'];
+    for (var i = currentYear; i >= 2013; i--) {
+        $scope.yearsList.push(i);
+    }
+    $scope.selectedYear = currentYear;
+    $scope.searchQuery = '';
+
+    $scope.volunteerJobFilter = function(job) {
+        // Year filter
+        if ($scope.selectedYear !== 'All') {
+            var jobDate = new Date(job.jobDate);
+            if (jobDate.getUTCFullYear() !== $scope.selectedYear) {
+                return false;
+            }
+        }
+        // Search filter
+        if ($scope.searchQuery) {
+            var q = $scope.searchQuery.toLowerCase();
+            var memberName = ((job.member.firstname || '') + ' ' + (job.member.lastname || '')).toLowerCase();
+            var eventName = (job.eventName || '').toLowerCase();
+            var description = (job.description || '').toLowerCase();
+            if (memberName.indexOf(q) === -1 && eventName.indexOf(q) === -1 && description.indexOf(q) === -1) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // =====================================
     // LOAD DATA ===========================
 
     // Load volunteer jobs

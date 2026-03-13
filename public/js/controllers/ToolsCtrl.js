@@ -20,6 +20,13 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
         };
     }
 
+    $scope.selectMyInfo = function () {
+        if ($scope.user && $scope.user.member && $scope.user.member.dateofbirth && $scope.user.member.sex) {
+            $scope.formData.age = UtilsService.calculateAge($scope.user.member.dateofbirth);
+            $scope.formData.sex = $scope.user.member.sex;
+        }
+    };
+
     $scope.getAgeGrade = function (time, ref) {
         return $filter('timeToAgeGrade')(time, ref, false);
     };

@@ -25,6 +25,12 @@
                             uib-btn-radio="'Female'">Women</label>
                     </div>
                 </div>
+                <div ng-if="user.member.dateofbirth && user.member.sex" style="margin-right: 10px;">
+                    <br>
+                    <button type="button" class="btn btn-default" ng-click="selectMyInfo()">
+                        <i class="fa fa-user"></i> Select my info
+                    </button>
+                </div>
                 <div  ng-show="hasOtherType()" style="margin-left: auto">
                     <br>
                     <button  type="button" class="btn btn-primary" ng-click="switchType()">Switch to {{currentType === 'Road' ? 'track' :

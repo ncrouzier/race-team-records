@@ -144,6 +144,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/racetypes",
             templateUrl: "views/racetypes.html",
             controller: 'RaceTypeController'
+        }).state('/users', {
+            url: "/users",
+            templateUrl: "views/users.html",
+            controller: 'UsersController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/users.html');
+                gtag('event', 'page_view');
+            }
         }).state('/volunteer-jobs', {
             url: "/volunteer-jobs",
             templateUrl: "views/volunteerJobs.html",

@@ -231,8 +231,8 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
 // =====================================
 // MODAL INSTANCE CONTROLLER ============
 angular.module('mcrrcApp.results').controller('VolunteerJobListModalInstanceController',
-    ['$scope', '$uibModalInstance', 'member', 'year', 'VolunteerJobsService',
-        function ($scope, $uibModalInstance, member, year, VolunteerJobsService) {
+    ['$scope', '$uibModalInstance', 'member', 'year', 'Restangular',
+        function ($scope, $uibModalInstance, member, year, Restangular) {
 
             $scope.member = member;
             $scope.year = year;
@@ -243,14 +243,11 @@ angular.module('mcrrcApp.results').controller('VolunteerJobListModalInstanceCont
             var dateFrom = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
             var dateTo = new Date(Date.UTC(year + 1, 0, 1, 0, 0, 0, 0));
 
-            // Load volunteer jobs for this member and year
-            VolunteerJobsService.getVolunteerJobs({}).then(function (allJobs) {
-                // Filter jobs by member and year
-                $scope.volunteerJobs = allJobs.filter(function (job) {
+            // Load volunteer jobs for this member using member-specific endpoint
+            Restangular.one('members', member._id).getList('volunteerjobs', { sort: '-jobDate' }).then(function (jobs) {
+                $scope.volunteerJobs = jobs.filter(function (job) {
                     var jobDate = new Date(job.jobDate);
-                    return job.member._id === member._id &&
-                        jobDate >= dateFrom &&
-                        jobDate < dateTo;
+                    return jobDate >= dateFrom && jobDate < dateTo;
                 });
                 $scope.loading = false;
             });

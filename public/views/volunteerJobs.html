@@ -11,7 +11,31 @@
                 </div>
             </div>
             <div class="panel-body" style="padding: 0;">
-                <table class="table table-striped table-hover">
+                <!-- Filters row -->
+                <div style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="margin: 0; font-weight: 600;">Year:</label>
+                        <select class="form-control input-sm" ng-model="selectedYear"
+                            ng-options="year for year in yearsList" style="width: 100px;">
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px; flex: 1; min-width: 200px;">
+                        <label style="margin: 0; font-weight: 600;">Search:</label>
+                        <div style="position: relative; flex: 1;">
+                            <input type="text" class="form-control input-sm" ng-model="searchQuery"
+                                ng-model-options="{debounce: 150}"
+                                placeholder="Filter by member, event, description..." style="padding-right: 25px;">
+                            <span class="fa fa-times-circle hoverhand"
+                                ng-show="searchQuery"
+                                ng-click="searchQuery=''"
+                                style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #999;"></span>
+                        </div>
+                    </div>
+                    <div style="color: #888; font-size: 0.9em;">
+                        {{(volunteerJobsList | filter:volunteerJobFilter).length}} jobs
+                    </div>
+                </div>
+                <table class="table table-striped table-hover" style="margin-bottom: 0;">
                     <thead>
                         <tr>
                             <th>Member</th>
@@ -22,14 +46,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-if="volunteerJobsList.length === 0">
+                        <tr ng-if="(volunteerJobsList | filter:volunteerJobFilter).length === 0">
                             <td colspan="5" class="text-center text-muted" style="padding: 40px;">
-                                <i class="fa fa-info-circle"></i> No volunteer jobs recorded yet.
-                                <span ng-if="user.role == 'admin'">Click "Add Volunteer Job" to create the first
-                                    one.</span>
+                                <i class="fa fa-info-circle"></i>
+                                <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded yet.
+                                    <span ng-if="user.role == 'admin'">Click "Add Volunteer Job" to create the first one.</span>
+                                </span>
+                                <span ng-if="volunteerJobsList.length > 0">No volunteer jobs match the current filters.</span>
                             </td>
                         </tr>
-                        <tr ng-repeat="job in volunteerJobsList | orderBy:'-jobDate'">
+                        <tr ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
                             <td>
                                 <a ui-sref="/members({member: job.member.username})">
                                     {{job.member.firstname}} {{job.member.lastname}}

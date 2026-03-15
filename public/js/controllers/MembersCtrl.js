@@ -3,6 +3,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+        // If columns are already built, move logged-in user's member to top
+        if (user && user.member && user.member._id && $scope.memberListcolumns) {
+            moveLoggedInMemberToTop();
+        }
     });
 
     $scope.$watch('paramModel', function (user) {
@@ -140,6 +144,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     // select a member after checking it
     $scope.retrieveMemberForEdit = function (member) {
         MembersService.retrieveMemberForEdit(member).then(function () { });
+    };
+
+    $scope.editMyBio = function (member) {
+        MembersService.showEditBioModal(member);
     };
 
 
@@ -349,6 +357,24 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
+    function moveLoggedInMemberToTop() {
+        if ($scope.user && $scope.user.member && $scope.user.member._id && $scope.memberListcolumns) {
+            $scope.memberListcolumns.forEach(function (column) {
+                var myIndex = -1;
+                for (var i = 0; i < column.length; i++) {
+                    if (column[i]._id === $scope.user.member._id) {
+                        myIndex = i;
+                        break;
+                    }
+                }
+                if (myIndex > 0) {
+                    var myMember = column.splice(myIndex, 1)[0];
+                    column.unshift(myMember);
+                }
+            });
+        }
+    }
+
     $scope.getMembers = async function (params_) {
         var params;
         if (params_ === undefined) {
@@ -380,6 +406,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 var columnIndex = getMemberListColumnIndexForType(person);
                 $scope.memberListcolumns[columnIndex].push(person);
             });
+
+            // Move logged-in user's member to the top of their column
+            moveLoggedInMemberToTop();
         });
 
 
@@ -737,4 +766,16 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         }
     }
 
+}]);
+
+angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
+    $scope.formData = { bio: member.bio || '' };
+
+    $scope.saveBio = function () {
+        $uibModalInstance.close($scope.formData.bio);
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
 }]);

@@ -1,0 +1,21 @@
+<div class="modal-header">
+    <h3 class="modal-title">Edit Bio</h3>
+</div>
+<div class="modal-body">
+    <form name="formbio">
+        <div class="form-group">
+            <label class="text-left">Member bio:</label>
+            <textarea class="form-control" ng-model="formData.bio" rows="8" placeholder="Write your bio here... (HTML supported)"></textarea>
+        </div>
+        <div class="form-group" ng-show="formData.bio">
+            <label class="text-left">Preview:</label>
+            <div style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; min-height: 40px;">
+                <span ng-bind-html="formData.bio"></span>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary" ng-click="saveBio()">Save</button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>

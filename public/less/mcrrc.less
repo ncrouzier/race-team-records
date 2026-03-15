@@ -330,6 +330,16 @@ footer {
         text-align: left;
     }
 
+    .resultlistrow.my-result-row {
+        border-left: 3px solid #f0ad4e !important;
+        background-color: #fff8e1 !important;
+    }
+
+    .my-result-row.modern-result-row {
+        background-color: #fff8e1 !important;
+        border-left: 3px solid #f0ad4e !important;
+    }
+
     .resultlistrow {
         padding-top: 3px;
         padding-bottom: 3px;
@@ -395,6 +405,26 @@ footer {
         // :hover{
         //   background-color: @brand-primary-very-light;
         // }
+    }
+}
+
+
+
+.my-member-row {
+    background-color: #fff8e1 !important;
+    border-left: 3px solid #f0ad4e !important;
+}
+
+.my-member-cell {
+    background-color: #fff8e1 !important;
+    border-left: 3px solid #f0ad4e !important;
+
+    &:hover {
+
+        background-color: @brand-primary-dark;
+        font-size: 18;
+        color: #FFF;
+        font-weight: bold;
     }
 }
 
@@ -998,6 +1028,11 @@ footer {
         font-weight: bold;
     }
 
+    &.my-member-cell:hover {
+        background-color: #fff0c0 !important;
+        color: inherit;
+    }
+
 }
 
 .memberListCell:empty {
@@ -1448,6 +1483,11 @@ footer {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 1px solid #dee2e6;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &.requirement-met {
+        background: linear-gradient(135deg, #dff0d8 0%, #c8e6c0 100%);
+        border-color: #d6e9c6;
+    }
 
     &:hover {
         transform: translateY(-2px);
@@ -4946,7 +4986,7 @@ footer {
     font-size: 1.1em;
 }
 
-.race-photos-icon + .caret {
+.race-photos-icon+.caret {
     color: white;
 }
 
@@ -4976,11 +5016,11 @@ footer {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.resultlistrow.expanded .race-photos-inherit .dropdown-menu > li > a {
+.resultlistrow.expanded .race-photos-inherit .dropdown-menu>li>a {
     color: white;
 }
 
-.resultlistrow.expanded .race-photos-inherit .dropdown-menu > li > a:hover {
+.resultlistrow.expanded .race-photos-inherit .dropdown-menu>li>a:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: white;
 }

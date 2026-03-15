@@ -7551,6 +7551,14 @@ footer {
   color: #006687;
   text-align: left;
 }
+.results-list .resultlistrow.my-result-row {
+  border-left: 3px solid #f0ad4e !important;
+  background-color: #fff8e1 !important;
+}
+.results-list .my-result-row.modern-result-row {
+  background-color: #fff8e1 !important;
+  border-left: 3px solid #f0ad4e !important;
+}
 .results-list .resultlistrow {
   padding-top: 3px;
   padding-bottom: 3px;
@@ -7599,6 +7607,20 @@ footer {
   border-top: 0px solid white;
   margin-bottom: 0px;
   border-bottom: 1px solid #ddd;
+}
+.my-member-row {
+  background-color: #fff8e1 !important;
+  border-left: 3px solid #f0ad4e !important;
+}
+.my-member-cell {
+  background-color: #fff8e1 !important;
+  border-left: 3px solid #f0ad4e !important;
+}
+.my-member-cell:hover {
+  background-color: #006687;
+  font-size: 18;
+  color: #FFF;
+  font-weight: bold;
 }
 .pb-list .pblistheader {
   padding: 15px;
@@ -8081,6 +8103,10 @@ footer {
   color: #FFF;
   font-weight: bold;
 }
+.memberListCell.my-member-cell:hover {
+  background-color: #fff0c0 !important;
+  color: inherit;
+}
 .memberListCell:empty {
   background-color: red;
 }
@@ -8419,6 +8445,10 @@ footer {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border: 1px solid #dee2e6;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-box.requirement-met {
+  background: linear-gradient(135deg, #dff0d8 0%, #c8e6c0 100%);
+  border-color: #d6e9c6;
 }
 .stat-box:hover {
   transform: translateY(-2px);

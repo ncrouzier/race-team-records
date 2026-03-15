@@ -1,0 +1,123 @@
+<div class="jumbotron">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="detailscontainer" ng-if="currentMember">
+
+                <div class="row text-center">
+                    <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
+                    <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}<span
+                            ng-if="user.role == 'admin'">, {{currentMember | memberAgeFilter }}</span>) <i
+                            class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
+                            ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
+                            class="hoverhand fa fa-times" ng-show="user.role == 'admin'"
+                            ng-click="removeMember(currentMember)" title="remove user"></i></h4>
+                    <h6 class="italic"> member <span
+                            ng-repeat="membershipdate in currentMember.membershipDates | orderBy:'start' track by $index"><span
+                                ng-if="membershipdate.end === undefined">since</span><span
+                                ng-if="membershipdate.end !== undefined">from</span> {{membershipdate.start |
+                            date:'M/d/y':'UTC' }} <span ng-if="membershipdate.end !== undefined">to {{membershipdate.end
+                                | date:'M/d/y':'UTC' }}</span><span
+                                ng-if="currentMember.membershipDates.length >1 && $index < currentMember.membershipDates.length-2">,
+                            </span><span
+                                ng-if="currentMember.membershipDates.length >1  && $index < currentMember.membershipDates.length-1 && $index !== currentMember.membershipDates.length-1  && $index === currentMember.membershipDates.length-2">
+                                and </span></span></h6>
+                </div>
+
+                <!-- View Toggle Buttons -->
+                <div class="row text-center member-navigation-buttons" style="margin-bottom: 20px;">
+                    <div class="btn-group" role="group">
+                        <a ui-sref="/members/member/bio({member: currentMember.username})" class="btn btn-primary">
+                            <i class="fa fa-user"></i> Bio & Results
+                        </a>
+                        <a ui-sref="/members/member/stats({member: currentMember.username})" class="btn btn-primary">
+                            <i class="fa fa-bar-chart"></i> Statistics
+                        </a>
+                        <a ui-sref="/members/member/head-to-head({member: currentMember.username})"
+                            class="btn btn-primary">
+                            <i class="fa fa-trophy"></i> Head-to-Head
+                        </a>
+                        <a ui-sref="/members/member/volunteer-jobs({member: currentMember.username})"
+                            class="btn btn-primary active">
+                            <i class="fa fa-heart"></i> Volunteer Jobs
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div ng-if="loading" class="text-center" style="padding: 60px;">
+                    <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
+                    <p style="margin-top: 10px;">Loading volunteer jobs...</p>
+                </div>
+
+                <!-- Unauthorized message -->
+                <div ng-if="!loading && !authorized" class="text-center" style="padding: 60px;">
+                    <i class="fa fa-lock fa-3x text-muted"></i>
+                    <p style="margin-top: 10px;" class="text-muted">You must be logged in to view this member's volunteer jobs.</p>
+                </div>
+
+                <!-- Volunteer Jobs Content -->
+                <div ng-if="!loading && authorized">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0;"><i class="fa fa-heart"></i> Volunteer Jobs</h4>
+                            <a class="btn btn-success" ui-sref="/submitvolunteer" target="_blank" style="font-weight: 600;">
+                                <i class="fa fa-plus-circle"></i> Submit Volunteer Job
+                            </a>
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <!-- Filters row -->
+                            <div style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <label style="margin: 0; font-weight: 600;">Year:</label>
+                                    <select class="form-control input-sm" ng-model="selectedYear"
+                                        ng-options="year for year in yearsList" style="width: 100px;">
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 5px; flex: 1; min-width: 200px;">
+                                    <label style="margin: 0; font-weight: 600;">Search:</label>
+                                    <div style="position: relative; flex: 1;">
+                                        <input type="text" class="form-control input-sm" ng-model="searchQuery"
+                                            ng-model-options="{debounce: 150}"
+                                            placeholder="Filter by event name or description..."
+                                            style="padding-right: 25px;">
+                                        <span class="fa fa-times-circle hoverhand"
+                                            ng-show="searchQuery"
+                                            ng-click="searchQuery=''"
+                                            style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #999;"></span>
+                                    </div>
+                                </div>
+                                <div style="color: #888; font-size: 0.9em;">
+                                    {{getFilteredCount()}} jobs
+                                </div>
+                            </div>
+                            <table class="table table-striped table-hover" style="margin-bottom: 0;">
+                                <thead>
+                                    <tr>
+                                        <th>Event Name</th>
+                                        <th>Job Date</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-if="getFilteredCount() === 0">
+                                        <td colspan="3" class="text-center text-muted" style="padding: 40px;">
+                                            <i class="fa fa-info-circle"></i>
+                                            <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded yet.</span>
+                                            <span ng-if="volunteerJobsList.length > 0">No volunteer jobs match the current filters.</span>
+                                        </td>
+                                    </tr>
+                                    <tr ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
+                                        <td>{{job.eventName}}</td>
+                                        <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
+                                        <td>{{job.description}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

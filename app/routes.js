@@ -386,6 +386,26 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
 
+    //update a member's bio (own member only)
+    app.put('/api/members/:member_id/bio', service.isLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            if (!req.user.member || !req.user.member._id.equals(req.params.member_id)) {
+                return res.status(403).json({ error: 'You can only edit your own bio' });
+            }
+            const member = await Member.findById(req.params.member_id);
+            if (!member) {
+                return res.status(404).json({ error: 'Member not found' });
+            }
+            member.bio = req.body.bio;
+            await member.save();
+            res.json({ success: 'Bio updated successfully', bio: member.bio });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Error updating bio' });
+        }
+    });
+
     //update a member
     app.put('/api/members/:member_id', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");

@@ -51,6 +51,11 @@
                             class="btn btn-primary">
                             <i class="fa fa-trophy"></i> Head-to-Head
                         </a>
+                        <a ui-sref="/members/member/volunteer-jobs({member: currentMember.username})"
+                            class="btn btn-primary"
+                            ng-if="user && (user.role === 'admin' || user.role === 'captain' || (user.member._id && user.member._id === currentMember._id))">
+                            <i class="fa fa-heart"></i> Volunteer Jobs
+                        </a>
                     </div>
                 </div>
 
@@ -58,7 +63,11 @@
                 <div class="row">
                     <div class="col-sm-7">
                         <div class="row row-no-left-margin">
-                            <h3>Member Bio:</h3><span class="black" ng-bind-html="currentMember.bio"></span>
+                            <h3>Member Bio:<i class="hoverhand red fa fa-pencil-square-o"
+                                    style="font-size: 16px; margin-left: 8px;"
+                                    ng-show="user.member._id && user.member._id === currentMember._id && user.role !== 'admin'"
+                                    ng-click="editMyBio(currentMember)" title="edit bio"></i></h3><span class="black"
+                                ng-bind-html="currentMember.bio"></span>
                         </div>
                     </div>
                     <div class="col-sm-5">

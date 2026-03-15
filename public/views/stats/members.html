@@ -141,7 +141,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-class="m.memberStatus === 'past' ? 'past-member-row' : 'active-member-row'"
+                                <tr ng-class="(m.memberStatus === 'past' ? 'past-member-row' : 'active-member-row') + (user.member._id && m._id === user.member._id ? ' my-member-row' : '')"
                                     ng-repeat="m in membersList | filter:statusChoice | sortMembers:field:reverseSort track by $index"
                                     class="member-row">
                                     <td class="rank-cell">

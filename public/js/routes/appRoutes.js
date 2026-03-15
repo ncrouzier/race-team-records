@@ -94,6 +94,18 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('event', 'page_view');
             }
         })
+        .state('/members/member/volunteer-jobs', {
+            url: "/members/:member/volunteer-jobs",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberVolunteerJobs.html",
+            controller: 'MemberVolunteerJobsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/memberVolunteerJobs.html');
+                gtag('event', 'page_view');
+            }
+        })
 
         .state('/members/head-to-head', {
             url: "/members/head-to-head/:member1/:member2?",

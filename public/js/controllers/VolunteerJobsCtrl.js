@@ -10,13 +10,23 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // =====================================
     // FILTERS =============================
 
-    var currentYear = new Date().getFullYear();
     $scope.yearsList = ['All'];
-    for (var i = currentYear; i >= 2013; i--) {
-        $scope.yearsList.push(i);
-    }
-    $scope.selectedYear = currentYear;
+    $scope.selectedYear = new Date().getFullYear();
     $scope.searchQuery = '';
+
+    function buildYearsList(jobs) {
+        var yearsSet = {};
+        jobs.forEach(function(job) {
+            var year = new Date(job.jobDate).getUTCFullYear();
+            yearsSet[year] = true;
+        });
+        var years = Object.keys(yearsSet).map(Number).sort(function(a, b) { return b - a; });
+        $scope.yearsList = ['All'].concat(years);
+        // If selected year has no jobs, default to 'All'
+        if (years.indexOf($scope.selectedYear) === -1) {
+            $scope.selectedYear = years.length > 0 ? years[0] : 'All';
+        }
+    }
 
     $scope.volunteerJobFilter = function(job) {
         // Year filter
@@ -47,6 +57,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
         sort: '-jobDate'
     }).then(function(jobs) {
         $scope.volunteerJobsList = jobs;
+        buildYearsList(jobs);
     });
 
     // Load members list (needed for modal member selection)

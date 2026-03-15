@@ -1,24 +1,24 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'MemoryCacheService', function(Restangular, $uibModal, $q, MemoryCacheService) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'MemoryCacheService', function (Restangular, $uibModal, $q, MemoryCacheService) {
     var factory = {};
     var members = Restangular.all('members');
-    
+
     // Cache names for MemoryCacheService
     var CACHE_NAMES = {
         MEMBERS: 'members',
         LOADING_PROMISES: 'loadingPromises'
     };
-    
 
-    
+
+
     // Helper function to strip functions and clean objects for IndexedDB storage
     function stripFunctions(obj) {
         try {
             // First try the simple approach
             var cleaned = JSON.parse(JSON.stringify(obj));
-            
+
             // Additional cleaning for member objects
             if (Array.isArray(cleaned)) {
-                cleaned = cleaned.map(function(member) {
+                cleaned = cleaned.map(function (member) {
                     if (member && typeof member === 'object') {
                         // Remove any problematic properties that might cause IndexedDB issues
                         var cleanMember = {};
@@ -32,10 +32,10 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
                                         cleanMember[key] = value.toISOString();
                                     }
                                     // Handle simple types
-                                    else if (typeof value === 'string' || 
-                                             typeof value === 'number' || 
-                                             typeof value === 'boolean' || 
-                                             value === null) {
+                                    else if (typeof value === 'string' ||
+                                        typeof value === 'number' ||
+                                        typeof value === 'boolean' ||
+                                        value === null) {
                                         cleanMember[key] = value;
                                     }
                                     // Handle arrays and objects (but be careful with deep nesting)
@@ -60,13 +60,13 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
                     return member;
                 });
             }
-            
+
             return cleaned;
         } catch (error) {
             console.error("Error in stripFunctions:", error);
             // Fallback: return a minimal version with just essential properties
             if (Array.isArray(obj)) {
-                return obj.map(function(member) {
+                return obj.map(function (member) {
                     if (member && typeof member === 'object') {
                         return {
                             _id: member._id,
@@ -90,105 +90,133 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
     // =====================================
 
     //retrieve members
-    factory.getMembers = function(params) {
-        return members.getList(params).then(function(members) {            
+    factory.getMembers = function (params) {
+        return members.getList(params).then(function (members) {
             return members;
         });
     };
 
     //retrieve members with cache support (memory cache only)
-    factory.getMembersWithCacheSupport = function(params) {        
+    factory.getMembersWithCacheSupport = function (params) {
         var cacheKey = JSON.stringify(params || {});
-        
+
         // Check memory cache first
         var cachedMembers = MemoryCacheService.get(CACHE_NAMES.MEMBERS, cacheKey);
         if (cachedMembers) {
             return $q.resolve(cachedMembers);
         }
-        
+
         // Check for loading promises to prevent duplicate requests
         var loadingPromises = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, cacheKey);
         if (loadingPromises) {
             return loadingPromises;
         }
-        
-        
+
+
         // Fetch from API and cache in memory only
-        var promise = members.getList(params).then(function(membersFromDatabase) {            
+        var promise = members.getList(params).then(function (membersFromDatabase) {
             // Cache in memory
             MemoryCacheService.set(CACHE_NAMES.MEMBERS, cacheKey, membersFromDatabase);
             MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
-            
+
             return membersFromDatabase;
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.error("❌ API call failed:", error);
             MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
             throw error;
         });
-        
+
         MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, promise);
         return promise;
     };
 
 
     //retrieve a member by id
-    factory.getMember = function(id) {
+    factory.getMember = function (id) {
         return Restangular.one('members', id).get().then(
-            function(member) {
+            function (member) {
                 return member;
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
     //create a member
-    factory.createMember = function(member) {
+    factory.createMember = function (member) {
         return members.post(member).then(
-            function(members) {},
-            function(res) {
+            function (members) { },
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
     //edit a member
-    factory.editMember = function(member) {
+    factory.editMember = function (member) {
         member.save();
     };
 
+    //edit a member's bio only
+    factory.editMemberBio = function (memberId, bio) {
+        return Restangular.one('members', memberId).customPUT({ bio: bio }, 'bio');
+    };
+
+    factory.showEditBioModal = function (member) {
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/bioEditModal.html',
+            controller: 'BioEditModalInstanceController',
+            size: 'lg',
+            backdrop: 'static',
+            resolve: {
+                member: function () {
+                    return member;
+                }
+            }
+        });
+
+        return modalInstance.result.then(function (bio) {
+            return factory.editMemberBio(member._id, bio).then(function () {
+                member.bio = bio;
+                return bio;
+            });
+        }, function () {
+            return null;
+        });
+    };
+
     //delete a member
-    factory.deleteMember = function(member) {
+    factory.deleteMember = function (member) {
         return member.remove().then(
-            function() {},
-            function(res) {
+            function () { },
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
-        //retrieve a member by id
-    factory.getMemberPbs = function(member) {
-         return Restangular.one('members', member._id).customGET("pbs").then(
-            function(results) {
+    //retrieve a member by id
+    factory.getMemberPbs = function (member) {
+        return Restangular.one('members', member._id).customGET("pbs").then(
+            function (results) {
                 return results;
             },
-            function(res) {
+            function (res) {
                 console.log('Error: ' + res.status);
             });
     };
 
 
-    factory.getParticipation = function(params){
-        return Restangular.one('stats/participation').get(params).then(function(results) {
+    factory.getParticipation = function (params) {
+        return Restangular.one('stats/participation').get(params).then(function (results) {
             return results;
         });
-       
+
     };
 
     // =====================================
     // MEMBER MODALS ======================
     // =====================================
 
-    factory.showAddMemberModal = function() {
+    factory.showAddMemberModal = function () {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/memberModal.html',
             controller: 'MemberModalInstanceController',
@@ -199,15 +227,15 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
             }
         });
 
-        return modalInstance.result.then(function(member) {
+        return modalInstance.result.then(function (member) {
             factory.createMember(member);
             return member;
-        }, function() {
+        }, function () {
             return null;
         });
     };
 
-    factory.retrieveMemberForEdit = function(member) {
+    factory.retrieveMemberForEdit = function (member) {
         if (member) {
             var modalInstance = $uibModal.open({
                 templateUrl: 'views/modals/memberModal.html',
@@ -215,15 +243,15 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
                 size: 'lg',
                 backdrop: 'static',
                 resolve: {
-                    member: function() {
+                    member: function () {
                         return member;
                     }
                 }
             });
 
-            return modalInstance.result.then(function(member) {
+            return modalInstance.result.then(function (member) {
                 factory.editMember(member);
-            }, function() {
+            }, function () {
                 return null;
             });
         }

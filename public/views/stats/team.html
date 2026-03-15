@@ -143,7 +143,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
@@ -175,7 +175,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostTraveled track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
@@ -206,7 +206,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostMiles track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
@@ -234,7 +234,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostWins track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
@@ -265,7 +265,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.bestAgeGrades track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
@@ -294,7 +294,7 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostConsistent track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}" ng-mouseenter="hover = true"
                                 ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">

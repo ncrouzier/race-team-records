@@ -241,7 +241,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="seg in memberSegments track by $index">
+                        <tr ng-repeat="seg in memberSegments track by $index"
+                            ng-class="{'my-member-row': user.member.username && seg.username === user.member.username}">
                             <td>{{$index + 1}}</td>
                             <td><a class="hoverhandandunderline" ng-click="centerOnSegment(seg)"><span
                                         style="display:inline-block;width:14px;height:14px;background:{{seg.color}};border-radius:2px;"></span></a>
@@ -287,7 +288,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="wp in waypoints track by wp.order" ng-class="{'success': wp.reached}"
+                        <tr ng-repeat="wp in waypoints track by wp.order" ng-class="{'success': wp.reached, 'my-member-row': view.mapMode === 'members' && user.member.username && wp.reachedByMemberUsername === user.member.username}"
                             ng-if="!wp.isStart">
                             <td>{{wp.order}}</td>
                             <td>

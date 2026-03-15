@@ -8,6 +8,7 @@ const Member = require('./models/member');
 const Result = require('./models/result');
 const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
+const VolunteerJob = require('./models/volunteerjob');
 const { configDotenv } = require('dotenv');
 
 // In-memory age grading cache for performance optimization
@@ -1033,7 +1034,7 @@ module.exports = {
                 if ( member.teamRequirementStats != undefined){
                     member.teamRequirementStats = undefined;
                     await member.save();
-                }                
+                }
                 return null;
             }
             const currentYear = new Date().getFullYear();
@@ -1053,12 +1054,18 @@ module.exports = {
             if (results.length !== 0) {
                 highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined && obj.agegrade !== null).map(obj => obj.agegrade));
             }
-                    
-            member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg };
+
+            // Count volunteer jobs for the current year
+            const volunteerJobCount = await VolunteerJob.countDocuments({
+                'member._id': member._id,
+                jobDate: { $gte: new Date(currentYearStart), $lt: new Date(currentYearEnd) }
+            });
+
+            member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg, volunteerJobCount: volunteerJobCount };
             await member.save();
             return [results.length, highestAg];
         }
-        
+
     },
 
     /**
@@ -1199,7 +1206,26 @@ module.exports = {
             
 
             
-            // Create a map of member stats
+            // Aggregate volunteer job counts for each member in the current year
+            const volunteerAggregation = await VolunteerJob.aggregate([
+                {
+                    $match: {
+                        'member._id': { $in: normalizedMemberIds },
+                        jobDate: {
+                            $gte: new Date(currentYearStart),
+                            $lt: new Date(currentYearEnd)
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$member._id',
+                        volunteerJobCount: { $sum: 1 }
+                    }
+                }
+            ]);
+
+            // Create maps of member stats
             const memberStatsMap = {};
             for (const stat of statsAggregation) {
                 memberStatsMap[stat._id.toString()] = {
@@ -1207,11 +1233,15 @@ module.exports = {
                     maxAgeGrade: stat.maxAgeGrade === -Infinity ? "N/A" : stat.maxAgeGrade
                 };
             }
-            
+            const volunteerMap = {};
+            for (const stat of volunteerAggregation) {
+                volunteerMap[stat._id.toString()] = stat.volunteerJobCount;
+            }
+
             // Prepare bulk operations
             const bulkOperations = [];
             let updateCount = 0;
-            
+
             for (const member of members) {
                 // Handle past members
                 if (member.memberStatus === 'past') {
@@ -1226,17 +1256,19 @@ module.exports = {
                     }
                     continue;
                 }
-                
+
                 // Get stats for current member
                 const stats = memberStatsMap[member._id.toString()] || { raceCount: 0, maxAgeGrade: "N/A" };
-                
+                const volunteerJobCount = volunteerMap[member._id.toString()] || 0;
+
                 // Check if stats have changed
                 const currentStats = member.teamRequirementStats;
-                const statsChanged = !currentStats || 
+                const statsChanged = !currentStats ||
                     currentStats.year !== currentYear ||
                     currentStats.raceCount !== stats.raceCount ||
-                    currentStats.maxAgeGrade !== stats.maxAgeGrade;
-                
+                    currentStats.maxAgeGrade !== stats.maxAgeGrade ||
+                    currentStats.volunteerJobCount !== volunteerJobCount;
+
                 if (statsChanged) {
                     bulkOperations.push({
                         updateOne: {
@@ -1246,7 +1278,8 @@ module.exports = {
                                     teamRequirementStats: {
                                         year: currentYear,
                                         raceCount: stats.raceCount,
-                                        maxAgeGrade: stats.maxAgeGrade
+                                        maxAgeGrade: stats.maxAgeGrade,
+                                        volunteerJobCount: volunteerJobCount
                                     }
                                 }
                             }

@@ -23,10 +23,15 @@ angular.module('mcrrcApp.results').factory('UsersService', ['Restangular', '$uib
     };
 
     // Edit user
-    factory.editUser = function(user) {
+    factory.editUser = function(user, options) {
+        if (options && options.notifyUser) {
+            user.notifyUser = true;
+        }
         return user.save().then(function(response) {
+            delete user.notifyUser;
             return response;
         }, function(res) {
+            delete user.notifyUser;
             console.log('Error: ' + res.status);
         });
     };

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt-nodejs');
 const raceSchema = require('./race').schema
 // const memberSchema = require('./member').schema
 

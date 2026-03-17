@@ -1,5 +1,4 @@
 var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
 
 // define the schema for our raceType model
 var racetypeSchema = mongoose.Schema({

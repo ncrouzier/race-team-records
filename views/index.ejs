@@ -46,12 +46,23 @@
 				</div> -->
 			<div class="">
 				<div class="logo-stats">
-					<span tooltip-append-to-body="true" tooltip-placement="bottom"
+					<!-- <span tooltip-append-to-body="true" tooltip-placement="bottom"
 						uib-tooltip-html="'View Progress Map'" ng-cloak ng-if="milesRaced"><a
 							ui-sref="/stats/progress-map"><img src="/images/route.svg"
 								style="width: 1em; height: 1em; vertical-align: top;">
 							{{milesRaced}} miles raced in
-							{{currentYear}}!</a></span>
+							{{currentYear}}!</a></span> -->
+
+					<div class="uib-dropdown" uib-dropdown style="margin-top: 5px; font-size: 13px;">
+						<a href class="uib-dropdown-toggle" uib-dropdown-toggle style="cursor: pointer;">
+							<span class="red"> Submit <span class="caret"></span></span>
+						</a>
+						<ul class="dropdown-menu dropdown-menu-right" uib-dropdown-menu>
+							<li><a ui-sref="/submitresult" target="_blank">Submit a Result</a></li>
+							<li><a ui-sref="/submitvolunteer" target="_blank">Submit a Volunteer Job</a></li>
+						</ul>
+					</div>
+
 				</div>
 			</div>
 			<div class="birthdaytext" ng-if="birthdays.length >0" ng-cloak>
@@ -139,7 +150,7 @@
 								<%= user.username %> <span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu" uib-dropdown-menu>
-								<li><a ui-sref="/profile">Profile</a></li>
+								<li><a ui-sref="/profile">My Account</a></li>
 								<% if (user.member) { %>
 									<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 											Page</a></li>
@@ -196,6 +207,7 @@
 									<%= user.username %> <span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" uib-dropdown-menu>
+									<li><a ui-sref="/profile">My Account</a></li>
 									<% if (user.member) { %>
 										<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 												Page</a></li>
@@ -242,6 +254,7 @@
 										<%= user.username %> <span class="caret"></span>
 									</a>
 									<ul class="dropdown-menu" uib-dropdown-menu>
+										<li><a ui-sref="/profile">My Account</a></li>
 										<% if (user.member) { %>
 											<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 													Page</a></li>
@@ -283,21 +296,10 @@
 									<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
 												ng-src="/images/instagramicon.svg" width="13" height="100%"></a></li>
 								</ul>
+
+
 								<ul class="nav navbar-nav nav-submit-admin">
-									<li ng-class="{active: ($state.includes('/tools/agegrade') || $state.includes('/tools/paceAdjustment') || $state.includes('/moist'))}"
-										class="uib-dropdown " uib-dropdown on-toggle="toggled(open)">
-										<a href style="padding:12px 5px 12px 5px;"
-											class=" submitmenu uib-dropdown-toggle" uib-dropdown-toggle>Submit <i
-												class="fa fa-edit"></i> <span class="caret"></span>
-										</a>
-										<ul class="dropdown-menu" uib-dropdown-menu>
-											<li><a class="submitmenu" ui-sref="/submitresult" target="_blank">Submit a
-													Result</a></li>
-											<li><a class="submitmenu" ui-sref="/submitvolunteer" target="_blank">Submit
-													a
-													Volunteer Job</a></li>
-										</ul>
-									</li>
+									<li><a ui-sref="/login">Login <i class="fa fa-sign-in"></i></a></li>
 								</ul>
 								<%}%>
 			</div><!-- /.navbar-collapse -->
@@ -313,7 +315,7 @@
 							me a coffee!</a></span></div>
 				<div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">login</a></div>
 				<div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a
-						title="Montgomery County Road Runners Club" href="http://www.mcrrc.org"
+						title="Montgomery County Road Runners Club" href="https://www.mcrrc.org"
 						target="_blank">MCRRC</a></div>
 			</div>
 		</footer>

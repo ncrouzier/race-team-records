@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -47,6 +48,19 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // =====================================
+    // PASSWORD VALIDATION =================
+    // =====================================
+    function validatePassword(password) {
+        if (!password || password.length < 8) {
+            return 'Password must be at least 8 characters long.';
+        }
+        if (password.length > 64) {
+            return 'Password must be no more than 64 characters long.';
+        }
+        return null;
+    }
+
+    // =====================================
     // LOGIN ===============================
     // =====================================
     // show the login form
@@ -69,6 +83,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     if (err) {
                         return next(err);
                     }
+                    user.lastLogin = Date.now();
+                    user.save();
                     res.status(200).send({
                         message: req.flash('loginMessage'),
                         user: req.user
@@ -98,28 +114,57 @@ module.exports = async function (app, qs, passport, async, _) {
 
     app.post('/api/signup', function (req, res, next) {
         passport.authenticate('local-signup', function (err, user, info) {
-            // console.log(err);
             if (err) {
                 return next(err);
             }
             if (!user) {
                 res.status(401).send(req.flash('signupMessage'));
             } else {
-                req.logIn(user, function (err) {
-                    if (err) {
-                        return next(err);
+                // Don't auto-login — account is disabled until admin approves
+                // Send confirmation email to the user
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Account Created',
+                    text: 'Hi ' + user.username + ',\n\n' +
+                        'Your account has been created successfully.\n\n' +
+                        'An administrator will review your account and you will be notified by email once it has been activated.\n\n' +
+                        'Thank you,\nMCRRC Racing Team\n'
+                }, function (error) {
+                    if (error) {
+                        console.error('Error sending user confirmation email:', error);
                     }
-                    res.status(200).send(req.flash('signupMessage'));
                 });
+                // Notify admins about new registration
+                var User = require('./models/user');
+                User.find({ role: 'admin', enabled: true }).then(function (admins) {
+                    var adminEmails = admins.map(function (a) { return a.email; }).filter(Boolean);
+                    if (adminEmails.length > 0) {
+                        transport.sendMail({
+                            from: {
+                                name: 'MCRRC Racing Team',
+                                address: process.env.MCRRC_FROM_EMAIL
+                            },
+                            to: adminEmails.join(','),
+                            subject: 'MCRRC Racing Team - New Account Registration',
+                            text: 'A new account has been created and is awaiting approval.\n\n' +
+                                'Username: ' + user.username + '\n' +
+                                'Email: ' + user.email + '\n\n' +
+                                'Please log in to the admin panel to enable this account.\n'
+                        }, function (error) {
+                            if (error) {
+                                console.error('Error sending admin notification email:', error);
+                            }
+                        });
+                    }
+                });
+                res.status(200).json({ message: 'Account created. An administrator will review and enable your account.' });
             }
         })(req, res, next);
     });
-
-    app.post('/api/signup', passport.authenticate('local-signup', {
-        successRedirect: '/profile', // redirect to the secure profile section
-        failureRedirect: '/api/signup', // redirect back to the signup page if there is an error
-        failureFlash: true // allow flash messages
-    }));
 
     // =====================================
     // PROFILE SECTION =====================
@@ -127,9 +172,78 @@ module.exports = async function (app, qs, passport, async, _) {
     // we will want this protected so you have to be logged in to visit
     // we will use route middleware to verify this (the isLoggedIn function)
     app.get('/api/profile', service.isLoggedIn, function (req, res) {
+        var userObj = req.user.toObject();
+        delete userObj.password;
+        delete userObj.resetPasswordToken;
+        delete userObj.resetPasswordExpires;
         res.send({
-            user: req.user
+            user: userObj
         });
+    });
+
+    // Update own profile (username, email)
+    app.put('/api/profile', service.isLoggedIn, async function (req, res) {
+        try {
+            var User = require('./models/user');
+            var user = await User.findById(req.user._id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            // Check if email is being changed and if it's already taken
+            if (req.body.email && req.body.email !== user.email) {
+                var existing = await User.findOne({ email: req.body.email });
+                if (existing) {
+                    return res.status(400).json({ message: 'That email is already in use.' });
+                }
+                user.email = req.body.email;
+            }
+
+            if (req.body.username) user.username = req.body.username;
+
+            await user.save();
+            await user.populate('member', 'username firstname lastname dateofbirth sex');
+            var result = user.toObject();
+            delete result.password;
+            delete result.resetPasswordToken;
+            delete result.resetPasswordExpires;
+            res.json(result);
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again.' });
+        }
+    });
+
+    // Change own password
+    app.post('/api/profile/change-password', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!req.body.currentPassword || !req.body.newPassword) {
+                return res.status(400).json({ message: 'Current password and new password are required.' });
+            }
+
+            var passwordError = validatePassword(req.body.newPassword);
+            if (passwordError) {
+                return res.status(400).json({ message: passwordError });
+            }
+
+            var User = require('./models/user');
+            var user = await User.findById(req.user._id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            // Verify current password
+            if (!user.validPassword(req.body.currentPassword)) {
+                return res.status(400).json({ message: 'Current password is incorrect.' });
+            }
+
+            user.password = user.generateHash(req.body.newPassword);
+            await user.save();
+            res.json({ message: 'Password changed successfully.' });
+        } catch (err) {
+            console.error('Error changing password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again.' });
+        }
     });
 
     // =====================================
@@ -141,6 +255,130 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     });
 
+    // =====================================
+    // PASSWORD RESET ======================
+    // =====================================
+
+    // Request password reset - sends email with reset link
+    app.post('/api/forgot', function (req, res) {
+        if (!req.body.email) {
+            return res.status(400).json({ message: 'Email address is required.' });
+        }
+
+        var token = crypto.randomBytes(20).toString('hex');
+        var User = require('./models/user');
+
+        User.findOne({ email: req.body.email }).then(function (user) {
+            // Always return same message to prevent email enumeration
+            if (!user) {
+                return res.status(200).json({
+                    message: 'If an account with that email exists, a password reset link has been sent.'
+                });
+            }
+
+            // Hash the token before storing
+            var hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+            user.resetPasswordToken = hashedToken;
+            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+            user.save().then(function () {
+                var resetUrl = req.protocol + '://' + req.get('host') + '/#/reset-password/' + token;
+
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Password Reset',
+                    text: 'You are receiving this because you (or someone else) requested a password reset for your account.\n\n' +
+                        'Please click on the following link, or paste it into your browser to complete the process:\n\n' +
+                        resetUrl + '\n\n' +
+                        'This link will expire in 1 hour.\n\n' +
+                        'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending password reset email:', error);
+                        return res.status(500).json({ message: 'Error sending email. Please try again later.' });
+                    }
+                    res.status(200).json({
+                        message: 'If an account with that email exists, a password reset link has been sent.'
+                    });
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in forgot password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // Validate reset token
+    app.get('/api/reset/:token', function (req, res) {
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        }).then(function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+            }
+            res.status(200).json({ message: 'Token is valid.' });
+        }).catch(function (err) {
+            res.status(500).json({ message: 'An error occurred.' });
+        });
+    });
+
+    // Perform password reset
+    app.post('/api/reset/:token', function (req, res) {
+        if (!req.body.password) {
+            return res.status(400).json({ message: 'Password is required.' });
+        }
+
+        var passwordError = validatePassword(req.body.password);
+        if (passwordError) {
+            return res.status(400).json({ message: passwordError });
+        }
+
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        }).then(function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+            }
+
+            user.password = user.generateHash(req.body.password);
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+
+            user.save().then(function () {
+                // Send confirmation email (best-effort)
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Password Changed',
+                    text: 'This is a confirmation that the password for your account (' + user.email + ') has just been changed.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending password change confirmation:', error);
+                    }
+                });
+
+                res.status(200).json({ message: 'Password has been reset successfully.' });
+            });
+        }).catch(function (err) {
+            console.error('Error in reset password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
 
     const SystemInfo = require('./models/systeminfo');
     const RaceType = require('./models/racetype');
@@ -2819,7 +3057,7 @@ module.exports = async function (app, qs, passport, async, _) {
             },
             to: {
                 name: "MCRRC RACE TEAM SITE ADMIN",
-                address: process.env.MCRRC_EMAIL_ADDRESS
+                address: process.env.MCRRC_FROM_EMAIL
             },
             subject: data.subject, // Subject line
             text: data.body // plaintext body
@@ -3347,6 +3585,11 @@ module.exports = async function (app, qs, passport, async, _) {
                 return res.status(400).json({ error: 'Email, username and password are required' });
             }
 
+            var passwordError = validatePassword(req.body.password);
+            if (passwordError) {
+                return res.status(400).json({ error: passwordError });
+            }
+
             var existing = await User.findOne({ email: req.body.email });
             if (existing) {
                 return res.status(400).json({ error: 'A user with that email already exists' });
@@ -3357,6 +3600,7 @@ module.exports = async function (app, qs, passport, async, _) {
             newUser.username = req.body.username;
             newUser.password = newUser.generateHash(req.body.password);
             newUser.role = req.body.role || 'user';
+            newUser.enabled = true; // Admin-created users are enabled by default
             if (req.body.member) newUser.member = req.body.member;
 
             await newUser.save();
@@ -3379,15 +3623,38 @@ module.exports = async function (app, qs, passport, async, _) {
                 return res.status(404).json({ error: 'User not found' });
             }
 
+            var wasEnabled = user.enabled;
+
             if (req.body.username) user.username = req.body.username;
             if (req.body.email) user.email = req.body.email;
             if (req.body.role) user.role = req.body.role;
+            if (req.body.hasOwnProperty('enabled')) user.enabled = req.body.enabled;
             // Allow setting or clearing member association
             if (req.body.hasOwnProperty('member')) {
                 user.member = req.body.member || null;
             }
 
             await user.save();
+
+            // Send activation notification email if requested
+            if (req.body.notifyUser && user.enabled && !wasEnabled && user.email) {
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Account Activated',
+                    text: 'Hi ' + user.username + ',\n\n' +
+                        'Your account has been activated. You can now log in at:\n\n' +
+                        req.protocol + '://' + req.get('host') + '/#/login\n\n' +
+                        'Thank you,\nMCRRC Racing Team\n'
+                }, function (error) {
+                    if (error) {
+                        console.error('Error sending account activation email:', error);
+                    }
+                });
+            }
 
             await user.populate('member', 'firstname lastname username sex memberStatus');
             var result = user.toObject();

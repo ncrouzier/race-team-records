@@ -27,7 +27,10 @@
                     ng-class="{ 'has-error' : formAddUser.password.$invalid && !formAddUser.password.$pristine}">
                     <label class="text-left">Password:</label>
                     <input type="password" name="password" class="form-control input-md text-left"
-                        ng-model="formData.password" required ng-minlength="4">
+                        ng-model="formData.password" required ng-minlength="8" maxlength="64">
+                    <p class="help-block" ng-show="formAddUser.password.$dirty && formAddUser.password.$error.minlength">
+                        Password must be at least 8 characters.
+                    </p>
                 </div>
             </div>
             <div class="col-md-6">

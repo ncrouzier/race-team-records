@@ -144,6 +144,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/login",
             templateUrl: "views/login.html",
             controller: 'LoginController'
+        }).state('/forgot-password', {
+            url: "/forgot-password",
+            templateUrl: "views/forgot-password.html",
+            controller: 'ForgotPasswordController'
+        }).state('/reset-password', {
+            url: "/reset-password/:token",
+            templateUrl: "views/reset-password.html",
+            controller: 'ResetPasswordController'
         }).state('/signup', {
             url: "/signup",
             templateUrl: "views/signup.html",

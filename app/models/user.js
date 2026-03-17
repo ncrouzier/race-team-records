@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var bcrypt   = require('bcrypt-nodejs');
+var bcrypt   = require('bcryptjs');
 
 // define the schema for our user model
 var userSchema = mongoose.Schema({
@@ -8,6 +8,10 @@ var userSchema = mongoose.Schema({
     role         : String,
     username     : String,
     member       : { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
+    enabled      : { type: Boolean, default: false },
+    resetPasswordToken  : String,
+    resetPasswordExpires : Date,
+    lastLogin: Date,
     createdAt: Date,
     updatedAt: Date
 });

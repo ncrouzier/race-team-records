@@ -66,6 +66,24 @@ angular.module('mcrrcApp.results').controller('UsersController', ['$scope', 'Aut
         });
     };
 
+    // Toggle enabled/disabled
+    $scope.toggleEnabled = function(user) {
+        var wasEnabled = user.enabled;
+        user.enabled = !user.enabled;
+
+        if (user.enabled && !wasEnabled) {
+            // Enabling a user — ask if they should be notified
+            var dlg = dialogs.confirm("Notify User?", "Would you like to send an email to <strong>" + (user.email || user.username) + "</strong> letting them know their account is now active?");
+            dlg.result.then(function() {
+                UsersService.editUser(user, { notifyUser: true });
+            }, function() {
+                UsersService.editUser(user);
+            });
+        } else {
+            UsersService.editUser(user);
+        }
+    };
+
     // Delete user
     $scope.removeUser = function(user) {
         var dlg = dialogs.confirm("Remove User?", "Are you sure you want to delete user <strong>" + user.username + "</strong>? This action cannot be undone.");
@@ -129,6 +147,7 @@ angular.module('mcrrcApp.results').controller('UserEditModalInstanceController',
         username: user.username,
         email: user.email,
         role: user.role,
+        enabled: user.enabled,
         member: null
     };
 
@@ -145,6 +164,7 @@ angular.module('mcrrcApp.results').controller('UserEditModalInstanceController',
         user.username = $scope.formData.username;
         user.email = $scope.formData.email;
         user.role = $scope.formData.role;
+        user.enabled = $scope.formData.enabled;
         user.member = $scope.formData.member ? $scope.formData.member._id : null;
         $uibModalInstance.close(user);
     };

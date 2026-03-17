@@ -59,10 +59,16 @@ module.exports = function(passport) {
            
                 // check to see if theres already a user with that email
                 if (user) {
-                    return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
+                    return done(null, false, req.flash('signupMessage', 'An account with this email already exists. Please use a different email or log in.'));
                 } else {
-    
-                    
+
+                    // Validate password length
+                    if (!password || password.length < 8) {
+                        return done(null, false, req.flash('signupMessage', 'Password must be at least 8 characters long.'));
+                    }
+                    if (password.length > 64) {
+                        return done(null, false, req.flash('signupMessage', 'Password must be no more than 64 characters long.'));
+                    }
 
                     // if there is no user with that email
                     // create the user
@@ -75,8 +81,9 @@ module.exports = function(passport) {
                     // if (req.body.role){
                     //     newUser.role = req.body.role;   
                     // }
-                    //default to user 
+                    //default to user, disabled until admin approves
                     newUser.role = "user";
+                    newUser.enabled = false;
     
                     // save the user
                     try{
@@ -121,12 +128,16 @@ module.exports = function(passport) {
             User.findOne({ 'email' :  email }).then(user =>{                     
                 // if no user is found, return the message
                 if (!user)
-                    return done(null, false, req.flash('loginMessage', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
-    
+                    return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
+
                 // if the user is found but the password is wrong
                 if (!user.validPassword(password))
-                    return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
-    
+                    return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
+
+                // if the account is not enabled
+                if (!user.enabled)
+                    return done(null, false, req.flash('loginMessage', 'Your account is pending approval by an administrator.'));
+
                 // all is well, return successful user
                 return done(null, user);
             });

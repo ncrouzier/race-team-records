@@ -1,12 +1,16 @@
-angular.module('mcrrcApp.authentication').controller('SignUpController', function($scope,$http,$state) {
+angular.module('mcrrcApp.authentication').controller('SignUpController', ['$scope', '$http', '$state', function($scope, $http, $state) {
 
-	$scope.signup = function (user) {
+    $scope.success = false;
 
-		$http.post("/api/signup", user).success(function (data, status) {
-			window.location.href = '/';
-		}).error(function (data) {
-			$scope.message = data[0];
-			$state.go('/signup'); 
-		});
-	};
-});
+    $scope.signup = function(user) {
+        $http.post("/api/signup", user).success(function(data) {
+            $scope.message = '';
+            $scope.success = true;
+            $scope.successMessage = data.message;
+        }).error(function(data) {
+            $scope.message = data[0] || (data && data.message) || 'An error occurred.';
+            $scope.success = false;
+        });
+    };
+
+}]);

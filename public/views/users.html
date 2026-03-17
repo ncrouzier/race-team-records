@@ -39,13 +39,15 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Member</th>
+                            <th>Status</th>
                             <th>Created</th>
+                            <th>Last Login</th>
                             <th style="width: 80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-if="(usersList | filter:userFilter).length === 0">
-                            <td colspan="6" class="text-center text-muted" style="padding: 40px;">
+                            <td colspan="8" class="text-center text-muted" style="padding: 40px;">
                                 <i class="fa fa-info-circle"></i>
                                 <span ng-if="usersList.length === 0">No users found.</span>
                                 <span ng-if="usersList.length > 0">No users match the current filters.</span>
@@ -66,7 +68,19 @@
                                 </a>
                                 <span ng-if="!u.member" class="text-muted">-</span>
                             </td>
+                            <td>
+                                <span class="label hoverhand"
+                                    ng-class="{'label-success': u.enabled, 'label-default': !u.enabled}"
+                                    ng-click="toggleEnabled(u)"
+                                    title="Click to {{u.enabled ? 'disable' : 'enable'}}">
+                                    {{u.enabled ? 'enabled' : 'disabled'}}
+                                </span>
+                            </td>
                             <td>{{u.createdAt | date:'yyyy-MM-dd':'UTC'}}</td>
+                            <td>
+                                <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd HH:mm':'UTC'}}</span>
+                                <span ng-if="!u.lastLogin" class="text-muted">-</span>
+                            </td>
                             <td class="text-center" style="white-space: nowrap;">
                                 <i class="fa fa-pencil hoverhand" ng-click="editUser(u)"
                                     title="Edit user" style="margin-right: 8px;"></i>

@@ -3,6 +3,11 @@
 // Load environment variables from .env file
 require('dotenv').config();
 
+if (!process.env.SESSION_SECRET) {
+    console.error('FATAL: SESSION_SECRET environment variable is required');
+    process.exit(1);
+}
+
 // set up ======================================================================
 // get all the tools we need
 var express = require('express');
@@ -34,22 +39,22 @@ var _ = require('underscore');
 
 var qs = require('querystring');
 
-const service = require('./app/service.js'); 
+const service = require('./app/service.js');
 const schedule = require('node-schedule');
 
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
 app.use(sslRedirect());
 
-app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({limit: '50mb', extended: true}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // configuration ===============================================================
 
 let mongourl;
 if (process.env.MLAB_MONGODB_DB_URL) {
     mongourl = process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords';
-	// mongoose.connect(process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords');
+    // mongoose.connect(process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords');
 } else if (process.env.OPENSHIFT_MONGODB_DB_URL) {
     mongourl = process.env.OPENSHIFT_MONGODB_DB_URL + 'records';
     // mongoose.connect(process.env.OPENSHIFT_MONGODB_DB_URL + 'records');
@@ -67,7 +72,7 @@ var mail = require('./config/mail')(nodemailer);
 
 // set up our express application
 app.use(morgan('dev')); // log every request to the console
-app.use(cookieParser("cheatshoes")); // read cookies (needed for auth)
+app.use(cookieParser(process.env.SESSION_SECRET)); // read cookies (needed for auth)
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -78,20 +83,34 @@ app.set('view engine', 'ejs'); // set up ejs for templating
 // required for passport
 app.use(session({
     cookie: {
-        maxAge:  30* 24 * 60 * 60 * 1000 // thirty day
+        maxAge: 30 * 24 * 60 * 60 * 1000 // thirty day
     },
-    secret: "cheatshoes",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl :  mongourl,
-        stringify: false        
-      })
+        mongoUrl: mongourl,
+        stringify: false
+    })
 }));
 
 app.use(passport.initialize());
 app.use(passport.session({})); // persistent login sessions
 app.use(flash()); // use connect-flash for flash messages stored in session
+
+// Rate limiting for auth endpoints
+const rateLimit = require('express-rate-limit');
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minute window
+    max: 20,                   // limit each IP to 20 requests per window
+    message: { error: 'Too many attempts, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.post('/api/login', authLimiter);
+app.post('/api/signup', authLimiter);
+app.post('/api/forgot', authLimiter);
+app.use('/api/reset', authLimiter);
 
 // routes ======================================================================
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
@@ -110,13 +129,13 @@ const rule = new schedule.RecurrenceRule();
 rule.hour = 0;
 rule.minute = 1;
 rule.tz = 'Etc/GMT+5';
-const job = schedule.scheduleJob(rule, function(){
+const job = schedule.scheduleJob(rule, function () {
     console.log("team requirement stats updated");
-    service.startUpUpdate();    
-  });
+    service.startUpUpdate();
+});
 
 
-var server = app.listen(port, function() {
-  console.log('Node app is running on port', port);
+var server = app.listen(port, function () {
+    console.log('Node app is running on port', port);
 });
 

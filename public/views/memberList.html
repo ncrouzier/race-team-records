@@ -104,7 +104,7 @@
                                 ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
                                 ui-sref="/members/member/head-to-head({member: memberListcolumns[0][$index].username})"
                                 class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
-                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats"
+                                ng-if="user.role == 'admin' && paramModel.showTeamRequirementProgress && memberListcolumns[0][$index].teamRequirementStats"
                                 member="memberListcolumns[0][$index]"></team-requirements>
                         </td>
                         <td ng-if="!memberListcolumns[0][$index]"></td>
@@ -119,7 +119,7 @@
                                 ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
                                 ui-sref="/members/member/head-to-head({member: memberListcolumns[1][$index].username})"
                                 class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
-                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats"
+                                ng-if="user.role == 'admin' && paramModel.showTeamRequirementProgress && memberListcolumns[1][$index].teamRequirementStats"
                                 member="memberListcolumns[1][$index]"></team-requirements>
                         </td>
                         <td ng-if="!memberListcolumns[1][$index]"></td>
@@ -134,7 +134,7 @@
                                 ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
                                 ui-sref="/members/member/head-to-head({member: memberListcolumns[2][$index].username})"
                                 class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
-                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats"
+                                ng-if="user.role == 'admin' && paramModel.showTeamRequirementProgress && memberListcolumns[2][$index].teamRequirementStats"
                                 member="memberListcolumns[2][$index]"></team-requirements>
                         </td>
                         <td ng-if="!memberListcolumns[2][$index]"></td>
@@ -149,7 +149,7 @@
                                 ng-click="$event.stopPropagation()" ng-if="user.role == 'admin'"
                                 ui-sref="/members/member/head-to-head({member: memberListcolumns[3][$index].username})"
                                 class="hoverhand"><i class="fa fa-trophy"></i></a><team-requirements
-                                ng-if="paramModel.showTeamRequirementProgress && memberListcolumns[3][$index].teamRequirementStats"
+                                ng-if="user.role == 'admin' && paramModel.showTeamRequirementProgress && memberListcolumns[3][$index].teamRequirementStats"
                                 member="memberListcolumns[3][$index]"></team-requirements>
                         </td>
                         <td ng-if="!memberListcolumns[3][$index]"></td>

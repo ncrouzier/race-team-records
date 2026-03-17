@@ -3647,7 +3647,7 @@ module.exports = async function (app, qs, passport, async, _) {
                     subject: 'MCRRC Racing Team - Account Activated',
                     text: 'Hi ' + user.username + ',\n\n' +
                         'Your account has been activated. You can now log in at:\n\n' +
-                        req.protocol + '://' + req.get('host') + '/#/login\n\n' +
+                        process.env.LOGIN_URL + '\n\n' +
                         'Thank you,\nMCRRC Racing Team\n'
                 }, function (error) {
                     if (error) {

@@ -9,7 +9,8 @@
             </div>
             <div class="panel-body" style="padding: 0;">
                 <!-- Filters row -->
-                <div style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <div
+                    style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 5px;">
                         <label style="margin: 0; font-weight: 600;">Role:</label>
                         <select class="form-control input-sm" ng-model="roleFilter"
@@ -20,11 +21,9 @@
                         <label style="margin: 0; font-weight: 600;">Search:</label>
                         <div style="position: relative; flex: 1;">
                             <input type="text" class="form-control input-sm" ng-model="searchQuery"
-                                ng-model-options="{debounce: 150}"
-                                placeholder="Filter by username or email..." style="padding-right: 25px;">
-                            <span class="fa fa-times-circle hoverhand"
-                                ng-show="searchQuery"
-                                ng-click="searchQuery=''"
+                                ng-model-options="{debounce: 150}" placeholder="Filter by username or email..."
+                                style="padding-right: 25px;">
+                            <span class="fa fa-times-circle hoverhand" ng-show="searchQuery" ng-click="searchQuery=''"
                                 style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #999;"></span>
                         </div>
                     </div>
@@ -71,21 +70,19 @@
                             <td>
                                 <span class="label hoverhand"
                                     ng-class="{'label-success': u.enabled, 'label-default': !u.enabled}"
-                                    ng-click="toggleEnabled(u)"
-                                    title="Click to {{u.enabled ? 'disable' : 'enable'}}">
+                                    ng-click="toggleEnabled(u)" title="Click to {{u.enabled ? 'disable' : 'enable'}}">
                                     {{u.enabled ? 'enabled' : 'disabled'}}
                                 </span>
                             </td>
-                            <td>{{u.createdAt | date:'yyyy-MM-dd':'UTC'}}</td>
+                            <td>{{u.createdAt | date:'yyyy-MM-dd'}}</td>
                             <td>
-                                <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd HH:mm':'UTC'}}</span>
+                                <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd HH:mm'}}</span>
                                 <span ng-if="!u.lastLogin" class="text-muted">-</span>
                             </td>
                             <td class="text-center" style="white-space: nowrap;">
-                                <i class="fa fa-pencil hoverhand" ng-click="editUser(u)"
-                                    title="Edit user" style="margin-right: 8px;"></i>
-                                <i class="fa fa-trash hoverhand" ng-click="removeUser(u)"
-                                    title="Delete user"></i>
+                                <i class="fa fa-pencil hoverhand" ng-click="editUser(u)" title="Edit user"
+                                    style="margin-right: 8px;"></i>
+                                <i class="fa fa-trash hoverhand" ng-click="removeUser(u)" title="Delete user"></i>
                             </td>
                         </tr>
                     </tbody>

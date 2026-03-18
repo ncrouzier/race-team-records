@@ -157,20 +157,28 @@ footer {
     height: 200px;
 
     .logo-stats {
-        padding-top: 10px;
-        padding-right: 20px;
-        color: #2d5185;
+        padding-top: 8px;
+        padding-right: 10px;
         position: absolute;
         right: 0;
         top: 0;
         z-index: 1;
 
-        a {
-            color: #2d5185;
+        .submit-btn {
+            display: inline-block;
+            background-color: #c9302c;
+            color: #fff;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
 
-            &:hover {
+            &:hover,
+            &:focus {
+                background-color: #a02622;
                 text-decoration: none;
-                color: #2d5185;
+                color: #fff;
             }
         }
     }

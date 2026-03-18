@@ -53,9 +53,9 @@
 							{{milesRaced}} miles raced in
 							{{currentYear}}!</a></span> -->
 
-					<div class="uib-dropdown" uib-dropdown style="margin-top: 5px; font-size: 13px;">
-						<a href class="uib-dropdown-toggle" uib-dropdown-toggle style="cursor: pointer;">
-							<span class="red"> Submit <span class="caret"></span></span>
+					<div class="uib-dropdown" uib-dropdown style="font-size: 13px;">
+						<a href class="uib-dropdown-toggle submit-btn" uib-dropdown-toggle>
+							Submit <span class="caret"></span>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-right" uib-dropdown-menu>
 							<li><a ui-sref="/submitresult" target="_blank">Submit a Result</a></li>
@@ -115,7 +115,7 @@
 								</li>
 							</ul>
 						</li>
-						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf	'))}"
+						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span class="caret"></span>
@@ -130,6 +130,7 @@
 								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
 										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
 								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
+								<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">Activity Log</a></li>
 								<li ng-class="{active: $state.includes('/stats/requirements')}"><a
 										ui-sref="/stats/requirements">Team Requirements</a></li>
 								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create

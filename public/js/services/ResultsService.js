@@ -709,12 +709,6 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 });
             });
     };
-    // Get race types for dropdown
-    factory.getRaceTypes = function () {
-        return racetypes.getList().then(function (racetypes) {
-            return racetypes;
-        });
-    };
 
 
 

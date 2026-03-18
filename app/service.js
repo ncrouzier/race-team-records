@@ -9,6 +9,7 @@ const Result = require('./models/result');
 const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
 const VolunteerJob = require('./models/volunteerjob');
+const ActivityLog = require('./models/activitylog');
 const { configDotenv } = require('dotenv');
 
 // In-memory age grading cache for performance optimization
@@ -1457,6 +1458,28 @@ module.exports = {
 
         } catch (err) {
             console.error('Error updating all location achievements:', err);
+        }
+    },
+
+    // Activity logging (fire-and-forget, never breaks the main operation)
+    logActivity: async function(options) {
+        try {
+            const log = new ActivityLog({
+                user: options.userId || null,
+                username: options.username || 'system',
+                action: options.action,
+                description: options.description || '',
+                targetType: options.targetType || null,
+                targetId: options.targetId || null,
+                targetName: options.targetName || null,
+                metadata: options.metadata || null,
+                ipAddress: options.ipAddress || null
+            });
+            await log.save();
+            return log;
+        } catch (err) {
+            console.error('Error logging activity:', err);
+            return null;
         }
     },
 

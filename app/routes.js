@@ -388,6 +388,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
     const User = require('./models/user');
+    const ActivityLog = require('./models/activitylog');
 
 
     // =====================================
@@ -637,6 +638,20 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             member.bio = req.body.bio;
             await member.save();
+
+            // Log the bio edit
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'bio_edit',
+                description: 'Updated bio for ' + member.firstname + ' ' + member.lastname,
+                targetType: 'member',
+                targetId: member._id.toString(),
+                targetName: member.firstname + ' ' + member.lastname,
+                metadata: { bioLength: (req.body.bio || '').length },
+                ipAddress: req.ip
+            });
+
             res.json({ success: 'Bio updated successfully', bio: member.bio });
         } catch (err) {
             console.error(err);
@@ -3678,6 +3693,65 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // =====================================
+    // ACTIVITY LOGS =======================
+    // =====================================
+
+    // Get activity logs (admin only, with filtering and pagination)
+    app.get('/api/activitylogs', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 50;
+            const skip = (page - 1) * limit;
+
+            let filter = {};
+
+            if (req.query.action && req.query.action !== 'All') {
+                filter.action = req.query.action;
+            }
+            if (req.query.username) {
+                filter.username = new RegExp(req.query.username, 'i');
+            }
+            if (req.query.from || req.query.to) {
+                filter.createdAt = {};
+                if (req.query.from) {
+                    filter.createdAt.$gte = new Date(req.query.from);
+                }
+                if (req.query.to) {
+                    filter.createdAt.$lte = new Date(req.query.to);
+                }
+            }
+
+            const total = await ActivityLog.countDocuments(filter);
+            const logs = await ActivityLog.find(filter)
+                .sort('-createdAt')
+                .skip(skip)
+                .limit(limit)
+                .exec();
+
+            res.json({
+                logs: logs,
+                total: total,
+                page: page,
+                pages: Math.ceil(total / limit)
+            });
+        } catch (err) {
+            console.error('Error fetching activity logs:', err);
+            res.status(500).json({ error: 'Error fetching activity logs' });
+        }
+    });
+
+    // Get distinct action types (for filter dropdown)
+    app.get('/api/activitylogs/actions', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const actions = await ActivityLog.distinct('action');
+            res.json(actions);
+        } catch (err) {
+            console.error('Error fetching action types:', err);
+            res.status(500).json({ error: 'Error fetching action types' });
+        }
+    });
+
     app.get('*', function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
         // console.log('Request URL:', req.url);
@@ -3805,6 +3879,7 @@ module.exports = async function (app, qs, passport, async, _) {
             });
         }
     });
+
 
 
 };

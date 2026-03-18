@@ -172,6 +172,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/users.html');
                 gtag('event', 'page_view');
             }
+        }).state('/activitylogs', {
+            url: "/activitylogs",
+            templateUrl: "views/activitylogs.html",
+            controller: 'ActivityLogController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/activitylogs.html');
+                gtag('event', 'page_view');
+            }
         }).state('/volunteer-jobs', {
             url: "/volunteer-jobs",
             templateUrl: "views/volunteerJobs.html",
@@ -311,10 +319,10 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             templateUrl: "views/mcrrcreport.html",
             controller: 'TableReportController'
         }).state('/submitresult', {
-            url: "http://bit.ly/reportresult"
+            url: "https://forms.gle/upXaECBdjt17WhwR9"
         })
         .state('/submitvolunteer', {
-            url: "http://bit.ly/submitvolunteer"
+            url: "https://forms.gle/iqZVhUjg6WpgG8D97"
         })
         .state('/instagram', {
             url: "https://www.instagram.com/mcrrc_racing",

@@ -6,6 +6,8 @@ const axios = require('axios');
 
 module.exports = async function (app, qs, passport, async, _) {
 
+    const User = require('./models/user');
+
     // Add response modification middleware BEFORE routes
     app.use('/api', function (req, res, next) {
         // Store original method
@@ -47,6 +49,21 @@ module.exports = async function (app, qs, passport, async, _) {
         next();
     });
 
+    // Track last active time (updates at most once per 5 minutes per user)
+    var lastActiveCache = {};
+    app.use('/api', function (req, res, next) {
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+            var userId = req.user._id.toString();
+            var now = Date.now();
+            var lastUpdate = lastActiveCache[userId] || 0;
+            if (now - lastUpdate > 5 * 60 * 1000) {
+                lastActiveCache[userId] = now;
+                User.updateOne({ _id: req.user._id }, { lastActive: new Date(now) }).exec();
+            }
+        }
+        next();
+    });
+
     // =====================================
     // PASSWORD VALIDATION =================
     // =====================================
@@ -83,7 +100,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     if (err) {
                         return next(err);
                     }
-                    user.lastLogin = Date.now();
+                    var nowdate = new Date();
+                    user.lastLogin = nowdate;
+                    user.lastActive = nowdate;
                     user.save();
                     res.status(200).send({
                         message: req.flash('loginMessage'),
@@ -282,7 +301,7 @@ module.exports = async function (app, qs, passport, async, _) {
             user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
             user.save().then(function () {
-                var resetUrl = req.protocol + '://' + req.get('host') + '/#/reset-password/' + token;
+                var resetUrl = process.env.SITE_URL + '/reset-password/' + token;
 
                 transport.sendMail({
                     from: {
@@ -387,7 +406,6 @@ module.exports = async function (app, qs, passport, async, _) {
     const Race = require('./models/race');
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
-    const User = require('./models/user');
     const ActivityLog = require('./models/activitylog');
 
 
@@ -3662,7 +3680,7 @@ module.exports = async function (app, qs, passport, async, _) {
                     subject: 'MCRRC Racing Team - Account Activated',
                     text: 'Hi ' + user.username + ',\n\n' +
                         'Your account has been activated. You can now log in at:\n\n' +
-                        process.env.LOGIN_URL + '\n\n' +
+                        process.env.SITE_URL + '/login' + '\n\n' +
                         'Thank you,\nMCRRC Racing Team\n'
                 }, function (error) {
                     if (error) {

@@ -20,8 +20,8 @@
                 <div class="row text-center">
                     <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
                     <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}<span
-                            ng-if="user.role == 'admin'">, {{currentMember | memberAgeFilter }}</span>) <i
-                            class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
+                            ng-if="user.role == 'admin' || user.role == 'captain'">, {{currentMember | memberAgeFilter
+                            }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
                             ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
                             class="hoverhand fa fa-times" ng-show="user.role == 'admin'"
                             ng-click="removeMember(currentMember)" title="remove user"></i></h4>

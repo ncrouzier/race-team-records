@@ -6,8 +6,8 @@
                 <div class="row text-center">
                     <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
                     <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}<span
-                            ng-if="user.role == 'admin'">, {{currentMember | memberAgeFilter }}</span>) <i
-                            class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
+                            ng-if="user.role == 'admin' || user.role == 'captain'">, {{currentMember | memberAgeFilter
+                            }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
                             ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
                             class="hoverhand fa fa-times" ng-show="user.role == 'admin'"
                             ng-click="removeMember(currentMember)" title="remove user"></i></h4>
@@ -52,21 +52,25 @@
                 <!-- Unauthorized message -->
                 <div ng-if="!loading && !authorized" class="text-center" style="padding: 60px;">
                     <i class="fa fa-lock fa-3x text-muted"></i>
-                    <p style="margin-top: 10px;" class="text-muted">You must be logged in to view this member's volunteer jobs.</p>
+                    <p style="margin-top: 10px;" class="text-muted">You must be logged in to view this member's
+                        volunteer jobs.</p>
                 </div>
 
                 <!-- Volunteer Jobs Content -->
                 <div ng-if="!loading && authorized">
                     <div class="panel panel-default">
-                        <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="panel-heading"
+                            style="display: flex; justify-content: space-between; align-items: center;">
                             <h4 style="margin: 0;"><i class="fa fa-heart"></i> Volunteer Jobs</h4>
-                            <a class="btn btn-success" ui-sref="/submitvolunteer" target="_blank" style="font-weight: 600;">
+                            <a class="btn btn-success" ui-sref="/submitvolunteer" target="_blank"
+                                style="font-weight: 600;">
                                 <i class="fa fa-plus-circle"></i> Submit Volunteer Job
                             </a>
                         </div>
                         <div class="panel-body" style="padding: 0;">
                             <!-- Filters row -->
-                            <div style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div
+                                style="padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <label style="margin: 0; font-weight: 600;">Year:</label>
                                     <select class="form-control input-sm" ng-model="selectedYear"
@@ -80,8 +84,7 @@
                                             ng-model-options="{debounce: 150}"
                                             placeholder="Filter by event name or description..."
                                             style="padding-right: 25px;">
-                                        <span class="fa fa-times-circle hoverhand"
-                                            ng-show="searchQuery"
+                                        <span class="fa fa-times-circle hoverhand" ng-show="searchQuery"
                                             ng-click="searchQuery=''"
                                             style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #999;"></span>
                                     </div>
@@ -102,11 +105,14 @@
                                     <tr ng-if="getFilteredCount() === 0">
                                         <td colspan="3" class="text-center text-muted" style="padding: 40px;">
                                             <i class="fa fa-info-circle"></i>
-                                            <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded yet.</span>
-                                            <span ng-if="volunteerJobsList.length > 0">No volunteer jobs match the current filters.</span>
+                                            <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded
+                                                yet.</span>
+                                            <span ng-if="volunteerJobsList.length > 0">No volunteer jobs match the
+                                                current filters.</span>
                                         </td>
                                     </tr>
-                                    <tr ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
+                                    <tr
+                                        ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
                                         <td>{{job.eventName}}</td>
                                         <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
                                         <td>{{job.description}}</td>

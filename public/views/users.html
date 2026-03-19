@@ -41,12 +41,13 @@
                             <th>Status</th>
                             <th>Created</th>
                             <th>Last Login</th>
+                            <th>Last Active</th>
                             <th style="width: 80px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-if="(usersList | filter:userFilter).length === 0">
-                            <td colspan="8" class="text-center text-muted" style="padding: 40px;">
+                            <td colspan="9" class="text-center text-muted" style="padding: 40px;">
                                 <i class="fa fa-info-circle"></i>
                                 <span ng-if="usersList.length === 0">No users found.</span>
                                 <span ng-if="usersList.length > 0">No users match the current filters.</span>
@@ -78,6 +79,10 @@
                             <td>
                                 <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd HH:mm'}}</span>
                                 <span ng-if="!u.lastLogin" class="text-muted">-</span>
+                            </td>
+                            <td>
+                                <span ng-if="u.lastActive">{{u.lastActive | date:'yyyy-MM-dd HH:mm'}}</span>
+                                <span ng-if="!u.lastActive" class="text-muted">-</span>
                             </td>
                             <td class="text-center" style="white-space: nowrap;">
                                 <i class="fa fa-pencil hoverhand" ng-click="editUser(u)" title="Edit user"

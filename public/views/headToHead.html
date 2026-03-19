@@ -19,7 +19,8 @@
                                 <div class="row text-center">
                                     <h2 class="bold">{{member1.firstname}} {{member1.lastname}}</h2>
                                     <h4> ({{member1.dateofbirth | categoryFilter}} {{member1.sex}}<span
-                                            ng-if="user.role == 'admin'">, {{member1 | memberAgeFilter }}</span>)</h4>
+                                            ng-if="user.role == 'admin' || user.role == 'captain'">, {{member1 |
+                                            memberAgeFilter }}</span>)</h4>
                                     <h6 class="italic"> member <span
                                             ng-repeat="membershipdate in member1.membershipDates | orderBy:'start' track by $index"><span
                                                 ng-if="membershipdate.end === undefined">since</span><span

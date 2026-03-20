@@ -75,7 +75,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
                 member2: null,
             },
-            templateUrl: "views/headToHead.html",
+            templateUrl: "views/memberHeadToHead.html",
             controller: 'HeadToHeadController',
             onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');
@@ -87,7 +87,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             params: {
                 member: null,
             },
-            templateUrl: "views/headToHead.html",
+            templateUrl: "views/memberHeadToHead.html",
             controller: 'HeadToHeadController',
             onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');

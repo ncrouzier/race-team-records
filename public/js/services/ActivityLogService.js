@@ -18,5 +18,13 @@ angular.module('mcrrcApp.admin').factory('ActivityLogService', ['Restangular', f
         });
     };
 
+    factory.deleteLog = function(id) {
+        return Restangular.one('activitylogs', id).remove().then(function() {
+            return true;
+        }, function(res) {
+            console.log('Error deleting activity log: ' + res.status);
+        });
+    };
+
     return factory;
 }]);

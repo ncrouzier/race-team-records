@@ -23,11 +23,27 @@ angular.module('mcrrcApp.results').controller('UsersController', ['$scope', 'Aut
             var q = $scope.searchQuery.toLowerCase();
             var username = (user.username || '').toLowerCase();
             var email = (user.email || '').toLowerCase();
-            if (username.indexOf(q) === -1 && email.indexOf(q) === -1) {
+            var memberName = user.member ? ((user.member.firstname || '') + ' ' + (user.member.lastname || '')).toLowerCase() : '';
+            var status = user.enabled ? 'enabled' : 'disabled';
+            if (username.indexOf(q) === -1 && email.indexOf(q) === -1 && memberName.indexOf(q) === -1 && status.indexOf(q) === -1) {
                 return false;
             }
         }
         return true;
+    };
+
+    // =====================================
+    // SORTING =============================
+    $scope.sortBy = 'username';
+    $scope.sortReverse = false;
+
+    $scope.setSortBy = function(field) {
+        if ($scope.sortBy === field) {
+            $scope.sortReverse = !$scope.sortReverse;
+        } else {
+            $scope.sortBy = field;
+            $scope.sortReverse = false;
+        }
     };
 
     // =====================================

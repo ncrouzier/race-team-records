@@ -23,7 +23,7 @@
                             ng-if="user.role == 'admin' || user.role == 'captain'">, {{currentMember | memberAgeFilter
                             }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
                             ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
-                            class="hoverhand fa fa-times" ng-show="user.role == 'admin'"
+                            class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
                             ng-click="removeMember(currentMember)" title="remove user"></i></h4>
                     <h6 class="italic"> member <span
                             ng-repeat="membershipdate in currentMember.membershipDates | orderBy:'start' track by $index"><span
@@ -63,11 +63,15 @@
                 <div class="row">
                     <div class="col-sm-7">
                         <div class="row row-no-left-margin">
-                            <h3>Member Bio:<i class="hoverhand red fa fa-pencil-square-o"
-                                    style="font-size: 16px; margin-left: 8px;"
-                                    ng-show="user.member._id && user.member._id === currentMember._id && user.role !== 'admin'"
-                                    ng-click="editMyBio(currentMember)" title="edit bio"></i></h3><span class="black"
-                                ng-bind-html="currentMember.bio"></span>
+                            <h3 style="display: flex; align-items: center; gap: 10px;">
+                                Member Bio:
+                                <button class="btn btn-default btn-xs"
+                                    ng-show="user.role === 'admin' || (user.member._id && user.member._id === currentMember._id)"
+                                    ng-click="editMyBio(currentMember)">
+                                    <i class="fa fa-pencil"></i> Edit Bio
+                                </button>
+                            </h3>
+                            <span class="black" ng-bind-html="currentMember.bio"></span>
                         </div>
                     </div>
                     <div class="col-sm-5">
@@ -81,6 +85,11 @@
                                         ng-if="currentMember.pictureLink && currentMember.pictureLink !== ''"
                                         ng-src="{{currentMember.pictureLink}}" / alt="Member's Picture">
                                 </div>
+                                <button class="btn btn-default btn-xs" style="margin-top: 8px;"
+                                    ng-show="user.role === 'admin' || (user.member._id && user.member._id === currentMember._id)"
+                                    ng-click="editMyPhoto(currentMember)">
+                                    <i class="fa fa-camera"></i> Edit Photo
+                                </button>
                             </div>
                         </div>
                     </div>

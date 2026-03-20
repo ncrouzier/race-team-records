@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.results').controller('RequirementsController',
-    ['$scope', 'AuthService', 'RequirementsService', '$state', '$uibModal',
-        function ($scope, AuthService, RequirementsService, $state, $uibModal) {
+    ['$scope', 'AuthService', 'MembersService', 'ResultsService', 'VolunteerJobsService', '$state', '$uibModal', '$q',
+        function ($scope, AuthService, MembersService, ResultsService, VolunteerJobsService, $state, $uibModal, $q) {
 
             // =====================================
             // AUTHENTICATION SETUP ================
@@ -22,17 +22,118 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
             // LOAD REQUIREMENTS DATA ==============
             $scope.loadRequirements = function () {
                 $scope.loading = true;
-                RequirementsService.getRequirements($scope.selectedYear).then(function (data) {
-                    // Add status value for sorting (0 = incomplete, 1 = partial, 2 = complete)
-                    data.forEach(function (req) {
-                        req.statusValue = $scope.calculateStatusValue(req);
-                    });
-                    $scope.requirementsList = data;
-                    // Get volunteer requirement flag from first item (same for all members in a year)
-                    $scope.volunteerRequirementApplies = data.length > 0 ? data[0].volunteerRequirementApplies : true;
-                    $scope.calculateSummaryStats();
-                    $scope.loading = false;
+                var year = $scope.selectedYear;
+
+                $q.all([
+                    MembersService.getMembersWithCacheSupport({ select: '-bio -personalBests' }),
+                    ResultsService.getRaceResultsWithCacheSupport({ sort: '-racedate -order racename', preload: false }),
+                    VolunteerJobsService.getVolunteerJobsWithCacheSupport({ sort: '-jobDate' })
+                ]).then(function (results) {
+                    var members = results[0];
+                    var races = results[1];
+                    var volunteerJobs = results[2];
+                    var data = $scope.buildRequirementsFromCachedData(members, races, volunteerJobs, year);
+                    $scope.processRequirementsData(data);
                 });
+            };
+
+            // Build requirements data from cached race results, volunteer jobs, and members
+            $scope.buildRequirementsFromCachedData = function (members, races, volunteerJobs, year) {
+                var yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+                var yearEnd = new Date(Date.UTC(year + 1, 0, 1, 0, 0, 0, 0));
+
+                // Build per-member race count and max age grade from race results
+                var memberRaceStats = {}; // keyed by member _id
+                races.forEach(function (race) {
+                    var raceDate = new Date(race.racedate);
+                    if (raceDate < yearStart || raceDate >= yearEnd) return;
+
+                    (race.results || []).forEach(function (result) {
+                        (result.members || []).forEach(function (m) {
+                            var id = m._id.toString();
+                            if (!memberRaceStats[id]) {
+                                memberRaceStats[id] = { raceCount: 0, maxAgeGrade: 0 };
+                            }
+                            memberRaceStats[id].raceCount++;
+                            var ag = result.agegrade || 0;
+                            if (ag > memberRaceStats[id].maxAgeGrade) {
+                                memberRaceStats[id].maxAgeGrade = ag;
+                            }
+                        });
+                    });
+                });
+
+                // Build per-member volunteer job count
+                var memberVolunteerCount = {}; // keyed by member _id
+                (volunteerJobs || []).forEach(function (job) {
+                    var jobDate = new Date(job.jobDate);
+                    if (jobDate < yearStart || jobDate >= yearEnd) return;
+                    var id = (job.member && job.member._id) ? job.member._id.toString() : null;
+                    if (!id) return;
+                    memberVolunteerCount[id] = (memberVolunteerCount[id] || 0) + 1;
+                });
+
+                // Build requirements for each active member
+                var data = [];
+                members.forEach(function (member) {
+                    if (!member.membershipDates || member.membershipDates.length === 0) return;
+
+                    var isActive = member.membershipDates.some(function (period) {
+                        var periodStart = new Date(period.start);
+                        var periodEnd = period.end ? new Date(period.end) : new Date(9999, 11, 31);
+                        return periodStart < yearEnd && periodEnd >= yearStart;
+                    });
+                    if (!isActive) return;
+
+                    var id = member._id.toString();
+                    var stats = memberRaceStats[id] || { raceCount: 0, maxAgeGrade: 0 };
+                    var volunteerJobCount = memberVolunteerCount[id] || 0;
+
+                    var meetsRaceRequirement = (stats.raceCount + volunteerJobCount) >= 8;
+                    var meetsAgeGradeRequirement = stats.maxAgeGrade >= 70;
+                    var meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
+
+                    var joinedDuringYear = member.membershipDates.some(function (period) {
+                        var periodStart = new Date(period.start);
+                        return periodStart >= yearStart && periodStart < yearEnd;
+                    });
+                    var leftDuringYear = member.membershipDates.some(function (period) {
+                        if (!period.end) return false;
+                        var periodEnd = new Date(period.end);
+                        return periodEnd >= yearStart && periodEnd < yearEnd;
+                    });
+
+                    data.push({
+                        member: {
+                            _id: member._id,
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username
+                        },
+                        raceCount: stats.raceCount,
+                        maxAgeGrade: stats.maxAgeGrade,
+                        volunteerJobCount: volunteerJobCount,
+                        meetsRaceRequirement: meetsRaceRequirement,
+                        meetsAgeGradeRequirement: meetsAgeGradeRequirement,
+                        meetsAllRequirements: meetsAllRequirements,
+                        volunteerRequirementApplies: true,
+                        joinedDuringYear: joinedDuringYear,
+                        leftDuringYear: leftDuringYear
+                    });
+                });
+
+                return data;
+            };
+
+            // Process requirements data
+            $scope.processRequirementsData = function (data) {
+                data.forEach(function (req) {
+                    req.statusValue = $scope.calculateStatusValue(req);
+                });
+                $scope.requirementsList = data;
+                $scope.volunteerRequirementApplies = true;
+                $scope.calculateSummaryStats();
+                $scope.loading = false;
             };
 
             // =====================================

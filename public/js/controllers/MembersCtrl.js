@@ -150,6 +150,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         MembersService.showEditBioModal(member);
     };
 
+    $scope.editMyPhoto = function (member) {
+        MembersService.showEditPhotoModal(member);
+    };
 
     $scope.removeMember = function (member) {
         var dlg = dialogs.confirm("Remove Member?", "Are you sure you want to remove this member?");
@@ -773,6 +776,19 @@ angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', 
 
     $scope.saveBio = function () {
         $uibModalInstance.close($scope.formData.bio);
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+}]);
+
+angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
+    $scope.formData = { pictureLink: member.pictureLink || '' };
+    $scope.memberName = member.firstname + ' ' + member.lastname;
+
+    $scope.savePhoto = function () {
+        $uibModalInstance.close($scope.formData.pictureLink);
     };
 
     $scope.cancel = function () {

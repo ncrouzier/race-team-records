@@ -37,11 +37,12 @@
                             <th>Action</th>
                             <th>Description</th>
                             <th>Target</th>
+                            <th style="width: 50px;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-if="!logsList || logsList.length === 0">
-                            <td colspan="5" class="text-center text-muted" style="padding: 40px;">
+                            <td colspan="6" class="text-center text-muted" style="padding: 40px;">
                                 <i class="fa fa-info-circle"></i> No activity logs found.
                             </td>
                         </tr>
@@ -49,12 +50,19 @@
                             <td style="white-space: nowrap;">{{log.createdAt | date:'yyyy-MM-dd HH:mm'}}</td>
                             <td>{{log.username}}</td>
                             <td>
-                                <span class="label label-info">{{log.action}}</span>
+                                <span class="label label-info"
+                                    style="display: inline-block; min-width: 75px; text-align: center;">{{log.action}}</span>
                             </td>
                             <td>{{log.description}}</td>
                             <td>
-                                <span ng-if="log.targetName">{{log.targetName}}</span>
+                                <a ng-if="log.targetName && log.targetType === 'member' && log.metadata.targetUsername"
+                                    ui-sref="/members/member/bio({member: log.metadata.targetUsername})">{{log.targetName}}</a>
+                                <span ng-if="log.targetName && !(log.targetType === 'member' && log.metadata.targetUsername)">{{log.targetName}}</span>
                                 <span ng-if="!log.targetName" class="text-muted">-</span>
+                            </td>
+                            <td class="text-center" style="white-space: nowrap;">
+                                <i class="fa fa-eye hoverhand" ng-click="viewLogDetail(log)" title="View details" style="margin-right: 8px;"></i>
+                                <i class="fa fa-trash hoverhand" ng-click="deleteLog(log)" title="Delete entry"></i>
                             </td>
                         </tr>
                     </tbody>

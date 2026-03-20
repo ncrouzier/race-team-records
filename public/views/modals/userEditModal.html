@@ -16,8 +16,8 @@
                 <div class="form-group"
                     ng-class="{ 'has-error' : formEditUser.email.$invalid && !formEditUser.email.$pristine}">
                     <label class="text-left">Email:</label>
-                    <input type="email" name="email" class="form-control input-md text-left"
-                        ng-model="formData.email" required>
+                    <input type=" email" name="email" class="form-control input-md text-left" ng-model="formData.email"
+                        required>
                 </div>
             </div>
         </div>
@@ -52,7 +52,8 @@
                         </ui-select-match>
                         <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
                             <span ng-class="{'past-member' : member.memberStatus === 'past'}">
-                                <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search">
+                                <div
+                                    ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search">
                                 </div>
                                 <small>
                                     <span ng-if="member.memberStatus === 'past'">(past)</span>
@@ -66,8 +67,7 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button type="submit" class="btn btn-primary"
-        ng-click="saveUser()" ng-disabled="formEditUser.$invalid">
+    <button type="submit" class="btn btn-primary" ng-click="saveUser()" ng-disabled="formEditUser.$invalid">
         Save Changes
     </button>
     <button class="btn btn-danger" ng-click="cancel()">Cancel</button>

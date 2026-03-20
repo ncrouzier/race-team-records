@@ -13,6 +13,7 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
                     raceUpdate: headers['x-race-update'],
                     racetypeUpdate: headers['x-racetype-update'],
                     memberUpdate: headers['x-member-update'],
+                    volunteerJobUpdate: headers['x-volunteer-job-update'],
                     overallUpdate: headers['x-overall-update']
                 };
                 lastApiCallTime = Date.now();
@@ -59,13 +60,14 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
                     raceUpdate: headers['x-race-update'],
                     racetypeUpdate: headers['x-racetype-update'],
                     memberUpdate: headers['x-member-update'],
+                    volunteerJobUpdate: headers['x-volunteer-job-update'],
                     overallUpdate: headers['x-overall-update']
                 };
                 lastApiCallTime = Date.now();
             }
         }
     };
-    
+
     // Method to get cached system info
     this.getCachedSystemInfo = function() {
         return lastSystemInfo;

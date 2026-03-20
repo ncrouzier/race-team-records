@@ -1,7 +1,7 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', function($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService) {
 
     $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function(user) {
+    $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
     });
 
@@ -32,7 +32,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     $scope.sharedRaces = [];
     $scope.comparisonStats = {};
     $scope.headToHeadRecord = { member1Wins: 0, member2Wins: 0, ties: 0 };
-    
+
     // Mode variables
     $scope.isTabMode = false;
     $scope.topTeamMembers = [];
@@ -42,10 +42,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     $scope.teamMemberSortCriteria = 'wins';
     $scope.teamMemberSortDirection = false; // false = desc, true = asc
     $scope.sortedTeamMembers = [];
-    
+
     // Gender filter for team members table
     $scope.teamMemberGenderFilter = null; // null = all, 'Male' = male only, 'Female' = female only
-    
+
     // Age grade mode toggle - load from localStorage or default to false
     $scope.ageGradeMode = localStorageService.get('headToHeadAgeGradeMode') || false;
 
@@ -56,9 +56,9 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     // Cached unfiltered data for year/filter changes without re-fetching
     $scope._cachedRaceList = null;
     $scope._cachedAllMembers = null;
-    
+
     // Toggle age grade mode
-    $scope.toggleAgeGradeMode = function(ageGradeMode) {
+    $scope.toggleAgeGradeMode = function (ageGradeMode) {
         $scope.ageGradeMode = ageGradeMode;
 
         // Save the mode to localStorage
@@ -91,10 +91,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Build years list from races where member1 has results
-    $scope.buildYearsList = function(raceList) {
+    $scope.buildYearsList = function (raceList) {
         var yearsSet = {};
         var memberId = $scope.member1._id;
-        raceList.forEach(function(race) {
+        raceList.forEach(function (race) {
             if (race.results && race.results.length > 0) {
                 for (var i = 0; i < race.results.length; i++) {
                     var result = race.results[i];
@@ -109,29 +109,29 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 }
             }
         });
-        var years = Object.keys(yearsSet).map(Number).sort(function(a, b) { return b - a; });
+        var years = Object.keys(yearsSet).map(Number).sort(function (a, b) { return b - a; });
         $scope.yearsList = ['All Time'].concat(years);
     };
 
     // Filter race list by selected year
-    $scope.filterRaceListByYear = function(raceList) {
+    $scope.filterRaceListByYear = function (raceList) {
         if ($scope.yearFilter.selected === 'All Time') return raceList;
         var selectedYear = parseInt($scope.yearFilter.selected);
-        return raceList.filter(function(race) {
+        return raceList.filter(function (race) {
             return new Date(race.racedate).getUTCFullYear() === selectedYear;
         });
     };
 
     // Recalculate comparison data from a (possibly year-filtered) race list
-    $scope.recalculateComparison = function(raceList) {
+    $scope.recalculateComparison = function (raceList) {
         $scope.member1Results = [];
         $scope.member2Results = [];
 
-        raceList.forEach(function(race) {
+        raceList.forEach(function (race) {
             if (race.results && race.results.length > 0) {
-                race.results.forEach(function(result) {
+                race.results.forEach(function (result) {
                     if (result.members) {
-                        result.members.forEach(function(member) {
+                        result.members.forEach(function (member) {
                             if (member._id === $scope.member1._id) {
                                 $scope.member1Results.push({
                                     ...result,
@@ -158,14 +158,14 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     // Build yearly win/loss breakdown from sharedRaces for the stacked bar chart
     $scope.yearlyHeadToHeadData = null;
-    $scope.buildYearlyHeadToHeadData = function() {
+    $scope.buildYearlyHeadToHeadData = function () {
         if (!$scope.sharedRaces || $scope.sharedRaces.length === 0) {
             $scope.yearlyHeadToHeadData = null;
             return;
         }
 
         var yearMap = {};
-        $scope.sharedRaces.forEach(function(race) {
+        $scope.sharedRaces.forEach(function (race) {
             var year = new Date(race.race.racedate).getUTCFullYear();
             if (!yearMap[year]) {
                 yearMap[year] = { member1Wins: 0, member2Wins: 0, ties: 0 };
@@ -179,17 +179,17 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             }
         });
 
-        var years = Object.keys(yearMap).map(Number).sort(function(a, b) { return a - b; });
+        var years = Object.keys(yearMap).map(Number).sort(function (a, b) { return a - b; });
         $scope.yearlyHeadToHeadData = {
             labels: years,
-            member1Wins: years.map(function(y) { return yearMap[y].member1Wins; }),
-            member2Wins: years.map(function(y) { return yearMap[y].member2Wins; }),
-            ties: years.map(function(y) { return yearMap[y].ties; })
+            member1Wins: years.map(function (y) { return yearMap[y].member1Wins; }),
+            member2Wins: years.map(function (y) { return yearMap[y].member2Wins; }),
+            ties: years.map(function (y) { return yearMap[y].ties; })
         };
     };
 
     // Handle year filter change
-    $scope.onYearChange = function() {
+    $scope.onYearChange = function () {
         if ($scope._cachedRaceList && $scope._cachedAllMembers) {
             var filteredRaceList = $scope.filterRaceListByYear($scope._cachedRaceList);
 
@@ -200,7 +200,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             if ($scope.member1 && $scope.member2) {
                 $scope.recalculateComparison(filteredRaceList);
                 // Update the selected comparison member reference from recalculated topTeamMembers
-                $scope.selectedComparisonMember = $scope.topTeamMembers.find(function(tm) {
+                $scope.selectedComparisonMember = $scope.topTeamMembers.find(function (tm) {
                     return tm.username === $scope.member2.username;
                 }) || $scope.member2;
             }
@@ -210,9 +210,9 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             }
         }
     };
-    
+
     // Load head-to-head data
-    $scope.loadHeadToHeadData = async function() {
+    $scope.loadHeadToHeadData = async function () {
         // Check if we're in tab mode (member detail page)
         if ($stateParams.member) {
             $scope.isTabMode = true;
@@ -230,7 +230,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Load data for tab mode (member detail page)
-    $scope.loadTabModeData = async function() {
+    $scope.loadTabModeData = async function () {
         if (!$stateParams.member) {
             $state.go('/members');
             return;
@@ -245,7 +245,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
         try {
             // Load all members with cache support
             const allMembers = await MembersService.getMembersWithCacheSupport();
-            
+
             // Find the current member
             const currentMember = allMembers.find(m => m.username === $stateParams.member);
             if (!currentMember) {
@@ -275,12 +275,12 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             $scope.calculateTopTeamMembers(filteredRaceList, allMembers);
 
             $scope.loading = false;
-            
+
             // Force digest cycle to update UI
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            
+
             $analytics.eventTrack('viewMemberHeadToHead', {
                 category: 'Member',
                 label: 'viewing member head-to-head tab ' + currentMember.firstname + ' ' + currentMember.lastname
@@ -297,7 +297,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Load data for tab comparison mode (member detail page with member2)
-    $scope.loadTabComparisonModeData = async function() {
+    $scope.loadTabComparisonModeData = async function () {
         if (!$stateParams.member || !$stateParams.member2) {
             $state.go('/members');
             return;
@@ -306,7 +306,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
         try {
             // Set loading state early to prevent UI issues
             $scope.loading = true;
-            
+
             // Add timeout safeguard to prevent infinite loading
             const timeoutId = setTimeout(() => {
                 console.warn('Head-to-head data loading timeout, clearing loading state');
@@ -315,10 +315,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                     $scope.$apply();
                 }
             }, 30000); // 30 second timeout
-            
+
             // Load all members with cache support
             const allMembers = await MembersService.getMembersWithCacheSupport();
-            
+
             // Find the specific members we need
             const member1 = allMembers.find(m => m.username === $stateParams.member);
             const member2 = allMembers.find(m => m.username === $stateParams.member2);
@@ -330,7 +330,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
             $scope.member1 = member1;
             $scope.member2 = member2;
-            
+
             // Load race data to calculate team members for the dropdown
             const raceList = await ResultsService.getRaceResultsWithCacheSupport({
                 "sort": '-racedate -order racename',
@@ -357,10 +357,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
             // Clear the timeout since we completed successfully
             clearTimeout(timeoutId);
-            
+
             // Ensure loading is set to false
             $scope.loading = false;
-            
+
             // Force a digest cycle to update the UI
             if (!$scope.$$phase) {
                 $scope.$apply();
@@ -385,15 +385,15 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
 
     // Calculate comprehensive comparison statistics
-    $scope.calculateComparisonStats = function(member1Results, member2Results) {
+    $scope.calculateComparisonStats = function (member1Results, member2Results) {
         // Use provided results or fall back to scope variables
         const results1 = member1Results || $scope.member1Results;
         const results2 = member2Results || $scope.member2Results;
-        
+
         const stats1 = $scope.calculateMemberStats(results1);
         const stats2 = $scope.calculateMemberStats(results2);
 
-   
+
         const comparisonStats = {
             member1: stats1,
             member2: stats2,
@@ -411,7 +411,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 uniqueCountries: { member1: stats1.uniqueCountries, member2: stats2.uniqueCountries }
             }
         };
-       
+
 
         // Update scope variable for comparison mode
         if (!member1Results && !member2Results) {
@@ -422,7 +422,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Calculate individual member statistics
-    $scope.calculateMemberStats = function(results) {
+    $scope.calculateMemberStats = function (results) {
         const stats = {
             totalRaces: results.length,
             yearsRacing: 0,
@@ -465,7 +465,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
             // Track miles - if result has legs, only count running legs
             if (result.legs && result.legs.length > 0) {
-                result.legs.forEach(function(leg) {
+                result.legs.forEach(function (leg) {
                     if (leg.legType === 'run' && leg.miles) {
                         stats.totalMiles += leg.miles;
                     }
@@ -507,37 +507,37 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Find races where both members participated
-    $scope.findSharedRaces = function(member1Results, member2Results) {
+    $scope.findSharedRaces = function (member1Results, member2Results) {
         // Use provided results or fall back to scope variables
         const results1 = member1Results || $scope.member1Results;
         const results2 = member2Results || $scope.member2Results;
-        
+
         const member1RaceIds = new Set(results1.map(r => r.race._id));
         const member2RaceIds = new Set(results2.map(r => r.race._id));
-        
+
         // Find intersection of race IDs
         const sharedRaceIds = new Set([...member1RaceIds].filter(id => member2RaceIds.has(id)));
-        
+
         const sharedRaces = [];
-        
+
         sharedRaceIds.forEach(raceId => {
             const member1Result = results1.find(r => r.race._id === raceId);
             const member2Result = results2.find(r => r.race._id === raceId);
-            
+
             // Skip if both members are in the same result (same _id)
             if (member1Result && member2Result && member1Result._id !== member2Result._id) {
                 let isTie = false;
                 let winner = null;
-                
+
                 if ($scope.ageGradeMode) {
                     // Age grade mode: compare age grades
                     const member1AgeGrade = member1Result.agegrade;
                     const member2AgeGrade = member2Result.agegrade;
-                    
+
                     // Only include races where both members have age grade data
                     if (member1AgeGrade && member2AgeGrade) {
                         isTie = member1AgeGrade === member2AgeGrade;
-                        
+
                         if (isTie) {
                             // In age grade mode, if age grades are tied, use time as tiebreaker
                             if (member1Result.time !== member2Result.time) {
@@ -555,12 +555,12 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 } else {
                     // Regular mode: compare times
                     isTie = member1Result.time === member2Result.time;
-                    
+
                     if (isTie) {
                         // Check overall ranking as tiebreaker
                         const member1Rank = member1Result.ranking ? member1Result.ranking.overallrank : null;
                         const member2Rank = member2Result.ranking ? member2Result.ranking.overallrank : null;
-                        
+
                         if (member1Rank && member2Rank && member1Rank !== member2Rank) {
                             // Use ranking as tiebreaker (lower rank number = better placement)
                             isTie = false;
@@ -572,13 +572,13 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                         winner = member1Result.time < member2Result.time ? 'member1' : 'member2';
                     }
                 }
-                
+
                 sharedRaces.push({
                     race: member1Result.race,
                     member1Result: member1Result,
                     member2Result: member2Result,
-                    timeDifference: isTie ? 0 : ($scope.ageGradeMode ? 
-                        Math.abs(member1Result.agegrade - member2Result.agegrade) : 
+                    timeDifference: isTie ? 0 : ($scope.ageGradeMode ?
+                        Math.abs(member1Result.agegrade - member2Result.agegrade) :
                         Math.abs(member1Result.time - member2Result.time)),
                     winner: winner,
                     isTie: isTie
@@ -591,9 +591,9 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Calculate head-to-head record
-    $scope.calculateHeadToHeadRecord = function() {
+    $scope.calculateHeadToHeadRecord = function () {
         $scope.headToHeadRecord = { member1Wins: 0, member2Wins: 0, ties: 0 };
-        
+
         $scope.sharedRaces.forEach(race => {
             if (race.isTie) {
                 $scope.headToHeadRecord.ties++;
@@ -607,7 +607,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     // Selection mode functions
     // Calculate top team members (for selection mode)
-    $scope.calculateTopTeamMembers = function(raceList, allMembers) {
+    $scope.calculateTopTeamMembers = function (raceList, allMembers) {
         const teamMemberCounts = {};
         const currentMemberId = $scope.member1._id;
 
@@ -620,7 +620,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             // Find current member's result in this race
             let currentMemberResult = null;
             let currentMemberInRace = false;
-            
+
             for (let i = 0; i < race.results.length; i++) {
                 const result = race.results[i];
                 if (result.members) {
@@ -648,7 +648,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                             if (!teamMemberCounts[member._id]) {
                                 // Find the full member data from allMembers to get memberStatus
                                 const fullMemberData = allMembers.find(m => m._id === member._id);
-                                
+
                                 teamMemberCounts[member._id] = {
                                     _id: member._id,
                                     firstname: member.firstname,
@@ -668,7 +668,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                             }
                             teamMemberCounts[member._id].count++;
 
-                            
+
 
                             // Calculate head-to-head result for this race
                             // Skip if both members are in the same result (same _id)
@@ -677,7 +677,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                                     // Age grade mode: compare age grades
                                     const currentMemberAgeGrade = currentMemberResult.agegrade;
                                     const otherMemberAgeGrade = result.agegrade;
-                                    
+
                                     // Only include races where both members have age grade data
                                     if (currentMemberAgeGrade && otherMemberAgeGrade) {
                                         teamMemberCounts[member._id].ageGradeCount++;
@@ -708,12 +708,12 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                                     // Regular mode: compare times
                                     const currentMemberTime = currentMemberResult.time;
                                     const otherMemberTime = result.time;
-                                    
+
                                     if (currentMemberTime === otherMemberTime) {
                                         // Check overall ranking as tiebreaker  
                                         const currentMemberRank = currentMemberResult.ranking ? currentMemberResult.ranking.overallrank : null;
                                         const otherMemberRank = result.ranking ? result.ranking.overallrank : null;
-                                        
+
                                         if (currentMemberRank && otherMemberRank && currentMemberRank !== otherMemberRank) {
                                             // Use ranking as tiebreaker (lower rank number = better placement)
                                             if (currentMemberRank < otherMemberRank) {
@@ -763,7 +763,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Sort team members function
-    $scope.sortTeamMembersBy = function(criteria) {
+    $scope.sortTeamMembersBy = function (criteria) {
         if ($scope.teamMemberSortCriteria === criteria) {
             $scope.teamMemberSortDirection = !$scope.teamMemberSortDirection;
         } else {
@@ -774,23 +774,23 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Get team members for dropdown (filtered by gender and mode)
-    $scope.getTeamMembersForDropdown = function() {
+    $scope.getTeamMembersForDropdown = function () {
         if (!$scope.topTeamMembers) {
             return [];
         }
-        
+
         let filteredMembers = $scope.topTeamMembers;
-        
+
         // Apply gender filter
         if ($scope.teamMemberGenderFilter) {
             filteredMembers = filteredMembers.filter(member => member.sex === $scope.teamMemberGenderFilter);
         }
-        
+
         return filteredMembers;
     };
 
     // Apply sorting to team members
-    $scope.sortTeamMembers = function() {
+    $scope.sortTeamMembers = function () {
         if (!$scope.topTeamMembers || $scope.topTeamMembers.length === 0) {
             $scope.sortedTeamMembers = [];
             return;
@@ -830,21 +830,21 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             }
 
             if (typeof aValue === 'string') {
-                return $scope.teamMemberSortDirection ? 
-                    aValue.localeCompare(bValue) : 
+                return $scope.teamMemberSortDirection ?
+                    aValue.localeCompare(bValue) :
                     bValue.localeCompare(aValue);
             } else {
-                return $scope.teamMemberSortDirection ? 
-                    aValue - bValue : 
+                return $scope.teamMemberSortDirection ?
+                    aValue - bValue :
                     bValue - aValue;
             }
         });
     };
 
-    
+
 
     // Load comparison data for selected member (for selection mode)
-    $scope.loadComparison = async function(teamMember) {
+    $scope.loadComparison = async function (teamMember) {
         if (!teamMember) return;
 
         // Always navigate to the comparison URL when a member is selected
@@ -856,52 +856,52 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     };
 
     // Navigation functions
-    $scope.goToMemberStats = function(member) {
+    $scope.goToMemberStats = function (member) {
         $state.go('/members/member/stats', { member: member.username });
     };
 
-    $scope.goToMemberDetail = function(member) {
+    $scope.goToMemberDetail = function (member) {
         $state.go('/members/member/bio', { member: member.username });
     };
 
-    $scope.goToMemberHeadToHead = function(member) {
+    $scope.goToMemberHeadToHead = function (member) {
         $state.go('/members/member/head-to-head', { member: member.username });
     };
 
-    $scope.showTeamMembersList = function(member) {
-        $state.go('/members/member/head-to-head', { member: member.username});
+    $scope.showTeamMembersList = function (member) {
+        $state.go('/members/member/head-to-head', { member: member.username });
     };
 
-    $scope.goToResultsWithQuery = function(query) {
+    $scope.goToResultsWithQuery = function (query) {
         if (query && (query.members || query.distance || query.year)) {
             $state.go('/results', { search: JSON.stringify(query) });
         }
     };
 
     // Show race modal for race details
-    $scope.showRaceModal = function(race) {
+    $scope.showRaceModal = function (race) {
         console.log('showRaceModal', race);
         if (race) {
-            ResultsService.showRaceModal(race).then(function() {});
+            ResultsService.showRaceModal(race).then(function () { });
         }
     };
 
-    $scope.formatTime = function(timeInCentiseconds) {
+    $scope.formatTime = function (timeInCentiseconds) {
         return $filter('secondsToTimeString')(timeInCentiseconds);
     };
 
-    $scope.formatDate = function(date) {
+    $scope.formatDate = function (date) {
         return new Date(date).toLocaleDateString();
     };
 
     // Gender filter functions for team members table
-    $scope.setTeamMemberGenderFilter = function(gender) {
+    $scope.setTeamMemberGenderFilter = function (gender) {
         $scope.teamMemberGenderFilter = gender;
         // Re-sort the filtered results
         $scope.sortTeamMembers();
     };
 
-    $scope.getFilteredTeamMembers = function() {
+    $scope.getFilteredTeamMembers = function () {
         if (!$scope.sortedTeamMembers || $scope.sortedTeamMembers.length === 0) {
             return [];
         }
@@ -910,21 +910,35 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             return $scope.sortedTeamMembers;
         }
 
-        return $scope.sortedTeamMembers.filter(function(member) {
+        return $scope.sortedTeamMembers.filter(function (member) {
             return member.sex === $scope.teamMemberGenderFilter;
         });
     };
 
     // Get team members for dropdown, ordered by number of races together (count)
-    $scope.getTeamMembersForDropdown = function() {
+    $scope.getTeamMembersForDropdown = function () {
         if (!$scope.topTeamMembers || $scope.topTeamMembers.length === 0) {
             return [];
         }
 
         // Sort by count (number of races together) in descending order
-        return $scope.topTeamMembers.slice().sort(function(a, b) {
+        return $scope.topTeamMembers.slice().sort(function (a, b) {
             return b.count - a.count;
         });
+    };
+
+    // Admin functions
+    $scope.retrieveMemberForEdit = function (member) {
+        MembersService.retrieveMemberForEdit(member).then(function () { });
+    };
+
+    $scope.removeMember = function (member) {
+        var dlg = dialogs.confirm("Remove Member?", "Are you sure you want to remove this member?");
+        dlg.result.then(function (btn) {
+            MembersService.deleteMember(member).then(function () {
+                $state.go('/members');
+            });
+        }, function (btn) { });
     };
 
     // Initialize

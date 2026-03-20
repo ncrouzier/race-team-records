@@ -1,34 +1,34 @@
-angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function($scope, AuthService, VolunteerJobsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function ($scope, AuthService, VolunteerJobsService, MembersService, dialogs) {
 
     // =====================================
     // AUTHENTICATION SETUP ================
     $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function(user) {
+    $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
     });
 
     // =====================================
     // FILTERS =============================
 
-    $scope.yearsList = ['All'];
-    $scope.selectedYear = new Date().getFullYear();
+    var currentYear = new Date().getFullYear();
+    $scope.yearsList = ['All', currentYear];
+    $scope.selectedYear = currentYear;
     $scope.searchQuery = '';
 
     function buildYearsList(jobs) {
         var yearsSet = {};
-        jobs.forEach(function(job) {
+        jobs.forEach(function (job) {
             var year = new Date(job.jobDate).getUTCFullYear();
             yearsSet[year] = true;
         });
-        var years = Object.keys(yearsSet).map(Number).sort(function(a, b) { return b - a; });
-        $scope.yearsList = ['All'].concat(years);
-        // If selected year has no jobs, default to 'All'
-        if (years.indexOf($scope.selectedYear) === -1) {
-            $scope.selectedYear = years.length > 0 ? years[0] : 'All';
+        var years = Object.keys(yearsSet).map(Number).sort(function (a, b) { return b - a; });
+        if (years.indexOf(currentYear) === -1) {
+            years.unshift(currentYear);
         }
+        $scope.yearsList = ['All'].concat(years);
     }
 
-    $scope.volunteerJobFilter = function(job) {
+    $scope.volunteerJobFilter = function (job) {
         // Year filter
         if ($scope.selectedYear !== 'All') {
             var jobDate = new Date(job.jobDate);
@@ -53,17 +53,17 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // LOAD DATA ===========================
 
     // Load volunteer jobs
-    VolunteerJobsService.getVolunteerJobs({
+    VolunteerJobsService.getVolunteerJobsWithCacheSupport({
         sort: '-jobDate'
-    }).then(function(jobs) {
+    }).then(function (jobs) {
         $scope.volunteerJobsList = jobs;
         buildYearsList(jobs);
     });
 
     // Load members list (needed for modal member selection)
-    MembersService.getMembersWithCacheSupport({}).then(function(members) {
+    MembersService.getMembersWithCacheSupport({}).then(function (members) {
         // Sort members: current members first, then past members
-        $scope.membersList = members.sort(function(a, b) {
+        $scope.membersList = members.sort(function (a, b) {
             // Current members (no status or 'current') come before past members
             var aStatus = a.memberStatus === 'past' ? 1 : 0;
             var bStatus = b.memberStatus === 'past' ? 1 : 0;
@@ -85,10 +85,10 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // CRUD OPERATIONS =====================
 
     // Show add modal (supports multiple members)
-    $scope.showAddVolunteerJobModal = function() {
-        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function(jobs) {
+    $scope.showAddVolunteerJobModal = function () {
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function (jobs) {
             if (jobs !== null && Array.isArray(jobs)) {
-                jobs.forEach(function(job) {
+                jobs.forEach(function (job) {
                     $scope.volunteerJobsList.push(job);
                 });
             }
@@ -96,14 +96,14 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     };
 
     // Duplicate a volunteer job (opens add modal pre-filled with event name and date)
-    $scope.duplicateVolunteerJob = function(job) {
+    $scope.duplicateVolunteerJob = function (job) {
         var prefillData = {
             eventName: job.eventName,
             jobDate: job.jobDate
         };
-        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList, prefillData).then(function(jobs) {
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList, prefillData).then(function (jobs) {
             if (jobs !== null && Array.isArray(jobs)) {
-                jobs.forEach(function(j) {
+                jobs.forEach(function (j) {
                     $scope.volunteerJobsList.push(j);
                 });
             }
@@ -111,23 +111,23 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     };
 
     // Show edit modal
-    $scope.retrieveVolunteerJobForEdit = function(job) {
-        VolunteerJobsService.retrieveVolunteerJobForEdit(job, $scope.membersList).then(function() {
+    $scope.retrieveVolunteerJobForEdit = function (job) {
+        VolunteerJobsService.retrieveVolunteerJobForEdit(job, $scope.membersList).then(function () {
             // Job is already updated via Restangular reference
         });
     };
 
     // Delete job
-    $scope.removeVolunteerJob = function(job) {
+    $scope.removeVolunteerJob = function (job) {
         var dlg = dialogs.confirm("Remove Volunteer Job?", "Are you sure you want to remove this volunteer job?");
-        dlg.result.then(function(btn) {
-            VolunteerJobsService.deleteVolunteerJob(job).then(function() {
+        dlg.result.then(function (btn) {
+            VolunteerJobsService.deleteVolunteerJob(job).then(function () {
                 var index = $scope.volunteerJobsList.indexOf(job);
                 if (index > -1) {
                     $scope.volunteerJobsList.splice(index, 1);
                 }
             });
-        }, function(btn) {
+        }, function (btn) {
             // User cancelled
         });
     };
@@ -137,7 +137,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
 // =====================================
 // ADD MODAL INSTANCE CONTROLLER ========
 // Used for both "Add" and "Duplicate" - supports multiple member rows
-angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceController', ['$scope', '$uibModalInstance', 'membersList', 'prefillData', function($scope, $uibModalInstance, membersList, prefillData) {
+angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceController', ['$scope', '$uibModalInstance', 'membersList', 'prefillData', function ($scope, $uibModalInstance, membersList, prefillData) {
 
     $scope.membersList = membersList;
 
@@ -154,23 +154,23 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
 
     // Date picker controls
     $scope.opened = false;
-    $scope.open = function($event) {
+    $scope.open = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
         $scope.opened = true;
     };
 
-    $scope.addRow = function() {
+    $scope.addRow = function () {
         $scope.rows.push({ member: null, description: '' });
     };
 
-    $scope.removeRow = function(index) {
+    $scope.removeRow = function (index) {
         if ($scope.rows.length > 1) {
             $scope.rows.splice(index, 1);
         }
     };
 
-    $scope.isFormValid = function() {
+    $scope.isFormValid = function () {
         if (!$scope.formData.eventName || !$scope.formData.jobDate) {
             return false;
         }
@@ -182,11 +182,11 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
         return true;
     };
 
-    $scope.saveBatch = function() {
+    $scope.saveBatch = function () {
         var batchData = {
             eventName: $scope.formData.eventName,
             jobDate: $scope.formData.jobDate,
-            jobs: $scope.rows.map(function(row) {
+            jobs: $scope.rows.map(function (row) {
                 return {
                     memberId: row.member._id,
                     description: row.description
@@ -196,7 +196,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
         $uibModalInstance.close(batchData);
     };
 
-    $scope.cancel = function() {
+    $scope.cancel = function () {
         $uibModalInstance.dismiss('cancel');
     };
 
@@ -205,7 +205,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
 // =====================================
 // EDIT MODAL INSTANCE CONTROLLER =======
 // Used only for editing a single existing volunteer job
-angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function($scope, $uibModalInstance, job, membersList) {
+angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function ($scope, $uibModalInstance, job, membersList) {
 
     $scope.membersList = membersList;
 
@@ -214,7 +214,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceCont
 
     // Find the member object from membersList that matches the job's member
     if (job.member && job.member._id) {
-        $scope.formData.member = membersList.find(function(m) {
+        $scope.formData.member = membersList.find(function (m) {
             return m._id === job.member._id;
         }) || job.member;
     }
@@ -226,13 +226,13 @@ angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceCont
 
     // Date picker controls
     $scope.opened = false;
-    $scope.open = function($event) {
+    $scope.open = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
         $scope.opened = true;
     };
 
-    $scope.editVolunteerJob = function() {
+    $scope.editVolunteerJob = function () {
         // Update the original job object with new data
         job.member = $scope.formData.member;
         job.eventName = $scope.formData.eventName;
@@ -241,7 +241,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceCont
         $uibModalInstance.close(job);
     };
 
-    $scope.cancel = function() {
+    $scope.cancel = function () {
         $uibModalInstance.dismiss('cancel');
     };
 

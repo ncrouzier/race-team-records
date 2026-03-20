@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
+const sanitizeHtml = require('sanitize-html');
 
 module.exports = async function (app, qs, passport, async, _) {
 
@@ -51,7 +52,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
     // Track last active time (updates at most once per 5 minutes per user)
     var lastActiveCache = {};
-    app.use('/api', function (req, res, next) {
+    app.use('/*', function (req, res, next) {
+        console.log('Request URL:', req.url);
         if (req.isAuthenticated && req.isAuthenticated() && req.user) {
             var userId = req.user._id.toString();
             var now = Date.now();
@@ -643,17 +645,20 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
 
-    //update a member's bio (own member only)
+    //update a member's bio (own member or admin)
     app.put('/api/members/:member_id/bio', service.isLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
-            if (!req.user.member || !req.user.member._id.equals(req.params.member_id)) {
+            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+            var isAdmin = req.user.role === 'admin';
+            if (!isOwnMember && !isAdmin) {
                 return res.status(403).json({ error: 'You can only edit your own bio' });
             }
             const member = await Member.findById(req.params.member_id);
             if (!member) {
                 return res.status(404).json({ error: 'Member not found' });
             }
+            var oldBio = member.bio || '';
             member.bio = req.body.bio;
             await member.save();
 
@@ -666,7 +671,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 targetType: 'member',
                 targetId: member._id.toString(),
                 targetName: member.firstname + ' ' + member.lastname,
-                metadata: { bioLength: (req.body.bio || '').length },
+                metadata: { targetUsername: member.username, oldValue: oldBio, newValue: req.body.bio || '' },
                 ipAddress: req.ip
             });
 
@@ -674,6 +679,43 @@ module.exports = async function (app, qs, passport, async, _) {
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'Error updating bio' });
+        }
+    });
+
+    //update a member's photo link (own member or admin)
+    app.put('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+            var isAdmin = req.user.role === 'admin';
+            if (!isOwnMember && !isAdmin) {
+                return res.status(403).json({ error: 'You can only edit your own photo' });
+            }
+            const member = await Member.findById(req.params.member_id);
+            if (!member) {
+                return res.status(404).json({ error: 'Member not found' });
+            }
+            var oldPictureLink = member.pictureLink || '';
+            member.pictureLink = req.body.pictureLink || '';
+            await member.save();
+
+            // Log the photo edit
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'photo_edit',
+                description: 'Updated photo for ' + member.firstname + ' ' + member.lastname,
+                targetType: 'member',
+                targetId: member._id.toString(),
+                targetName: member.firstname + ' ' + member.lastname,
+                metadata: { targetUsername: member.username, oldValue: oldPictureLink, newValue: req.body.pictureLink || '' },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: 'Photo updated successfully', pictureLink: member.pictureLink });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Error updating photo' });
         }
     });
 
@@ -3770,6 +3812,17 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Delete an activity log entry (admin only)
+    app.delete('/api/activitylogs/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            await ActivityLog.findByIdAndDelete(req.params.id);
+            res.json({ success: 'Activity log entry deleted' });
+        } catch (err) {
+            console.error('Error deleting activity log:', err);
+            res.status(500).json({ error: 'Error deleting activity log entry' });
+        }
+    });
+
     app.get('*', function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
         // console.log('Request URL:', req.url);
@@ -3901,7 +3954,4 @@ module.exports = async function (app, qs, passport, async, _) {
 
 
 };
-
-
-
 

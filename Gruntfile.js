@@ -1,4 +1,4 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
     grunt.initConfig({
 
@@ -7,8 +7,8 @@ module.exports = function(grunt) {
         jshint: {
             options: {
                 smarttabs: true,
-                 esversion: 11,
-                 sub:true
+                esversion: 11,
+                sub: true
             },
             all: [
                 'public/js/**/*.js',
@@ -55,55 +55,63 @@ module.exports = function(grunt) {
             options: {
                 stripBanners: true
             },
-           
+
             dist: {
                 src: ['public/libs/jquery/dist/jquery.js',
-                'public/libs/angular/angular.js',
-                'public/libs/angular-notify/dist/angular-notify.js',
-                // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
-                'public/libs/angular-loading-bar/build/loading-bar.js',
-                'public/libs/angular-sanitize/angular-sanitize.js',
-                'public/libs/angular-ui-router/release/angular-ui-router.js',
-                'public/libs/angular-ui-select/dist/select.js',
-                'public/libs/lodash/dist/lodash.js',
-                'public/libs/restangular/dist/restangular.js',
-                'public/libs/angular-utils-pagination/dirPagination.js',
-                'public/libs/angular-dialog-service/dist/dialogs.min.js',
-                'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-                'public/libs/angulartics/dist/angulartics.min.js',
-                'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
-                'public/libs/jspdf/dist/jspdf.min.js',
-                'public/libs/async/dist/async.min.js',
-                'public/libs/datamaps/dist/datamaps.all.hires.min.js',
-                'public/libs/moment/min/moment.min.js',
-                'public/libs/nouislider/dist/nouislider.js',
-                'public/js/**/*.js',
-                'public/js/*.js'],
+                    'public/libs/angular/angular.js',
+                    'public/libs/angular-notify/dist/angular-notify.js',
+                    // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                    'public/libs/angular-loading-bar/build/loading-bar.js',
+                    'public/libs/angular-sanitize/angular-sanitize.js',
+                    'public/libs/angular-ui-router/release/angular-ui-router.js',
+                    'public/libs/angular-ui-select/dist/select.js',
+                    'public/libs/lodash/dist/lodash.js',
+                    'public/libs/restangular/dist/restangular.js',
+                    'public/libs/angular-utils-pagination/dirPagination.js',
+                    'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                    'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
+                    'public/libs/angulartics/dist/angulartics.min.js',
+                    'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
+                    'public/libs/jspdf/dist/jspdf.min.js',
+                    'public/libs/async/dist/async.min.js',
+                    'public/libs/datamaps/dist/datamaps.all.hires.min.js',
+                    'public/libs/moment/min/moment.min.js',
+                    'public/libs/nouislider/dist/nouislider.js',
+                    'public/libs/textAngular/dist/textAngular-rangy.min.js',
+                    'public/libs/textAngular/dist/textAngular-sanitize.js',
+                    'public/libs/textAngular/dist/textAngularSetup.js',
+                    'public/libs/textAngular/dist/textAngular.js',
+                    'public/js/**/*.js',
+                    'public/js/*.js'],
                 dest: 'public/dist/js/app.min.js'
             },
             dev: {
                 src: ['public/libs/jquery/dist/jquery.js',
-                'public/libs/angular/angular.js',
-                'public/libs/angular-notify/dist/angular-notify.js',
-                // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
-                'public/libs/angular-loading-bar/build/loading-bar.js',
-                'public/libs/angular-sanitize/angular-sanitize.js',
-                'public/libs/angular-ui-router/release/angular-ui-router.js',
-                'public/libs/angular-ui-select/dist/select.js',
-                'public/libs/lodash/dist/lodash.js',
-                'public/libs/restangular/dist/restangular.js',
-                'public/libs/angular-utils-pagination/dirPagination.js',
-                'public/libs/angular-dialog-service/dist/dialogs.min.js',
-                'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-                'public/libs/angulartics/dist/angulartics.min.js',
-                'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
-                'public/libs/jspdf/dist/jspdf.min.js',
-                'public/libs/async/dist/async.min.js',
-                'public/libs/datamaps/dist/datamaps.all.hires.min.js',
-                'public/libs/moment/min/moment.min.js',
-                'public/libs/nouislider/dist/nouislider.js',
-                'public/js/**/*.js',
-                'public/js/*.js'],
+                    'public/libs/angular/angular.js',
+                    'public/libs/angular-notify/dist/angular-notify.js',
+                    // 'public/js/custom-libs/angular-bootstrap/ui-bootstrap-tpls.js',
+                    'public/libs/angular-loading-bar/build/loading-bar.js',
+                    'public/libs/angular-sanitize/angular-sanitize.js',
+                    'public/libs/angular-ui-router/release/angular-ui-router.js',
+                    'public/libs/angular-ui-select/dist/select.js',
+                    'public/libs/lodash/dist/lodash.js',
+                    'public/libs/restangular/dist/restangular.js',
+                    'public/libs/angular-utils-pagination/dirPagination.js',
+                    'public/libs/angular-dialog-service/dist/dialogs.min.js',
+                    'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
+                    'public/libs/angulartics/dist/angulartics.min.js',
+                    'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
+                    'public/libs/jspdf/dist/jspdf.min.js',
+                    'public/libs/async/dist/async.min.js',
+                    'public/libs/datamaps/dist/datamaps.all.hires.min.js',
+                    'public/libs/moment/min/moment.min.js',
+                    'public/libs/nouislider/dist/nouislider.js',
+                    'public/libs/textAngular/dist/textAngular-rangy.min.js',
+                    'public/libs/textAngular/dist/textAngular-sanitize.js',
+                    'public/libs/textAngular/dist/textAngularSetup.js',
+                    'public/libs/textAngular/dist/textAngular.js',
+                    'public/js/**/*.js',
+                    'public/js/*.js'],
                 dest: 'public/dist/js/app.js'
             }
         },
@@ -127,20 +135,21 @@ module.exports = function(grunt) {
                     keepSpecialComments: 0
                 },
                 files: {
-                        'public/dist/css/style.min.css': [
-                            'public/libs/fontawesome/css/font-awesome.css',
-                            'public/libs/nanogallery/dist/css/nanogallery.min.css',
-                            'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',
-                            'public/css/libs/select2.css',
-                            'public/css/libs/select2-override.css',
-                            'public/css/libs/bootstrap.css',
-                            'public/libs/angular-loading-bar/build/loading-bar.css',
-                            'public/libs/angular-ui-select/dist/select.css',
-                            'public/libs/angular-dialog-service/dist/dialogs.min.css',
-                            'public/libs/angular-notify/dist/angular-notify.css',
-                            'public/libs/nouislider/dist/nouislider.min.css',
-                            'public/dist/css/style.css'
-                        ]
+                    'public/dist/css/style.min.css': [
+                        'public/libs/fontawesome/css/font-awesome.css',
+                        'public/libs/nanogallery/dist/css/nanogallery.min.css',
+                        'public/libs/nanogallery/dist/css/themes/light/nanogallery_light.woff.min.css',
+                        'public/css/libs/select2.css',
+                        'public/css/libs/select2-override.css',
+                        'public/css/libs/bootstrap.css',
+                        'public/libs/angular-loading-bar/build/loading-bar.css',
+                        'public/libs/angular-ui-select/dist/select.css',
+                        'public/libs/angular-dialog-service/dist/dialogs.min.css',
+                        'public/libs/angular-notify/dist/angular-notify.css',
+                        'public/libs/nouislider/dist/nouislider.min.css',
+                        'public/libs/textAngular/dist/textAngular.css',
+                        'public/dist/css/style.css'
+                    ]
                 }
             }
         },

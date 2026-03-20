@@ -184,6 +184,34 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         });
     };
 
+    //edit a member's photo link only
+    factory.editMemberPhoto = function (memberId, pictureLink) {
+        return Restangular.one('members', memberId).customPUT({ pictureLink: pictureLink }, 'photo');
+    };
+
+    factory.showEditPhotoModal = function (member) {
+        var modalInstance = $uibModal.open({
+            templateUrl: 'views/modals/photoEditModal.html',
+            controller: 'PhotoEditModalInstanceController',
+            size: 'lg',
+            backdrop: 'static',
+            resolve: {
+                member: function () {
+                    return member;
+                }
+            }
+        });
+
+        return modalInstance.result.then(function (pictureLink) {
+            return factory.editMemberPhoto(member._id, pictureLink).then(function () {
+                member.pictureLink = pictureLink;
+                return pictureLink;
+            });
+        }, function () {
+            return null;
+        });
+    };
+
     //delete a member
     factory.deleteMember = function (member) {
         return member.remove().then(

@@ -37,6 +37,7 @@
     "passport-local": "~1.0.0",
     "postmark": "^0.2.6",
     "rebuild": "^0.1.2",
+    "sanitize-html": "^2.17.2",
     "serve-favicon": "^2.5.0",
     "terser": "^5.16.1",
     "underscore": "^1.9.1"

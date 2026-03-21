@@ -1,4 +1,4 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule','cgNotify','textAngular']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule','cgNotify']);
 
 var membersModule = angular.module('mcrrcApp.members', []);
 var resultsModule = angular.module('mcrrcApp.results', []);
@@ -16,19 +16,24 @@ app.config(function(localStorageServiceProvider) {
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
-app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Restangular) {
+app.run(['$http', 'AuthService', 'Restangular', '$transitions', function($http, AuthService, Restangular, $transitions) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
     });
-
-
 
     $http.get("/api/login").success(function(data, status) {
         AuthService.setUser(data.user);
     }).error(function(data) {
         $scope.message = data[0];
         $state.go('/login');
+    });
+
+    // Track user activity on page navigation
+    $transitions.onSuccess({}, function() {
+        if (AuthService.isLoggedIn()) {
+            $http.post('/api/heartbeat');
+        }
     });
 }]); 
 

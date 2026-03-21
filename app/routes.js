@@ -5,6 +5,36 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
 
+const bioSanitizeOptions = {
+    allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'strike', 'pre', 'img'],
+    allowedAttributes: {
+        'a': ['href', 'target', 'title'],
+        'img': ['src', 'alt', 'width', 'height'],
+        'span': ['style'],
+        'div': ['style'],
+        'p': ['style'],
+        'h1': ['style'], 'h2': ['style'], 'h3': ['style'],
+        'h4': ['style'], 'h5': ['style'], 'h6': ['style'],
+    },
+    allowedStyles: {
+        '*': {
+            'text-align': [/^left$/, /^right$/, /^center$/, /^justify$/],
+            'font-size': [/^\d+(?:px|em|rem|%)$/],
+            'font-weight': [/^(?:bold|normal|\d{3})$/],
+            'font-style': [/^(?:italic|normal)$/],
+            'text-decoration': [/^(?:underline|line-through|none)$/],
+            'color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/],
+            'background-color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/],
+        }
+    },
+    allowedSchemes: ['http', 'https', 'mailto']
+};
+
+function sanitizeBio(html) {
+    return sanitizeHtml(html || '', bioSanitizeOptions);
+}
+
 module.exports = async function (app, qs, passport, async, _) {
 
     const User = require('./models/user');
@@ -65,6 +95,11 @@ module.exports = async function (app, qs, passport, async, _) {
         }
         next();
     });
+
+    // =====================================
+    // HEARTBEAT ===========================
+    // =====================================
+    app.post('/api/heartbeat', function (req, res) { res.sendStatus(200); });
 
     // =====================================
     // PASSWORD VALIDATION =================
@@ -254,11 +289,11 @@ module.exports = async function (app, qs, passport, async, _) {
             }
 
             // Verify current password
-            if (!user.validPassword(req.body.currentPassword)) {
+            if (!await user.validPassword(req.body.currentPassword)) {
                 return res.status(400).json({ message: 'Current password is incorrect.' });
             }
 
-            user.password = user.generateHash(req.body.newPassword);
+            user.password = await user.generateHash(req.body.newPassword);
             await user.save();
             res.json({ message: 'Password changed successfully.' });
         } catch (err) {
@@ -368,12 +403,12 @@ module.exports = async function (app, qs, passport, async, _) {
         User.findOne({
             resetPasswordToken: hashedToken,
             resetPasswordExpires: { $gt: Date.now() }
-        }).then(function (user) {
+        }).then(async function (user) {
             if (!user) {
                 return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
             }
 
-            user.password = user.generateHash(req.body.password);
+            user.password = await user.generateHash(req.body.password);
             user.resetPasswordToken = undefined;
             user.resetPasswordExpires = undefined;
 
@@ -744,6 +779,7 @@ module.exports = async function (app, qs, passport, async, _) {
             member.memberStatus = req.body.memberStatus;
             member.membershipDates = req.body.membershipDates;
             member.achievements = req.body.achievements;
+
 
             // Save the updated member
             await member.save();
@@ -3673,7 +3709,7 @@ module.exports = async function (app, qs, passport, async, _) {
             var newUser = new User();
             newUser.email = req.body.email;
             newUser.username = req.body.username;
-            newUser.password = newUser.generateHash(req.body.password);
+            newUser.password = await newUser.generateHash(req.body.password);
             newUser.role = req.body.role || 'user';
             newUser.enabled = true; // Admin-created users are enabled by default
             if (req.body.member) newUser.member = req.body.member;

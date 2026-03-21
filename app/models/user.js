@@ -1,16 +1,16 @@
 var mongoose = require('mongoose');
-var bcrypt   = require('bcryptjs');
+var bcrypt = require('bcryptjs');
 
 // define the schema for our user model
 var userSchema = mongoose.Schema({
-    email        : String,
-    password     : String,
-    role         : String,
-    username     : String,
-    member       : { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
-    enabled      : { type: Boolean, default: false },
-    resetPasswordToken  : String,
-    resetPasswordExpires : Date,
+    email: String,
+    password: String,
+    role: String,
+    username: String,
+    member: { type: mongoose.Schema.Types.ObjectId, ref: 'Member' },
+    enabled: { type: Boolean, default: false },
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
     lastLogin: Date,
     lastActive: Date,
     createdAt: Date,
@@ -20,7 +20,7 @@ var userSchema = mongoose.Schema({
 // methods ======================
 
 // keep track of when users are updated and created
-userSchema.pre('save', function(next, done) {
+userSchema.pre('save', function (next, done) {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
@@ -28,14 +28,15 @@ userSchema.pre('save', function(next, done) {
     next();
 });
 
-// generating a hash
-userSchema.methods.generateHash = function(password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
+// generating a hash (async — does not block the event loop)
+userSchema.methods.generateHash = async function (password) {
+    var salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(password, salt);
 };
 
-// checking if password is valid
-userSchema.methods.validPassword = function(password) {
-    return bcrypt.compareSync(password, this.password);
+// checking if password is valid (async — does not block the event loop)
+userSchema.methods.validPassword = async function (password) {
+    return bcrypt.compare(password, this.password);
 };
 
 // create the model for users and expose it to our app

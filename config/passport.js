@@ -55,8 +55,8 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(user => {
-           
+            User.findOne({ 'email' :  email }).then(async user => {
+
                 // check to see if theres already a user with that email
                 if (user) {
                     return done(null, false, req.flash('signupMessage', 'An account with this email already exists. Please use a different email or log in.'));
@@ -75,7 +75,7 @@ module.exports = function(passport) {
                     var newUser = new User();
                     // set the user's local credentials
                     newUser.email = email;
-                    newUser.password = newUser.generateHash(password);
+                    newUser.password = await newUser.generateHash(password);
                     newUser.username = req.body.username;
                     // if we let users decide a role at signup
                     // if (req.body.role){
@@ -125,13 +125,13 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(user =>{                     
+            User.findOne({ 'email' :  email }).then(async user =>{
                 // if no user is found, return the message
                 if (!user)
                     return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
 
                 // if the user is found but the password is wrong
-                if (!user.validPassword(password))
+                if (!await user.validPassword(password))
                     return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
 
                 // if the account is not enabled

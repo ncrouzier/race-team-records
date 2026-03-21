@@ -44,7 +44,9 @@ const schedule = require('node-schedule');
 
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
-app.use(sslRedirect());
+if (process.env.DYNO) {
+    app.use(sslRedirect());
+}
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

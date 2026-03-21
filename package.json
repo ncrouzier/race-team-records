@@ -1,7 +1,20 @@
 {
   "scripts": {
     "start": "node server.js",
-    "dev": "PARKRUN_PROXY=https://your-proxy-service.com/api PARKRUN_PROXY_KEY=your-api-key-here node server.js",
+    "server": "nodemon server.js",
+    "server:prod": "NODE_ENV=production nodemon server.js",
+    "lint": "eslint public/js/",
+    "build:js:dev": "node scripts/build-js.mjs dev",
+    "build:js:prod": "node scripts/build-js.mjs prod",
+    "build:js": "npm run build:js:dev && npm run build:js:prod",
+    "build:css": "node scripts/build-css.mjs",
+    "copy:assets": "mkdir -p public/dist/fonts public/dist/font public/views/templates && cp public/libs/fontawesome/fonts/fontawesome-webfont.eot public/libs/fontawesome/fonts/fontawesome-webfont.ttf public/libs/fontawesome/fonts/fontawesome-webfont.woff public/libs/fontawesome/fonts/fontawesome-webfont.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/angular-utils-pagination/dirPagination.tpl.html public/views/templates/ 2>/dev/null; true",
+    "build": "npm run build:css && npm run build:js && npm run copy:assets",
+    "watch:js": "chokidar 'public/js/**/*.js' -c 'npm run build:js:dev' --initial",
+    "watch:css": "chokidar 'public/less/**/*.less' 'public/css/**/*.css' -c 'npm run build:css' --initial",
+    "watch": "run-p watch:js watch:css",
+    "dev": "npm run build:css && npm run build:js:dev && npm run copy:assets && run-p server watch",
+    "prod": "npm run build && run-p server:prod watch",
     "migrate:cross-country-to-trail": "node migrations/migrate-cross-country-to-trail.js",
     "test": "jest"
   },
@@ -43,18 +56,14 @@
     "underscore": "^1.9.1"
   },
   "devDependencies": {
-    "grunt": "~1.5.3",
-    "grunt-concurrent": "~3.0.0",
-    "grunt-contrib-concat": "^2.1.0",
-    "grunt-contrib-copy": "^1.0.0",
-    "grunt-contrib-cssmin": "~4.0.0",
-    "grunt-contrib-jshint": "~3.2.0",
-    "grunt-contrib-less": "~3.0.0",
-    "grunt-contrib-uglify": "~5.2.2",
-    "grunt-contrib-watch": "~1.1.0",
-    "grunt-nodemon": "^0.4.2",
-    "grunt-terser": "^2.0.0",
-    "jest": "^29.7.0"
+    "chokidar-cli": "^3.0.0",
+    "clean-css-cli": "^5.6.3",
+    "eslint": "^10.1.0",
+    "glob": "^13.0.6",
+    "jest": "^29.7.0",
+    "less": "^4.6.4",
+    "nodemon": "^3.1.14",
+    "npm-run-all2": "^8.0.4"
   },
   "jest": {
     "testEnvironment": "node",

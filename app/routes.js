@@ -83,7 +83,6 @@ module.exports = async function (app, qs, passport, async, _) {
     // Track last active time (updates at most once per 5 minutes per user)
     var lastActiveCache = {};
     app.use('/*', function (req, res, next) {
-        console.log('Request URL:', req.url);
         if (req.isAuthenticated && req.isAuthenticated() && req.user) {
             var userId = req.user._id.toString();
             var now = Date.now();

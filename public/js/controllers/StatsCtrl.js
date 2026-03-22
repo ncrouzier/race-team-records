@@ -317,6 +317,83 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     // On controller load, check for DB updates and clear caches if needed
     // Use Promise-based loading to avoid race conditions and ensure proper timing
+    // =====================================
+    // AWARDS (ROY / MUTROY) ===============
+    $scope.awardsByYear = [];
+    $scope.loadingStates.awards = false;
+
+    $scope.loadAwards = function () {
+        if ($scope.awardsByYear.length > 0) return; // already loaded
+        $scope.loadingStates.awards = true;
+
+        MembersService.getMembersWithCacheSupport({
+            select: 'firstname lastname username achievements sex'
+        }).then(function (members) {
+            var awards = [];
+            members.forEach(function (member) {
+                if (!member.achievements || member.achievements.length === 0) return;
+                member.achievements.forEach(function (ach) {
+                    if (ach.name !== 'ROY' && ach.name !== 'MUTROY') return;
+                    // Parse year from text (e.g., "Runner of the Year Open Male 2014")
+                    var yearMatch = ach.text && ach.text.match(/\b(20\d{2})\b/);
+                    var year = yearMatch ? parseInt(yearMatch[1]) : null;
+                    // Parse category: remove the award title prefix and the year
+                    var category = '';
+                    if (ach.text) {
+                        category = ach.text
+                            .replace(/Runner of the Year\s*/i, '')
+                            .replace(/Mountain\/Ultra\/Trail Runner of the Year\s*/i, '')
+                            .replace(/\b20\d{2}\b/, '')
+                            .trim();
+                    }
+                    awards.push({
+                        type: ach.name,
+                        typeName: ach.name === 'ROY' ? 'Runner of the Year' : 'Mountain/Ultra/Trail Runner of the Year',
+                        category: category,
+                        year: year,
+                        member: {
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username
+                        },
+                        img: ach.value && ach.value.img ? ach.value.img : null,
+                        text: ach.text
+                    });
+                });
+            });
+
+            // Group by year, sorted descending
+            var yearMap = {};
+            awards.forEach(function (award) {
+                var key = award.year || 'Unknown';
+                if (!yearMap[key]) yearMap[key] = [];
+                yearMap[key].push(award);
+            });
+
+            var sortedYears = Object.keys(yearMap).sort(function (a, b) {
+                if (a === 'Unknown') return 1;
+                if (b === 'Unknown') return -1;
+                return parseInt(b) - parseInt(a);
+            });
+
+            $scope.awardsByYear = sortedYears.map(function (year) {
+                // Sort awards within year: ROY first, then MUTROY, then by category
+                var yearAwards = yearMap[year].sort(function (a, b) {
+                    if (a.type !== b.type) return a.type === 'ROY' ? -1 : 1;
+                    return a.category.localeCompare(b.category);
+                });
+                return { year: year, awards: yearAwards };
+            });
+
+            $scope.loadingStates.awards = false;
+        });
+    };
+
+    // Load awards if on the awards page
+    if ($state.current.name === '/stats/awards') {
+        $scope.loadAwards();
+    }
+
     $scope.initializeStats = function() {
         // Create array of promises for stats loading
         var statsPromises = [

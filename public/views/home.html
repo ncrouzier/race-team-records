@@ -50,7 +50,9 @@
                         </span>
                         Best Age Grade:
                         <b ng-if="dashboardMember.teamRequirementStats.maxAgeGrade !== 'N/A'">
-                            {{dashboardMember.teamRequirementStats.maxAgeGrade}}% / {{reqConfig.minAgeGrade}}%
+                            {{dashboardMember.teamRequirementStats.maxAgeGrade}}%
+                            <span ng-if="meetsAgeGradeReq">&ge; {{reqConfig.minAgeGrade}}%</span>
+                            <span ng-if="!meetsAgeGradeReq">&lt; {{reqConfig.minAgeGrade}}%</span>
                         </b>
                         <span ng-if="dashboardMember.teamRequirementStats.maxAgeGrade === 'N/A'" class="text-muted">
                             N/A

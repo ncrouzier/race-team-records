@@ -6,14 +6,24 @@
                 <!-- Achievement icons -->
                 <div ng-if="currentMember.achievements.length > 0"
                     style="position: absolute; top: 10px; right: 15px; z-index: 1; background:#006484; border-radius: 6px; padding: 4px 6px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span class="hoverhand" ng-repeat="ach in currentMember.achievements" tooltip-append-to-body="true"
+                    <span ng-repeat="ach in currentMember.achievements" tooltip-append-to-body="true"
                         tooltip-placement="top" uib-tooltip-html="ach.text"
                         style="display: inline-flex; align-items: center;">
-                        <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
-                            style="height: 32px; vertical-align: top;">
-                        <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
-                            style="font-size: 32px;" ng-style="{ 'color': ach.value.color || '#333' }"></i>
-                        <span ng-if="!ach.value.img && !ach.value.icon" class="label label-default">{{ach.name}}</span>
+                        <a ng-if="ach.name === 'ROY' || ach.name === 'MUTROY'" ui-sref="/stats/awards"
+                            style="display: inline-flex; align-items: center;">
+                            <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
+                                style="height: 32px; vertical-align: top;">
+                            <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
+                                style="font-size: 32px;" ng-style="{ 'color': ach.value.color || '#333' }"></i>
+                            <span ng-if="!ach.value.img && !ach.value.icon" class="label label-default">{{ach.name}}</span>
+                        </a>
+                        <span ng-if="ach.name !== 'ROY' && ach.name !== 'MUTROY'">
+                            <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
+                                style="height: 32px; vertical-align: top;">
+                            <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
+                                style="font-size: 32px;" ng-style="{ 'color': ach.value.color || '#333' }"></i>
+                            <span ng-if="!ach.value.img && !ach.value.icon" class="label label-default">{{ach.name}}</span>
+                        </span>
                     </span>
                 </div>
 

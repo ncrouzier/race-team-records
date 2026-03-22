@@ -3,9 +3,14 @@
         <div class="panel panel-default">
             <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="margin: 0;"><i class="fa fa-users"></i> User Management</h4>
-                <button class="btn btn-success" ng-click="addUser()" style="font-weight: 600;">
-                    <i class="fa fa-plus-circle"></i> Add User
-                </button>
+                <div>
+                    <button class="btn btn-default btn-sm" ng-click="refreshUsers()" title="Refresh user list">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                    <button class="btn btn-success" ng-click="addUser()" style="font-weight: 600;">
+                        <i class="fa fa-plus-circle"></i> Add User
+                    </button>
+                </div>
             </div>
             <div class="panel-body" style="padding: 0;">
                 <!-- Filters row -->

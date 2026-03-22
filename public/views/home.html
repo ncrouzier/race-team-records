@@ -1,13 +1,78 @@
 <div class="jumbotron ">
 
-    <p class="text-left">Welcome to the MCRRC racing team results and records site.</p>
-    <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and recognize
-                highly talented and competitive members of MCRRC, promote competitive distance running among club
-                members, and increase the visibility of MCRRC within the broader running community. The program
-                establishes racing teams to compete at races in the metropolitan Washington, DC area. <a
-                    href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank"><b>learn
-                        more...</b></a></i></small>
-    </p>
+    <!-- Dashboard for logged-in members -->
+    <div ng-if="user && user.member" class="well"
+        style="margin-bottom: 15px; background: #fff; border: 1px solid #ddd;">
+        <h4 style="margin-top: 0;">
+            Welcome back, {{user.member.firstname}}!
+            <a ui-sref="/members/member({member: user.member.username})" style="margin-left: 8px; font-weight: 600; font-size: 14px;">My Page &raquo;</a>
+        </h4>
+
+        <div class="row">
+            <!-- Latest Race -->
+            <div class="col-sm-4" style="border-right: 1px solid #eee;">
+                <h5><i class="fa fa-flag-checkered"></i> Latest Race</h5>
+                <hr style="margin: 5px 0 10px;">
+                <div ng-if="latestResult">
+                    <a class="hoverhand" ng-click="showRaceByIdModal(latestResult.race._id)">
+                        <b>{{latestResult.race.racename}}</b>
+                    </a>
+                    <br>
+                    <small class="text-muted">{{latestResult.race.racedate | date:'mediumDate':'UTC'}}</small>
+                    <br>
+                    <span>Time: <span class="time">{{latestResult.time | secondsToTimeString}}</span></span>
+                    <span ng-if="latestResult.agegrade"> | AG: {{latestResult.agegrade}}%</span>
+                </div>
+                <p ng-if="!latestResult && dashboardLoaded" class="text-muted"><small>No race results yet.</small></p>
+            </div>
+
+            <!-- Requirement Status -->
+            <div class="col-sm-8" ng-if="dashboardMember.teamRequirementStats">
+                <h5><i class="fa fa-check-square-o"></i> {{currentYear}} Requirements</h5>
+                <hr style="margin: 5px 0 10px;">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <span ng-class="meetsRaceReq ? 'text-success' : 'text-warning'">
+                            <i class="fa" ng-class="meetsRaceReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
+                        </span>
+                        Races + Volunteer:
+                        <b>{{dashboardMember.teamRequirementStats.raceCount +
+                            dashboardMember.teamRequirementStats.volunteerJobCount}} / {{reqConfig.minRaceAndVolunteerCount}}</b>
+                        <br>
+                        <small class="text-muted">
+                            ({{dashboardMember.teamRequirementStats.raceCount}} races,
+                            {{dashboardMember.teamRequirementStats.volunteerJobCount}} vol.)
+                        </small>
+                    </div>
+                    <div class="col-sm-6">
+                        <span ng-class="meetsAgeGradeReq ? 'text-success' : 'text-warning'">
+                            <i class="fa" ng-class="meetsAgeGradeReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
+                        </span>
+                        Best Age Grade:
+                        <b ng-if="dashboardMember.teamRequirementStats.maxAgeGrade !== 'N/A'">
+                            {{dashboardMember.teamRequirementStats.maxAgeGrade}}% / {{reqConfig.minAgeGrade}}%
+                        </b>
+                        <span ng-if="dashboardMember.teamRequirementStats.maxAgeGrade === 'N/A'" class="text-muted">
+                            N/A
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome for non-members / anonymous visitors -->
+    <div ng-if="!user || !user.member">
+        <p class="text-left">Welcome to the MCRRC racing team results and records site.</p>
+        <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and
+                    recognize
+                    highly talented and competitive members of MCRRC, promote competitive distance running among club
+                    members, and increase the visibility of MCRRC within the broader running community. The program
+                    establishes racing teams to compete at races in the metropolitan Washington, DC area. <a
+                        href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank"><b>learn
+                            more...</b></a></i></small>
+        </p>
+    </div>
 
     <div class="row">
         <div class="col-md-12">

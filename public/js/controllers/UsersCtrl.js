@@ -48,9 +48,13 @@ angular.module('mcrrcApp.results').controller('UsersController', ['$scope', 'Aut
 
     // =====================================
     // LOAD DATA ===========================
-    UsersService.getUsers().then(function(users) {
-        $scope.usersList = users;
-    });
+    $scope.refreshUsers = function() {
+        UsersService.getUsers().then(function(users) {
+            $scope.usersList = users;
+        });
+    };
+
+    $scope.refreshUsers();
 
     MembersService.getMembersWithCacheSupport({}).then(function(members) {
         $scope.membersList = members.sort(function(a, b) {
@@ -70,15 +74,17 @@ angular.module('mcrrcApp.results').controller('UsersController', ['$scope', 'Aut
     $scope.addUser = function() {
         UsersService.showAddUserModal($scope.membersList).then(function(newUser) {
             if (newUser) {
-                $scope.usersList.push(newUser);
+                $scope.refreshUsers();
             }
         });
     };
 
     // Edit user
     $scope.editUser = function(user) {
-        UsersService.showEditUserModal(user, $scope.membersList).then(function() {
-            // User is already updated via Restangular reference
+        UsersService.showEditUserModal(user, $scope.membersList).then(function(result) {
+            if (result) {
+                $scope.refreshUsers();
+            }
         });
     };
 

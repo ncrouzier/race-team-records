@@ -86,7 +86,7 @@
 
                                             </div>
                                             <div class="row"
-                                                ng-init="reqStats = currentMember.teamRequirementStats; reqTotal = (reqStats.raceCount || 0) + (reqStats.volunteerJobCount || 0); reqMeetsRaces = reqTotal >= 8; reqMeetsAG = reqStats.maxAgeGrade >= 70; reqMeetsAll = reqMeetsRaces && reqMeetsAG">
+                                                ng-init="reqStats = currentMember.teamRequirementStats; reqTotal = (reqStats.raceCount || 0) + (reqStats.volunteerJobCount || 0); reqMeetsRaces = reqTotal >= reqConfig.minRaceAndVolunteerCount; reqMeetsAG = reqStats.maxAgeGrade >= reqConfig.minAgeGrade; reqMeetsAll = reqMeetsRaces && reqMeetsAG">
                                                 <div class="col-sm-4">
                                                     <div class="stat-box text-center">
                                                         <div class="stat-number">{{memberStats.yearsRacing}}</div>
@@ -98,7 +98,7 @@
                                                     <div class="stat-box text-center"
                                                         ng-class="{'requirement-met': reqMeetsAll}">
                                                         <div class="stat-number">
-                                                            {{reqTotal}} / 8
+                                                            {{reqTotal}} / {{reqConfig.minRaceAndVolunteerCount}}
                                                             <i ng-if="reqMeetsRaces" class="fa fa-check text-success"
                                                                 style="font-size: 16px;"></i>
                                                         </div>
@@ -123,12 +123,12 @@
                                                                 | number:1}}%</span>
                                                             <span
                                                                 ng-if="currentMember.teamRequirementStats.maxAgeGrade === 'N/A'">N/A</span>
-                                                            <i ng-if="currentMember.teamRequirementStats.maxAgeGrade >= 70"
+                                                            <i ng-if="currentMember.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade"
                                                                 class="fa fa-check text-success"
                                                                 style="font-size: 16px;"></i>
                                                         </div>
                                                         <div class="stat-label">
-                                                            {{currentMember.teamRequirementStats.year}} Age Grade (70%+
+                                                            {{currentMember.teamRequirementStats.year}} Age Grade ({{reqConfig.minAgeGrade}}%+
                                                             needed)</div>
                                                     </div>
                                                 </div>

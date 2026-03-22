@@ -1,8 +1,38 @@
-angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', 'MembersService', function ($scope, AuthService, ResultsService, dialogs, MembersService) {
+angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', 'MembersService', 'TeamRequirementsConfig', function ($scope, AuthService, ResultsService, dialogs, MembersService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
+    $scope.currentYear = new Date().getFullYear();
+    $scope.reqConfig = TeamRequirementsConfig.getForYear($scope.currentYear);
+    $scope.dashboardLoaded = false;
+
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+
+        // Load dashboard data for logged-in members
+        if (user && user.member && !$scope.dashboardLoaded) {
+            $scope.dashboardLoaded = true;
+
+            // Fetch full member data (includes teamRequirementStats)
+            MembersService.getMember(user.member.username).then(function (member) {
+                $scope.dashboardMember = member;
+                if (member && member.teamRequirementStats) {
+                    var stats = member.teamRequirementStats;
+                    $scope.meetsRaceReq = (stats.raceCount + stats.volunteerJobCount) >= $scope.reqConfig.minRaceAndVolunteerCount;
+                    $scope.meetsAgeGradeReq = stats.maxAgeGrade !== 'N/A' && stats.maxAgeGrade >= $scope.reqConfig.minAgeGrade;
+                }
+            });
+
+            // Fetch latest result for the member
+            ResultsService.getResults({
+                member: JSON.stringify({ _id: user.member._id }),
+                sort: '-race.racedate',
+                limit: 1
+            }).then(function (results) {
+                if (results && results.length > 0) {
+                    $scope.latestResult = results[0];
+                }
+            });
+        }
     });
 
     $scope.expandedRaces = {};  // Object to track expanded races by ID
@@ -150,6 +180,12 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
     $scope.showRaceModal = function (raceinfo) {
         if (raceinfo) {
             ResultsService.showRaceModal(raceinfo).then(function () { });
+        }
+    };
+
+    $scope.showRaceByIdModal = function (raceId) {
+        if (raceId) {
+            ResultsService.showRaceFromRaceIdModal(raceId);
         }
     };
 

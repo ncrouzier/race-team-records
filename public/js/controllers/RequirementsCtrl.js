@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.results').controller('RequirementsController',
-    ['$scope', 'AuthService', 'MembersService', 'ResultsService', 'VolunteerJobsService', '$state', '$uibModal', '$q',
-        function ($scope, AuthService, MembersService, ResultsService, VolunteerJobsService, $state, $uibModal, $q) {
+    ['$scope', 'AuthService', 'MembersService', 'ResultsService', 'VolunteerJobsService', '$state', '$uibModal', '$q', 'TeamRequirementsConfig',
+        function ($scope, AuthService, MembersService, ResultsService, VolunteerJobsService, $state, $uibModal, $q, TeamRequirementsConfig) {
 
             // =====================================
             // AUTHENTICATION SETUP ================
@@ -17,12 +17,14 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
                 $scope.yearsList.push(i);
             }
             $scope.selectedYear = currentYear;
+            $scope.reqConfig = TeamRequirementsConfig.getForYear(currentYear);
 
             // =====================================
             // LOAD REQUIREMENTS DATA ==============
             $scope.loadRequirements = function () {
                 $scope.loading = true;
                 var year = $scope.selectedYear;
+                $scope.reqConfig = TeamRequirementsConfig.getForYear(year);
 
                 $q.all([
                     MembersService.getMembersWithCacheSupport({ select: '-bio -personalBests' }),
@@ -89,8 +91,9 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
                     var stats = memberRaceStats[id] || { raceCount: 0, maxAgeGrade: 0 };
                     var volunteerJobCount = memberVolunteerCount[id] || 0;
 
-                    var meetsRaceRequirement = (stats.raceCount + volunteerJobCount) >= 8;
-                    var meetsAgeGradeRequirement = stats.maxAgeGrade >= 70;
+                    var reqConfig = TeamRequirementsConfig.getForYear(year);
+                    var meetsRaceRequirement = (stats.raceCount + volunteerJobCount) >= reqConfig.minRaceAndVolunteerCount;
+                    var meetsAgeGradeRequirement = stats.maxAgeGrade >= reqConfig.minAgeGrade;
                     var meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
 
                     var joinedDuringYear = member.membershipDates.some(function (period) {

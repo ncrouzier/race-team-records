@@ -11,7 +11,7 @@
     "copy:assets": "mkdir -p public/dist/fonts public/dist/font public/views/templates && cp public/libs/fontawesome/fonts/fontawesome-webfont.eot public/libs/fontawesome/fonts/fontawesome-webfont.ttf public/libs/fontawesome/fonts/fontawesome-webfont.woff public/libs/fontawesome/fonts/fontawesome-webfont.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/angular-utils-pagination/dirPagination.tpl.html public/views/templates/ 2>/dev/null; true",
     "build": "npm run build:css && npm run build:js && npm run copy:assets",
     "heroku-postbuild": "npx bower install --allow-root",
-    "watch:js": "chokidar 'public/js/**/*.js' -c 'npm run build:js:dev' --initial",
+    "watch:js": "chokidar 'public/js/**/*.js' 'config/teamRequirements.js' -c 'npm run build:js:dev' --initial",
     "watch:css": "chokidar 'public/less/**/*.less' 'public/css/**/*.css' -c 'npm run build:css' --initial",
     "watch": "run-p watch:js watch:css",
     "dev": "npm run build:css && npm run build:js:dev && npm run copy:assets && run-p server watch",

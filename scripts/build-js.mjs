@@ -25,6 +25,7 @@ const libFiles = [
     'public/libs/datamaps/dist/datamaps.all.hires.min.js',
     'public/libs/moment/min/moment.min.js',
     'public/libs/nouislider/dist/nouislider.js',
+    'config/teamRequirements.js',
 ];
 
 // App files via glob (same patterns as old Gruntfile)

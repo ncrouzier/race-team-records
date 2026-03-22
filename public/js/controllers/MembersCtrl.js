@@ -1,6 +1,7 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
+    $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
         // If columns are already built, move logged-in user's member to top
@@ -434,7 +435,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
     $scope.hasTeamRequirementFulfilled = function (member) {
-        if (member.teamRequirementStats && member.teamRequirementStats.raceCount >= 8 && member.teamRequirementStats.maxAgeGrade >= 70) {
+        var reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
+        if (member.teamRequirementStats &&
+            (member.teamRequirementStats.raceCount + (member.teamRequirementStats.volunteerJobCount || 0)) >= reqConfig.minRaceAndVolunteerCount &&
+            member.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade) {
             return true;
         } else {
             return false;

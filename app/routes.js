@@ -4,6 +4,7 @@ const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
+const teamRequirements = require('../config/teamRequirements');
 
 const bioSanitizeOptions = {
     allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
@@ -80,16 +81,22 @@ module.exports = async function (app, qs, passport, async, _) {
         next();
     });
 
-    // Track last active time (updates at most once per 5 minutes per user)
+    // Track last active time
+    // - Updates in-memory on every request (for live reads via req.user and admin list)
+    // - Persists to database at most once per 5 minutes per user
     var lastActiveCache = {};
+    var lastActiveDbWrite = {};
     app.use('/*', function (req, res, next) {
         if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+            var now = new Date();
+            req.user.lastActive = now;
+
             var userId = req.user._id.toString();
-            var now = Date.now();
-            var lastUpdate = lastActiveCache[userId] || 0;
-            if (now - lastUpdate > 5 * 60 * 1000) {
-                lastActiveCache[userId] = now;
-                User.updateOne({ _id: req.user._id }, { lastActive: new Date(now) }).exec();
+            lastActiveCache[userId] = now;
+            var lastWrite = lastActiveDbWrite[userId] || 0;
+            if (now.getTime() - lastWrite > 5 * 60 * 1000) {
+                lastActiveDbWrite[userId] = now.getTime();
+                User.updateOne({ _id: req.user._id }, { lastActive: now }).exec();
             }
         }
         next();
@@ -1231,10 +1238,10 @@ module.exports = async function (app, qs, passport, async, _) {
                     jobDate: { $gte: dateFrom, $lt: dateTo }
                 });
 
-                // Calculate if requirements are met
-                // Volunteer jobs count toward the 8-race requirement (all years)
-                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= 8;
-                const meetsAgeGradeRequirement = maxAgeGrade >= 70;
+                // Calculate if requirements are met using centralized config
+                const reqConfig = teamRequirements.getForYear(yearNum);
+                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= reqConfig.minRaceAndVolunteerCount;
+                const meetsAgeGradeRequirement = maxAgeGrade >= reqConfig.minAgeGrade;
 
                 // Volunteer requirement is no longer separate - it contributes to race count
                 // Keep this for backward compatibility but it's not used in overall calculation
@@ -3680,7 +3687,13 @@ module.exports = async function (app, qs, passport, async, _) {
     // Get all users
     app.get('/api/users', service.isAdminLoggedIn, function (req, res) {
         try {
-            User.find({}, '-password').populate('member', 'firstname lastname username sex memberStatus').sort('username').then(function (users) {
+            User.find({}, '-password').populate('member', 'firstname lastname username sex memberStatus').sort('username').lean().then(function (users) {
+                users.forEach(function (user) {
+                    var cached = lastActiveCache[user._id.toString()];
+                    if (cached) {
+                        user.lastActive = cached;
+                    }
+                });
                 res.json(users);
             });
         } catch (err) {

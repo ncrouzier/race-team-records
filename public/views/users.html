@@ -90,7 +90,7 @@
                                 <span ng-if="usersList.length > 0">No users match the current filters.</span>
                             </td>
                         </tr>
-                        <tr ng-repeat="u in usersList | filter:userFilter | orderBy:sortBy:sortReverse">
+                        <tr ng-repeat="u in usersList | filter:userFilter | orderBy:sortFn:sortReverse">
                             <td>{{u.username}}</td>
                             <td>{{u.email}}</td>
                             <td>

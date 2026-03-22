@@ -46,6 +46,22 @@ angular.module('mcrrcApp.results').controller('UsersController', ['$scope', 'Aut
         }
     };
 
+    // Custom sort function that pushes null/undefined values to the bottom
+    $scope.sortFn = function(user) {
+        var field = $scope.sortBy;
+        var val = field.indexOf('.') !== -1
+            ? field.split('.').reduce(function(obj, key) { return obj ? obj[key] : undefined; }, user)
+            : user[field];
+
+        if (field === 'lastLogin' || field === 'lastActive') {
+            if (!val) {
+                // Push nulls to bottom: use far-past date when ascending, far-future when descending
+                return $scope.sortReverse ? '' : 'zzzz';
+            }
+        }
+        return val;
+    };
+
     // =====================================
     // LOAD DATA ===========================
     $scope.refreshUsers = function() {

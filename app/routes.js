@@ -2264,15 +2264,18 @@ module.exports = async function (app, qs, passport, async, _) {
                             input: "$results",
                             as: "result",
                             in: {
-                                $mergeObjects: [
-                                    "$$result",
-                                    {
-                                        race: {
-                                            _id: "$$result.race._id"
-                                        },
-                                        miles: { $ifNull: ["$$result.race.racetype.miles", 0] }
-                                    }
-                                ]
+                                _id: "$$result._id",
+                                time: "$$result.time",
+                                ranking: "$$result.ranking",
+                                members: "$$result.members",
+                                race: { _id: "$$result.race._id" },
+                                miles: { $ifNull: ["$$result.race.racetype.miles", 0] },
+                                agegrade: "$$result.agegrade",
+                                achievements: "$$result.achievements",
+                                customOptions: "$$result.customOptions",
+                                comments: "$$result.comments",
+                                resultlink: "$$result.resultlink",
+                                legs: "$$result.legs"
                             }
                         }
                     }

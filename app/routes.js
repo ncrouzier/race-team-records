@@ -464,16 +464,16 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!systemInfo) {
                 SystemInfo.create({
                     name: "mcrrc"
-                }, function (err) {
-                    if (err) {
-                        console.log(err);
-                    }
+                }).catch(function (err) {
+                    console.log(err);
                 });
+
             }
         });
     } catch (err) {
         console.log("error fetching systemInfo")
     }
+
 
 
 

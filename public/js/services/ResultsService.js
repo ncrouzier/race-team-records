@@ -14,6 +14,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // In-memory cache for race results
     var raceResultsMemoryCache = {};
 
+    // In-flight request deduplication for getRaceResultsWithCacheSupport
+    var inFlightRequests = {};
+
     function isRestangularized(obj) {
         return obj && typeof obj.getRestangularUrl === 'function';
     }
@@ -342,7 +345,23 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             });
     };
 
-    factory.getRaceResultsWithCacheSupport = async function (params) {
+    factory.getRaceResultsWithCacheSupport = function (params) {
+        var dedupeKey = JSON.stringify(params || {});
+
+        // If an identical request is already in flight, return the same promise
+        if (inFlightRequests[dedupeKey]) {
+            return inFlightRequests[dedupeKey];
+        }
+
+        var promise = _getRaceResultsWithCacheSupportImpl(params).finally(function () {
+            delete inFlightRequests[dedupeKey];
+        });
+
+        inFlightRequests[dedupeKey] = promise;
+        return promise;
+    };
+
+    async function _getRaceResultsWithCacheSupportImpl(params) {
         try {
             var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
                 return sysinfo;
@@ -374,7 +393,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
 
             // Check in-memory cache first using MemoryCacheService
 
-            // console.log("memKey", memKey);  
+            // console.log("memKey", memKey);
             var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKey);
             // console.log("memCacheEntry", memCacheEntry);
             if (memCacheEntry && memCacheEntry.date && date.getTime() === new Date(memCacheEntry.date).getTime()) {
@@ -446,7 +465,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         } catch (error) {
             throw error;
         }
-    };
+    }
 
 
     factory.showRaceFromResultModal = function (raceId, fromStateParams) {

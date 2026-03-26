@@ -13,7 +13,14 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
     var self = this;
 
     function stripFunctions(obj) {
-        return JSON.parse(JSON.stringify(obj));
+        var seen = new WeakSet();
+        return JSON.parse(JSON.stringify(obj, function(key, value) {
+            if (typeof value === 'object' && value !== null) {
+                if (seen.has(value)) return undefined;
+                seen.add(value);
+            }
+            return value;
+        }));
     }
 
     this.getStats = async function(year) {

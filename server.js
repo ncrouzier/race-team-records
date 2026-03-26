@@ -11,6 +11,7 @@ if (!process.env.SESSION_SECRET) {
 // set up ======================================================================
 // get all the tools we need
 var express = require('express');
+const compression = require('compression');
 const sslRedirect = require('heroku-ssl-redirect').default
 var app = express();
 var osipaddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
@@ -50,6 +51,11 @@ if (process.env.DYNO) {
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+app.use(compression({
+    threshold: 1024,
+    level: 6
+}));
 
 // configuration ===============================================================
 

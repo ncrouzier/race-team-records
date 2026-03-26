@@ -2,10 +2,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
+        var hadUser = !!$scope.user;
         $scope.user = user;
-        // Re-initialize stats when user changes to load participation stats if needed
-        if ($scope.statsInitialized) {
-            $scope.initializeStats();
+        // When user logs in after initial load, only load participation stats (other stats are user-independent)
+        if ($scope.statsInitialized && !hadUser && user && (user.role === 'user' || user.role === 'admin' || user.role === 'captain')) {
+            $scope.getParticipationStats();
         }
     });
 

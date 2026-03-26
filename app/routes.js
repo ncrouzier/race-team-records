@@ -2241,11 +2241,32 @@ module.exports = async function (app, qs, passport, async, _) {
     // });
 
     // get raceinfo list
-    app.get('/api/raceinfos', function (req, res) {
+    var raceInfosCache = {};
+
+    app.get('/api/raceinfos', async function (req, res) {
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
         let raceId = req.query.raceId;
 
+        // Build a cache key from the query params
+        const cacheKey = JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: req.query.filters });
+
+        // Check cache freshness against systemInfo.resultUpdate
+        try {
+            const systemInfo = await service.getCachedSystemInfo();
+            if (systemInfo) {
+                const latestUpdate = Math.max(
+                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
+                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
+                );
+                const cached = raceInfosCache[cacheKey];
+                if (cached && cached.timestamp >= latestUpdate) {
+                    return res.json(cached.data);
+                }
+            }
+        } catch (err) {
+            // If systemInfo check fails, proceed without cache
+        }
 
         let query = Race.aggregate([
 
@@ -2316,7 +2337,12 @@ module.exports = async function (app, qs, passport, async, _) {
                 results.forEach(function (resu) {
                     resu.results = _.sortBy(resu.results, 'time');
                 });
-                res.json(results); // return all members in JSON format                
+                // Cache the results
+                raceInfosCache[cacheKey] = {
+                    data: results,
+                    timestamp: Date.now()
+                };
+                res.json(results); // return all members in JSON format
             });
         } catch (err) {
             res.send(err);

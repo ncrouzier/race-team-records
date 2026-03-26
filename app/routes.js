@@ -2721,13 +2721,19 @@ module.exports = async function (app, qs, passport, async, _) {
                 {
                     '$set': {
                         "bestAgeGroup": {
-                            '$first': {
-                                '$sortArray': {
-                                    'input': "$results",
-                                    'sortBy': {
-                                        "agegrade": -1,
-                                        "race.racedate": -1
-
+                            '$reduce': {
+                                'input': '$results',
+                                'initialValue': null,
+                                'in': {
+                                    '$cond': {
+                                        'if': {
+                                            '$or': [
+                                                { '$eq': ['$$value', null] },
+                                                { '$gt': [{ '$ifNull': ['$$this.agegrade', 0] }, { '$ifNull': ['$$value.agegrade', 0] }] }
+                                            ]
+                                        },
+                                        'then': '$$this',
+                                        'else': '$$value'
                                     }
                                 }
                             }

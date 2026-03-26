@@ -2701,23 +2701,18 @@ module.exports = async function (app, qs, passport, async, _) {
                 }, {
                     '$lookup': {
                         'from': 'results',
-                        'localField': '_id',
-                        'foreignField': 'members._id',
+                        'let': { 'memberId': '$_id' },
                         'as': 'results',
                         'pipeline': [
                             {
                                 '$match': {
-                                    '$and': [
-                                        {
-                                            'race.racedate': {
-                                                '$gte': startdate
-                                            }
-                                        }, {
-                                            'race.racedate': {
-                                                '$lte': enddate
-                                            }
-                                        }
-                                    ]
+                                    '$expr': {
+                                        '$in': ['$$memberId', '$members._id']
+                                    },
+                                    'race.racedate': {
+                                        '$gte': startdate,
+                                        '$lte': enddate
+                                    }
                                 }
                             }
                         ]

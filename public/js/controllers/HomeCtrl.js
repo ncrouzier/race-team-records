@@ -22,14 +22,37 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                 }
             });
 
-            // Fetch latest result for the member
-            ResultsService.getResults({
-                member: JSON.stringify({ _id: user.member._id }),
-                sort: '-race.racedate',
-                limit: 1
-            }).then(function (results) {
-                if (results && results.length > 0) {
-                    $scope.latestResult = results[0];
+            // Extract latest result from cached race data
+            ResultsService.getRaceResultsWithCacheSupport({
+                "sort": '-racedate -order racename',
+                "preload": false
+            }).then(function (races) {
+                var memberId = user.member._id;
+                var latestResult = null;
+                var latestDate = null;
+                for (var i = 0; i < races.length; i++) {
+                    var race = races[i];
+                    if (!race.results) continue;
+                    for (var j = 0; j < race.results.length; j++) {
+                        var result = race.results[j];
+                        if (!result.members) continue;
+                        for (var k = 0; k < result.members.length; k++) {
+                            if (result.members[k]._id === memberId) {
+                                var raceDate = new Date(race.racedate);
+                                if (!latestDate || raceDate > latestDate) {
+                                    latestDate = raceDate;
+                                    latestResult = result;
+                                    latestResult.race = race;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    // Since races are sorted by date desc, first match is the latest
+                    if (latestResult) break;
+                }
+                if (latestResult) {
+                    $scope.latestResult = latestResult;
                 }
             });
         }

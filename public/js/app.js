@@ -16,7 +16,7 @@ app.config(function(localStorageServiceProvider) {
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
-app.run(['$http', 'AuthService', 'Restangular', '$transitions', '$rootScope', function($http, AuthService, Restangular, $transitions, $rootScope) {
+app.run(['$http', 'AuthService', 'Restangular', '$transitions', '$rootScope', '$location', function($http, AuthService, Restangular, $transitions, $rootScope, $location) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
@@ -30,14 +30,13 @@ app.run(['$http', 'AuthService', 'Restangular', '$transitions', '$rootScope', fu
     });
 
     // Centralized GA4 page view tracking + heartbeat on every route change
-    $transitions.onSuccess({}, function(transition) {
+    $transitions.onSuccess({}, function() {
         // Heartbeat
         if (AuthService.isLoggedIn()) {
             $http.post('/api/heartbeat');
         }
-        // GA4 page view
-        var toState = transition.to();
-        gtag('set', 'page_path', toState.url || toState.name);
+        // GA4 page view - use $location.path() to get the resolved URL with actual params
+        gtag('set', 'page_path', $location.path());
         gtag('event', 'page_view');
     });
 

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$stateParams', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $analytics, $filter, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$stateParams', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $filter, AuthService, ResultsService) {
 
 
 
@@ -138,7 +138,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$s
 
 }]);
 
-angular.module('mcrrcApp.results').controller('TableReportController', ['$scope', '$stateParams', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $analytics, $filter, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('TableReportController', ['$scope', '$stateParams', '$filter', 'AuthService', 'ResultsService', function($scope, $stateParams, $filter, AuthService, ResultsService) {
 
     if ($stateParams.from && $stateParams.to) {
         ResultsService.getResults({

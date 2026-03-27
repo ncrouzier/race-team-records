@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope', '$analytics', '$filter', 'AuthService', 'ResultsService', function($scope, $analytics, $filter, AuthService, ResultsService) {
+angular.module('mcrrcApp.results').controller('PdfGeneratorController', ['$scope', '$filter', 'AuthService', 'ResultsService', function($scope, $filter, AuthService, ResultsService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {

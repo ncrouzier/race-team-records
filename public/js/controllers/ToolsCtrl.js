@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'UtilsService', 'localStorageService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, UtilsService, localStorageService) {
+angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'UtilsService', 'localStorageService', function ($scope, $location, $timeout, $state, $stateParams, $http, AuthService, MembersService, ResultsService, dialogs, $filter, UtilsService, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -103,8 +103,8 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
 }]);
 
 angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
-    '$scope', '$analytics', 'AuthService', 'localStorageService',
-    function ($scope, $analytics, AuthService, localStorageService) {
+    '$scope', 'AuthService', 'localStorageService',
+    function ($scope, AuthService, localStorageService) {
 
     // Cache DOM elements and constants
     const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);

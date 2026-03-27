@@ -13,11 +13,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
         .state('/', {
             url: "/",
             templateUrl: "views/home.html",
-            controller: 'HomeController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/home.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'HomeController'
         }).state('/members', {
             url: "/members?member",
             templateUrl: "views/memberList.html",
@@ -29,10 +25,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                     return transition.router.stateService.target('/members/member/bio', { member: member });
                 }
                 return null; // No redirect, stay on current state
-            },
-            onEnter: function () {
-                gtag('set', 'page_path', '/members.html');
-                gtag('event', 'page_view');
             }
         })
         .state('/members/member', {
@@ -51,11 +43,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
             },
             templateUrl: "views/memberDetail.html",
-            controller: 'MembersController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/memberDetail.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'MembersController'
         })
         .state('/members/member/stats', {
             url: "/members/:member/stats",
@@ -63,11 +51,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
             },
             templateUrl: "views/memberStats.html",
-            controller: 'MemberStatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/memberStats.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'MemberStatsController'
         })
         .state('/members/member/head-to-head-compare', {
             url: "/members/:member/head-to-head/:member2",
@@ -76,11 +60,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member2: null,
             },
             templateUrl: "views/memberHeadToHead.html",
-            controller: 'HeadToHeadController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/memberHeadToHead.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'HeadToHeadController'
         })
         .state('/members/member/head-to-head', {
             url: "/members/:member/head-to-head",
@@ -88,11 +68,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
             },
             templateUrl: "views/memberHeadToHead.html",
-            controller: 'HeadToHeadController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/memberHeadToHead.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'HeadToHeadController'
         })
         .state('/members/member/volunteer-jobs', {
             url: "/members/:member/volunteer-jobs",
@@ -100,11 +76,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
             },
             templateUrl: "views/memberVolunteerJobs.html",
-            controller: 'MemberVolunteerJobsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/memberVolunteerJobs.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'MemberVolunteerJobsController'
         })
 
         .state('/members/head-to-head', {
@@ -114,11 +86,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member2: null,
             },
             templateUrl: "views/headToHead.html",
-            controller: 'HeadToHeadController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/headToHead.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'HeadToHeadController'
         })
         .state('/results', {
             url: "/results",
@@ -126,10 +94,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             controller: 'ResultsController',
             params: {
                 search: null
-            },
-            onEnter: function () {
-                gtag('set', 'page_path', '/results.html');
-                gtag('event', 'page_view');
             }
         }).state('/about', {
             url: '/about',
@@ -167,121 +131,65 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
         }).state('/users', {
             url: "/users",
             templateUrl: "views/users.html",
-            controller: 'UsersController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/users.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'UsersController'
         }).state('/activitylogs', {
             url: "/activitylogs",
             templateUrl: "views/activitylogs.html",
-            controller: 'ActivityLogController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/activitylogs.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'ActivityLogController'
         }).state('/volunteer-jobs', {
             url: "/volunteer-jobs",
             templateUrl: "views/volunteerJobs.html",
-            controller: 'VolunteerJobsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/volunteerJobs.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'VolunteerJobsController'
         }).state('/stats/requirements', {
             url: "/stats/requirements",
             templateUrl: "views/stats/requirements.html",
-            controller: 'RequirementsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/requirements.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'RequirementsController'
         }).state('/records', {
             url: "/records",
             templateUrl: "views/records.html",
-            controller: 'RecordsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/records.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'RecordsController'
         }).state('/stats', {
             url: "/stats",
             redirectTo: '/stats/team'
         }).state('/stats/team', {
             url: "/stats/team",
             templateUrl: "views/stats/team.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/team.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/stats/us-map', {
             url: "/stats/us-map",
             templateUrl: "views/stats/us-map.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/us-map.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/stats/world-map', {
             url: "/stats/world-map",
             templateUrl: "views/stats/world-map.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/world-map.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/stats/participation', {
             url: "/stats/participation",
             templateUrl: "views/stats/participation.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/participation.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/stats/members', {
             url: "/stats/members",
             templateUrl: "views/stats/members.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/members.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/stats/progress-map', {
             url: "/stats/progress-map",
             templateUrl: "views/stats/progress-map.html",
-            controller: 'ProgressMapController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/progress-map.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'ProgressMapController'
         }).state('/stats/awards', {
             url: "/stats/awards",
             templateUrl: "views/stats/awards.html",
-            controller: 'StatsController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/stats/awards.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'StatsController'
         }).state('/tools', {
             url: "/tools",
             redirectTo: '/tools/agegrade'
         }).state('/tools/agegrade', {
             url: "/tools/agegrade",
             templateUrl: "views/agegrade.html",
-            controller: 'AgeGradeController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/agegrade.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'AgeGradeController'
         }).state('/tools/paceAdjustment', {
             url: "/tools/paceAdjustment",
             templateUrl: "views/tempAdjustment.html",
-            controller: 'TempAdjustmentController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/tempAdjustment.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'TempAdjustmentController'
         }).state('/tools/resultExtractor', {
             url: "/tools/result-extractor",
             templateUrl: "views/resultExtractor.html",
@@ -290,10 +198,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 auth: function (AuthService) {
                     return AuthService.isLoggedIn();
                 }
-            },
-            onEnter: function () {
-                gtag('set', 'page_path', '/resultExtractor.html');
-                gtag('event', 'page_view');
             }
         }).state('/moist', {
             url: "/moist",
@@ -313,11 +217,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
         }).state('/contact', {
             url: "/contact",
             templateUrl: "views/contact.html",
-            controller: 'ContactController',
-            onEnter: function () {
-                gtag('set', 'page_path', '/contact.html');
-                gtag('event', 'page_view');
-            }
+            controller: 'ContactController'
         }).state('/bulk', {
             url: "/bulk",
             templateUrl: "views/bulkOperations.html",
@@ -333,11 +233,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "https://forms.gle/iqZVhUjg6WpgG8D97"
         })
         .state('/instagram', {
-            url: "https://www.instagram.com/mcrrc_racing",
-            onEnter: function () {
-                gtag('set', 'page_path', '/instagram');
-                gtag('event', 'page_view');
-            }
+            url: "https://www.instagram.com/mcrrc_racing"
         })
         .state('/notacult', {
             url: "/notacult",

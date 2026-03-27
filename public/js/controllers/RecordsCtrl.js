@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', 'localStorageService', function($scope, $analytics, AuthService, ResultsService, $http, dialogs, localStorageService) {
+angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', 'AuthService', 'ResultsService', '$http', 'dialogs', 'localStorageService', function($scope, AuthService, ResultsService, $http, dialogs, localStorageService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function(user) {
@@ -30,9 +30,12 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         //save selection in storage
         localStorageService.set('records.options', $scope.paramModel);
 
-        $analytics.eventTrack('viewRecords', {
-            category: 'Records',
-            label: 'viewing record for ' + $scope.paramModel.racetype.name + ' (' + $scope.paramModel.racetype.surface + ') sex= ' + $scope.paramModel.sex + ' category= ' + $scope.paramModel.category + ' mode= ' + $scope.paramModel.mode
+        gtag('event', 'view_records', {
+            race_type: $scope.paramModel.racetype.name,
+            surface: $scope.paramModel.racetype.surface,
+            sex: $scope.paramModel.sex,
+            category: $scope.paramModel.category,
+            mode: $scope.paramModel.mode
         });
 
     };

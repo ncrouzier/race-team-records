@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', 'dialogs', '$filter', 'localStorageService', 'AuthService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, dialogs, $filter, localStorageService, AuthService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -281,9 +281,8 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewMemberHeadToHead', {
-                category: 'Member',
-                label: 'viewing member head-to-head tab ' + currentMember.firstname + ' ' + currentMember.lastname
+            gtag('event', 'view_head_to_head', {
+                member_name: currentMember.firstname + ' ' + currentMember.lastname
             });
 
         } catch (error) {
@@ -366,9 +365,9 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewHeadToHead', {
-                category: 'Member',
-                label: 'viewing head-to-head tab ' + member1.firstname + ' ' + member1.lastname + ' vs ' + member2.firstname + ' ' + member2.lastname
+            gtag('event', 'view_head_to_head', {
+                member1: member1.firstname + ' ' + member1.lastname,
+                member2: member2.firstname + ' ' + member2.lastname
             });
 
         } catch (error) {

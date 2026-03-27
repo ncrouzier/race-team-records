@@ -1,4 +1,4 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule','cgNotify']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'LocalStorageModule','cgNotify']);
 
 var membersModule = angular.module('mcrrcApp.members', []);
 var resultsModule = angular.module('mcrrcApp.results', []);
@@ -16,7 +16,7 @@ app.config(function(localStorageServiceProvider) {
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
-app.run(['$http', 'AuthService', 'Restangular', '$transitions', function($http, AuthService, Restangular, $transitions) {
+app.run(['$http', 'AuthService', 'Restangular', '$transitions', '$rootScope', function($http, AuthService, Restangular, $transitions, $rootScope) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
@@ -29,10 +29,22 @@ app.run(['$http', 'AuthService', 'Restangular', '$transitions', function($http, 
         $state.go('/login');
     });
 
-    // Track user activity on page navigation
-    $transitions.onSuccess({}, function() {
+    // Centralized GA4 page view tracking + heartbeat on every route change
+    $transitions.onSuccess({}, function(transition) {
+        // Heartbeat
         if (AuthService.isLoggedIn()) {
             $http.post('/api/heartbeat');
+        }
+        // GA4 page view
+        var toState = transition.to();
+        gtag('set', 'page_path', toState.url || toState.name);
+        gtag('event', 'page_view');
+    });
+
+    // Set GA4 user properties when user logs in
+    $rootScope.$watch(function() { return AuthService.isLoggedIn(); }, function(user) {
+        if (user) {
+            gtag('set', 'user_properties', { user_role: user.role });
         }
     });
 }]); 

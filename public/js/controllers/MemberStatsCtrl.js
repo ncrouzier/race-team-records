@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
+angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function($scope, $location,$timeout, $state, $stateParams, $http, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -98,9 +98,8 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewMemberStats', {
-                category: 'Member',
-                label: 'viewing member stats ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
+            gtag('event', 'view_member_stats', {
+                member_name: $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
             });
         });
     };

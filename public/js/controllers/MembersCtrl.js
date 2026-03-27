@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -251,9 +251,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             // Navigate to member detail page (bio tab by default)
             $state.go('/members/member/bio', { member: $scope.currentMember.username });
 
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
+            gtag('event', 'view_member', {
+                member_name: $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
             });
         });
         if (!$scope.$$phase) {
@@ -334,9 +333,8 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
+            gtag('event', 'view_member', {
+                member_name: $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
             });
         });
     };

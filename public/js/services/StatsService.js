@@ -12,15 +12,41 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
     
     var self = this;
 
+    // Clear stale stats cache that was corrupted by the old stripFunctions
+    // (shared object references were incorrectly treated as circular refs)
+    try { db.statsCache.clear(); } catch(e) { /* ignore */ }
+
     function stripFunctions(obj) {
-        var seen = new WeakSet();
-        return JSON.parse(JSON.stringify(obj, function(key, value) {
-            if (typeof value === 'object' && value !== null) {
-                if (seen.has(value)) return undefined;
-                seen.add(value);
+        // Deep-clone obj to a plain JSON-safe value.
+        // We must skip circular references but NOT shared references
+        // (e.g. the same racetype object used by many races).
+        function deepClone(value, ancestors) {
+            if (value === null || value === undefined) return value;
+            if (typeof value === 'function') return undefined;
+            if (typeof value !== 'object') return value;
+            // Arrays and Dates
+            if (value instanceof Date) return value.toISOString();
+            if (ancestors.has(value)) return undefined; // true circular ref
+            ancestors.add(value);
+            var result;
+            if (Array.isArray(value)) {
+                result = [];
+                for (var i = 0; i < value.length; i++) {
+                    result.push(deepClone(value[i], ancestors));
+                }
+            } else {
+                result = {};
+                var keys = Object.keys(value);
+                for (var j = 0; j < keys.length; j++) {
+                    var k = keys[j];
+                    var v = deepClone(value[k], ancestors);
+                    if (v !== undefined) result[k] = v;
+                }
             }
-            return value;
-        }));
+            ancestors.delete(value); // allow shared refs, only block true cycles
+            return result;
+        }
+        return deepClone(obj, new Set());
     }
 
     this.getStats = async function(year) {

@@ -1,5 +1,4 @@
 var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
  const resultSchema = require('./result').schema
  const SystemInfo = require('./systeminfo');
 
@@ -35,7 +34,8 @@ var memberSchema = mongoose.Schema({
     teamRequirementStats:{
         year: Number,
         raceCount: Number,
-        maxAgeGrade: mongoose.Schema.Types.Mixed
+        maxAgeGrade: mongoose.Schema.Types.Mixed,
+        volunteerJobCount: Number
     },
     createdAt: Date,
     updatedAt: Date

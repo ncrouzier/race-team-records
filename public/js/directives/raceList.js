@@ -379,6 +379,12 @@ angular.module('mcrrcApp').directive('raceList', function() {
                 };
             }
 
+            $scope.isMyResult = function(result) {
+                return $scope.user && $scope.user.member && result.members && result.members.some(function(m) {
+                    return m._id === $scope.user.member._id;
+                });
+            };
+
             $scope.expandedRaces = {};
             $scope.sortCriteria = 'racedate';
             $scope.sortDirection = false;

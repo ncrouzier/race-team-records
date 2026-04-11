@@ -1,27 +1,34 @@
 <div class="col-sm-6 col-sm-offset-3">
 
-    <h1><span class="fa fa-sign-in"></span> Signup</h1>
+    <h1><span class="fa fa-sign-in"></span> Create Account</h1>
 
     <!-- show any messages that come back with authentication -->
-     <div ng-show="message.length >0" class="alert alert-danger">{{message}}</div>
+    <div ng-show="message" class="alert alert-danger">{{message}}</div>
 
-    <!-- LOGIN FORM -->
-    <!-- <form action="/api/signup" method="post"> -->
-    <form name="form" ng-submit="signup(user)" >
+    <!-- Success message after registration -->
+    <div ng-show="success" class="alert alert-success">
+        <i class="fa fa-check-circle"></i> {{successMessage}}
+    </div>
+
+    <form name="form" ng-submit="signup(user)" ng-hide="success">
         <div class="form-group">
             <label>Name</label>
-            <input type="text" class="form-control" name="user.username" ng-model="user.username" required>
+            <input type="text" class="form-control" name="username" ng-model="user.username" required auto-focus>
         </div>
         <div class="form-group">
             <label>Email</label>
             <input type="email" class="form-control" name="email" ng-model="user.email" required>
         </div>
-        <div class="form-group">
+        <div class="form-group" ng-class="{'has-error': form.password.$dirty && form.password.$invalid}">
             <label>Password</label>
-            <input type="password" class="form-control" name="password" ng-model="user.password" required>
-        </div>     
+            <input type="password" class="form-control" name="password" ng-model="user.password" required
+                ng-minlength="8" maxlength="64">
+            <p class="help-block" ng-show="form.password.$dirty && form.password.$error.minlength">
+                Password must be at least 8 characters.
+            </p>
+        </div>
 
-        <button ng-disabled="!form.$valid" type="submit" class="btn btn-warning btn-lg">Signup</button>
+        <button ng-disabled="!form.$valid" type="submit" class="btn btn-warning btn-lg">Create Account</button>
     </form>
 
     <hr>

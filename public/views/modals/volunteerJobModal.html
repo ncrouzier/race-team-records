@@ -1,8 +1,7 @@
 <div class="modal-header">
-    <h3 ng-show="editmode" class="modal-title">Edit Volunteer Job</h3>
-    <h3 ng-show="!editmode" class="modal-title">Add Volunteer Job</h3>
+    <h3 class="modal-title">Edit Volunteer Job</h3>
 </div>
-<div class="modal-body">
+<div class="modal-body" style="overflow: visible;">
     <form name="formvolunteerjob">
         <div class="row">
             <div class="col-md-12">
@@ -67,13 +66,9 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button ng-show="editmode" type="submit" class="btn btn-primary"
+    <button type="submit" class="btn btn-primary"
             ng-click="editVolunteerJob()" ng-disabled="formvolunteerjob.$invalid">
-        Edit Volunteer Job
-    </button>
-    <button ng-show="!editmode" type="submit" class="btn btn-primary"
-            ng-click="addVolunteerJob()" ng-disabled="formvolunteerjob.$invalid">
-        Add Volunteer Job
+        Save Changes
     </button>
     <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
 </div>

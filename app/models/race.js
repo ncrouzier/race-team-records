@@ -1,5 +1,4 @@
 var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
 const racetype = require('./racetype');
 const racetypeSchema = require('./racetype').schema
 

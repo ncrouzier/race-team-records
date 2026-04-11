@@ -2047,7 +2047,7 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.resultsCollapsed = true;
     
     // Load racetypes
-    ResultsService.getRaceTypes().then(function(racetypes) {
+    ResultsService.getRaceTypes({ sort: 'meters' }).then(function(racetypes) {
         $scope.racetypesList = racetypes;
     });
     

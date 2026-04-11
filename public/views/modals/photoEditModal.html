@@ -1,0 +1,32 @@
+<div class="modal-header">
+    <h3 class="modal-title">Edit Photo — {{memberName}}</h3>
+</div>
+<div class="modal-body">
+    <form name="formphoto">
+        <div class="form-group"
+            ng-class="{'has-error': formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid}">
+            <label class="text-left">Photo URL:</label>
+            <input type="url" name="pictureLink" class="form-control" ng-model="formData.pictureLink"
+                ng-pattern="/^https?:\/\//" placeholder="https://example.com/photo.jpg">
+            <span class="help-block" ng-show="formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid">
+                Please enter a valid URL starting with http:// or https://
+            </span>
+        </div>
+        <div class="alert alert-info" style="font-size: 12px; margin-top: 10px;">
+            <strong>Tip:</strong> Please keep image file size small for faster page loading. The photo display is limited to 500px wide, so there is no need for very large images.
+        </div>
+
+        <div class="form-group" ng-show="formData.pictureLink && !formphoto.pictureLink.$invalid">
+            <label class="text-left">Preview:</label>
+            <div
+                style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; text-align: center;">
+                <img ng-src="{{formData.pictureLink}}" style="max-width: 100%; max-height: 300px;" alt="Photo preview">
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary" ng-click="savePhoto()"
+        ng-disabled="formphoto.pictureLink.$invalid">Save</button>
+    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>

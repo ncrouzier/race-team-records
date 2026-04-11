@@ -138,10 +138,10 @@
                                     </div>
                                 </li>
                                 <li ng-repeat="result in raceInfo.results  track by result._id"
-                                    class="list-group-item text-left resultlistrow" ng-class="{hoverlistbg: hover2}"
+                                    class="list-group-item text-left resultlistrow" ng-class="{hoverlistbg: hover2, 'my-result-row': isMyResult(result)}"
                                     ng-mouseenter="hover2 = true" ng-mouseleave="hover2 = false"
                                     style="border: none; border-bottom: 1px solid #e9ecef; background-color: white; transition: background-color 0.2s ease;"
-                                    ng-style="{'background-color': hover2 ? '#f0f7fa' : 'white'}">
+                                    ng-style="{'background-color': hover2 ? '#f0f7fa' : (isMyResult(result) ? '#fff8e1' : 'white')}">
                                     <div class="row" style="display: flex; align-items: center; font-size: 0.95em;">
                                         <div class="col-sm-3">
                                             <result-members-names result="result"

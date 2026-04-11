@@ -21,20 +21,22 @@ app.directive('resultMembersNamesFull', function () {
     };
 });
 
-app.directive('teamRequirements', function () {
+app.directive('teamRequirements', ['TeamRequirementsConfig', function (TeamRequirementsConfig) {
+    var reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
     return {
         scope: {
             member: '=member',
         },
         controller: function ($scope) {
-            $scope.numberOfRequiredRaces = 8;
+            $scope.numberOfRequiredRaces = reqConfig.minRaceAndVolunteerCount;
+            $scope.minAgeGrade = reqConfig.minAgeGrade;
         },
         link: function (scope, element, attrs) {
             scope.getProgressBarClass = function (stats) {
                 if (stats.raceCount < scope.numberOfRequiredRaces) {
                     return 'filling';
                 } else {
-                    if (stats.maxAgeGrade >= 70) {
+                    if (stats.maxAgeGrade >= scope.minAgeGrade) {
                         return 'full complete';
                     } else {
                         return 'full';
@@ -49,19 +51,19 @@ app.directive('teamRequirements', function () {
                         return 'fa-star ageworld ageGradedRequirementMetStar';
                     case value >= 80:
                         return 'fa-star agenational ageGradedRequirementMetStar';
-                    case value >= 70:
+                    case value >= scope.minAgeGrade:
                         return 'fa-star ageregional ageGradedRequirementMetStar';
-                    default: // under 70
+                    default:
                         return 'fa-star-o';
                 }
             };
             scope.getText = function (stats) {
                 let txt = '<span>' + stats.raceCount + ' out of ' + scope.numberOfRequiredRaces + ' races ran';
-                if (stats.maxAgeGrade >= 70) {
+                if (stats.maxAgeGrade >= scope.minAgeGrade) {
                     txt += " and age grade requirements met!";
                 } else if (stats.maxAgeGrade === 'N/A') {
                     txt += " but no age graded races ran.";
-                } else if (stats.maxAgeGrade < 70) {
+                } else if (stats.maxAgeGrade < scope.minAgeGrade) {
                     txt += " but age grade requirements NOT met.";
                 }
                 return txt + '</span>';
@@ -83,7 +85,7 @@ app.directive('teamRequirements', function () {
 
     };
 
-});
+}]);
 
 
 

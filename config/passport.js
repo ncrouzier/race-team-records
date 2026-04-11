@@ -24,7 +24,7 @@ module.exports = function(passport) {
     // used to deserialize the user
     passport.deserializeUser(function(id, done) {
         try{
-            User.findById(id).then(user => {                
+            User.findById(id).populate('member', 'username firstname lastname dateofbirth sex').then(user => {
                 // console.log("deserializing user",user);
                 done(null, user);
             });
@@ -55,28 +55,35 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(user => {
-           
+            User.findOne({ 'email' :  email }).then(async user => {
+
                 // check to see if theres already a user with that email
                 if (user) {
-                    return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
+                    return done(null, false, req.flash('signupMessage', 'An account with this email already exists. Please use a different email or log in.'));
                 } else {
-    
-                    
+
+                    // Validate password length
+                    if (!password || password.length < 8) {
+                        return done(null, false, req.flash('signupMessage', 'Password must be at least 8 characters long.'));
+                    }
+                    if (password.length > 64) {
+                        return done(null, false, req.flash('signupMessage', 'Password must be no more than 64 characters long.'));
+                    }
 
                     // if there is no user with that email
                     // create the user
                     var newUser = new User();
                     // set the user's local credentials
                     newUser.email = email;
-                    newUser.password = newUser.generateHash(password);
+                    newUser.password = await newUser.generateHash(password);
                     newUser.username = req.body.username;
                     // if we let users decide a role at signup
                     // if (req.body.role){
                     //     newUser.role = req.body.role;   
                     // }
-                    //default to user 
+                    //default to user, disabled until admin approves
                     newUser.role = "user";
+                    newUser.enabled = false;
     
                     // save the user
                     try{
@@ -118,15 +125,19 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(user =>{                     
+            User.findOne({ 'email' :  email }).then(async user =>{
                 // if no user is found, return the message
                 if (!user)
-                    return done(null, false, req.flash('loginMessage', 'No user found.')); // req.flash is the way to set flashdata using connect-flash
-    
+                    return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
+
                 // if the user is found but the password is wrong
-                if (!user.validPassword(password))
-                    return done(null, false, req.flash('loginMessage', 'Oops! Wrong password.')); // create the loginMessage and save it to session as flashdata
-    
+                if (!await user.validPassword(password))
+                    return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));
+
+                // if the account is not enabled
+                if (!user.enabled)
+                    return done(null, false, req.flash('loginMessage', 'Your account is pending approval by an administrator.'));
+
                 // all is well, return successful user
                 return done(null, user);
             });

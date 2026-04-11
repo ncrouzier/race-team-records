@@ -1,29 +1,6 @@
 <div class="jumbotron">
 
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Team Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
-            <a ui-sref="/stats/requirements">Team Requirements</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
+
     <!-- Header -->
     <div class="requirements-header">
         <div class="row">
@@ -65,8 +42,8 @@
                 <div class="stat-box">
                     <h4>Requirements</h4>
                     <p class="requirements-text">
-                        <i class="fa fa-check-circle text-success"></i> 8+ races (volunteer jobs count)<br>
-                        <i class="fa fa-check-circle text-success"></i> 70%+ age grade
+                        <i class="fa fa-check-circle text-success"></i> {{reqConfig.minRaceAndVolunteerCount}}+ races (volunteer jobs count)<br>
+                        <i class="fa fa-check-circle text-success"></i> {{reqConfig.minAgeGrade}}%+ age grade
                     </p>
                 </div>
             </div>
@@ -147,7 +124,7 @@
                                     ng-class="{'text-success': req.meetsAgeGradeRequirement, 'text-danger': !req.meetsAgeGradeRequirement}">
                                     <i class="fa"
                                         ng-class="{'fa-check-circle': req.meetsAgeGradeRequirement, 'fa-times-circle': !req.meetsAgeGradeRequirement}"></i>
-                                    {{req.maxAgeGrade | number:1}}%
+                                    {{req.maxAgeGrade | number:2}}%
                                 </span>
                             </td>
                             <td>

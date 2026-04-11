@@ -4,10 +4,11 @@
 module.exports = function(nodemailer) {
 
     transport = nodemailer.createTransport({
-        service: "gmail", // sets automatically host, port and connection security settings
+        host: 'smtp-relay.brevo.com',
+        port: 587,
         auth: {
-            user: process.env.MCRRC_EMAIL_ADDRESS,
-            pass: process.env.MCRRC_EMAIL_PASSWORD
+            user: process.env.BREVO_SMTP_USER,
+            pass: process.env.BREVO_SMTP_KEY
         }
     });
 

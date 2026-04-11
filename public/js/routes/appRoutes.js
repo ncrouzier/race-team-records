@@ -75,7 +75,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 member: null,
                 member2: null,
             },
-            templateUrl: "views/headToHead.html",
+            templateUrl: "views/memberHeadToHead.html",
             controller: 'HeadToHeadController',
             onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');
@@ -87,10 +87,22 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             params: {
                 member: null,
             },
-            templateUrl: "views/headToHead.html",
+            templateUrl: "views/memberHeadToHead.html",
             controller: 'HeadToHeadController',
             onEnter: function () {
                 gtag('set', 'page_path', '/memberHeadToHead.html');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/members/member/volunteer-jobs', {
+            url: "/members/:member/volunteer-jobs",
+            params: {
+                member: null,
+            },
+            templateUrl: "views/memberVolunteerJobs.html",
+            controller: 'MemberVolunteerJobsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/memberVolunteerJobs.html');
                 gtag('event', 'page_view');
             }
         })
@@ -132,6 +144,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/login",
             templateUrl: "views/login.html",
             controller: 'LoginController'
+        }).state('/forgot-password', {
+            url: "/forgot-password",
+            templateUrl: "views/forgot-password.html",
+            controller: 'ForgotPasswordController'
+        }).state('/reset-password', {
+            url: "/reset-password/:token",
+            templateUrl: "views/reset-password.html",
+            controller: 'ResetPasswordController'
         }).state('/signup', {
             url: "/signup",
             templateUrl: "views/signup.html",
@@ -144,6 +164,22 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/racetypes",
             templateUrl: "views/racetypes.html",
             controller: 'RaceTypeController'
+        }).state('/users', {
+            url: "/users",
+            templateUrl: "views/users.html",
+            controller: 'UsersController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/users.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/activitylogs', {
+            url: "/activitylogs",
+            templateUrl: "views/activitylogs.html",
+            controller: 'ActivityLogController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/activitylogs.html');
+                gtag('event', 'page_view');
+            }
         }).state('/volunteer-jobs', {
             url: "/volunteer-jobs",
             templateUrl: "views/volunteerJobs.html",
@@ -219,6 +255,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/stats/progress-map.html');
                 gtag('event', 'page_view');
             }
+        }).state('/stats/awards', {
+            url: "/stats/awards",
+            templateUrl: "views/stats/awards.html",
+            controller: 'StatsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/stats/awards.html');
+                gtag('event', 'page_view');
+            }
         }).state('/tools', {
             url: "/tools",
             redirectTo: '/tools/agegrade'
@@ -283,10 +327,10 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             templateUrl: "views/mcrrcreport.html",
             controller: 'TableReportController'
         }).state('/submitresult', {
-            url: "http://bit.ly/reportresult"
+            url: "https://forms.gle/upXaECBdjt17WhwR9"
         })
         .state('/submitvolunteer', {
-            url: "http://bit.ly/submitvolunteer"
+            url: "https://forms.gle/iqZVhUjg6WpgG8D97"
         })
         .state('/instagram', {
             url: "https://www.instagram.com/mcrrc_racing",

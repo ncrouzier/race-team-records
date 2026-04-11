@@ -1,8 +1,13 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
+    $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+        // If columns are already built, move logged-in user's member to top
+        if (user && user.member && user.member._id && $scope.memberListcolumns) {
+            moveLoggedInMemberToTop();
+        }
     });
 
     $scope.$watch('paramModel', function (user) {
@@ -142,6 +147,13 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         MembersService.retrieveMemberForEdit(member).then(function () { });
     };
 
+    $scope.editMyBio = function (member) {
+        MembersService.showEditBioModal(member);
+    };
+
+    $scope.editMyPhoto = function (member) {
+        MembersService.showEditPhotoModal(member);
+    };
 
     $scope.removeMember = function (member) {
         var dlg = dialogs.confirm("Remove Member?", "Are you sure you want to remove this member?");
@@ -349,6 +361,24 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
+    function moveLoggedInMemberToTop() {
+        if ($scope.user && $scope.user.member && $scope.user.member._id && $scope.memberListcolumns) {
+            $scope.memberListcolumns.forEach(function (column) {
+                var myIndex = -1;
+                for (var i = 0; i < column.length; i++) {
+                    if (column[i]._id === $scope.user.member._id) {
+                        myIndex = i;
+                        break;
+                    }
+                }
+                if (myIndex > 0) {
+                    var myMember = column.splice(myIndex, 1)[0];
+                    column.unshift(myMember);
+                }
+            });
+        }
+    }
+
     $scope.getMembers = async function (params_) {
         var params;
         if (params_ === undefined) {
@@ -380,6 +410,9 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 var columnIndex = getMemberListColumnIndexForType(person);
                 $scope.memberListcolumns[columnIndex].push(person);
             });
+
+            // Move logged-in user's member to the top of their column
+            moveLoggedInMemberToTop();
         });
 
 
@@ -402,7 +435,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
 
     $scope.hasTeamRequirementFulfilled = function (member) {
-        if (member.teamRequirementStats && member.teamRequirementStats.raceCount >= 8 && member.teamRequirementStats.maxAgeGrade >= 70) {
+        var reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
+        if (member.teamRequirementStats &&
+            (member.teamRequirementStats.raceCount + (member.teamRequirementStats.volunteerJobCount || 0)) >= reqConfig.minRaceAndVolunteerCount &&
+            member.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade) {
             return true;
         } else {
             return false;
@@ -737,4 +773,170 @@ angular.module('mcrrcApp.members').controller('MemberModalInstanceController', [
         }
     }
 
+}]);
+
+angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
+
+    $scope.simpleOptions = {
+        forced_root_block: false,
+        plugins: 'link image',
+        toolbar: 'bold italic underline | link image',
+        menubar: false,
+        statusbar: false,
+        height: 80,
+        branding: false,
+        base_url: '/libs/tinymce',
+        suffix: '.min',
+        content_style: 'body { margin: 0.5em; }'
+    };
+
+    $scope.mediumOptions = {
+        forced_root_block: false,
+        plugins: 'link image',
+        toolbar: 'bold italic underline | link image',
+        menubar: false,
+        statusbar: false,
+        height: 120,
+        branding: false,
+        base_url: '/libs/tinymce',
+        suffix: '.min',
+        content_style: 'body { margin: 0.5em; }'
+    };
+
+    $scope.tallOptions = {
+        forced_root_block: false,
+        plugins: 'link image',
+        toolbar: 'bold italic underline | link image',
+        menubar: false,
+        statusbar: false,
+        height: 150,
+        branding: false,
+        base_url: '/libs/tinymce',
+        suffix: '.min',
+        content_style: 'body { margin: 0.5em; }'
+    };
+
+    $scope.runningLogsOptions = {
+        forced_root_block: false,
+        plugins: 'link image',
+        toolbar: 'bold italic underline | link image | strava garmin',
+        menubar: false,
+        statusbar: false,
+        height: 80,
+        branding: false,
+        base_url: '/libs/tinymce',
+        suffix: '.min',
+        content_style: 'body { margin: 0.5em; }'
+    };
+
+    var bioFields = [
+        { key: 'occupation', label: 'Occupation', options: $scope.simpleOptions },
+        { key: 'college', label: 'College/Grad School Attended', options: $scope.simpleOptions },
+        { key: 'hometown', label: 'Hometown', options: $scope.simpleOptions },
+        { key: 'favoriteRace', label: 'Favorite race', options: $scope.simpleOptions },
+        { key: 'bestMoment', label: 'Best running moment', options: $scope.mediumOptions },
+        { key: 'goals', label: 'Running goals', options: $scope.mediumOptions },
+        { key: 'gear', label: 'Running gear I can\'t live without', options: $scope.simpleOptions },
+        { key: 'funFact', label: 'Fun fact', options: $scope.mediumOptions },
+        { key: 'prs', label: 'All Time PRs', options: $scope.tallOptions },
+        { key: 'runningLogs', label: 'Running logs', options: $scope.runningLogsOptions }
+    ];
+
+    var sectionFields = [
+
+    ];
+
+    function parseBio(html) {
+        var result = {};
+        if (!html) return result;
+
+        // Build all labels for matching
+        var allFields = bioFields.concat(sectionFields);
+
+        for (var i = 0; i < allFields.length; i++) {
+            var field = allFields[i];
+            var label = field.label;
+            // Match <span class="bold">Label: </span> or <span class="bold">Label:</span>
+            var pattern = '<span class="bold">' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':?\\s*</span>';
+            var regex = new RegExp(pattern, 'i');
+            var match = html.match(regex);
+            if (match) {
+                var startIdx = html.indexOf(match[0]) + match[0].length;
+                // Find the next <span class="bold"> or end of string
+                var nextBold = html.indexOf('<span class="bold">', startIdx);
+                var content = nextBold > -1 ? html.substring(startIdx, nextBold) : html.substring(startIdx);
+                // Clean up: remove leading/trailing <br>, <div>, whitespace
+                content = content.replace(/^(\s|<br\s*\/?>|<\/?div>|<\/?p>)+/gi, '');
+                content = content.replace(/(\s|<br\s*\/?>|<\/?div>|<\/?p>)+$/gi, '');
+                result[field.key] = content;
+            }
+        }
+        return result;
+    }
+
+    function assembleBio() {
+        var parts = [];
+
+        // Regular fields: <span class="bold">Label: </span>Value<br>
+        for (var i = 0; i < bioFields.length; i++) {
+            var field = bioFields[i];
+            var value = ($scope.formData[field.key] || '').trim();
+            if (value) {
+                if (field.key === 'runningLogs' || field.key === 'prs') {
+                    parts.push('<br><span class="bold">' + field.label + ': </span><br>');
+                    parts.push(value + '<br>');
+                } else {
+                    parts.push('<span class="bold">' + field.label + ': </span>' + value + '<br>');
+                }
+            }
+        }
+
+        // // All Time PRs section
+        // var prs = ($scope.formData.prs || '').trim();
+        // if (prs) {
+        //     parts.push('<br><span class="bold">All Time PRs:</span><br>');
+        //     parts.push(prs + '<br>');
+        // }
+
+        // // Running logs section
+        // var logs = ($scope.formData.runningLogs || '').trim();
+        // if (logs) {
+        //     parts.push('<br><span class="bold">Running logs:</span><br>');
+        //     parts.push(logs);
+        // }
+        return parts.join('\n');
+    }
+
+    // Parse existing bio into fields
+    var parsed = parseBio(member.bio || '');
+    $scope.formData = {};
+    var allFieldDefs = bioFields.concat(sectionFields);
+    for (var i = 0; i < allFieldDefs.length; i++) {
+        $scope.formData[allFieldDefs[i].key] = parsed[allFieldDefs[i].key] || '';
+    }
+
+    $scope.bioFields = bioFields;
+
+
+
+    $scope.saveBio = function () {
+        $uibModalInstance.close(assembleBio());
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+}]);
+
+angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
+    $scope.formData = { pictureLink: member.pictureLink || '' };
+    $scope.memberName = member.firstname + ' ' + member.lastname;
+
+    $scope.savePhoto = function () {
+        $uibModalInstance.close($scope.formData.pictureLink);
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
 }]);

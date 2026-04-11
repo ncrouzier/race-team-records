@@ -157,20 +157,28 @@ footer {
     height: 200px;
 
     .logo-stats {
-        padding-top: 10px;
-        padding-right: 20px;
-        color: #2d5185;
+        padding-top: 8px;
+        padding-right: 10px;
         position: absolute;
         right: 0;
         top: 0;
         z-index: 1;
 
-        a {
-            color: #2d5185;
+        .submit-btn {
+            display: inline-block;
+            background-color: #c9302c;
+            color: #fff;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
 
-            &:hover {
+            &:hover,
+            &:focus {
+                background-color: #a02622;
                 text-decoration: none;
-                color: #2d5185;
+                color: #fff;
             }
         }
     }
@@ -330,6 +338,16 @@ footer {
         text-align: left;
     }
 
+    .resultlistrow.my-result-row {
+        border-left: 3px solid #f0ad4e !important;
+        background-color: #fff8e1 !important;
+    }
+
+    .my-result-row.modern-result-row {
+        background-color: #fff8e1 !important;
+        border-left: 3px solid #f0ad4e !important;
+    }
+
     .resultlistrow {
         padding-top: 3px;
         padding-bottom: 3px;
@@ -395,6 +413,26 @@ footer {
         // :hover{
         //   background-color: @brand-primary-very-light;
         // }
+    }
+}
+
+
+
+.my-member-row {
+    background-color: #fff8e1 !important;
+    border-left: 3px solid #f0ad4e !important;
+}
+
+.my-member-cell {
+    background-color: #fff8e1 !important;
+    border-left: 3px solid #f0ad4e !important;
+
+    &:hover {
+
+        background-color: @brand-primary-dark;
+        font-size: 18;
+        color: #FFF;
+        font-weight: bold;
     }
 }
 
@@ -733,6 +771,11 @@ footer {
 
 .black {
     color: #4D5153;
+    p {
+        margin: 0 0 5px 0;
+        font-size: inherit;
+        line-height: inherit;
+    }
 }
 
 .red {
@@ -996,6 +1039,11 @@ footer {
         font-size: 18;
         color: #FFF;
         font-weight: bold;
+    }
+
+    &.my-member-cell:hover {
+        background-color: #fff0c0 !important;
+        color: inherit;
     }
 
 }
@@ -1448,6 +1496,11 @@ footer {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 1px solid #dee2e6;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &.requirement-met {
+        background: linear-gradient(135deg, #dff0d8 0%, #c8e6c0 100%);
+        border-color: #d6e9c6;
+    }
 
     &:hover {
         transform: translateY(-2px);
@@ -4946,7 +4999,7 @@ footer {
     font-size: 1.1em;
 }
 
-.race-photos-icon + .caret {
+.race-photos-icon+.caret {
     color: white;
 }
 
@@ -4976,11 +5029,11 @@ footer {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.resultlistrow.expanded .race-photos-inherit .dropdown-menu > li > a {
+.resultlistrow.expanded .race-photos-inherit .dropdown-menu>li>a {
     color: white;
 }
 
-.resultlistrow.expanded .race-photos-inherit .dropdown-menu > li > a:hover {
+.resultlistrow.expanded .race-photos-inherit .dropdown-menu>li>a:hover {
     background-color: rgba(255, 255, 255, 0.15);
     color: white;
 }
@@ -7135,6 +7188,19 @@ footer {
 
 .status-incomplete {
     background-color: #f8d7da !important;
+}
+
+// Bio edit modal
+.bio-edit-form {
+    .form-group label {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 2px;
+    }
+
+    .tox-tinymce {
+        font-size: 12px;
+    }
 }
 
 // Status badges

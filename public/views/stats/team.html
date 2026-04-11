@@ -13,8 +13,8 @@
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/progress-map">Progress Map</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role == 'user'">
-            <a ui-sref="/stats/requirements">Team Requirements</a>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/awards">Awards</a>
         </li>
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
@@ -146,8 +146,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
@@ -178,8 +178,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostTraveled track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
@@ -209,8 +209,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostMiles track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
@@ -237,8 +237,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostWins track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
@@ -268,8 +268,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.bestAgeGrades track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
@@ -288,7 +288,7 @@
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6" ng-if="miscStats.year === 'All Time'">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h4><i class="fa fa-calendar"></i> Most Consistent Racers</h4>
@@ -297,8 +297,8 @@
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
                                 ng-repeat="member in miscStats.mostConsistent track by $index" style="border: none;"
-                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                ng-mouseleave="hover = false">
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a

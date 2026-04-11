@@ -16,19 +16,24 @@ app.config(function(localStorageServiceProvider) {
     localStorageServiceProvider.setPrefix('mcrrcApp');
 });
 
-app.run(['$http', 'AuthService', 'Restangular', function($http, AuthService, Restangular) {
+app.run(['$http', 'AuthService', 'Restangular', '$transitions', function($http, AuthService, Restangular, $transitions) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
     });
-
-
 
     $http.get("/api/login").success(function(data, status) {
         AuthService.setUser(data.user);
     }).error(function(data) {
         $scope.message = data[0];
         $state.go('/login');
+    });
+
+    // Track user activity on page navigation
+    $transitions.onSuccess({}, function() {
+        if (AuthService.isLoggedIn()) {
+            $http.post('/api/heartbeat');
+        }
     });
 }]); 
 

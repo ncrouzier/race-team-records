@@ -8,6 +8,8 @@ const Member = require('./models/member');
 const Result = require('./models/result');
 const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
+const VolunteerJob = require('./models/volunteerjob');
+const ActivityLog = require('./models/activitylog');
 const { configDotenv } = require('dotenv');
 
 // In-memory age grading cache for performance optimization
@@ -26,12 +28,12 @@ var systemInfoCache = {
 // Standalone function to get cached system info
 async function getCachedSystemInfo() {
     const now = Date.now();
-    
+
     // Return cached data if it's still fresh
     if (systemInfoCache.data && (now - systemInfoCache.lastUpdated) < systemInfoCache.cacheDuration) {
         return systemInfoCache.data;
     }
-    
+
     // Fetch fresh data from database
     try {
         const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
@@ -49,21 +51,21 @@ async function getCachedSystemInfo() {
 module.exports = {
 
     // Global query counter management
-    getGlobalQueryCount: function() {
+    getGlobalQueryCount: function () {
         return globalQueryCount;
     },
-    
-    resetGlobalQueryCount: function() {
+
+    resetGlobalQueryCount: function () {
         globalQueryCount = 0;
     },
-    
-    incrementGlobalQueryCount: function() {
+
+    incrementGlobalQueryCount: function () {
         globalQueryCount++;
         return globalQueryCount;
     },
 
     // Initialize system info cache
-    initializeSystemInfoCache: async function() {
+    initializeSystemInfoCache: async function () {
         try {
             const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
             if (systemInfo) {
@@ -76,17 +78,17 @@ module.exports = {
         }
     },
 
-    initializeAgeGradingCache: async function() {
+    initializeAgeGradingCache: async function () {
         try {
             const allAgeGrading = await AgeGrading.find().lean();
-            
+
             ageGradingCache = new Map();
-            
+
             for (const ag of allAgeGrading) {
                 const key = `${ag.sex}_${ag.type}_${ag.age}_${ag.version}`;
                 ageGradingCache.set(key, ag);
             }
-            
+
             console.log(`✅ Age grading cache initialized with ${ageGradingCache.size} entries`);
         } catch (error) {
             console.error('❌ Error initializing age grading cache:', error);
@@ -94,52 +96,52 @@ module.exports = {
         }
     },
 
-    refreshAgeGradingCache: async function() {
+    refreshAgeGradingCache: async function () {
         await this.initializeAgeGradingCache();
     },
 
     // Invalidate system info cache
-    invalidateSystemInfoCache: async function() {
+    invalidateSystemInfoCache: async function () {
         systemInfoCache.data = null;
         systemInfoCache.lastUpdated = 0;
         // console.log('System info cache invalidated');
     },
-    updateSystemInfoAndInvalidateSystemInfoCache: async function(type) {
+    updateSystemInfoAndInvalidateSystemInfoCache: async function (type) {
         try {
             // Update the system info document with current date for the specified type
             const currentDate = new Date();
-            
+
             // Use findOneAndUpdate to update the specific field or create if doesn't exist
             await SystemInfo.findOneAndUpdate(
                 {}, // Match any document (there should only be one)
-                { 
-                    $set: { 
-                        [type]: currentDate 
-                    } 
+                {
+                    $set: {
+                        [type]: currentDate
+                    }
                 },
-                { 
+                {
                     upsert: true, // Create if doesn't exist
                     new: true // Return the updated document
                 }
             );
-            
+
             // Invalidate the cache after updating
             await this.invalidateSystemInfoCache();
-            
 
-            
+
+
         } catch (error) {
             console.error(`❌ Error updating system info for type '${type}':`, error);
             throw error;
         }
     },
     // Get cached system info or fetch from database if needed
-    getCachedSystemInfo: async function() {
+    getCachedSystemInfo: async function () {
         return await getCachedSystemInfo();
     },
 
     // Update system info cache when changes are made
-    updateSystemInfoCache: async function() {
+    updateSystemInfoCache: async function () {
         try {
             const systemInfo = await SystemInfo.findOne({ name: 'mcrrc' });
             if (systemInfo) {
@@ -163,7 +165,7 @@ module.exports = {
     //             res.set('X-Race-Update', systemInfo.raceUpdate ? systemInfo.raceUpdate.toISOString() : '');
     //             res.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
     //             res.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
-                
+
     //             // Calculate the latest overall update date
     //             const dates = [
     //                 systemInfo.resultUpdate,
@@ -171,7 +173,7 @@ module.exports = {
     //                 systemInfo.racetypeUpdate,
     //                 systemInfo.memberUpdate
     //             ].filter(date => date); // Remove null/undefined dates
-                
+
     //             if (dates.length > 0) {
     //                 const latestDate = new Date(Math.max(...dates.map(date => new Date(date))));
     //                 console.log("latestDate", latestDate);
@@ -201,9 +203,9 @@ module.exports = {
             // OPTIMIZATION: Run bulk functions sequentially to avoid conflicts
             await this.updatePBsandAchivementsBulk(memberIds);
             await this.updateTeamRequirementStatsBulk(memberIds);
-            
+
             return { success: true, memberCount: memberIds.length };
-            
+
         } catch (error) {
             console.error(`❌ Error in bulk member stats update:`, error);
             throw error;
@@ -427,9 +429,9 @@ module.exports = {
                 }
             }
 
-                                               
-            
-                
+
+
+
 
             if (resModification) {
                 await result.save();
@@ -457,21 +459,21 @@ module.exports = {
 
     //         // Use the shared processMemberAchievements function
     //         const { resultOps, memberOp } = await this.processMemberAchievements(member, results);
-            
+
     //         // Execute bulk operations
     //         if (resultOps.length > 0) {
     //             await Result.bulkWrite(resultOps);
     //         }
-            
+
     //         if (memberOp) {
     //             await Member.bulkWrite([memberOp]);
     //         }
-            
+
     //         return { 
     //             "Number of saves": resultOps.length, 
     //             "Results": [] // processMemberAchievements doesn't return detailed results
     //         };
-            
+
     //     } catch (error) {
     //         console.error(`❌ Error in updatePBsandAchivementsOptimized for ${member.firstname}:`, error);
     //         throw error;
@@ -479,37 +481,37 @@ module.exports = {
     // },
 
     // Helper function to compare achievements efficiently
-    achievementsAreDifferent: function(existingAchievements, calculatedAchievements) {
+    achievementsAreDifferent: function (existingAchievements, calculatedAchievements) {
         // Sort both arrays by name for consistent comparison
         const sortedExisting = existingAchievements.sort((a, b) => a.name.localeCompare(b.name));
         const sortedCalculated = calculatedAchievements.sort((a, b) => a.name.localeCompare(b.name));
-        
+
         // Check if arrays have different lengths
         if (sortedExisting.length !== sortedCalculated.length) {
             return true;
         }
-        
+
         // Compare each achievement by name, text, and value
         for (let i = 0; i < sortedExisting.length; i++) {
             const existing = sortedExisting[i];
             const calculated = sortedCalculated[i];
-            
+
             // Compare name
             if (existing.name !== calculated.name) {
                 return true;
             }
-            
+
             // Compare text
             if (existing.text !== calculated.text) {
                 return true;
             }
-            
+
             // Compare value (handle different value structures)
             if (JSON.stringify(existing.value) !== JSON.stringify(calculated.value)) {
                 return true;
             }
         }
-        
+
         return false; // No differences found
     },
 
@@ -517,22 +519,22 @@ module.exports = {
         try {
             // Convert memberIds to Set for faster lookups
             const memberIdsSet = new Set(memberIds.map(id => id.toString()));
-            
+
             // Fetch all members with projection for efficiency
             this.incrementGlobalQueryCount();
             const members = await Member.find({ _id: { $in: memberIds } })
                 .select('_id firstname lastname dateofbirth personalBests')
                 .lean();
-            
+
             // Fetch all results for all members in parallel
             this.incrementGlobalQueryCount();
             const allResults = await Result.find({
                 'members._id': { $in: memberIds }
             })
-            .populate('race')
-            .sort('race.racedate race.order')
-            .lean();
-            
+                .populate('race')
+                .sort('race.racedate race.order')
+                .lean();
+
             // Group results by member
             const resultsByMember = {};
             for (const result of allResults) {
@@ -546,49 +548,49 @@ module.exports = {
                     }
                 }
             }
-            
+
             // OPTIMIZATION: Process members in batches to avoid memory issues
             const batchSize = 5; // Process 5 members at a time
             const memberResults = [];
-            
+
             for (let i = 0; i < members.length; i += batchSize) {
                 const batch = members.slice(i, i + batchSize);
-                
-                const batchPromises = batch.map(member => 
+
+                const batchPromises = batch.map(member =>
                     this.processMemberAchievements(member, resultsByMember[member._id.toString()] || [])
                 );
-                
+
                 const batchResults = await Promise.all(batchPromises);
                 memberResults.push(...batchResults);
             }
-            
+
             // Collect all bulk operations
             const resultBulkOperations = [];
             const memberBulkOperations = [];
-            
+
             for (const { resultOps, memberOp } of memberResults) {
                 resultBulkOperations.push(...resultOps);
                 if (memberOp) {
                     memberBulkOperations.push(memberOp);
                 }
             }
-            
+
             // Execute bulk operations
             if (resultBulkOperations.length > 0) {
                 await Result.bulkWrite(resultBulkOperations);
             }
-            
+
             if (memberBulkOperations.length > 0) {
                 await Member.bulkWrite(memberBulkOperations);
             }
-            
-            return { 
-                success: true, 
+
+            return {
+                success: true,
                 memberCount: members.length,
                 resultUpdates: resultBulkOperations.length,
                 memberUpdates: memberBulkOperations.length
             };
-            
+
         } catch (error) {
             console.error(`❌ Error in bulk PBs and achievements update:`, error);
             throw error;
@@ -605,18 +607,18 @@ module.exports = {
         const pbDistancesSet = new Set(pbDistances);
         const pbSurfacesSet = new Set(pbSurfaces);
         const raceNumberSet = new Set(raceNumber);
-        
+
         const resultBulkOperations = [];
         let tmpPersonalBests = [];
         let bestAgeGrade = 0;
-        
+
         // OPTIMIZATION: Use Map for faster PB lookups
         const pbMap = new Map();
-        
+
         // OPTIMIZATION: Calculate what achievements SHOULD be first
         const memberIdStr = member._id.toString();
         const calculatedAchievements = new Map(); // Map<resultId, achievements>
-        
+
         // Process results chronologically to calculate correct achievements
         let raceIndex = 0;
         for (const result of allResults) {
@@ -626,20 +628,20 @@ module.exports = {
             if (member.dateofbirth) {
                 const raceDate = new Date(result.race.racedate);
                 const memberBirthday = new Date(member.dateofbirth);
-                
+
                 // Check if race date matches member's birthday (month and day) using UTC
-                if (raceDate.getUTCMonth() === memberBirthday.getUTCMonth() && 
+                if (raceDate.getUTCMonth() === memberBirthday.getUTCMonth() &&
                     raceDate.getUTCDate() === memberBirthday.getUTCDate()) {
                     resultAchievements.push({
                         name: "birthday",
                         text: member.firstname + " ran on their birthday! 🎂",
-                        value: { 
+                        value: {
                             memberId: new mongoose.Types.ObjectId(member._id)
                         }
                     });
                 }
             }
-            
+
             // Check if this result is a race count milestone
             if (raceNumberSet.has(raceIndex + 1)) {
                 resultAchievements.push({
@@ -648,18 +650,18 @@ module.exports = {
                     value: { raceCount: raceIndex + 1, memberId: new mongoose.Types.ObjectId(member._id) }
                 });
             }
-            
+
             // OPTIMIZATION: Pre-calculate valid PB conditions
-            const isValidPB = result.isRecordEligible && 
-                result.members.length === 1 && 
-                pbDistancesSet.has(result.race.racetype.name) && 
+            const isValidPB = result.isRecordEligible &&
+                result.members.length === 1 &&
+                pbDistancesSet.has(result.race.racetype.name) &&
                 pbSurfacesSet.has(result.race.racetype.surface);
-            
+
             // Handle personal bests
             if (isValidPB) {
                 const pbKey = `${result.race.racetype.name}-${result.race.racetype.surface}`;
                 const existingPB = pbMap.get(pbKey);
-                
+
                 if (existingPB) {
                     // If strictly better, update the member's PB reference
                     if (result.time < existingPB.time) {
@@ -703,57 +705,57 @@ module.exports = {
                     });
                 }
             }
-            
+
             // Handle age grade achievements
             if (result.agegrade && parseFloat(result.agegrade) > bestAgeGrade) {
                 bestAgeGrade = parseFloat(result.agegrade);
-                
+
                 resultAchievements.push({
                     name: "agegrade",
                     text: member.firstname + "'s best age graded result with the team! " + result.agegrade + "%",
                     value: { agegrade: bestAgeGrade }
                 });
             }
-            
+
             calculatedAchievements.set(result._id.toString(), resultAchievements);
             raceIndex++;
         }
-        
+
         // OPTIMIZATION: Compare calculated achievements with existing ones and only update if different
         for (const result of allResults) {
             const resultId = result._id.toString();
             const calculated = calculatedAchievements.get(resultId) || [];
-            
+
             // Get existing member-specific achievements
             const existingMemberAchievements = result.achievements.filter(achievement => {
                 if (achievement.name === "agegrade") return true;
-                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return true;
-                if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "pb" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return true;
-                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return true;
                 return false;
             });
-            
+
             // Get non-member-specific achievements (keep these unchanged)
             const otherAchievements = result.achievements.filter(achievement => {
                 if (achievement.name === "agegrade") return false;
-                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "raceCount" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return false;
-                if (achievement.name === "pb" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "pb" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return false;
-                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId && 
+                if (achievement.name === "birthday" && achievement.value && achievement.value.memberId &&
                     achievement.value.memberId.toString() === memberIdStr) return false;
                 return true;
             });
-            
+
             // Combine other achievements with calculated ones
             const newAchievements = [...otherAchievements, ...calculated];
-            
+
             // OPTIMIZATION: Only update if achievements actually changed
             const achievementsChanged = this.achievementsAreDifferent(existingMemberAchievements, calculated);
-            if (achievementsChanged) {                                
+            if (achievementsChanged) {
                 resultBulkOperations.push({
                     updateOne: {
                         filter: { _id: result._id },
@@ -764,7 +766,7 @@ module.exports = {
         }
         // OPTIMIZATION: Convert Map back to array for member update
         tmpPersonalBests = Array.from(pbMap.values());
-        
+
         // Update member's personal bests
         const memberOp = {
             updateOne: {
@@ -772,7 +774,7 @@ module.exports = {
                 update: { $set: { personalBests: tmpPersonalBests } }
             }
         };
-        
+
         return { resultOps: resultBulkOperations, memberOp };
     },
 
@@ -973,9 +975,9 @@ module.exports = {
         if (raceSurface === "road") {
             if (new Date(raceDate).getFullYear() < 2020) {
                 version = "2015";
-            } else if (new Date(raceDate).getFullYear() < 2025){
+            } else if (new Date(raceDate).getFullYear() < 2025) {
                 version = "2020";
-            } else { 
+            } else {
                 version = "2025";
             }
         }
@@ -986,7 +988,7 @@ module.exports = {
                 version = "2023";
             }
         }
-        
+
         // Use cache if available
         if (ageGradingCache) {
             const key = `${sex}_${raceSurface}_${age}_${version}`;
@@ -995,7 +997,7 @@ module.exports = {
                 return cached;
             }
         }
-        
+
         // Fallback to database query (for cache misses or when cache not initialized)
         try {
             const ag = await AgeGrading.findOne({
@@ -1029,11 +1031,11 @@ module.exports = {
     updateTeamRequirementStats: async function (member) {
         if (member) {
             //only update team requirement stats for current members
-            if(member.memberStatus === 'past'){
-                if ( member.teamRequirementStats != undefined){
+            if (member.memberStatus === 'past') {
+                if (member.teamRequirementStats != undefined) {
                     member.teamRequirementStats = undefined;
                     await member.save();
-                }                
+                }
                 return null;
             }
             const currentYear = new Date().getFullYear();
@@ -1053,19 +1055,25 @@ module.exports = {
             if (results.length !== 0) {
                 highestAg = Math.max(...results.filter(obj => obj.agegrade !== undefined && obj.agegrade !== null).map(obj => obj.agegrade));
             }
-                    
-            member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg };
+
+            // Count volunteer jobs for the current year
+            const volunteerJobCount = await VolunteerJob.countDocuments({
+                'member._id': member._id,
+                jobDate: { $gte: new Date(currentYearStart), $lt: new Date(currentYearEnd) }
+            });
+
+            member.teamRequirementStats = { year: currentYear, raceCount: results.length, maxAgeGrade: highestAg, volunteerJobCount: volunteerJobCount };
             await member.save();
             return [results.length, highestAg];
         }
-        
+
     },
 
     /**
      * Optimized version of updateTeamRequirementStats using aggregation for better performance
      */
     // updateTeamRequirementStatsOptimized: async function (member) {
-        
+
     //     if (!member) {
     //         return null;
     //     }
@@ -1146,13 +1154,13 @@ module.exports = {
             const members = await Member.find({ _id: { $in: memberIds } })
                 .select('_id firstname memberStatus teamRequirementStats')
                 .lean();
-            
+
             const currentYear = new Date().getFullYear();
             //get current year start time in epoc time
             const currentYearStart = new Date(currentYear, 0, 1).getTime();
             //get current year end time in epoc time
             const currentYearEnd = new Date(currentYear + 1, 0, 1).getTime();
-            
+
             // Convert string IDs to ObjectIds if needed
             const mongoose = require('mongoose');
             const normalizedMemberIds = memberIds.map(id => {
@@ -1161,7 +1169,7 @@ module.exports = {
                 }
                 return id;
             });
-            
+
             // OPTIMIZATION: Use aggregation to calculate stats for all members in one query
             const statsAggregation = await Result.aggregate([
                 {
@@ -1196,10 +1204,29 @@ module.exports = {
                     }
                 }
             ]);
-            
 
-            
-            // Create a map of member stats
+
+
+            // Aggregate volunteer job counts for each member in the current year
+            const volunteerAggregation = await VolunteerJob.aggregate([
+                {
+                    $match: {
+                        'member._id': { $in: normalizedMemberIds },
+                        jobDate: {
+                            $gte: new Date(currentYearStart),
+                            $lt: new Date(currentYearEnd)
+                        }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$member._id',
+                        volunteerJobCount: { $sum: 1 }
+                    }
+                }
+            ]);
+
+            // Create maps of member stats
             const memberStatsMap = {};
             for (const stat of statsAggregation) {
                 memberStatsMap[stat._id.toString()] = {
@@ -1207,11 +1234,15 @@ module.exports = {
                     maxAgeGrade: stat.maxAgeGrade === -Infinity ? "N/A" : stat.maxAgeGrade
                 };
             }
-            
+            const volunteerMap = {};
+            for (const stat of volunteerAggregation) {
+                volunteerMap[stat._id.toString()] = stat.volunteerJobCount;
+            }
+
             // Prepare bulk operations
             const bulkOperations = [];
             let updateCount = 0;
-            
+
             for (const member of members) {
                 // Handle past members
                 if (member.memberStatus === 'past') {
@@ -1226,17 +1257,19 @@ module.exports = {
                     }
                     continue;
                 }
-                
+
                 // Get stats for current member
                 const stats = memberStatsMap[member._id.toString()] || { raceCount: 0, maxAgeGrade: "N/A" };
-                
+                const volunteerJobCount = volunteerMap[member._id.toString()] || 0;
+
                 // Check if stats have changed
                 const currentStats = member.teamRequirementStats;
-                const statsChanged = !currentStats || 
+                const statsChanged = !currentStats ||
                     currentStats.year !== currentYear ||
                     currentStats.raceCount !== stats.raceCount ||
-                    currentStats.maxAgeGrade !== stats.maxAgeGrade;
-                
+                    currentStats.maxAgeGrade !== stats.maxAgeGrade ||
+                    currentStats.volunteerJobCount !== volunteerJobCount;
+
                 if (statsChanged) {
                     bulkOperations.push({
                         updateOne: {
@@ -1246,7 +1279,8 @@ module.exports = {
                                     teamRequirementStats: {
                                         year: currentYear,
                                         raceCount: stats.raceCount,
-                                        maxAgeGrade: stats.maxAgeGrade
+                                        maxAgeGrade: stats.maxAgeGrade,
+                                        volunteerJobCount: volunteerJobCount
                                     }
                                 }
                             }
@@ -1255,18 +1289,18 @@ module.exports = {
                     updateCount++;
                 }
             }
-            
+
             // Execute bulk operation
             if (bulkOperations.length > 0) {
                 await Member.bulkWrite(bulkOperations);
             }
-            
-            return { 
-                success: true, 
+
+            return {
+                success: true,
                 memberCount: members.length,
                 updates: updateCount
             };
-            
+
         } catch (error) {
             console.error(`❌ Error in bulk team requirement stats update:`, error);
             throw error;
@@ -1281,8 +1315,8 @@ module.exports = {
             });
             for (const resultForMemberUpdate of resultsForMemberUpdate) {
                 for (const memberElement of resultForMemberUpdate.members) { //itirates members if relay race
-                    if (memberElement._id.equals(member._id)) {     
-                        if ( memberElement.firstname !== member.firstname || memberElement.lastname !== member.lastname
+                    if (memberElement._id.equals(member._id)) {
+                        if (memberElement.firstname !== member.firstname || memberElement.lastname !== member.lastname
                             || memberElement.username !== member.username || memberElement.sex !== member.sex || memberElement.dateofbirth.getTime() !== member.dateofbirth.getTime()
                         ) {
                             memberElement.firstname = member.firstname;
@@ -1291,7 +1325,7 @@ module.exports = {
                             memberElement.sex = member.sex;
                             memberElement.dateofbirth = member.dateofbirth;
                             await resultForMemberUpdate.save();
-                        }else{
+                        } else {
                         }
                     }
                 }
@@ -1303,25 +1337,25 @@ module.exports = {
         try {
             // Initialize system info cache
             await this.initializeSystemInfoCache();
-            
+
             // Initialize age grading cache
             await this.initializeAgeGradingCache();
-            
+
             // OPTIMIZATION: Use bulk processing instead of individual member updates
             const members = await Member.find().select('_id firstname memberStatus teamRequirementStats');
-            
+
             if (members.length === 0) {
                 return;
             }
-            
+
             // Extract member IDs for bulk processing
             const memberIds = members.map(member => member._id);
-            
+
             // OPTIMIZATION: Use bulk team requirement stats update
             await this.updateTeamRequirementStatsBulk(memberIds);
             // await this.updateMemberStatsBulk(memberIds);
             // console.log("startUpUpdate completed");
-            
+
         } catch (error) {
             console.error('❌ Error in startUpUpdate:', error);
             throw error;
@@ -1362,7 +1396,7 @@ module.exports = {
                 const locationKey = `${location._id.country}-${location._id.state || 'null'}`;
                 if (processedLocations.has(locationKey)) continue;
                 processedLocations.add(locationKey);
-                
+
                 // Find all races at this location, sorted by date (oldest first)
                 const racesAtLocation = await Race.find({
                     'location.country': location._id.country,
@@ -1384,7 +1418,7 @@ module.exports = {
                         if (newLocationIndex !== -1) {
                             const updatedAchievements = [...race.achievements];
                             updatedAchievements.splice(newLocationIndex, 1);
-                            
+
                             bulkOperations.push({
                                 updateOne: {
                                     filter: { _id: race._id },
@@ -1408,14 +1442,14 @@ module.exports = {
                 };
 
                 oldestRaceAchievements.push(achievement);
-                
+
                 bulkOperations.push({
                     updateOne: {
                         filter: { _id: oldestRace._id },
                         update: { $set: { achievements: oldestRaceAchievements } }
                     }
                 });
-                
+
                 // Execute bulk operations for this location
                 if (bulkOperations.length > 0) {
                     await Race.bulkWrite(bulkOperations);
@@ -1424,6 +1458,28 @@ module.exports = {
 
         } catch (err) {
             console.error('Error updating all location achievements:', err);
+        }
+    },
+
+    // Activity logging (fire-and-forget, never breaks the main operation)
+    logActivity: async function (options) {
+        try {
+            const log = new ActivityLog({
+                user: options.userId || null,
+                username: options.username || 'system',
+                action: options.action,
+                description: options.description || '',
+                targetType: options.targetType || null,
+                targetId: options.targetId || null,
+                targetName: options.targetName || null,
+                metadata: options.metadata || null,
+                ipAddress: options.ipAddress || null
+            });
+            await log.save();
+            return log;
+        } catch (err) {
+            console.error('Error logging activity:', err);
+            return null;
         }
     },
 
@@ -1446,11 +1502,18 @@ module.exports = {
         res.status(401).send("insufficient privileges");
     },
     isUserLoggedIn: function (req, res, next) {
-        // if user is authenticated in the session and has an admin role, carry on
+        // if user is authenticated in the session and has a user or admin role, carry on
         if (req.isAuthenticated() && (req.user.role === 'user' || req.user.role === 'admin')) {
             return next();
         }
         // if they aren't redirect them to the home page
+        res.status(401).send("insufficient privileges");
+    },
+    // route middleware to make sure a user is logged in and is a captain or admin
+    isCaptainOrAdminLoggedIn: function (req, res, next) {
+        if (req.isAuthenticated() && (req.user.role === 'captain' || req.user.role === 'admin')) {
+            return next();
+        }
         res.status(401).send("insufficient privileges");
     },
 
@@ -1493,7 +1556,7 @@ module.exports = {
             return 1;
         return 0;
     },
-    
+
 
 };
 

@@ -1,8 +1,61 @@
-angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', 'MembersService', function ($scope, AuthService, ResultsService, dialogs, MembersService) {
+angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'AuthService', 'ResultsService', 'dialogs', 'MembersService', 'TeamRequirementsConfig', function ($scope, AuthService, ResultsService, dialogs, MembersService, TeamRequirementsConfig) {
 
     $scope.authService = AuthService;
+    $scope.currentYear = new Date().getFullYear();
+    $scope.reqConfig = TeamRequirementsConfig.getForYear($scope.currentYear);
+    $scope.dashboardLoaded = false;
+
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+
+        // Load dashboard data for logged-in members
+        if (user && user.member && !$scope.dashboardLoaded) {
+            $scope.dashboardLoaded = true;
+
+            // Fetch full member data (includes teamRequirementStats)
+            MembersService.getMember(user.member.username).then(function (member) {
+                $scope.dashboardMember = member;
+                if (member && member.teamRequirementStats) {
+                    var stats = member.teamRequirementStats;
+                    $scope.meetsRaceReq = (stats.raceCount + stats.volunteerJobCount) >= $scope.reqConfig.minRaceAndVolunteerCount;
+                    $scope.meetsAgeGradeReq = stats.maxAgeGrade !== 'N/A' && stats.maxAgeGrade >= $scope.reqConfig.minAgeGrade;
+                }
+            });
+
+            // Extract latest result from cached race data
+            ResultsService.getRaceResultsWithCacheSupport({
+                "sort": '-racedate -order racename',
+                "preload": false
+            }).then(function (races) {
+                var memberId = user.member._id;
+                var latestResult = null;
+                var latestDate = null;
+                for (var i = 0; i < races.length; i++) {
+                    var race = races[i];
+                    if (!race.results) continue;
+                    for (var j = 0; j < race.results.length; j++) {
+                        var result = race.results[j];
+                        if (!result.members) continue;
+                        for (var k = 0; k < result.members.length; k++) {
+                            if (result.members[k]._id === memberId) {
+                                var raceDate = new Date(race.racedate);
+                                if (!latestDate || raceDate > latestDate) {
+                                    latestDate = raceDate;
+                                    latestResult = result;
+                                    latestResult.race = race;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    // Since races are sorted by date desc, first match is the latest
+                    if (latestResult) break;
+                }
+                if (latestResult) {
+                    $scope.latestResult = latestResult;
+                }
+            });
+        }
     });
 
     $scope.expandedRaces = {};  // Object to track expanded races by ID
@@ -150,6 +203,12 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
     $scope.showRaceModal = function (raceinfo) {
         if (raceinfo) {
             ResultsService.showRaceModal(raceinfo).then(function () { });
+        }
+    };
+
+    $scope.showRaceByIdModal = function (raceId) {
+        if (raceId) {
+            ResultsService.showRaceFromRaceIdModal(raceId);
         }
     };
 

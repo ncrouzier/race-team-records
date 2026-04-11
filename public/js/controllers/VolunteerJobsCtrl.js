@@ -1,26 +1,69 @@
-angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function($scope, AuthService, VolunteerJobsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function ($scope, AuthService, VolunteerJobsService, MembersService, dialogs) {
 
     // =====================================
     // AUTHENTICATION SETUP ================
     $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function(user) {
+    $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
     });
+
+    // =====================================
+    // FILTERS =============================
+
+    var currentYear = new Date().getFullYear();
+    $scope.yearsList = ['All', currentYear];
+    $scope.selectedYear = currentYear;
+    $scope.searchQuery = '';
+
+    function buildYearsList(jobs) {
+        var yearsSet = {};
+        jobs.forEach(function (job) {
+            var year = new Date(job.jobDate).getUTCFullYear();
+            yearsSet[year] = true;
+        });
+        var years = Object.keys(yearsSet).map(Number).sort(function (a, b) { return b - a; });
+        if (years.indexOf(currentYear) === -1) {
+            years.unshift(currentYear);
+        }
+        $scope.yearsList = ['All'].concat(years);
+    }
+
+    $scope.volunteerJobFilter = function (job) {
+        // Year filter
+        if ($scope.selectedYear !== 'All') {
+            var jobDate = new Date(job.jobDate);
+            if (jobDate.getUTCFullYear() !== $scope.selectedYear) {
+                return false;
+            }
+        }
+        // Search filter
+        if ($scope.searchQuery) {
+            var q = $scope.searchQuery.toLowerCase();
+            var memberName = ((job.member.firstname || '') + ' ' + (job.member.lastname || '')).toLowerCase();
+            var eventName = (job.eventName || '').toLowerCase();
+            var description = (job.description || '').toLowerCase();
+            if (memberName.indexOf(q) === -1 && eventName.indexOf(q) === -1 && description.indexOf(q) === -1) {
+                return false;
+            }
+        }
+        return true;
+    };
 
     // =====================================
     // LOAD DATA ===========================
 
     // Load volunteer jobs
-    VolunteerJobsService.getVolunteerJobs({
+    VolunteerJobsService.getVolunteerJobsWithCacheSupport({
         sort: '-jobDate'
-    }).then(function(jobs) {
+    }).then(function (jobs) {
         $scope.volunteerJobsList = jobs;
+        buildYearsList(jobs);
     });
 
     // Load members list (needed for modal member selection)
-    MembersService.getMembersWithCacheSupport({}).then(function(members) {
+    MembersService.getMembersWithCacheSupport({}).then(function (members) {
         // Sort members: current members first, then past members
-        $scope.membersList = members.sort(function(a, b) {
+        $scope.membersList = members.sort(function (a, b) {
             // Current members (no status or 'current') come before past members
             var aStatus = a.memberStatus === 'past' ? 1 : 0;
             var bStatus = b.memberStatus === 'past' ? 1 : 0;
@@ -41,33 +84,50 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // =====================================
     // CRUD OPERATIONS =====================
 
-    // Show add modal
-    $scope.showAddVolunteerJobModal = function() {
-        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function(job) {
-            if (job !== null) {
-                $scope.volunteerJobsList.push(job);
+    // Show add modal (supports multiple members)
+    $scope.showAddVolunteerJobModal = function () {
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList).then(function (jobs) {
+            if (jobs !== null && Array.isArray(jobs)) {
+                jobs.forEach(function (job) {
+                    $scope.volunteerJobsList.push(job);
+                });
+            }
+        });
+    };
+
+    // Duplicate a volunteer job (opens add modal pre-filled with event name and date)
+    $scope.duplicateVolunteerJob = function (job) {
+        var prefillData = {
+            eventName: job.eventName,
+            jobDate: job.jobDate
+        };
+        VolunteerJobsService.showAddVolunteerJobModal($scope.membersList, prefillData).then(function (jobs) {
+            if (jobs !== null && Array.isArray(jobs)) {
+                jobs.forEach(function (j) {
+                    $scope.volunteerJobsList.push(j);
+                });
             }
         });
     };
 
     // Show edit modal
-    $scope.retrieveVolunteerJobForEdit = function(job) {
-        VolunteerJobsService.retrieveVolunteerJobForEdit(job, $scope.membersList).then(function() {
+    $scope.retrieveVolunteerJobForEdit = function (job) {
+        VolunteerJobsService.retrieveVolunteerJobForEdit(job, $scope.membersList).then(function () {
             // Job is already updated via Restangular reference
         });
     };
 
     // Delete job
-    $scope.removeVolunteerJob = function(job) {
+    $scope.removeVolunteerJob = function (job) {
         var dlg = dialogs.confirm("Remove Volunteer Job?", "Are you sure you want to remove this volunteer job?");
-        dlg.result.then(function(btn) {
-            VolunteerJobsService.deleteVolunteerJob(job).then(function() {
+        dlg.result.then(function (btn) {
+            VolunteerJobsService.deleteVolunteerJob(job).then(function () {
                 var index = $scope.volunteerJobsList.indexOf(job);
                 if (index > -1) {
                     $scope.volunteerJobsList.splice(index, 1);
                 }
             });
-        }, function(btn) {
+        }, function (btn) {
             // User cancelled
         });
     };
@@ -75,63 +135,113 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
 }]);
 
 // =====================================
-// MODAL INSTANCE CONTROLLER ============
-angular.module('mcrrcApp.results').controller('VolunteerJobModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function($scope, $uibModalInstance, job, membersList) {
+// ADD MODAL INSTANCE CONTROLLER ========
+// Used for both "Add" and "Duplicate" - supports multiple member rows
+angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceController', ['$scope', '$uibModalInstance', 'membersList', 'prefillData', function ($scope, $uibModalInstance, membersList, prefillData) {
 
     $scope.membersList = membersList;
-    $scope.editmode = false;
 
-    if (job) {
-        // Edit mode - copy the job data
-        $scope.formData = angular.copy(job);
-        $scope.editmode = true;
+    // Shared fields
+    $scope.formData = {
+        eventName: prefillData && prefillData.eventName ? prefillData.eventName : '',
+        jobDate: prefillData && prefillData.jobDate ? new Date(prefillData.jobDate) : new Date()
+    };
 
-        // Find the member object from membersList that matches the job's member
-        if (job.member && job.member._id) {
-            $scope.formData.member = membersList.find(function(m) {
-                return m._id === job.member._id;
-            }) || job.member;
-        }
-
-        // Convert date string to Date object for datepicker
-        if ($scope.formData.jobDate) {
-            $scope.formData.jobDate = new Date($scope.formData.jobDate);
-        }
-    } else {
-        // Add mode - initialize with defaults
-        $scope.formData = {
-            jobDate: new Date(),
-            member: null,
-            eventName: '',
-            description: ''
-        };
-        $scope.editmode = false;
-    }
+    // Dynamic rows
+    $scope.rows = [
+        { member: null, description: '' }
+    ];
 
     // Date picker controls
     $scope.opened = false;
-    $scope.open = function($event) {
+    $scope.open = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
         $scope.opened = true;
     };
 
-    $scope.addVolunteerJob = function() {
-        $uibModalInstance.close($scope.formData);
+    $scope.addRow = function () {
+        $scope.rows.push({ member: null, description: '' });
     };
 
-    $scope.editVolunteerJob = function() {
-        // Update the original job object with new data
-        if (job) {
-            job.member = $scope.formData.member;
-            job.eventName = $scope.formData.eventName;
-            job.jobDate = $scope.formData.jobDate;
-            job.description = $scope.formData.description;
+    $scope.removeRow = function (index) {
+        if ($scope.rows.length > 1) {
+            $scope.rows.splice(index, 1);
         }
+    };
+
+    $scope.isFormValid = function () {
+        if (!$scope.formData.eventName || !$scope.formData.jobDate) {
+            return false;
+        }
+        for (var i = 0; i < $scope.rows.length; i++) {
+            if (!$scope.rows[i].member || !$scope.rows[i].description) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    $scope.saveBatch = function () {
+        var batchData = {
+            eventName: $scope.formData.eventName,
+            jobDate: $scope.formData.jobDate,
+            jobs: $scope.rows.map(function (row) {
+                return {
+                    memberId: row.member._id,
+                    description: row.description
+                };
+            })
+        };
+        $uibModalInstance.close(batchData);
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+
+}]);
+
+// =====================================
+// EDIT MODAL INSTANCE CONTROLLER =======
+// Used only for editing a single existing volunteer job
+angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceController', ['$scope', '$uibModalInstance', 'job', 'membersList', function ($scope, $uibModalInstance, job, membersList) {
+
+    $scope.membersList = membersList;
+
+    // Copy the job data
+    $scope.formData = angular.copy(job);
+
+    // Find the member object from membersList that matches the job's member
+    if (job.member && job.member._id) {
+        $scope.formData.member = membersList.find(function (m) {
+            return m._id === job.member._id;
+        }) || job.member;
+    }
+
+    // Convert date string to Date object for datepicker
+    if ($scope.formData.jobDate) {
+        $scope.formData.jobDate = new Date($scope.formData.jobDate);
+    }
+
+    // Date picker controls
+    $scope.opened = false;
+    $scope.open = function ($event) {
+        $event.preventDefault();
+        $event.stopPropagation();
+        $scope.opened = true;
+    };
+
+    $scope.editVolunteerJob = function () {
+        // Update the original job object with new data
+        job.member = $scope.formData.member;
+        job.eventName = $scope.formData.eventName;
+        job.jobDate = $scope.formData.jobDate;
+        job.description = $scope.formData.description;
         $uibModalInstance.close(job);
     };
 
-    $scope.cancel = function() {
+    $scope.cancel = function () {
         $uibModalInstance.dismiss('cancel');
     };
 

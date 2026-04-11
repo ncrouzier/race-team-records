@@ -1,9 +1,44 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
+const sanitizeHtml = require('sanitize-html');
+const teamRequirements = require('../config/teamRequirements');
+
+const bioSanitizeOptions = {
+    allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'strike', 'pre', 'img'],
+    allowedAttributes: {
+        'a': ['href', 'target', 'title'],
+        'img': ['src', 'alt', 'width', 'height'],
+        'span': ['style'],
+        'div': ['style'],
+        'p': ['style'],
+        'h1': ['style'], 'h2': ['style'], 'h3': ['style'],
+        'h4': ['style'], 'h5': ['style'], 'h6': ['style'],
+    },
+    allowedStyles: {
+        '*': {
+            'text-align': [/^left$/, /^right$/, /^center$/, /^justify$/],
+            'font-size': [/^\d+(?:px|em|rem|%)$/],
+            'font-weight': [/^(?:bold|normal|\d{3})$/],
+            'font-style': [/^(?:italic|normal)$/],
+            'text-decoration': [/^(?:underline|line-through|none)$/],
+            'color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/],
+            'background-color': [/^#[0-9a-fA-F]{3,6}$/, /^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/],
+        }
+    },
+    allowedSchemes: ['http', 'https', 'mailto']
+};
+
+function sanitizeBio(html) {
+    return sanitizeHtml(html || '', bioSanitizeOptions);
+}
 
 module.exports = async function (app, qs, passport, async, _) {
+
+    const User = require('./models/user');
 
     // Add response modification middleware BEFORE routes
     app.use('/api', function (req, res, next) {
@@ -46,6 +81,45 @@ module.exports = async function (app, qs, passport, async, _) {
         next();
     });
 
+    // Track last active time
+    // - Updates in-memory on every request (for live reads via req.user and admin list)
+    // - Persists to database at most once per 5 minutes per user
+    var lastActiveCache = {};
+    var lastActiveDbWrite = {};
+    app.use('/*', function (req, res, next) {
+        if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+            var now = new Date();
+            req.user.lastActive = now;
+
+            var userId = req.user._id.toString();
+            lastActiveCache[userId] = now;
+            var lastWrite = lastActiveDbWrite[userId] || 0;
+            if (now.getTime() - lastWrite > 5 * 60 * 1000) {
+                lastActiveDbWrite[userId] = now.getTime();
+                User.updateOne({ _id: req.user._id }, { lastActive: now }).exec();
+            }
+        }
+        next();
+    });
+
+    // =====================================
+    // HEARTBEAT ===========================
+    // =====================================
+    app.post('/api/heartbeat', function (req, res) { res.sendStatus(200); });
+
+    // =====================================
+    // PASSWORD VALIDATION =================
+    // =====================================
+    function validatePassword(password) {
+        if (!password || password.length < 8) {
+            return 'Password must be at least 8 characters long.';
+        }
+        if (password.length > 64) {
+            return 'Password must be no more than 64 characters long.';
+        }
+        return null;
+    }
+
     // =====================================
     // LOGIN ===============================
     // =====================================
@@ -69,6 +143,10 @@ module.exports = async function (app, qs, passport, async, _) {
                     if (err) {
                         return next(err);
                     }
+                    var nowdate = new Date();
+                    user.lastLogin = nowdate;
+                    user.lastActive = nowdate;
+                    user.save();
                     res.status(200).send({
                         message: req.flash('loginMessage'),
                         user: req.user
@@ -98,28 +176,57 @@ module.exports = async function (app, qs, passport, async, _) {
 
     app.post('/api/signup', function (req, res, next) {
         passport.authenticate('local-signup', function (err, user, info) {
-            // console.log(err);
             if (err) {
                 return next(err);
             }
             if (!user) {
                 res.status(401).send(req.flash('signupMessage'));
             } else {
-                req.logIn(user, function (err) {
-                    if (err) {
-                        return next(err);
+                // Don't auto-login — account is disabled until admin approves
+                // Send confirmation email to the user
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Account Created',
+                    text: 'Hi ' + user.username + ',\n\n' +
+                        'Your account has been created successfully.\n\n' +
+                        'An administrator will review your account and you will be notified by email once it has been activated.\n\n' +
+                        'Thank you,\nMCRRC Racing Team\n'
+                }, function (error) {
+                    if (error) {
+                        console.error('Error sending user confirmation email:', error);
                     }
-                    res.status(200).send(req.flash('signupMessage'));
                 });
+                // Notify admins about new registration
+                var User = require('./models/user');
+                User.find({ role: 'admin', enabled: true }).then(function (admins) {
+                    var adminEmails = admins.map(function (a) { return a.email; }).filter(Boolean);
+                    if (adminEmails.length > 0) {
+                        transport.sendMail({
+                            from: {
+                                name: 'MCRRC Racing Team',
+                                address: process.env.MCRRC_FROM_EMAIL
+                            },
+                            to: adminEmails.join(','),
+                            subject: 'MCRRC Racing Team - New Account Registration',
+                            text: 'A new account has been created and is awaiting approval.\n\n' +
+                                'Username: ' + user.username + '\n' +
+                                'Email: ' + user.email + '\n\n' +
+                                'Please log in to the admin panel to enable this account.\n'
+                        }, function (error) {
+                            if (error) {
+                                console.error('Error sending admin notification email:', error);
+                            }
+                        });
+                    }
+                });
+                res.status(200).json({ message: 'Account created. An administrator will review and enable your account.' });
             }
         })(req, res, next);
     });
-
-    app.post('/api/signup', passport.authenticate('local-signup', {
-        successRedirect: '/profile', // redirect to the secure profile section
-        failureRedirect: '/api/signup', // redirect back to the signup page if there is an error
-        failureFlash: true // allow flash messages
-    }));
 
     // =====================================
     // PROFILE SECTION =====================
@@ -127,9 +234,78 @@ module.exports = async function (app, qs, passport, async, _) {
     // we will want this protected so you have to be logged in to visit
     // we will use route middleware to verify this (the isLoggedIn function)
     app.get('/api/profile', service.isLoggedIn, function (req, res) {
+        var userObj = req.user.toObject();
+        delete userObj.password;
+        delete userObj.resetPasswordToken;
+        delete userObj.resetPasswordExpires;
         res.send({
-            user: req.user
+            user: userObj
         });
+    });
+
+    // Update own profile (username, email)
+    app.put('/api/profile', service.isLoggedIn, async function (req, res) {
+        try {
+            var User = require('./models/user');
+            var user = await User.findById(req.user._id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            // Check if email is being changed and if it's already taken
+            if (req.body.email && req.body.email !== user.email) {
+                var existing = await User.findOne({ email: req.body.email });
+                if (existing) {
+                    return res.status(400).json({ message: 'That email is already in use.' });
+                }
+                user.email = req.body.email;
+            }
+
+            if (req.body.username) user.username = req.body.username;
+
+            await user.save();
+            await user.populate('member', 'username firstname lastname dateofbirth sex');
+            var result = user.toObject();
+            delete result.password;
+            delete result.resetPasswordToken;
+            delete result.resetPasswordExpires;
+            res.json(result);
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again.' });
+        }
+    });
+
+    // Change own password
+    app.post('/api/profile/change-password', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!req.body.currentPassword || !req.body.newPassword) {
+                return res.status(400).json({ message: 'Current password and new password are required.' });
+            }
+
+            var passwordError = validatePassword(req.body.newPassword);
+            if (passwordError) {
+                return res.status(400).json({ message: passwordError });
+            }
+
+            var User = require('./models/user');
+            var user = await User.findById(req.user._id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+            // Verify current password
+            if (!await user.validPassword(req.body.currentPassword)) {
+                return res.status(400).json({ message: 'Current password is incorrect.' });
+            }
+
+            user.password = await user.generateHash(req.body.newPassword);
+            await user.save();
+            res.json({ message: 'Password changed successfully.' });
+        } catch (err) {
+            console.error('Error changing password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again.' });
+        }
     });
 
     // =====================================
@@ -141,6 +317,130 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     });
 
+    // =====================================
+    // PASSWORD RESET ======================
+    // =====================================
+
+    // Request password reset - sends email with reset link
+    app.post('/api/forgot', function (req, res) {
+        if (!req.body.email) {
+            return res.status(400).json({ message: 'Email address is required.' });
+        }
+
+        var token = crypto.randomBytes(20).toString('hex');
+        var User = require('./models/user');
+
+        User.findOne({ email: req.body.email }).then(function (user) {
+            // Always return same message to prevent email enumeration
+            if (!user) {
+                return res.status(200).json({
+                    message: 'If an account with that email exists, a password reset link has been sent.'
+                });
+            }
+
+            // Hash the token before storing
+            var hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+            user.resetPasswordToken = hashedToken;
+            user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+            user.save().then(function () {
+                var resetUrl = process.env.SITE_URL + '/reset-password/' + token;
+
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Password Reset',
+                    text: 'You are receiving this because you (or someone else) requested a password reset for your account.\n\n' +
+                        'Please click on the following link, or paste it into your browser to complete the process:\n\n' +
+                        resetUrl + '\n\n' +
+                        'This link will expire in 1 hour.\n\n' +
+                        'If you did not request this, please ignore this email and your password will remain unchanged.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending password reset email:', error);
+                        return res.status(500).json({ message: 'Error sending email. Please try again later.' });
+                    }
+                    res.status(200).json({
+                        message: 'If an account with that email exists, a password reset link has been sent.'
+                    });
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in forgot password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // Validate reset token
+    app.get('/api/reset/:token', function (req, res) {
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        }).then(function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+            }
+            res.status(200).json({ message: 'Token is valid.' });
+        }).catch(function (err) {
+            res.status(500).json({ message: 'An error occurred.' });
+        });
+    });
+
+    // Perform password reset
+    app.post('/api/reset/:token', function (req, res) {
+        if (!req.body.password) {
+            return res.status(400).json({ message: 'Password is required.' });
+        }
+
+        var passwordError = validatePassword(req.body.password);
+        if (passwordError) {
+            return res.status(400).json({ message: passwordError });
+        }
+
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        }).then(async function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'Password reset token is invalid or has expired.' });
+            }
+
+            user.password = await user.generateHash(req.body.password);
+            user.resetPasswordToken = undefined;
+            user.resetPasswordExpires = undefined;
+
+            user.save().then(function () {
+                // Send confirmation email (best-effort)
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Password Changed',
+                    text: 'This is a confirmation that the password for your account (' + user.email + ') has just been changed.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending password change confirmation:', error);
+                    }
+                });
+
+                res.status(200).json({ message: 'Password has been reset successfully.' });
+            });
+        }).catch(function (err) {
+            console.error('Error in reset password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
 
     const SystemInfo = require('./models/systeminfo');
     const RaceType = require('./models/racetype');
@@ -149,6 +449,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const Race = require('./models/race');
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
+    const ActivityLog = require('./models/activitylog');
 
 
     // =====================================
@@ -163,16 +464,16 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!systemInfo) {
                 SystemInfo.create({
                     name: "mcrrc"
-                }, function (err) {
-                    if (err) {
-                        console.log(err);
-                    }
+                }).catch(function (err) {
+                    console.log(err);
                 });
+
             }
         });
     } catch (err) {
         console.log("error fetching systemInfo")
     }
+
 
 
 
@@ -385,6 +686,80 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
 
+    //update a member's bio (own member or admin)
+    app.put('/api/members/:member_id/bio', service.isLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+            var isAdmin = req.user.role === 'admin';
+            if (!isOwnMember && !isAdmin) {
+                return res.status(403).json({ error: 'You can only edit your own bio' });
+            }
+            const member = await Member.findById(req.params.member_id);
+            if (!member) {
+                return res.status(404).json({ error: 'Member not found' });
+            }
+            var oldBio = member.bio || '';
+            member.bio = req.body.bio;
+            await member.save();
+
+            // Log the bio edit
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'bio_edit',
+                description: 'Updated bio for ' + member.firstname + ' ' + member.lastname,
+                targetType: 'member',
+                targetId: member._id.toString(),
+                targetName: member.firstname + ' ' + member.lastname,
+                metadata: { targetUsername: member.username, oldValue: oldBio, newValue: req.body.bio || '' },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: 'Bio updated successfully', bio: member.bio });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Error updating bio' });
+        }
+    });
+
+    //update a member's photo link (own member or admin)
+    app.put('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+            var isAdmin = req.user.role === 'admin';
+            if (!isOwnMember && !isAdmin) {
+                return res.status(403).json({ error: 'You can only edit your own photo' });
+            }
+            const member = await Member.findById(req.params.member_id);
+            if (!member) {
+                return res.status(404).json({ error: 'Member not found' });
+            }
+            var oldPictureLink = member.pictureLink || '';
+            member.pictureLink = req.body.pictureLink || '';
+            await member.save();
+
+            // Log the photo edit
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'photo_edit',
+                description: 'Updated photo for ' + member.firstname + ' ' + member.lastname,
+                targetType: 'member',
+                targetId: member._id.toString(),
+                targetName: member.firstname + ' ' + member.lastname,
+                metadata: { targetUsername: member.username, oldValue: oldPictureLink, newValue: req.body.pictureLink || '' },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: 'Photo updated successfully', pictureLink: member.pictureLink });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: 'Error updating photo' });
+        }
+    });
+
     //update a member
     app.put('/api/members/:member_id', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
@@ -410,6 +785,7 @@ module.exports = async function (app, qs, passport, async, _) {
             member.memberStatus = req.body.memberStatus;
             member.membershipDates = req.body.membershipDates;
             member.achievements = req.body.achievements;
+
 
             // Save the updated member
             await member.save();
@@ -570,7 +946,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get all volunteer jobs
-    app.get('/api/volunteerjobs', function (req, res) {
+    app.get('/api/volunteerjobs', service.isCaptainOrAdminLoggedIn, function (req, res) {
         res.setHeader("Content-Type", "application/json");
 
         const filters = req.query.filters;
@@ -611,7 +987,7 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // get a single volunteer job
-    app.get('/api/volunteerjobs/:job_id', function (req, res) {
+    app.get('/api/volunteerjobs/:job_id', service.isCaptainOrAdminLoggedIn, function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
             VolunteerJob.findOne({
@@ -682,6 +1058,61 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // batch create volunteer jobs
+    app.post('/api/volunteerjobs/batch', service.isAdminLoggedIn, async function (req, res) {
+        res.setHeader("Content-Type", "application/json");
+        try {
+            const { eventName, jobDate, jobs } = req.body;
+
+            if (!eventName || !jobDate) {
+                return res.status(400).json({ error: 'Event name and job date are required' });
+            }
+            if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
+                return res.status(400).json({ error: 'Jobs array is required and must not be empty' });
+            }
+
+            const createdJobs = [];
+
+            for (const jobData of jobs) {
+                try {
+                    const member = await Member.findById(jobData.memberId);
+                    if (!member) {
+                        console.error('Member with ID ' + jobData.memberId + ' not found, skipping');
+                        continue;
+                    }
+
+                    const volunteerJob = await VolunteerJob.create({
+                        member: {
+                            _id: member._id,
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username,
+                            sex: member.sex,
+                            dateofbirth: member.dateofbirth
+                        },
+                        jobDate: jobDate,
+                        eventName: eventName,
+                        description: jobData.description
+                    });
+
+                    createdJobs.push(volunteerJob);
+                } catch (jobError) {
+                    console.error('Error creating volunteer job:', jobError);
+                }
+            }
+
+            await service.invalidateSystemInfoCache();
+            res.json({
+                success: true,
+                jobs: createdJobs,
+                createdCount: createdJobs.length,
+                totalRequested: jobs.length
+            });
+        } catch (err) {
+            res.status(500).json({ error: 'Failed to create batch volunteer jobs' });
+        }
+    });
+
     // update a volunteer job
     app.put('/api/volunteerjobs/:job_id', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
@@ -746,7 +1177,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get team requirements for a year
-    app.get('/api/requirements/:year', service.isUserLoggedIn, async function (req, res) {
+    app.get('/api/requirements/:year', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
             const year = req.params.year;
@@ -807,10 +1238,10 @@ module.exports = async function (app, qs, passport, async, _) {
                     jobDate: { $gte: dateFrom, $lt: dateTo }
                 });
 
-                // Calculate if requirements are met
-                // Volunteer jobs count toward the 8-race requirement (all years)
-                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= 8;
-                const meetsAgeGradeRequirement = maxAgeGrade >= 70;
+                // Calculate if requirements are met using centralized config
+                const reqConfig = teamRequirements.getForYear(yearNum);
+                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= reqConfig.minRaceAndVolunteerCount;
+                const meetsAgeGradeRequirement = maxAgeGrade >= reqConfig.minAgeGrade;
 
                 // Volunteer requirement is no longer separate - it contributes to race count
                 // Keep this for backward compatibility but it's not used in overall calculation
@@ -1810,11 +2241,32 @@ module.exports = async function (app, qs, passport, async, _) {
     // });
 
     // get raceinfo list
-    app.get('/api/raceinfos', function (req, res) {
+    var raceInfosCache = {};
+
+    app.get('/api/raceinfos', async function (req, res) {
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
         let raceId = req.query.raceId;
 
+        // Build a cache key from the query params
+        const cacheKey = JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: req.query.filters });
+
+        // Check cache freshness against systemInfo.resultUpdate
+        try {
+            const systemInfo = await service.getCachedSystemInfo();
+            if (systemInfo) {
+                const latestUpdate = Math.max(
+                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
+                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
+                );
+                const cached = raceInfosCache[cacheKey];
+                if (cached && cached.timestamp >= latestUpdate) {
+                    return res.json(cached.data);
+                }
+            }
+        } catch (err) {
+            // If systemInfo check fails, proceed without cache
+        }
 
         let query = Race.aggregate([
 
@@ -1833,15 +2285,18 @@ module.exports = async function (app, qs, passport, async, _) {
                             input: "$results",
                             as: "result",
                             in: {
-                                $mergeObjects: [
-                                    "$$result",
-                                    {
-                                        race: {
-                                            _id: "$$result.race._id"
-                                        },
-                                        miles: { $ifNull: ["$$result.race.racetype.miles", 0] }
-                                    }
-                                ]
+                                _id: "$$result._id",
+                                time: "$$result.time",
+                                ranking: "$$result.ranking",
+                                members: "$$result.members",
+                                race: { _id: "$$result.race._id" },
+                                miles: { $ifNull: ["$$result.race.racetype.miles", 0] },
+                                agegrade: "$$result.agegrade",
+                                achievements: "$$result.achievements",
+                                customOptions: "$$result.customOptions",
+                                comments: "$$result.comments",
+                                resultlink: "$$result.resultlink",
+                                legs: "$$result.legs"
                             }
                         }
                     }
@@ -1882,7 +2337,12 @@ module.exports = async function (app, qs, passport, async, _) {
                 results.forEach(function (resu) {
                     resu.results = _.sortBy(resu.results, 'time');
                 });
-                res.json(results); // return all members in JSON format                
+                // Cache the results
+                raceInfosCache[cacheKey] = {
+                    data: results,
+                    timestamp: Date.now()
+                };
+                res.json(results); // return all members in JSON format
             });
         } catch (err) {
             res.send(err);
@@ -2267,23 +2727,18 @@ module.exports = async function (app, qs, passport, async, _) {
                 }, {
                     '$lookup': {
                         'from': 'results',
-                        'localField': '_id',
-                        'foreignField': 'members._id',
+                        'let': { 'memberId': '$_id' },
                         'as': 'results',
                         'pipeline': [
                             {
                                 '$match': {
-                                    '$and': [
-                                        {
-                                            'race.racedate': {
-                                                '$gte': startdate
-                                            }
-                                        }, {
-                                            'race.racedate': {
-                                                '$lte': enddate
-                                            }
-                                        }
-                                    ]
+                                    '$expr': {
+                                        '$in': ['$$memberId', '$members._id']
+                                    },
+                                    'race.racedate': {
+                                        '$gte': startdate,
+                                        '$lte': enddate
+                                    }
                                 }
                             }
                         ]
@@ -2292,13 +2747,19 @@ module.exports = async function (app, qs, passport, async, _) {
                 {
                     '$set': {
                         "bestAgeGroup": {
-                            '$first': {
-                                '$sortArray': {
-                                    'input': "$results",
-                                    'sortBy': {
-                                        "agegrade": -1,
-                                        "race.racedate": -1
-
+                            '$reduce': {
+                                'input': '$results',
+                                'initialValue': null,
+                                'in': {
+                                    '$cond': {
+                                        'if': {
+                                            '$or': [
+                                                { '$eq': ['$$value', null] },
+                                                { '$gt': [{ '$ifNull': ['$$this.agegrade', 0] }, { '$ifNull': ['$$value.agegrade', 0] }] }
+                                            ]
+                                        },
+                                        'then': '$$this',
+                                        'else': '$$value'
                                     }
                                 }
                             }
@@ -2547,17 +3008,21 @@ module.exports = async function (app, qs, passport, async, _) {
                         $sum: {
                             $cond: {
                                 if: { $gt: [{ $size: { $ifNull: ["$legs", []] } }, 0] },
-                                then: { $sum: {
-                                    $map: {
-                                        input: { $filter: {
-                                            input: "$legs",
-                                            as: "leg",
-                                            cond: { $eq: ["$$leg.legType", "run"] }
-                                        }},
-                                        as: "runLeg",
-                                        in: { $ifNull: ["$$runLeg.miles", 0] }
+                                then: {
+                                    $sum: {
+                                        $map: {
+                                            input: {
+                                                $filter: {
+                                                    input: "$legs",
+                                                    as: "leg",
+                                                    cond: { $eq: ["$$leg.legType", "run"] }
+                                                }
+                                            },
+                                            as: "runLeg",
+                                            in: { $ifNull: ["$$runLeg.miles", 0] }
+                                        }
                                     }
-                                }},
+                                },
                                 else: { $ifNull: ["$race.racetype.miles", 0] }
                             }
                         }
@@ -2739,7 +3204,7 @@ module.exports = async function (app, qs, passport, async, _) {
             },
             to: {
                 name: "MCRRC RACE TEAM SITE ADMIN",
-                address: process.env.MCRRC_EMAIL_ADDRESS
+                address: process.env.MCRRC_FROM_EMAIL
             },
             subject: data.subject, // Subject line
             text: data.body // plaintext body
@@ -3245,6 +3710,197 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // =====================================
+    // USER MANAGEMENT (admin only) ========
+    // =====================================
+
+    // Get all users
+    app.get('/api/users', service.isAdminLoggedIn, function (req, res) {
+        try {
+            User.find({}, '-password').populate('member', 'firstname lastname username sex memberStatus').sort('username').lean().then(function (users) {
+                users.forEach(function (user) {
+                    var cached = lastActiveCache[user._id.toString()];
+                    if (cached) {
+                        user.lastActive = cached;
+                    }
+                });
+                res.json(users);
+            });
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Create a user (admin only)
+    app.post('/api/users', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            if (!req.body.email || !req.body.username || !req.body.password) {
+                return res.status(400).json({ error: 'Email, username and password are required' });
+            }
+
+            var passwordError = validatePassword(req.body.password);
+            if (passwordError) {
+                return res.status(400).json({ error: passwordError });
+            }
+
+            var existing = await User.findOne({ email: req.body.email });
+            if (existing) {
+                return res.status(400).json({ error: 'A user with that email already exists' });
+            }
+
+            var newUser = new User();
+            newUser.email = req.body.email;
+            newUser.username = req.body.username;
+            newUser.password = await newUser.generateHash(req.body.password);
+            newUser.role = req.body.role || 'user';
+            newUser.enabled = true; // Admin-created users are enabled by default
+            if (req.body.member) newUser.member = req.body.member;
+
+            await newUser.save();
+
+            // Populate member before returning
+            await newUser.populate('member', 'firstname lastname username sex memberStatus');
+            var result = newUser.toObject();
+            delete result.password;
+            res.json(result);
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Update a user (admin only)
+    app.put('/api/users/:user_id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            var user = await User.findById(req.params.user_id);
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            var wasEnabled = user.enabled;
+
+            if (req.body.username) user.username = req.body.username;
+            if (req.body.email) user.email = req.body.email;
+            if (req.body.role) user.role = req.body.role;
+            if (req.body.hasOwnProperty('enabled')) user.enabled = req.body.enabled;
+            // Allow setting or clearing member association
+            if (req.body.hasOwnProperty('member')) {
+                user.member = req.body.member || null;
+            }
+
+            await user.save();
+
+            // Send activation notification email if requested
+            if (req.body.notifyUser && user.enabled && !wasEnabled && user.email) {
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Account Activated',
+                    text: 'Hi ' + user.username + ',\n\n' +
+                        'Your account has been activated. You can now log in at:\n\n' +
+                        process.env.SITE_URL + '/login' + '\n\n' +
+                        'Thank you,\nMCRRC Racing Team\n'
+                }, function (error) {
+                    if (error) {
+                        console.error('Error sending account activation email:', error);
+                    }
+                });
+            }
+
+            await user.populate('member', 'firstname lastname username sex memberStatus');
+            var result = user.toObject();
+            delete result.password;
+            res.json(result);
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // Delete a user (admin only)
+    app.delete('/api/users/:user_id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            if (req.params.user_id === req.user._id.toString()) {
+                return res.status(400).json({ error: 'Cannot delete your own account' });
+            }
+            await User.findByIdAndDelete(req.params.user_id);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).send(err);
+        }
+    });
+
+    // =====================================
+    // ACTIVITY LOGS =======================
+    // =====================================
+
+    // Get activity logs (admin only, with filtering and pagination)
+    app.get('/api/activitylogs', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 50;
+            const skip = (page - 1) * limit;
+
+            let filter = {};
+
+            if (req.query.action && req.query.action !== 'All') {
+                filter.action = req.query.action;
+            }
+            if (req.query.username) {
+                filter.username = new RegExp(req.query.username, 'i');
+            }
+            if (req.query.from || req.query.to) {
+                filter.createdAt = {};
+                if (req.query.from) {
+                    filter.createdAt.$gte = new Date(req.query.from);
+                }
+                if (req.query.to) {
+                    filter.createdAt.$lte = new Date(req.query.to);
+                }
+            }
+
+            const total = await ActivityLog.countDocuments(filter);
+            const logs = await ActivityLog.find(filter)
+                .sort('-createdAt')
+                .skip(skip)
+                .limit(limit)
+                .exec();
+
+            res.json({
+                logs: logs,
+                total: total,
+                page: page,
+                pages: Math.ceil(total / limit)
+            });
+        } catch (err) {
+            console.error('Error fetching activity logs:', err);
+            res.status(500).json({ error: 'Error fetching activity logs' });
+        }
+    });
+
+    // Get distinct action types (for filter dropdown)
+    app.get('/api/activitylogs/actions', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const actions = await ActivityLog.distinct('action');
+            res.json(actions);
+        } catch (err) {
+            console.error('Error fetching action types:', err);
+            res.status(500).json({ error: 'Error fetching action types' });
+        }
+    });
+
+    // Delete an activity log entry (admin only)
+    app.delete('/api/activitylogs/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            await ActivityLog.findByIdAndDelete(req.params.id);
+            res.json({ success: 'Activity log entry deleted' });
+        } catch (err) {
+            console.error('Error deleting activity log:', err);
+            res.status(500).json({ error: 'Error deleting activity log entry' });
+        }
+    });
+
     app.get('*', function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
         // console.log('Request URL:', req.url);
@@ -3374,8 +4030,6 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
 
+
 };
-
-
-
 

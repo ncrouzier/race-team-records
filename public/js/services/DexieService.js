@@ -1,11 +1,11 @@
 angular.module('mcrrcApp').factory('DexieService', function() {
     if (!window.mcrrcDexie) {
         var db = new Dexie("mcrrcAppDatabase");
-        db.version(3).stores({
+        db.version(4).stores({
             races: 'instance',
             statsCache: 'year',
-            members: 'params'
-            // Add more stores as needed
+            members: 'params',
+            volunteerjobs: 'instance'
         });
         window.mcrrcDexie = db;
     }

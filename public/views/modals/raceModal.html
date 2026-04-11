@@ -146,10 +146,10 @@
                 </div>
                 
                 <div class="results-list">
-                    <div class="result-row modern-result-row" 
-                         ng-repeat="result in getFilteredResults()" 
-                         ng-class="{hoverlistbg: hover}" 
-                         ng-mouseenter="hover = true" 
+                    <div class="result-row modern-result-row"
+                         ng-repeat="result in getFilteredResults()"
+                         ng-class="{hoverlistbg: hover, 'my-result-row': user.member._id && result.members[0]._id === user.member._id}"
+                         ng-mouseenter="hover = true"
                          ng-mouseleave="hover = false">
                         <div class="result-content">
                             <div class="result-cell racer-cell">

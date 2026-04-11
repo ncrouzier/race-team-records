@@ -16,4 +16,7 @@ npm-debug.log
 node_modules
 
 public/libs
+public/dist/ng
+.angular
+dist/out-tsc
 .env

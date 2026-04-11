@@ -3907,8 +3907,7 @@ module.exports = async function (app, qs, passport, async, _) {
         // console.log('Request headers:', req.headers.host);
         // console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
-            user: req.user,
-            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'
+            ngScriptPath: isDev ? '/dist/ng/browser/main.js' : '/dist/ng/browser/main.js'
         });
     });
 

@@ -1240,14 +1240,13 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 // Calculate if requirements are met using centralized config
                 const reqConfig = teamRequirements.getForYear(yearNum);
-                const meetsRaceRequirement = (raceCount + volunteerJobCount) >= reqConfig.minRaceAndVolunteerCount;
+                const meetsRaceRequirement = raceCount >= reqConfig.minRaceCount;
                 const meetsAgeGradeRequirement = maxAgeGrade >= reqConfig.minAgeGrade;
 
-                // Volunteer requirement is no longer separate - it contributes to race count
-                // Keep this for backward compatibility but it's not used in overall calculation
+                // Volunteer count is informational only and does not affect eligibility
                 const meetsVolunteerRequirement = volunteerJobCount >= 2;
 
-                // All requirements met: combined race+volunteer count >= 8 AND age grade >= 70%
+                // All requirements met: races >= minRaceCount AND age grade >= minAgeGrade
                 const meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
 
                 // Check if member joined or left during the year

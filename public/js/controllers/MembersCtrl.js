@@ -437,7 +437,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.hasTeamRequirementFulfilled = function (member) {
         var reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
         if (member.teamRequirementStats &&
-            (member.teamRequirementStats.raceCount + (member.teamRequirementStats.volunteerJobCount || 0)) >= reqConfig.minRaceAndVolunteerCount &&
+            member.teamRequirementStats.raceCount >= reqConfig.minRaceCount &&
             member.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade) {
             return true;
         } else {

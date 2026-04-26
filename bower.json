@@ -22,7 +22,8 @@
     "angular-notify": "^2.5.1",
     "chart.js": "^3.9.1",
     "nouislider": "^15.8.1",
-    "tinymce": "5.10.9"
+    "tinymce": "5.10.9",
+    "bootstrap": "3.3.7"
   },
   "description": "",
   "main": "",

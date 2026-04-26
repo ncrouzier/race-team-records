@@ -28,7 +28,7 @@ app.directive('teamRequirements', ['TeamRequirementsConfig', function (TeamRequi
             member: '=member',
         },
         controller: function ($scope) {
-            $scope.numberOfRequiredRaces = reqConfig.minRaceAndVolunteerCount;
+            $scope.numberOfRequiredRaces = reqConfig.minRaceCount;
             $scope.minAgeGrade = reqConfig.minAgeGrade;
         },
         link: function (scope, element, attrs) {

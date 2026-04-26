@@ -92,7 +92,7 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
                     var volunteerJobCount = memberVolunteerCount[id] || 0;
 
                     var reqConfig = TeamRequirementsConfig.getForYear(year);
-                    var meetsRaceRequirement = (stats.raceCount + volunteerJobCount) >= reqConfig.minRaceAndVolunteerCount;
+                    var meetsRaceRequirement = stats.raceCount >= reqConfig.minRaceCount;
                     var meetsAgeGradeRequirement = stats.maxAgeGrade >= reqConfig.minAgeGrade;
                     var meetsAllRequirements = meetsRaceRequirement && meetsAgeGradeRequirement;
 
@@ -215,7 +215,7 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
             $scope.calculateStatusValue = function (requirement) {
                 if (requirement.meetsAllRequirements) return 2; // Complete
 
-                // Count which requirements are met (race+volunteer count and age grade)
+                // Count which requirements are met (race count and age grade)
                 var requirementsToCheck = [
                     requirement.meetsRaceRequirement,
                     requirement.meetsAgeGradeRequirement
@@ -231,7 +231,7 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
             $scope.getStatusClass = function (requirement) {
                 if (requirement.meetsAllRequirements) return 'status-complete';
 
-                // Count which requirements are met (race+volunteer count and age grade)
+                // Count which requirements are met (race count and age grade)
                 var requirementsToCheck = [
                     requirement.meetsRaceRequirement,
                     requirement.meetsAgeGradeRequirement
@@ -250,14 +250,14 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
             $scope.getStatusText = function (requirement) {
                 if (requirement.meetsAllRequirements) return 'Complete';
 
-                // Count which requirements are met (race+volunteer count and age grade)
+                // Count which requirements are met (race count and age grade)
                 var requirementsToCheck = [
                     requirement.meetsRaceRequirement,
                     requirement.meetsAgeGradeRequirement
                 ];
 
                 const metCount = requirementsToCheck.filter(Boolean).length;
-                const totalRequired = 2; // Always 2 requirements: race+volunteer count and age grade
+                const totalRequired = 2; // Always 2 requirements: race count and age grade
 
                 if (metCount === 0) return 'Incomplete (0/' + totalRequired + ')';
 

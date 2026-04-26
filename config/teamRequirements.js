@@ -1,11 +1,11 @@
 var teamRequirements = {
     defaults: {
-        minRaceAndVolunteerCount: 8,   // races + volunteer jobs combined
+        minRaceCount: 8,                // races only — volunteer jobs are tracked but no longer count toward eligibility
         minAgeGrade: 70                 // percentage
     },
     // Year-specific overrides (merged on top of defaults)
     yearOverrides: {
-        // 2025: { minRaceAndVolunteerCount: 6 }
+        // 2025: { minRaceCount: 6 }
     }
 };
 

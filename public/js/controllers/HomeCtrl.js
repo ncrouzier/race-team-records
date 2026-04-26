@@ -17,7 +17,7 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                 $scope.dashboardMember = member;
                 if (member && member.teamRequirementStats) {
                     var stats = member.teamRequirementStats;
-                    $scope.meetsRaceReq = (stats.raceCount + stats.volunteerJobCount) >= $scope.reqConfig.minRaceAndVolunteerCount;
+                    $scope.meetsRaceReq = stats.raceCount >= $scope.reqConfig.minRaceCount;
                     $scope.meetsAgeGradeReq = stats.maxAgeGrade !== 'N/A' && stats.maxAgeGrade >= $scope.reqConfig.minAgeGrade;
                 }
             });

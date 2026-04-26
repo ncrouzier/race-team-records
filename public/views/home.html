@@ -35,13 +35,12 @@
                         <span ng-class="meetsRaceReq ? 'text-success' : 'text-warning'">
                             <i class="fa" ng-class="meetsRaceReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
                         </span>
-                        Races + Volunteer:
-                        <b>{{dashboardMember.teamRequirementStats.raceCount +
-                            dashboardMember.teamRequirementStats.volunteerJobCount}} / {{reqConfig.minRaceAndVolunteerCount}}</b>
+                        Races:
+                        <b>{{dashboardMember.teamRequirementStats.raceCount}} / {{reqConfig.minRaceCount}}</b>
                         <br>
                         <small class="text-muted">
-                            ({{dashboardMember.teamRequirementStats.raceCount}} races,
-                            {{dashboardMember.teamRequirementStats.volunteerJobCount}} vol.)
+                            ({{dashboardMember.teamRequirementStats.volunteerJobCount}} volunteer
+                            job{{dashboardMember.teamRequirementStats.volunteerJobCount === 1 ? '' : 's'}})
                         </small>
                     </div>
                     <div class="col-sm-6">

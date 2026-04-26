@@ -42,7 +42,7 @@
                 <div class="stat-box">
                     <h4>Requirements</h4>
                     <p class="requirements-text">
-                        <i class="fa fa-check-circle text-success"></i> {{reqConfig.minRaceAndVolunteerCount}}+ races (volunteer jobs count)<br>
+                        <i class="fa fa-check-circle text-success"></i> {{reqConfig.minRaceCount}}+ races<br>
                         <i class="fa fa-check-circle text-success"></i> {{reqConfig.minAgeGrade}}%+ age grade
                     </p>
                 </div>
@@ -140,10 +140,6 @@
                             <td>
                                 <span class="status-badge" ng-class="getStatusClass(req)">
                                     {{getStatusText(req)}}
-                                </span>
-                                <span ng-if="req.volunteerJobCount > 0" class="text-muted">
-                                    ({{req.raceCount}} + {{req.volunteerJobCount}} = {{req.raceCount +
-                                    req.volunteerJobCount}})
                                 </span>
                             </td>
                         </tr>

@@ -1,171 +1,173 @@
 var app = angular.module('mcrrcApp');
 
-app.directive('rankingResult', function() {
-    return {
-				template:	'<span class="hoverhand" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== \'\') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== \'\') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== \'\')"  tooltip-trigger="mouseenter"  uib-tooltip-html="\'<span>{{result.ranking | rankTooltip}}</span>\'" >{{result.ranking.agerank}} / {{result.ranking.genderrank}} / {{result.ranking.overallrank}}</span>'
-    };
-});
-
-app.directive('resultIcon', ['UtilsService', function(UtilsService) {
-    return {
-        scope: {
-          result:'=result',
-          race:'=race',
-          raceDisplay: '@raceDisplay'
-        },
-        link: function($scope, element, attrs) {
-          // $scope.imgsrc = "";
-          // $scope.title = "";
-          // if undefined, assume not a race display
-          if ($scope.raceDisplay === undefined){
-            $scope.raceDisplay = false;
-          }
-
-          function isSameDay(date1, date2) {
-            return date1.getUTCMonth() === date2.getUTCMonth() && date1.getUTCDate() === date2.getUTCDate();
-          }
-
-          //return thanksgiving date for a given year.
-          function thanksgivingDayUSA(year){
-            first = new Date(year,10,1);
-            day_of_week = first.getUTCDay();
-            return new Date(year,10,22 + (11 - day_of_week) % 7);
-          }
-
-          if ($scope.result.customOptions !== undefined){
-            $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
-            $scope.resultTexts = $scope.result.customOptions.filter(x => x.name === "resultText");
-          }
-          if ($scope.result.achievements !== undefined){
-            $scope.raceCounts = $scope.result.achievements.filter(x => x.name === "raceCount");
-            $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
-            $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");
-            $scope.birthdays = $scope.result.achievements.filter(x => x.name === "birthday");
-          }
-
-          if ($scope.race.customOptions !== undefined){
-            $scope.raceIcons = $scope.race.customOptions.filter(x => x.name === "raceIcon");
-            $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
-          }
-          
-           var d1= new Date($scope.race.racedate);
-           var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
-          // $scope.isbirthdayRace = false;
-          // $scope.result.members.forEach(function(member) {
-          //     if(isSameDay(new Date(member.dateofbirth),raceDate)){
-          //         $scope.isbirthdayRace = true;
-          //     }
-          // });
-
-          $scope.isThanksgiving = false;
-          if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
-            if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
-              $scope.isThanksgiving = true;
-            }        
-          }
-          
-          $scope.isFourthOfJuly = false;
-          if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4){
-            $scope.isFourthOfJuly = true;
-          }
-
-        
-
-        },
-        template: '<span ng-if="ags" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true"><div class="pbBox">🎖️</div></span>' +
-          '<span ng-if="pbs" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true"><div class="pbBox">🧨</div></span>' +
-          '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text" tooltip-append-to-body="true"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
-          '<span ng-if="birthdays" ng-repeat="birthday in birthdays track by $index" class="hoverhand" uib-tooltip-html="birthday.text" tooltip-append-to-body="true">🎂</span>' +
-          '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
-          '<span class="hoverhand" uib-tooltip="Fourth of July Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +   
-          '<span ng-if="raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +
-          '<span ng-if="raceTexts.length >0 && !raceDisplay" ng-repeat="raceText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceText.text"><span>{{raceText.value}}</span></span>' +
-          '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text" tooltip-append-to-body="true"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
-          '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text" tooltip-append-to-body="true"><span>{{resultText.value}}</span></span>'
-      };
-  }]);
-
-
-app.directive('raceIcon', function() {
+app.directive('rankingResult', function () {
   return {
-      scope: {
-        race:'=race'
-      },
-      link: function($scope, element, attrs) {
-
-
-        function isSameDay(date1, date2) {
-          return date1.getUTCMonth() === date2.getUTCMonth() && date1.getUTCDate() === date2.getUTCDate();
-        }
-
-        //return thanksgiving date for a given year.
-        function thanksgivingDayUSA(year){
-          first = new Date(year,10,1);
-          day_of_week = first.getUTCDay();
-          return new Date(year,10,22 + (11 - day_of_week) % 7);
-        }
-
-        if ($scope.race.customOptions !== undefined){
-          $scope.raceIcons = $scope.race.customOptions.filter(x => x.name === "raceIcon");
-          $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
-        }
-        
-        var d1= new Date($scope.race.racedate);
-        var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
-       
-        $scope.isThanksgiving = false;
-        if (raceDate.getMonth() === 10){ //if November, check if Thanksgiving
-          if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()),raceDate)) {
-            $scope.isThanksgiving = true;
-          }        
-        }
-        
-        $scope.isFourthOfJuly = false;
-        if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4){
-          $scope.isFourthOfJuly = true;
-        }
-
-      },
-        template:	
-        '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
-        '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
-        '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
-        '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
-    };
+    template: '<span class="hoverhand" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== \'\') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== \'\') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== \'\')"  tooltip-trigger="mouseenter"  uib-tooltip-html="\'<span>{{result.ranking | rankTooltip}}</span>\'" >{{result.ranking.agerank}} / {{result.ranking.genderrank}} / {{result.ranking.overallrank}}</span>'
+  };
 });
 
-app.directive('racePhotos', function() {
-    return {
-        scope: {
-            race: '=race'
-        },
-        link: function($scope) {
-            $scope.photoLinks = [];
-            if ($scope.race && $scope.race.photoLinks) {
-                $scope.photoLinks = $scope.race.photoLinks.filter(function(link) {
-                    return link.url && link.url.trim() !== '';
-                });
-            }
-        },
-        template:
-            '<span ng-if="photoLinks.length === 1" style="margin-left: 5px;">' +
-                '<a ng-href="{{photoLinks[0].url}}" target="_blank" class="hoverhand" ' +
-                    'uib-tooltip="{{photoLinks[0].label || \'Photos\'}}" tooltip-append-to-body="true" tooltip-placement="top">' +
-                    '<i class="fa fa-camera race-photos-icon"></i>' +
-                '</a>' +
-            '</span>' +
-            '<span ng-if="photoLinks.length > 1" style="margin-left: 5px; display: inline-block;" uib-dropdown>' +
-                '<a class="hoverhand" uib-dropdown-toggle uib-tooltip="Race Photos" tooltip-append-to-body="true" tooltip-placement="top">' +
-                    '<i class="fa fa-camera race-photos-icon"></i>' +
-                    '<span class="caret" style="margin-left: 2px;"></span>' +
-                '</a>' +
-                '<ul class="dropdown-menu" uib-dropdown-menu>' +
-                    '<li ng-repeat="link in photoLinks track by $index">' +
-                        '<a ng-href="{{link.url}}" target="_blank">' +
-                            '<i class="fa fa-external-link"></i> {{link.label || \'Photos\' }}' +
-                        '</a>' +
-                    '</li>' +
-                '</ul>' +
-            '</span>'
-    };
+app.directive('resultIcon', ['UtilsService', function (UtilsService) {
+  return {
+    scope: {
+      result: '=result',
+      race: '=race',
+      raceDisplay: '@raceDisplay'
+    },
+    link: function ($scope, element, attrs) {
+      // $scope.imgsrc = "";
+      // $scope.title = "";
+      // if undefined, assume not a race display
+      if ($scope.raceDisplay === undefined) {
+        $scope.raceDisplay = false;
+      }
+
+      function isSameDay(date1, date2) {
+        return date1.getUTCMonth() === date2.getUTCMonth() && date1.getUTCDate() === date2.getUTCDate();
+      }
+
+      //return thanksgiving date for a given year.
+      function thanksgivingDayUSA(year) {
+        first = new Date(year, 10, 1);
+        day_of_week = first.getUTCDay();
+        return new Date(year, 10, 22 + (11 - day_of_week) % 7);
+      }
+
+      if ($scope.result.customOptions !== undefined) {
+        $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
+        $scope.resultTexts = $scope.result.customOptions.filter(x => x.name === "resultText");
+      }
+      if ($scope.result.achievements !== undefined) {
+        $scope.raceCounts = $scope.result.achievements.filter(x => x.name === "raceCount");
+        $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
+        $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");
+        $scope.birthdays = $scope.result.achievements.filter(x => x.name === "birthday");
+        $scope.teamRecords = $scope.result.achievements.filter(x => x.name === "teamRecord");
+      }
+
+      if ($scope.race.customOptions !== undefined) {
+        $scope.raceIcons = $scope.race.customOptions.filter(x => x.name === "raceIcon");
+        $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
+      }
+
+      var d1 = new Date($scope.race.racedate);
+      var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
+      // $scope.isbirthdayRace = false;
+      // $scope.result.members.forEach(function(member) {
+      //     if(isSameDay(new Date(member.dateofbirth),raceDate)){
+      //         $scope.isbirthdayRace = true;
+      //     }
+      // });
+
+      $scope.isThanksgiving = false;
+      if (raceDate.getMonth() === 10) { //if November, check if Thanksgiving
+        if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()), raceDate)) {
+          $scope.isThanksgiving = true;
+        }
+      }
+
+      $scope.isFourthOfJuly = false;
+      if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4) {
+        $scope.isFourthOfJuly = true;
+      }
+
+
+
+    },
+    template: '<span ng-if="ags" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true"><div class="pbBox">🎖️</div></span>' +
+      '<span ng-if="pbs" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true"><div class="pbBox">🧨</div></span>' +
+      '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text" tooltip-append-to-body="true"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
+      '<span ng-if="birthdays" ng-repeat="birthday in birthdays track by $index" class="hoverhand" uib-tooltip-html="birthday.text" tooltip-append-to-body="true">🎂</span>' +
+      '<span ng-if="teamRecords" ng-repeat="teamRecord in teamRecords track by $index" class="hoverhand" uib-tooltip-html="teamRecord.text" tooltip-append-to-body="true">🔥</span>' +
+      '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
+      '<span class="hoverhand" uib-tooltip="Fourth of July Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +
+      '<span ng-if="raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +
+      '<span ng-if="raceTexts.length >0 && !raceDisplay" ng-repeat="raceText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceText.text"><span>{{raceText.value}}</span></span>' +
+      '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text" tooltip-append-to-body="true"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
+      '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text" tooltip-append-to-body="true"><span>{{resultText.value}}</span></span>'
+  };
+}]);
+
+
+app.directive('raceIcon', function () {
+  return {
+    scope: {
+      race: '=race'
+    },
+    link: function ($scope, element, attrs) {
+
+
+      function isSameDay(date1, date2) {
+        return date1.getUTCMonth() === date2.getUTCMonth() && date1.getUTCDate() === date2.getUTCDate();
+      }
+
+      //return thanksgiving date for a given year.
+      function thanksgivingDayUSA(year) {
+        first = new Date(year, 10, 1);
+        day_of_week = first.getUTCDay();
+        return new Date(year, 10, 22 + (11 - day_of_week) % 7);
+      }
+
+      if ($scope.race.customOptions !== undefined) {
+        $scope.raceIcons = $scope.race.customOptions.filter(x => x.name === "raceIcon");
+        $scope.raceTexts = $scope.race.customOptions.filter(x => x.name === "raceText");
+      }
+
+      var d1 = new Date($scope.race.racedate);
+      var raceDate = new Date(d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate());
+
+      $scope.isThanksgiving = false;
+      if (raceDate.getMonth() === 10) { //if November, check if Thanksgiving
+        if (isSameDay(thanksgivingDayUSA(raceDate.getUTCFullYear()), raceDate)) {
+          $scope.isThanksgiving = true;
+        }
+      }
+
+      $scope.isFourthOfJuly = false;
+      if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4) {
+        $scope.isFourthOfJuly = true;
+      }
+
+    },
+    template:
+      '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
+      '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
+      '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
+      '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
+  };
+});
+
+app.directive('racePhotos', function () {
+  return {
+    scope: {
+      race: '=race'
+    },
+    link: function ($scope) {
+      $scope.photoLinks = [];
+      if ($scope.race && $scope.race.photoLinks) {
+        $scope.photoLinks = $scope.race.photoLinks.filter(function (link) {
+          return link.url && link.url.trim() !== '';
+        });
+      }
+    },
+    template:
+      '<span ng-if="photoLinks.length === 1" style="margin-left: 5px;">' +
+      '<a ng-href="{{photoLinks[0].url}}" target="_blank" class="hoverhand" ' +
+      'uib-tooltip="{{photoLinks[0].label || \'Photos\'}}" tooltip-append-to-body="true" tooltip-placement="top">' +
+      '<i class="fa fa-camera race-photos-icon"></i>' +
+      '</a>' +
+      '</span>' +
+      '<span ng-if="photoLinks.length > 1" style="margin-left: 5px; display: inline-block;" uib-dropdown>' +
+      '<a class="hoverhand" uib-dropdown-toggle uib-tooltip="Race Photos" tooltip-append-to-body="true" tooltip-placement="top">' +
+      '<i class="fa fa-camera race-photos-icon"></i>' +
+      '<span class="caret" style="margin-left: 2px;"></span>' +
+      '</a>' +
+      '<ul class="dropdown-menu" uib-dropdown-menu>' +
+      '<li ng-repeat="link in photoLinks track by $index">' +
+      '<a ng-href="{{link.url}}" target="_blank">' +
+      '<i class="fa fa-external-link"></i> {{link.label || \'Photos\' }}' +
+      '</a>' +
+      '</li>' +
+      '</ul>' +
+      '</span>'
+  };
 });

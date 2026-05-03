@@ -1,17 +1,18 @@
 <div class="jumbotron ">
 
     <!-- Dashboard for logged-in members -->
-    <div ng-if="user && user.member" class="well"
-        style="margin-bottom: 15px; background: #fff; border: 1px solid #ddd;">
+    <div ng-if="user && user.member" class="well" style="margin-bottom: 30px; background: #fff; border: 2px
+        solid #006687;  box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px;">
         <h4 style="margin-top: 0;">
             Welcome back, {{user.member.firstname}}!
-            <a ui-sref="/members/member({member: user.member.username})" style="margin-left: 8px; font-weight: 600; font-size: 14px;">My Page &raquo;</a>
+            <a ui-sref="/members/member({member: user.member.username})"
+                style="margin-left: 8px; font-weight: 600; font-size: 14px;">My Page &raquo;</a>
         </h4>
 
         <div class="row">
             <!-- Latest Race -->
             <div class="col-sm-4" style="border-right: 1px solid #eee;">
-                <h5><i class="fa fa-flag-checkered"></i> Latest Race</h5>
+                <h5><i class="fa fa-flag-checkered"></i>Latest Race</h5>
                 <hr style="margin: 5px 0 10px;">
                 <div ng-if="latestResult">
                     <a class="hoverhand" ng-click="showRaceByIdModal(latestResult.race._id)">
@@ -77,7 +78,7 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h4>Last 5 Races <small> <a ui-sref="/results">View all results</a></small></h4>
+            <h4>The teams's latest 5 races <small> <a ui-sref="/results">View all results</a></small></h4>
             <div class="row">
                 <div class="col-md-12">
                     <race-list races-list="recentRaces" search-query="searchQuery"
@@ -89,7 +90,7 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-            <h4>Latest Achievements</h4>
+            <h4>The team's latest achievements</h4>
             <ul class="list-group" ng-if="recentAchievements.length > 0">
                 <li class="list-group-item" ng-repeat="ach in recentAchievements">
                     <div ng-if="ach.achievements.length === 1">
@@ -118,6 +119,15 @@
                                 performance best of {{::ach.achievements[0].value.agegrade}}% at <b><a class="hoverhand"
                                         ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
                             </span>
+                            <span ng-switch-when="teamrecord">
+                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
+                                        {{::ach.result.members[0].firstname}}
+                                        {{::ach.result.members[0].lastname}}</a></b> set a new
+                                {{::ach.achievements[0].value.category}} {{::ach.achievements[0].value.sex}} team record
+                                of <span class="time">{{::ach.achievements[0].value.time | secondsToTimeString}}</span>
+                                for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) at <b><a class="hoverhand"
+                                        ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>! 🔥
+                            </span>
                         </span>
                     </div>
                     <div ng-if="ach.achievements.length > 1">
@@ -137,6 +147,11 @@
                                     </span>
                                     <span ng-switch-when="agegrade">
                                         Achieved a new age grade performance best of {{::a.value.agegrade}}%.
+                                    </span>
+                                    <span ng-switch-when="teamrecord">
+                                        Set a new {{::a.value.category}} {{::a.value.sex}} team record of
+                                        <span class="time">{{::a.value.time | secondsToTimeString}}</span>
+                                        for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}). 🔥
                                     </span>
                                 </span>
                             </li>
@@ -158,7 +173,7 @@
             </div>
         </div>
         <div class="col-md-6">
-            <h4>Recent Team Ins & Outs <small>(last 60 days)</small></h4>
+            <h4>Latest Ins & Outs <small>(last 60 days)</small></h4>
             <ul class="list-group" ng-if="recentStatusChanges.length > 0">
                 <li class="list-group-item" ng-repeat="change in recentStatusChanges">
                     <b><a ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}}

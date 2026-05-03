@@ -1466,6 +1466,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
                                         // Update location achievements for this location
                                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
+                                        await service.updateAllTeamRecordAchievements();
 
                                         resultWithPBsAndAchievements = await Result.findById(result._id);
                                         await service.invalidateSystemInfoCache();
@@ -1504,6 +1505,7 @@ module.exports = async function (app, qs, passport, async, _) {
                                 }
                                 // Update location achievements for this location
                                 await service.updateAllLocationAchievements(race.location.country, race.location.state);
+                                await service.updateAllTeamRecordAchievements();
 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);
                                 await service.invalidateSystemInfoCache();
@@ -1694,13 +1696,14 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
                 // Update location achievements for this location
                 await service.updateAllLocationAchievements(r.location.country, r.location.state);
+                await service.updateAllTeamRecordAchievements();
 
                 resultWithPBsAndAchievements = await Result.findById(result._id);
                 await service.invalidateSystemInfoCache();
                 res.json(resultWithPBsAndAchievements);
 
 
-            } else { // race exists       
+            } else { // race exists
                 result.race = race;
 
                 result.members = members;
@@ -1735,6 +1738,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
                 // Update location achievements for this location
                 await service.updateAllLocationAchievements(race.location.country, race.location.state);
+                await service.updateAllTeamRecordAchievements();
                 resultWithPBsAndAchievements = await Result.findById(result._id);
                 await service.invalidateSystemInfoCache();
                 res.json(resultWithPBsAndAchievements);
@@ -1860,8 +1864,9 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // Update location achievements
             await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
+            await service.updateAllTeamRecordAchievements();
 
-            // Invalidate cache 
+            // Invalidate cache
             await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
 
 
@@ -1915,6 +1920,7 @@ module.exports = async function (app, qs, passport, async, _) {
                             let member = await Member.findById(m._id);
                             service.updateMemberStats(member);
                         }
+                        await service.updateAllTeamRecordAchievements();
                         await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                         res.end('{"success" : "Result deleted successfully", "status" : 200}');
 
@@ -2177,6 +2183,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (oldRace.location.country !== updatedRace.location.country || oldRace.location.state !== updatedRace.location.state) {
                 await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
             }
+            await service.updateAllTeamRecordAchievements();
 
 
             // Get the updated race with populated results
@@ -2544,6 +2551,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // OPTIMIZATION: Use bulk team requirement stats update
             await service.updatePBsandAchivementsBulk(memberIds);
+            await service.updateAllTeamRecordAchievements();
             res.end('{"success" : "Pbs and achievements updated successfully", "status" : 200}');
         } catch (err) {
             res.end('{"error" : "Pbs and achievements not updated", "status" : 500, "error" : "' + err + '"}');

@@ -13122,7 +13122,8 @@ footer {
   margin-top: 2px;
 }
 .feed-card .feed-icon.feed-icon-racecount {
-  background: #4a90e2;
+  border-radius: 0px;
+  font-size: inherit !important;
 }
 .feed-card .feed-body {
   flex: 1 1 auto;

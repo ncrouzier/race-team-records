@@ -133,8 +133,8 @@
                                 </div>
                             </div>
                             <div ng-switch-when="racecount" class="feed-row">
-                                <span class="feed-icon feed-icon-racecount hoverhand" uib-tooltip="Race Count"><i
-                                        class="fa fa-hashtag"></i></span>
+                                <span class="feed-icon feed-icon-racecount raceCountBox hoverhand"
+                                    uib-tooltip="Race Count">{{::ach.achievements[0].value.raceCount}}</span>
                                 <div class="feed-body">
                                     <div class="feed-text">
                                         <b><a
@@ -198,20 +198,21 @@
                                         <span ng-switch-when="pb">
                                             <!-- <i class="fa fa-bolt feed-sub-icon feed-sub-icon-pb"></i> -->
                                             🧨 New {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of
-                                            <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
+                                            <span class="time bold">{{::a.value.time | secondsToTimeString}}</span>.
                                         </span>
                                         <span ng-switch-when="racecount">
                                             <!-- <i class="fa fa-hashtag feed-sub-icon feed-sub-icon-racecount"></i> -->
-                                            ＃{{a.value.raceCount | addOrdinalSuffix}} race with the team.
-                                        </span>
+                                            <i class="fa fa-hashtag"></i>
+                                            {{a.value.raceCount | addOrdinalSuffix}} race with the team. </span>
                                         <span ng-switch-when="agegrade">
                                             <!-- <i class="fa fa-percent feed-sub-icon feed-sub-icon-agegrade"></i> -->
-                                            🎖️ New age grade best of {{::a.value.agegrade}}%.
+                                            🎖️ New age grade best of <span class="bold">{{::a.value.agegrade}}%</span>.
                                         </span>
                                         <span ng-switch-when="teamrecord">
                                             <!-- <i class="fa fa-fire feed-sub-icon feed-sub-icon-teamrecord"></i> -->
                                             🔥 New {{::a.value.category}} {{::a.value.sex}} team record of
-                                            <span class="time">{{::a.value.time | secondsToTimeString}}</span>
+                                            <span class="time bold">{{::a.value.time |
+                                                secondsToTimeString}}</span>
                                             for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}).
                                         </span>
                                     </li>

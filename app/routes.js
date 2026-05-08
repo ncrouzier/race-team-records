@@ -2298,6 +2298,7 @@ module.exports = async function (app, qs, passport, async, _) {
                                 race: { _id: "$$result.race._id" },
                                 miles: { $ifNull: ["$$result.race.racetype.miles", 0] },
                                 agegrade: "$$result.agegrade",
+                                isRecordEligible: "$$result.isRecordEligible",
                                 achievements: "$$result.achievements",
                                 customOptions: "$$result.customOptions",
                                 comments: "$$result.comments",

@@ -204,6 +204,22 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/records.html');
                 gtag('event', 'page_view');
             }
+        }).state('/records/age', {
+            url: "/records/age",
+            templateUrl: "views/ageRecords.html",
+            controller: 'AgeRecordsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/records/age');
+                gtag('event', 'page_view');
+            }
+        }).state('/records/year', {
+            url: "/records/year",
+            templateUrl: "views/yearRecords.html",
+            controller: 'YearRecordsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/records/year');
+                gtag('event', 'page_view');
+            }
         }).state('/stats', {
             url: "/stats",
             redirectTo: '/stats/team'

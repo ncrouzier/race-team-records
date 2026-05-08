@@ -1,0 +1,195 @@
+<div class="jumbotron">
+    <div class="records-toolbar-card">
+        <div class="records-toolbar-top">
+            <div class="age-records-header">
+                <h3>Year Records</h3>
+                <p>Fastest team performance per distance per year</p>
+            </div>
+            <div class="records-subnav">
+                <a class="records-subnav-link" ui-sref="/records/age">By Age</a>
+                <a class="records-subnav-link active" ui-sref="/records/year">By Year</a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="age-records-filters">
+            <div class="filter-group">
+                <span class="filter-label">Gender</span>
+                <div class="btn-group">
+                    <label class="btn-record btn btn-primary" ng-class="{'active': sexFilter === 'Men'}"
+                        ng-click="sexFilter = 'Men'; onFilterChange()">Men</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': sexFilter === 'Women'}"
+                        ng-click="sexFilter = 'Women'; onFilterChange()">Women</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': sexFilter === 'Both'}"
+                        ng-click="sexFilter = 'Both'; onFilterChange()">Both</label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Surface</span>
+                <div class="btn-group">
+                    <label class="btn-record btn btn-primary" ng-class="{'active': surfaceFilter === 'Road'}"
+                        ng-click="surfaceFilter = 'Road'; onFilterChange()">Road</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': surfaceFilter === 'Track'}"
+                        ng-click="surfaceFilter = 'Track'; onFilterChange()">Track</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': surfaceFilter === 'Trail'}"
+                        ng-click="surfaceFilter = 'Trail'; onFilterChange()">Trail</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': surfaceFilter === 'Ultra'}"
+                        ng-click="surfaceFilter = 'Ultra'; onFilterChange()">Ultra</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': surfaceFilter === 'Custom'}"
+                        ng-click="surfaceFilter = 'Custom'; onFilterChange()">Custom</label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">BEST</span>
+                <div class="btn-group">
+                    <label class="btn-record btn btn-primary" ng-class="{'active': valueMode === 'time'}"
+                        ng-click="valueMode = 'time'; onValueModeChange()">Time</label>
+                    <label class="btn-record btn btn-primary" ng-class="{'active': valueMode === 'agegrade'}"
+                        ng-click="valueMode = 'agegrade'; onValueModeChange()">Age Grade</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Distance Selector -->
+        <div ng-if="surfaceFilter === 'Custom' && allDistanceGroups.length > 0" class="custom-distance-selector">
+            <div class="custom-distance-header hoverhand" ng-click="toggleCustomFilter()">
+                <span class="filter-label">Distances</span>
+                <span class="custom-distance-summary" ng-if="customFilterCollapsed">
+                    {{distances.length}} / {{totalCustomDistances}} selected
+                </span>
+                <div class="custom-distance-header-actions" ng-if="!customFilterCollapsed">
+                    <button class="btn btn-xs btn-link"
+                        ng-click="$event.stopPropagation(); selectAllDistances()">All</button>
+                    <button class="btn btn-xs btn-link"
+                        ng-click="$event.stopPropagation(); clearAllDistances()">None</button>
+                </div>
+                <button class="btn btn-xs btn-link custom-filter-toggle">
+                    <i class="fa" ng-class="customFilterCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"></i>
+                </button>
+            </div>
+            <div ng-show="!customFilterCollapsed">
+                <div ng-repeat="group in allDistanceGroups track by group.label" class="custom-distance-group">
+                    <div class="custom-distance-group-label">
+                        {{group.label}}
+                        <button class="btn btn-xs btn-link" ng-click="selectGroupDistances(group)">All</button>
+                        <button class="btn btn-xs btn-link" ng-click="clearGroupDistances(group)">None</button>
+                    </div>
+                    <div class="custom-distance-options">
+                        <label class="custom-distance-option" ng-repeat="d in group.distances track by d.key">
+                            <input type="checkbox" ng-model="customDistanceSelection[d.key]"
+                                ng-change="onCustomDistanceChange()">
+                            <span>{{d.name}}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- /.records-toolbar-card -->
+
+    <div class="records-grid-card">
+
+        <!-- Loading Spinner -->
+        <div ng-if="loading" class="text-center" style="padding: 60px;">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
+            <p style="margin-top: 12px; color: #6b7280;">Loading year records...</p>
+        </div>
+
+        <!-- No distances selected (custom mode) -->
+        <div ng-if="!loading && surfaceFilter === 'Custom' && distances.length === 0" class="text-center"
+            style="padding: 60px;">
+            <i class="fa fa-sliders fa-2x" style="color: #d1d5db;"></i>
+            <p style="margin-top: 12px; color: #6b7280;">Select at least one distance above to show records.</p>
+        </div>
+
+        <!-- Grid Table -->
+        <div ng-if="!loading && years.length > 0 && distances.length > 0" class="age-records-container">
+            <div class="age-records-scroll">
+                <table class="age-records-table year-records-table">
+                    <thead>
+                        <tr>
+                            <th class="age-col-header year-col-header">Year</th>
+                            <th ng-repeat="dist in distances track by dist.key" class="distance-col-header">
+                                {{dist.name}}
+                                <span ng-if="surfaceFilter === 'Custom'"
+                                    class="dist-surface-tag">{{dist.surface}}</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- All Time Row -->
+                        <tr class="all-time-row">
+                            <td class="age-col all-time-label">ALL</td>
+                            <td ng-repeat="dist in distances track by dist.key" class="record-cell all-time-cell"
+                                ng-class="{
+                                'has-record': allTimeRow[dist.key],
+                                'cell-current-user': loggedInMemberId && allTimeRow[dist.key] && allTimeRow[dist.key].member._id === loggedInMemberId,
+                                'cell-highlighted': selectedMemberKey && allTimeRow[dist.key] && getMemberKey(allTimeRow[dist.key].member) === selectedMemberKey,
+                                'cell-faded': selectedMemberKey && allTimeRow[dist.key] && getMemberKey(allTimeRow[dist.key].member) !== selectedMemberKey
+                            }" uib-tooltip-html="allTimeTooltips[dist.key]" tooltip-placement="top"
+                                tooltip-append-to-body="true" tooltip-enable="!!allTimeRow[dist.key]">
+                                <div ng-if="allTimeRow[dist.key]" class="record-cell-content"
+                                    ng-click="openRecordModal(allTimeRow[dist.key])"
+                                    ng-style="selectedMemberKey && getMemberKey(allTimeRow[dist.key].member) === selectedMemberKey ? {'box-shadow': '0 0 0 2px ' + getMemberColor(allTimeRow[dist.key].member)} : {}">
+                                    <span class="record-badge"
+                                        ng-style="{'background-color': getMemberColor(allTimeRow[dist.key].member)}">
+                                        {{getInitials(allTimeRow[dist.key].member)}}
+                                    </span>
+                                    <span class="record-time">{{formatCellValue(allTimeRow[dist.key])}}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Year Rows -->
+                        <tr ng-repeat="year in years track by year">
+                            <td class="age-col">{{year}}</td>
+                            <td ng-repeat="dist in distances track by dist.key" class="record-cell" ng-class="{
+                                'has-record': grid[year][dist.key],
+                                'cell-current-user': loggedInMemberId && grid[year][dist.key] && grid[year][dist.key].member._id === loggedInMemberId,
+                                'cell-highlighted': selectedMemberKey && grid[year][dist.key] && getMemberKey(grid[year][dist.key].member) === selectedMemberKey,
+                                'cell-faded': selectedMemberKey && grid[year][dist.key] && getMemberKey(grid[year][dist.key].member) !== selectedMemberKey
+                            }" uib-tooltip-html="tooltips[year][dist.key]" tooltip-placement="top"
+                                tooltip-append-to-body="true" tooltip-enable="!!grid[year][dist.key]">
+                                <div ng-if="grid[year][dist.key]" class="record-cell-content"
+                                    ng-click="openRecordModal(grid[year][dist.key])"
+                                    ng-style="selectedMemberKey && getMemberKey(grid[year][dist.key].member) === selectedMemberKey ? {'box-shadow': '0 0 0 2px ' + getMemberColor(grid[year][dist.key].member)} : {}">
+                                    <span class="record-badge"
+                                        ng-style="{'background-color': getMemberColor(grid[year][dist.key].member)}">
+                                        {{getInitials(grid[year][dist.key].member)}}
+                                    </span>
+                                    <span class="record-time">{{formatCellValue(grid[year][dist.key])}}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- No data message -->
+        <div ng-if="!loading && years.length === 0" class="text-center" style="padding: 60px;">
+            <p style="color: #6b7280;">No records found for this filter combination.</p>
+        </div>
+
+        <!-- Member List -->
+        <div ng-if="!loading && memberList.length > 0" class="age-records-members">
+            <h4>Record Holders</h4>
+            <div class="member-grid">
+                <div class="member-card" ng-repeat="m in memberList track by m.key"
+                    ng-class="{'selected': selectedMemberKey === m.key, 'member-card-current-user': loggedInMemberId && m.memberId === loggedInMemberId}"
+                    ng-style="selectedMemberKey === m.key ? {'box-shadow': '0 0 0 2px ' + getMemberColorByKey(m.key)} : {}"
+                    ng-click="toggleMemberHighlight(m.key)">
+                    <span class="member-badge" ng-style="{'background-color': getMemberColorByKey(m.key)}">
+                        {{m.name.charAt(0)}}{{m.name.split(' ')[1].charAt(0)}}
+                    </span>
+                    <div class="member-info">
+                        <!-- <a class="member-name" ng-href="/members/{{m.username}}/bio" ng-if="m.username"
+                       ng-click="$event.stopPropagation()">{{m.name}}</a> -->
+                        {{m.name}}
+                        <span class="member-name" ng-if="!m.username">{{m.name}}</span>
+                        <span class="member-count">{{m.count}} {{m.count === 1 ? 'record' : 'records'}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /.records-grid-card -->
+</div>

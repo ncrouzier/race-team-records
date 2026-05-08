@@ -94,8 +94,19 @@
 				<% if (user && user.role==='admin' ) { %>
 					<ul class="nav navbar-nav">
 						<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-						<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i
-									class="fa fa-trophy"></i></a></li>
+						<li ng-class="{active: $state.includes('/records')}" class="uib-dropdown" uib-dropdown
+							on-toggle="toggled(open)">
+							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+								uib-dropdown-toggle>Records <i class="fa fa-trophy"></i> <span class="caret"></span></a>
+							<ul class="dropdown-menu" uib-dropdown-menu>
+								<li ng-class="{active: $state.is('/records')}"><a ui-sref="/records"> <i
+											class="fa fa-trophy"></i> Best Performances</a></li>
+								<li ng-class="{active: $state.is('/records/age')}"><a ui-sref="/records/age"> <i
+											class="fa fa-th"></i> Records by Age</a></li>
+								<li ng-class="{active: $state.is('/records/year')}"><a ui-sref="/records/year"> <i
+											class="fa fa-th"></i> Records by Year</a></li>
+							</ul>
+						</li>
 						<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
 								ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 						<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
@@ -131,7 +142,8 @@
 								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
 										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
 								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
-								<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">Activity Log</a></li>
+								<li ng-class="{active: $state.includes('/activitylogs')}"><a
+										ui-sref="/activitylogs">Activity Log</a></li>
 								<li ng-class="{active: $state.includes('/stats/requirements')}"><a
 										ui-sref="/stats/requirements">Team Requirements</a></li>
 								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
@@ -164,8 +176,20 @@
 					<%}else if (user && user.role==='captain' ) { %>
 						<ul class="nav navbar-nav">
 							<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-							<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records <i
-										class="fa fa-trophy"></i></a></li>
+							<li ng-class="{active: $state.includes('/records')}" class="uib-dropdown" uib-dropdown
+								on-toggle="toggled(open)">
+								<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+									uib-dropdown-toggle>Records <i class="fa fa-trophy"></i> <span
+										class="caret"></span></a>
+								<ul class="dropdown-menu" uib-dropdown-menu>
+									<li ng-class="{active: $state.is('/records')}"><a ui-sref="/records"> <i
+												class="fa fa-trophy"></i> Best Performances</a></li>
+									<li ng-class="{active: $state.is('/records/age')}"><a ui-sref="/records/age"> <i
+												class="fa fa-th"></i> Records by Age</a></li>
+									<li ng-class="{active: $state.is('/records/year')}"><a ui-sref="/records/year"> <i
+												class="fa fa-th"></i> Records by Year</a></li>
+								</ul>
+							</li>
 							<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
 									ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 							<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
@@ -222,8 +246,20 @@
 						<%}else if (user && user.role==='user' ) { %>
 							<ul class="nav navbar-nav">
 								<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-								<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team Records
-										<i class="fa fa-trophy"></i></a></li>
+								<li ng-class="{active: $state.includes('/records')}" class="uib-dropdown" uib-dropdown
+									on-toggle="toggled(open)">
+									<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+										uib-dropdown-toggle>Records <i class="fa fa-trophy"></i> <span
+											class="caret"></span></a>
+									<ul class="dropdown-menu" uib-dropdown-menu>
+										<li ng-class="{active: $state.is('/records')}"><a ui-sref="/records"> <i
+													class="fa fa-trophy"></i> Best Performances</a></li>
+										<li ng-class="{active: $state.is('/records/age')}"><a ui-sref="/records/age"> <i
+													class="fa fa-th"></i> Records by Age</a></li>
+										<li ng-class="{active: $state.is('/records/year')}"><a ui-sref="/records/year">
+												<i class="fa fa-th"></i> Records by Year</a></li>
+									</ul>
+								</li>
 								<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
 										ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 								<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members
@@ -269,9 +305,23 @@
 							<%}else{ %>
 								<ul class="nav navbar-nav">
 									<li ng-class="{active: $state.includes('/')}"><a ui-sref="/">Home</a></li>
-									<li ng-class="{active: $state.includes('/records')}"><a ui-sref="/records">Team
-											Records
-											<i class="fa fa-trophy"></i></a></li>
+									<li ng-class="{active: $state.includes('/records')}" class="uib-dropdown"
+										uib-dropdown on-toggle="toggled(open)">
+										<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
+											uib-dropdown-toggle>Records <i class="fa fa-trophy"></i> <span
+												class="caret"></span></a>
+										<ul class="dropdown-menu" uib-dropdown-menu>
+											<li ng-class="{active: $state.is('/records')}"><a ui-sref="/records"> <i
+														class="fa fa-trophy"></i> Best Performances</a></li>
+											<li ng-class="{active: $state.is('/records/age')}"><a
+													ui-sref="/records/age"> <i class="fa fa-th"></i> Records by Age</a>
+											</li>
+											<li ng-class="{active: $state.is('/records/year')}"><a
+													ui-sref="/records/year"> <i class="fa fa-th"></i> Records by
+													Year</a>
+											</li>
+										</ul>
+									</li>
 									<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
 											ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
 									<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team

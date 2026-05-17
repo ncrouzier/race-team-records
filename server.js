@@ -143,6 +143,22 @@ const job = schedule.scheduleJob(rule, function () {
 });
 
 
+// Close comp race forms whose closesAt deadline has passed
+const { CompRaceForm } = require('./app/models/compraceform');
+schedule.scheduleJob('* * * * *', async function () {
+    try {
+        const result = await CompRaceForm.updateMany(
+            { isOpen: true, closesAt: { $lte: new Date() } },
+            { $set: { isOpen: false } }
+        );
+        if (result.modifiedCount > 0) {
+            console.log(`Auto-closed ${result.modifiedCount} comp race form(s) past their deadline`);
+        }
+    } catch (err) {
+        console.error('Error auto-closing comp race forms:', err);
+    }
+});
+
 var server = app.listen(port, function () {
     console.log('Node app is running on port', port);
 });

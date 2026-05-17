@@ -1,0 +1,387 @@
+<div class="jumbotron">
+
+    <div style="margin-bottom: 16px;">
+        <a ui-sref="/comp-race-forms" class="crf-chip crf-chip-ghost">
+            <i class="fa fa-arrow-left"></i> Back to Forms
+        </a>
+    </div>
+
+    <!-- Loading -->
+    <div ng-if="loading" class="feed-card">
+        <div class="feed-card-body" style="text-align:center; padding: 40px;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+            <p style="margin-top: 12px; color: #666;">Loading responses…</p>
+        </div>
+    </div>
+
+    <div ng-if="error" class="alert alert-danger">{{ error }}</div>
+
+    <div ng-if="!loading && formData">
+
+        <!-- Header card -->
+        <div class="feed-card" style="margin-bottom: 16px; overflow: visible;">
+            <div class="feed-card-header">
+                <h4>
+                    <i class="fa fa-list-alt"></i>
+                    {{ formData.title }}
+                    <span ng-if="!editing" class="crf-chip" style="margin-left:8px;"
+                        ng-class="formData.isOpen ? 'crf-chip-open' : 'crf-chip-closed'">
+                        <i class="fa" ng-class="formData.isOpen ? 'fa-unlock' : 'fa-lock'"></i>
+                        {{ formData.isOpen ? 'Open' : 'Closed' }}
+                    </span>
+                    <span ng-if="editing" class="crf-chip crf-chip-editing" style="margin-left:8px;">
+                        <i class="fa fa-pencil"></i> Editing…
+                    </span>
+                    <button class="crf-chip crf-chip-ghost" style="margin-left:auto;" ng-if="!editing"
+                        ng-click="startEdit()">
+                        <i class="fa fa-pencil"></i> Edit
+                    </button>
+                </h4>
+            </div>
+            <div class="feed-card-body" style="padding: 12px 18px;">
+
+                <!-- Display mode -->
+                <div ng-if="!editing">
+                    <div ng-if="formData.description" class="text-muted" style="margin-bottom: 4px;"
+                        ng-bind-html="formData.description"></div>
+                    <div ng-if="formData.race" style="font-size: 0.9em; margin-bottom: 8px;">
+                        <i class="fa fa-flag-checkered" style="color:#006687;"></i>
+                        <strong>{{ formData.race.racename }}</strong>
+                        <span class="text-muted"> &mdash; {{ formData.race.racedate | date:'mediumDate':'UTC' }}</span>
+                        <span ng-if="formData.race.racetype" class="crf-chip crf-chip-ghost"
+                            style="margin-left:6px; font-size:11px;">
+                            {{ formData.race.racetype.name }}
+                        </span>
+                    </div>
+                    <div ng-if="formData.closesAt" style="font-size:0.85em; color:#666; margin-bottom: 6px;">
+                        <i class="fa fa-clock-o"></i> Closes {{ formData.closesAt | date:'MMM d, y, h:mm a' }}
+                    </div>
+                    <div style="font-size:0.82em; color:#aaa; margin-bottom: 12px; font-family: monospace;">
+                        /form/{{ formData.uniqueId }} <a class="crf-chip crf-chip-ghost"
+                            ng-href="/form/{{ formData.uniqueId }}" target="_blank" uib-tooltip="Preview form">
+                            <i class="fa fa-external-link"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Edit mode -->
+                <div ng-if="editing" class="crf-edit-form">
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <div class="form-group">
+                                <label class="crf-edit-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control input-sm" ng-model="editFields.title"
+                                    placeholder="Form title">
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label class="crf-edit-label">Status</label>
+                                <div style="display:flex; gap:6px;">
+                                    <span class="crf-chip"
+                                        ng-class="editFields.isOpen ? 'crf-chip-open' : 'crf-chip-ghost'"
+                                        ng-click="editFields.isOpen = true" style="cursor:pointer;">
+                                        <i class="fa fa-unlock"></i> Open
+                                    </span>
+                                    <span class="crf-chip"
+                                        ng-class="!editFields.isOpen ? 'crf-chip-closed' : 'crf-chip-ghost'"
+                                        ng-click="editFields.isOpen = false" style="cursor:pointer;">
+                                        <i class="fa fa-lock"></i> Closed
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label class="crf-edit-label">Race name</label>
+                                <input type="text" class="form-control input-sm" ng-model="editFields.racename"
+                                    placeholder="e.g. Cherry Blossom 10M">
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label class="crf-edit-label">Race date</label>
+                                <input type="date" class="form-control input-sm" ng-model="editFields.racedate">
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="crf-edit-label">Race Type <span class="text-muted"></span></label>
+                            <span ng-if="loadingRaceTypes" class="text-muted"><i class="fa fa-spinner fa-spin"></i>
+                                Loading…</span>
+                            <select ng-if="!loadingRaceTypes" class="form-control input-sm"
+                                ng-model="editFields.racetype"
+                                ng-options="rt as (rt.name + ' (' + rt.surface + ')') for rt in raceTypes track by rt._id">
+                                <option value="">— No age grade calculation —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="crf-edit-label">Description (HTML allowed)</label>
+                        <textarea class="form-control input-sm" ng-model="editFields.description" rows="3"
+                            placeholder="Optional notes for members… (HTML allowed)"></textarea>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label class="crf-edit-label"><i class="fa fa-clock-o"></i> Closes at <span
+                                class="text-muted">(optional)</span></label>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input type="datetime-local" class="form-control input-sm" ng-model="editFields.closesAt">
+                            <button class="crf-chip crf-chip-ghost" ng-if="editFields.closesAt"
+                                ng-click="editFields.closesAt = null" uib-tooltip="Clear deadline" type="button">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="crf-edit-label">Form URL ID</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-addon" style="font-size:12px; color:#888;">/form/</span>
+                            <input type="text" class="form-control" ng-model="editFields.uniqueId"
+                                ng-change="onEditUniqueIdInput()" style="font-family: monospace;">
+                        </div>
+                        <p class="help-block" style="font-size: 11px; margin-top: 4px;">Only lowercase letters, numbers,
+                            and hyphens.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="crf-edit-label"><i class="fa fa-image"></i> Banner Image URL <span
+                                class="text-muted">(optional — full-screen background on the signup page)</span></label>
+                        <input type="url" class="form-control input-sm" ng-model="editFields.bannerImageUrl"
+                            placeholder="https://…">
+                    </div>
+                    <div ng-if="editError" class="alert alert-danger" style="margin-bottom: 8px;">{{ editError }}</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="crf-chip crf-chip-primary" ng-click="saveForm()"
+                            ng-disabled="savingForm || !editFields.title">
+                            <i class="fa fa-spinner fa-spin" ng-if="savingForm"></i>
+                            <i class="fa fa-check" ng-if="!savingForm"></i>
+                            Save
+                        </button>
+                        <button class="crf-chip crf-chip-ghost" ng-click="cancelEdit()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Allocation row (always visible) -->
+                <div class="crf-allocation-row" style="margin-top: 12px;">
+                    <!-- Display mode: read-only counts -->
+                    <div ng-if="!editing" class="crf-allocation-field">
+                        <span class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
+                            Comps</span>
+                        <span class="crf-allocation-value">{{ formData.numComps || 0 }}</span>
+                    </div>
+                    <div ng-if="!editing" class="crf-allocation-field">
+                        <span class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
+                            Discounts</span>
+                        <span class="crf-allocation-value">{{ formData.numDiscounts || 0 }}</span>
+                    </div>
+                    <!-- Edit mode: editable inputs -->
+                    <div ng-if="editing" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
+                            Comps</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numComps" min="0">
+                    </div>
+                    <div ng-if="editing" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
+                            Discounts</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numDiscounts" min="0">
+                    </div>
+                    <div class="crf-allocation-legend">
+                        <span class="crf-slot-legend crf-slot-legend-comp"><i class="fa fa-thumbs-up"></i> Comp</span>
+                        <span class="crf-slot-legend crf-slot-legend-discount"><i class="fa fa-tag"></i> Discount</span>
+                        <span class="crf-slot-legend crf-slot-legend-cut"><svg class="crf-axe-icon"
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M16.2106 12.8805L9 17L3 7L10 3L20.3806 19.5146C20.7306 20.0715 20.5951 20.8037 20.0689 21.1983C19.4884 21.6337 18.6614 21.492 18.2589 20.8883L16 17.5L16.5 16L15 13.5714M9 7L9.00707 7.00707"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg> Cut</span>
+                    </div>
+                    <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;"
+                        ng-if="formData.numComps || formData.numDiscounts">
+                        <div ng-if="formData.numComps" class="crf-email-dropdown" ng-class="{'crf-email-dropdown-open': compEmailMenuOpen}">
+                            <button class="crf-chip crf-chip-open" ng-click="compEmailMenuOpen = !compEmailMenuOpen">
+                                <i class="fa fa-copy"></i> Comp emails <i class="fa fa-caret-down"></i>
+                            </button>
+                            <div class="crf-email-dropdown-menu">
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp'] ? 'Copied!' : 'All comp emails' }}
+                                </button>
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-first'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp-first'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp-first'] ? 'Copied!' : 'First half' }}
+                                </button>
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-second'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp-second'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp-second'] ? 'Copied!' : 'Second half' }}
+                                </button>
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third1'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp-third1'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp-third1'] ? 'Copied!' : 'First third' }}
+                                </button>
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third2'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp-third2'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp-third2'] ? 'Copied!' : 'Second third' }}
+                                </button>
+                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third3'); compEmailMenuOpen = false">
+                                    <i class="fa" ng-class="emailCopyFeedback['comp-third3'] ? 'fa-check' : 'fa-copy'"></i>
+                                    {{ emailCopyFeedback['comp-third3'] ? 'Copied!' : 'Last third' }}
+                                </button>
+                            </div>
+                        </div>
+                        <button class="crf-chip crf-chip-discount-email" ng-click="copyEmails('discount')"
+                            ng-if="formData.numDiscounts" uib-tooltip="Copy discount recipients' emails">
+                            <i class="fa" ng-class="emailCopyFeedback['discount'] ? 'fa-check' : 'fa-copy'"></i>
+                            {{ emailCopyFeedback['discount'] ? 'Copied!' : 'Discount emails' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Responses card -->
+        <div class="feed-card">
+            <div class="feed-card-header">
+                <div class="feed-card-header-row">
+                    <span><i class="fa fa-table"></i> Responses ({{ responses.length }})</span>
+                    <div class="crf-responses-toolbar">
+                        <input type="text" class="form-control input-sm crf-toolbar-search"
+                            ng-model="filter.searchQuery" placeholder="Search by name or race…">
+                        <div class="crf-toolbar-sort">
+                            <label class="crf-sort-label">Sort:</label>
+                            <select class="form-control input-sm crf-sort-select" ng-model="filter.sortMethod"
+                                ng-options="m.id as m.label for m in sortMethods">
+                            </select>
+                            <button class="crf-chip crf-chip-ghost crf-reroll-btn"
+                                ng-if="filter.sortMethod === 'random'" ng-click="rerollRandom()"
+                                title="Re-randomize order">
+                                <i class="fa fa-random"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div ng-if="responses.length === 0" class="feed-card-body"
+                style="text-align:center; padding: 40px; color:#999;">
+                <i class="fa fa-inbox fa-3x" style="margin-bottom:12px; display:block;"></i>
+                <p>No responses yet. Share the signup link with team members.</p>
+            </div>
+
+            <!-- Table -->
+            <div ng-if="responses.length > 0" style="overflow-x:auto;">
+                <table class="table table-hover crf-detail-table">
+                    <thead>
+                        <tr>
+                            <th class="crf-td-rownum">#</th>
+                            <th class="crf-th-sortable" ng-click="setColSort('member')">Member <i class="fa"
+                                    ng-class="colSortIcon('member')"></i></th>
+                            <th class="crf-th-sortable" ng-click="setColSort('race')">Recent Race <i class="fa"
+                                    ng-class="colSortIcon('race')"></i></th>
+                            <th class="crf-th-sortable text-center" ng-click="setColSort('recentTime')">Time <i
+                                    class="fa" ng-class="colSortIcon('recentTime')"></i></th>
+                            <th class="crf-th-sortable text-center" ng-click="setColSort('recentAg')">AG% <i class="fa"
+                                    ng-class="colSortIcon('recentAg')"></i></th>
+                            <th class="crf-th-sortable text-center" ng-click="setColSort('projTime')">Proj. Time <i
+                                    class="fa" ng-class="colSortIcon('projTime')"></i></th>
+                            <th class="crf-th-sortable text-center" ng-click="setColSort('projAg')">Proj. AG% <i
+                                    class="fa" ng-class="colSortIcon('projAg')"></i></th>
+                            <th class="text-center"><i class="fa fa-comment" style="color:#aaa;"></i></th>
+                            <th class="crf-th-sortable text-right" ng-click="setColSort('submitted')">Submitted <i
+                                    class="fa" ng-class="colSortIcon('submitted')"></i></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="r in displayedResponses" crf-draggable-row ng-class="{
+                                'crf-row-comp':         rowSlot(r) === 'comp',
+                                'crf-row-discount':     rowSlot(r) === 'discount',
+                                'crf-row-cut':          rowSlot(r) === 'cut',
+                                'crf-row-discountline': isDiscountLine(r),
+                                'crf-row-cutline':      isCutLine(r),
+                                'crf-row-draggable':    filter.sortMethod === 'custom'
+                            }">
+                            <td class="crf-td-rownum">
+                                <span class="crf-rownum">{{ $index + 1 }}</span>
+                                <span ng-if="filter.sortMethod === 'custom'" class="crf-drag-handle"><i
+                                        class="fa fa-bars"></i></span>
+                                <span ng-if="rowSlot(r) === 'comp'" class="crf-slot-icon crf-slot-comp-icon"
+                                    uib-tooltip="Comp entry"><i class="fa fa-thumbs-up"></i></span>
+                                <span ng-if="rowSlot(r) === 'discount'" class="crf-slot-icon crf-slot-discount-icon"
+                                    uib-tooltip="Discount code"><i class="fa fa-tag"></i></span>
+                                <span ng-if="rowSlot(r) === 'cut'" class="crf-slot-icon crf-slot-cut-icon"
+                                    uib-tooltip="Cut"><svg class="crf-axe-icon" xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24" fill="none">
+                                        <path
+                                            d="M16.2106 12.8805L9 17L3 7L10 3L20.3806 19.5146C20.7306 20.0715 20.5951 20.8037 20.0689 21.1983C19.4884 21.6337 18.6614 21.492 18.2589 20.8883L16 17.5L16.5 16L15 13.5714M9 7L9.00707 7.00707"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round" />
+                                    </svg></span>
+                            </td>
+                            <td class="crf-td-name">
+                                <a ng-if="r.member" ng-href="/members/member/{{ r.member.username }}" target="_blank">{{
+                                    r.member.firstname }} {{ r.member.lastname }}</a>
+                                <span ng-if="!r.member && r.user">{{ r.user.username }}</span>
+                                <span ng-if="!r.member && !r.user" class="text-muted">—</span>
+                            </td>
+                            <td class="crf-td-race">
+                                <span ng-if="r.recentResult && r.recentResult.race"
+                                    uib-tooltip="{{ r.recentResult.race.racename }} — {{ r.recentResult.race.racedate | date:'mediumDate':'UTC' }}"
+                                    tooltip-placement="top">
+                                    {{ r.recentResult.race.racename }}
+                                </span>
+                                <span ng-if="!r.recentResult" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num">
+                                <span ng-if="r.recentResult" class="time">{{ centisToString(r.recentResult.time)
+                                    }}</span>
+                                <span ng-if="!r.recentResult" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num">
+                                <span ng-if="r.recentResult && r.recentResult.agegrade != null" class="crf-ag-value">{{
+                                    formatAg(r.recentResult.agegrade) }}</span>
+                                <span ng-if="!r.recentResult || r.recentResult.agegrade == null"
+                                    class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num">
+                                <strong class="time" ng-if="r.projectedTimeCentiseconds">{{
+                                    centisToString(r.projectedTimeCentiseconds) }}</strong>
+                                <span ng-if="!r.projectedTimeCentiseconds" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num">
+                                <span ng-if="r.projectedAgeGrade != null" class="crf-ag-value crf-ag-proj">{{
+                                    formatAg(r.projectedAgeGrade) }}</span>
+                                <span ng-if="r.projectedAgeGrade == null" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-comments">
+                                <i ng-if="r.comments" class="fa fa-comment crf-comment-icon"
+                                    uib-tooltip="{{ r.comments }}" tooltip-placement="top"
+                                    tooltip-trigger="'mouseenter click'" tooltip-class="crf-comment-tooltip"></i>
+                                <span ng-if="!r.comments" class="text-muted">—</span>
+                            </td>
+                            <td class="crf-td-num text-right crf-td-submitted">
+                                <span ng-if="r.submittedAt">{{ r.submittedAt | date:'M/d/yy' }}<br><span
+                                        class="crf-submitted-time">{{ r.submittedAt | date:'h:mm a' }}</span></span>
+                                <span ng-if="!r.submittedAt" class="text-muted">—</span>
+                            </td>
+                            <td class="crf-td-action">
+                                <button class="crf-chip crf-chip-danger" ng-click="deleteResponse(r)"
+                                    uib-tooltip="Delete">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>

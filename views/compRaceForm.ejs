@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    <%= form.title %> — MCRRC Racing Team
+  </title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/dist/css/comprace-form.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body<% if (form.bannerImageUrl) { %> class="crf-has-banner" style="background-image: url('<%- form.bannerImageUrl
+    %>');"<% } %>>
+
+      <div class="crf-page">
+        <div class="crf-header">
+          <% if (user) { %>
+            <div class="crf-user-bar">
+              <i class="fa fa-user-circle"></i>
+              <%= user.username %>
+                <a href="/logout?returnTo=/form/<%= form.uniqueId %>" class="crf-user-bar-logout">
+                  <i class="fa fa-sign-out"></i> Log out
+                </a>
+            </div>
+            <% } %>
+
+              <h1 class="crf-title">
+                <%= form.title %>
+              </h1>
+              <% if (form.race) { %>
+                <div class="crf-race-info">
+                  <i class="fa fa-flag-checkered"></i>
+                  <%= form.race.racename %>
+                    <% if (form.race.racedate) { %>
+                      &mdash; <%= new Date(form.race.racedate).toLocaleDateString('en-US', { year: 'numeric' ,
+                        month: 'long' , day: 'numeric' , timeZone: 'UTC' }) %>
+                        <% } %>
+                          <% if (form.race.racetype) { %>
+                            <span class="crf-badge">
+                              <%= form.race.racetype.name %>
+                            </span>
+                            <% } %>
+                </div>
+                <% } %>
+                  <% if (form.description) { %>
+                    <div class="crf-description"><%- form.description %></div>
+                    <% } %>
+                      <% if (form.closesAt) { %>
+                        <p class="crf-deadline">
+                          <i class="fa fa-clock-o"></i>
+                          Closes <%= new Date(form.closesAt).toLocaleString('en-US', { month: 'long' , day: 'numeric' ,
+                            year: 'numeric' , hour: 'numeric' , minute: '2-digit' , timeZoneName: 'short' }) %>
+                        </p>
+                        <% } %>
+        </div>
+
+        <div class="crf-body">
+
+          <% if (!form.isOpen) { %>
+            <!-- CLOSED -->
+            <div class="crf-card crf-closed">
+              <i class="fa fa-lock fa-2x"></i>
+              <h2>This form is closed</h2>
+              <p>Sign-ups for this race are no longer being accepted.</p>
+            </div>
+
+            <% } else if (!user) { %>
+              <!-- LOGIN / REGISTER -->
+              <div class="crf-card" x-data="authPanel()">
+
+                <ul class="nav nav-tabs mb-4">
+                  <li class="nav-item">
+                    <button class="nav-link" :class="tab === 'login' ? 'active' : ''"
+                      @click="tab = 'login'; error = ''; success = ''">
+                      <i class="fa fa-sign-in"></i> Log In
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" :class="tab === 'register' ? 'active' : ''"
+                      @click="tab = 'register'; error = ''; success = ''">
+                      <i class="fa fa-user-plus"></i> Create a MCRRC Racing Team Account
+                    </button>
+                  </li>
+                </ul>
+
+                <div x-show="error" class="alert alert-danger" x-text="error"></div>
+                <div x-show="success" class="alert alert-success" x-text="success"></div>
+
+                <!-- Login form -->
+                <form x-show="tab === 'login'" @submit.prevent="login()">
+                  <p class="text-muted mb-3">Log in to your MCRRC Racing Team account to complete this form.</p>
+                  <div class="mb-3">
+                    <label class="form-label" for="login-email">Email</label>
+                    <input type="email" class="form-control" id="login-email" x-model="loginEmail"
+                      placeholder="your@email.com" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" class="form-control" id="login-password" x-model="loginPassword"
+                      placeholder="Password" required>
+                  </div>
+                  <button type="submit" class="btn crf-btn-primary w-100" :disabled="busy">
+                    <i class="fa fa-spinner fa-spin" x-show="busy && tab === 'login'"></i>
+                    <i class="fa fa-sign-in" x-show="!busy || tab !== 'login'"></i>
+                    Log In &amp; Continue
+                  </button>
+                </form>
+
+                <!-- Register form -->
+                <form x-show="tab === 'register'" @submit.prevent="register()">
+                  <p class="text-muted mb-3">Create an account to complete this form. An admin will activate it and
+                    you'll
+                    get an email when it's ready.</p>
+                  <div class="mb-3">
+                    <label class="form-label" for="reg-username">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="reg-username" x-model="regUsername"
+                      placeholder="Your name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="reg-email">Email <span class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="reg-email" x-model="regEmail"
+                      placeholder="your@email.com" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label" for="reg-password">Password <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="reg-password" x-model="regPassword"
+                      placeholder="At least 8 characters" required>
+                  </div>
+                  <button type="submit" class="btn crf-btn-primary w-100" :disabled="busy">
+                    <i class="fa fa-spinner fa-spin" x-show="busy && tab === 'register'"></i>
+                    <i class="fa fa-user-plus" x-show="!busy || tab !== 'register'"></i>
+                    Create Account
+                  </button>
+                </form>
+
+              </div>
+
+              <% } else { %>
+                <!-- LOGGED IN -->
+                <div x-data="crfApp()" x-init="init()">
+
+                  <!-- Already submitted / confirmation view -->
+                  <div x-show="view === 'submitted'" class="crf-card crf-success" x-cloak>
+                    <i class="fa fa-check-circle fa-2x"></i>
+                    <h2>You&rsquo;re all set!</h2>
+                    <p>Your response has been recorded. The captains will be in touch.</p>
+                    <div x-show="response" class="crf-submitted-summary mt-3">
+                      <div x-show="response && response.recentResult">
+                        <span class="crf-stat-label">Recent result:</span>
+                        <span
+                          x-text="response && response.recentResult ? (response.recentResult.race?.racename || '') + ' — ' + centisToString(response.recentResult.time) : ''"></span>
+                      </div>
+                      <div x-show="response && response.projectedTimeCentiseconds">
+                        <span class="crf-stat-label">Projected time:</span>
+                        <span x-text="response ? centisToString(response.projectedTimeCentiseconds) : ''"></span>
+                      </div>
+                      <div x-show="response && response.projectedAgeGrade">
+                        <span class="crf-stat-label">Projected age grade:</span>
+                        <span x-text="response ? formatAg(response.projectedAgeGrade) : ''"></span>
+                      </div>
+                      <div x-show="response && response.comments">
+                        <span class="crf-stat-label">Comments:</span>
+                        <span x-text="response ? response.comments : ''"></span>
+                      </div>
+                    </div>
+                    <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                      <button class="btn crf-btn-primary" @click="startEdit()">
+                        <i class="fa fa-pencil"></i> Edit my response
+                      </button>
+                      <button class="btn btn-outline-danger" @click="deleteOwnResponse()">
+                        <i class="fa fa-trash"></i> Withdraw
+                      </button>
+                    </div>
+                    <div class="mt-4 text-center">
+                      <a href="/" class="btn btn-outline-secondary">
+                        Back to MCRRC Racing Team Website
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Sign-up / edit form -->
+                  <div x-show="view === 'form'" class="crf-card" x-cloak>
+                    <h2 class="crf-section-title">
+                      <i class="fa fa-pencil-square-o"></i>
+                      <span x-text="isEditing ? 'Edit Your Response' : 'Sign Up'"></span>
+                    </h2>
+                    <div x-show="error" class="alert alert-danger" x-text="error"></div>
+
+                    <!-- Recent result selector -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold">
+                        Recent race result <span class="text-muted fw-normal">(optional)</span>
+                      </label>
+
+                      <div x-show="resultsLoading" class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading your
+                        results…</div>
+
+                      <template x-if="!resultsLoading">
+                        <div>
+                          <select class="form-select crf-result-select" x-model="selectedResultId"
+                            @change="onResultChange()">
+                            <option value="">— Select a recent result —</option>
+                            <template x-for="r in dbResults" :key="r._id">
+                              <option :value="r._id" :data-time="r.time" :data-ag="r.agegrade" x-text="resultLabel(r)">
+                              </option>
+                            </template>
+                            <option value="__manual__" class="crf-option-manual">✎ Enter a result manually</option>
+                            <option value="__none__">🚑 I have no recent result</option>
+                          </select>
+
+                          <!-- Manual result entry -->
+                          <div x-show="selectedResultId === '__manual__'" class="mt-3 p-3 border rounded bg-light">
+                            <div class="row g-2">
+                              <div class="col-12">
+                                <label class="form-label form-label-sm fw-semibold">Race name <span
+                                    class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" x-model="manualRacename"
+                                  placeholder="e.g. Cherry Blossom 10M">
+                              </div>
+                              <div class="col-7 col-sm-8">
+                                <label class="form-label form-label-sm fw-semibold">Race date <span
+                                    class="text-danger">*</span></label>
+                                <input type="date" class="form-control form-control-sm" x-model="manualRacedate">
+                              </div>
+                              <div class="col-5 col-sm-4">
+                                <label class="form-label form-label-sm fw-semibold">Your time <span
+                                    class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-sm" x-model="manualTime"
+                                  placeholder="42:30" autocomplete="off">
+                                <div class="form-text">M:SS or H:MM:SS</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- DB result info panel -->
+                          <div x-show="selectedResultId && selectedResultId !== '__manual__' && selectedResult"
+                            class="crf-result-info mt-2">
+                            <div class="row">
+                              <div class="col-6">
+                                <div class="crf-stat-label">Time</div>
+                                <div class="crf-stat-value"
+                                  x-text="selectedResult ? centisToString(selectedResult.time) : '—'"></div>
+                              </div>
+                              <div class="col-6">
+                                <div class="crf-stat-label">Age Grade</div>
+                                <div class="crf-stat-value"
+                                  x-text="selectedResult ? formatAg(selectedResult.agegrade) : '—'"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- Projected time -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold" for="projected-time-input">
+                        Projected time for <strong>
+                          <%= form.race ? form.race.racename : 'this race' %>
+                        </strong>
+                        <span class="text-muted fw-normal">(optional)</span>
+                      </label>
+                      <input type="text" class="form-control" id="projected-time-input" x-model="projectedTimeStr"
+                        @input="onProjectedTimeInput()" placeholder="e.g. 42:30 or 1:25:00" autocomplete="off">
+                      <div class="form-text">Enter as M:SS, MM:SS, or H:MM:SS</div>
+                      <div x-show="projectedAg !== null" class="crf-result-info mt-2">
+                        <div class="crf-stat-label">Projected Age Grade</div>
+                        <div class="crf-stat-value" x-text="formatAg(projectedAg)"></div>
+                      </div>
+                    </div>
+
+                    <!-- Comments -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold" for="comments-input">
+                        Comments <span class="text-muted fw-normal">(optional)</span>
+                      </label>
+                      <textarea class="form-control" id="comments-input" rows="3" x-model="comments"
+                        placeholder="Training context, injury notes, etc."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                      <button class="btn crf-btn-primary flex-grow-1" @click="submit()" :disabled="submitting">
+                        <i class="fa fa-spinner fa-spin" x-show="submitting"></i>
+                        <i class="fa fa-check" x-show="!submitting"></i>
+                        <span x-text="isEditing ? 'Save Changes' : 'Submit Sign-Up'"></span>
+                      </button>
+                      <button x-show="isEditing" class="btn btn-outline-secondary" @click="cancelEdit()">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Loading state -->
+                  <div x-show="view === 'loading'" class="crf-card text-center py-5" x-cloak>
+                    <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+                  </div>
+
+                </div><!-- /x-data -->
+                <% } %>
+
+        </div><!-- /.crf-body -->
+
+        <div class="crf-footer">
+          <a href="/" target="_blank">MCRRC Racing Team</a>
+        </div>
+      </div><!-- /.crf-page -->
+
+      <% if (user && form.isOpen) { %>
+        <script>
+          const CRF_UNIQUE_ID = '<%= form.uniqueId %>';
+          const CRF_RACE_DATE = '<%= (form.race && form.race.racedate) ? new Date(form.race.racedate).toISOString().split("T")[0] : "" %>';
+          const CRF_RACETYPE_ID = '<%= (form.race && form.race.racetype && form.race.racetype._id) ? form.race.racetype._id : "" %>';
+
+          function crfApp() {
+            return {
+              // view: 'loading' | 'form' | 'submitted'
+              view: 'loading',
+              isEditing: false,
+              response: null,
+
+              // results
+              dbResults: [],
+              resultsLoading: true,
+              recentCount: 0,
+              selectedResultId: '',
+              selectedResult: null,
+
+              // manual entry
+              manualRacename: '',
+              manualRacedate: '',
+              manualTime: '',
+
+              // projected time
+              projectedTimeStr: '',
+              projectedAg: null,
+              agTimer: null,
+
+              // form state
+              comments: '',
+              error: '',
+              submitting: false,
+
+              async init() {
+                try {
+                  const r = await fetch('/api/comprace-forms/' + CRF_UNIQUE_ID + '/my-response', { credentials: 'include' });
+                  const data = await r.json();
+                  if (data.submitted) {
+                    this.response = data.response;
+                    this.view = 'submitted';
+                  } else {
+                    await this.loadResults();
+                    this.view = 'form';
+                  }
+                } catch (_) {
+                  await this.loadResults();
+                  this.view = 'form';
+                }
+              },
+
+              async loadResults() {
+                this.resultsLoading = true;
+                try {
+                  const r = await fetch('/api/members/me/results', { credentials: 'include' });
+                  const data = await r.json();
+                  this.dbResults = data.results || [];
+                  this.recentCount = data.recentCount || 0;
+                  // Pre-select manual if runner has 5 or fewer results in the last 6 months
+                  if (this.recentCount == 0) {
+                    this.selectedResultId = '__manual__';
+                  }
+                } catch (_) {
+                  this.dbResults = [];
+                  this.recentCount = 0;
+                } finally {
+                  this.resultsLoading = false;
+                }
+              },
+
+              onResultChange() {
+                if (this.selectedResultId && this.selectedResultId !== '__manual__') {
+                  this.selectedResult = this.dbResults.find(r => r._id === this.selectedResultId) || null;
+                } else {
+                  this.selectedResult = null;
+                }
+              },
+
+              onProjectedTimeInput() {
+                clearTimeout(this.agTimer);
+                this.agTimer = setTimeout(() => this.fetchProjectedAg(), 500);
+              },
+
+              async fetchProjectedAg() {
+                const cs = this.parseTime(this.projectedTimeStr);
+                if (!cs || !CRF_RACE_DATE || !CRF_RACETYPE_ID) { this.projectedAg = null; return; }
+                try {
+                  const params = new URLSearchParams({ timeCentiseconds: cs, racedate: CRF_RACE_DATE, racetype_id: CRF_RACETYPE_ID });
+                  const r = await fetch('/api/agegrade/calculate?' + params, { credentials: 'include' });
+                  const data = await r.json();
+                  this.projectedAg = data.agegrade ?? null;
+                } catch (_) {
+                  this.projectedAg = null;
+                }
+              },
+
+              buildPayload() {
+                const cs = this.parseTime(this.projectedTimeStr);
+                const payload = { projectedTimeCentiseconds: cs || null, comments: this.comments };
+
+                if (this.selectedResultId && this.selectedResultId !== '__manual__' && this.selectedResultId !== '__none__') {
+                  payload.recentResultId = this.selectedResultId;
+                } else if (this.selectedResultId === '__manual__') {
+                  const manualCs = this.parseTime(this.manualTime);
+                  payload.manualResult = {
+                    racename: this.manualRacename,
+                    racedate: this.manualRacedate || null,
+                    time: manualCs
+                  };
+                }
+                return payload;
+              },
+
+              async submit() {
+                this.error = '';
+
+                // Recent result is required (but "__none__" is a valid explicit choice)
+                if (!this.selectedResultId) {
+                  this.error = 'Please select or enter a recent race result, or choose "I have no recent result".'; return;
+                }
+                if (this.selectedResultId === '__manual__') {
+                  if (!this.manualRacename) { this.error = 'Please enter the race name for your recent result.'; return; }
+                  if (!this.manualRacedate) { this.error = 'Please enter the race date for your recent result.'; return; }
+                  if (!this.parseTime(this.manualTime)) { this.error = 'Please enter a valid time for your recent result (e.g. 42:30).'; return; }
+                }
+
+                // Projected time is optional, but must be valid if provided
+                if (this.projectedTimeStr.trim() && !this.parseTime(this.projectedTimeStr)) {
+                  this.error = 'Projected time format is invalid (use M:SS, MM:SS, or H:MM:SS).'; return;
+                }
+
+                this.submitting = true;
+                try {
+                  const url = '/api/comprace-forms/' + CRF_UNIQUE_ID + '/responses' + (this.isEditing ? '/mine' : '');
+                  const method = this.isEditing ? 'PUT' : 'POST';
+                  const r = await fetch(url, {
+                    method,
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.buildPayload())
+                  });
+                  const data = await r.json();
+                  if (r.status === 200 || r.status === 201) {
+                    this.response = data;
+                    this.isEditing = false;
+                    this.view = 'submitted';
+                  } else {
+                    this.error = data.error || 'Submission failed. Please try again.';
+                  }
+                } catch (_) {
+                  this.error = 'Network error. Please try again.';
+                } finally {
+                  this.submitting = false;
+                }
+              },
+
+              async startEdit() {
+                await this.loadResults();
+                if (this.response) {
+                  // Restore projected time
+                  this.projectedTimeStr = this.centisToString(this.response.projectedTimeCentiseconds);
+                  this.comments = this.response.comments || '';
+                  this.projectedAg = this.response.projectedAgeGrade ?? null;
+
+                  // Restore recent result selection
+                  if (this.response.recentResult) {
+                    if (this.response.recentResult.isManual) {
+                      this.selectedResultId = '__manual__';
+                      this.manualRacename = this.response.recentResult.race?.racename || '';
+                      this.manualRacedate = this.response.recentResult.race?.racedate
+                        ? new Date(this.response.recentResult.race.racedate).toISOString().split('T')[0]
+                        : '';
+                      this.manualTime = this.centisToString(this.response.recentResult.time);
+                    } else if (this.response.recentResult._id) {
+                      this.selectedResultId = String(this.response.recentResult._id);
+                      this.selectedResult = this.dbResults.find(r => r._id === this.selectedResultId) || null;
+                    }
+                  } else {
+                    this.selectedResultId = '__none__';
+                    this.selectedResult = null;
+                  }
+                }
+                this.isEditing = true;
+                this.view = 'form';
+              },
+
+              cancelEdit() {
+                this.isEditing = false;
+                this.view = 'submitted';
+              },
+
+              async deleteOwnResponse() {
+                if (!confirm('Withdraw your sign-up? This cannot be undone.')) return;
+                try {
+                  const r = await fetch('/api/comprace-forms/' + CRF_UNIQUE_ID + '/responses/mine', {
+                    method: 'DELETE',
+                    credentials: 'include'
+                  });
+                  if (r.ok) {
+                    this.response = null;
+                    this.projectedTimeStr = '';
+                    this.comments = '';
+                    this.projectedAg = null;
+                    this.selectedResultId = '';
+                    this.selectedResult = null;
+                    await this.loadResults();
+                    this.view = 'form';
+                  } else {
+                    const data = await r.json();
+                    alert(data.error || 'Failed to withdraw response.');
+                  }
+                } catch (_) {
+                  alert('Network error. Please try again.');
+                }
+              },
+
+              // --- Utilities ---
+              resultLabel(r) {
+                const dateStr = r.race && r.race.racedate
+                  ? new Date(r.race.racedate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
+                  : '';
+                return (r.race ? r.race.racename : 'Unknown race') + (dateStr ? ' (' + dateStr + ')' : '') + ' — ' + this.centisToString(r.time);
+              },
+
+              centisToString(cs) {
+                if (!cs) return '—';
+                const totalSec = Math.floor(cs / 100);
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = totalSec % 60;
+                if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                return m + ':' + String(s).padStart(2, '0');
+              },
+
+              parseTime(str) {
+                if (!str) return null;
+                str = str.trim();
+                const parts = str.split(':').map(Number);
+                if (parts.some(isNaN) || parts.some(p => p < 0)) return null;
+                if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 100;
+                if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 100;
+                return null;
+              },
+
+              formatAg(val) {
+                if (val == null) return '—';
+                return Number(val).toFixed(1) + '%';
+              }
+            };
+          }
+        </script>
+        <% } %>
+
+          <% if (!user) { %>
+            <script>
+              function authPanel() {
+                return {
+                  tab: 'login',
+                  busy: false,
+                  error: '',
+                  success: '',
+                  loginEmail: '',
+                  loginPassword: '',
+                  regUsername: '',
+                  regEmail: '',
+                  regPassword: '',
+
+                  async login() {
+                    this.error = ''; this.success = '';
+                    this.busy = true;
+                    try {
+                      const r = await fetch('/api/login', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: this.loginEmail, password: this.loginPassword })
+                      });
+                      const data = await r.json();
+                      if (r.ok) {
+                        window.location.reload();
+                      } else {
+                        this.error = Array.isArray(data) ? data[0] : (data.message || data.error || 'Login failed.');
+                      }
+                    } catch (_) {
+                      this.error = 'Network error. Please try again.';
+                    } finally {
+                      this.busy = false;
+                    }
+                  },
+
+                  async register() {
+                    this.error = ''; this.success = '';
+                    this.busy = true;
+                    try {
+                      const r = await fetch('/api/signup', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: this.regEmail, password: this.regPassword, username: this.regUsername })
+                      });
+                      const data = await r.json();
+                      if (r.ok) {
+                        this.success = data.message || 'Account created! You\'ll receive an email once an admin activates it.';
+                        this.regUsername = ''; this.regEmail = ''; this.regPassword = '';
+                      } else {
+                        this.error = Array.isArray(data) ? data[0] : (data.message || data.error || 'Registration failed.');
+                      }
+                    } catch (_) {
+                      this.error = 'Network error. Please try again.';
+                    } finally {
+                      this.busy = false;
+                    }
+                  }
+                };
+              }
+            </script>
+            <% } %>
+
+              </body>
+
+</html>

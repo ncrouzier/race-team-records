@@ -1267,3 +1267,10 @@ app.filter('addOrdinalSuffix', function () {
     }
     };
 });
+
+app.filter('stripTags', function () {
+    return function (input) {
+        if (!input) return '';
+        return String(input).replace(/<[^>]+>/g, '');
+    };
+});

@@ -359,6 +359,24 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/notacult",
             templateUrl: "views/notacult.html",
             controller: 'ParkrunStatsController'
+        })
+        .state('/comp-race-forms', {
+            url: "/comp-race-forms",
+            templateUrl: "views/compRaceForms.html",
+            controller: 'CompRaceFormsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/comp-race-forms');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/comp-race-forms/detail', {
+            url: "/comp-race-forms/detail?formId",
+            templateUrl: "views/compRaceFormDetail.html",
+            controller: 'CompRaceFormDetailController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/comp-race-forms/detail');
+                gtag('event', 'page_view');
+            }
         });
 
 });

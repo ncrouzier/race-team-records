@@ -5,6 +5,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
+const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 
 const bioSanitizeOptions = {
     allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
@@ -312,8 +313,10 @@ module.exports = async function (app, qs, passport, async, _) {
     // LOGOUT ==============================
     // =====================================
     app.get('/logout', function (req, res) {
+        const returnTo = req.query.returnTo;
         req.session.destroy(function (err) {
-            res.redirect('/');
+            const dest = (returnTo && returnTo.startsWith('/')) ? returnTo : '/';
+            res.redirect(dest);
         });
     });
 
@@ -3906,6 +3909,430 @@ module.exports = async function (app, qs, passport, async, _) {
         } catch (err) {
             console.error('Error deleting activity log:', err);
             res.status(500).json({ error: 'Error deleting activity log entry' });
+        }
+    });
+
+    // =====================================
+    // COMP RACE FORMS =====================
+    // =====================================
+
+    // Standalone member-facing form page (no auth required — inline login on page)
+    app.get('/form/:uniqueId', async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).send('Form not found');
+            // Backfill racetype._id for forms created before schema included it
+            if (form.race && form.race.racetype && form.race.racetype.name && !form.race.racetype._id) {
+                const RaceType = require('./models/racetype');
+                const rt = await RaceType.findOne({ name: form.race.racetype.name, surface: form.race.racetype.surface }).lean();
+                if (rt) form.race.racetype._id = rt._id;
+            }
+            res.render('compRaceForm.ejs', { form, user: req.user || null });
+        } catch (err) {
+            res.status(500).send('Server error');
+        }
+    });
+
+    // Generic age grade calculator for the logged-in user
+    // GET /api/agegrade/calculate?timeCentiseconds=X&racedate=YYYY-MM-DD&racetype_id=<id>
+    app.get('/api/agegrade/calculate', service.isLoggedIn, async function (req, res) {
+        try {
+            const member = req.user.member;
+            if (!member) return res.status(400).json({ error: 'No member profile linked to your account' });
+            if (!member.sex || !member.dateofbirth) return res.json({ agegrade: null });
+
+            const { timeCentiseconds, racedate, racetype_id } = req.query;
+            if (!timeCentiseconds || !racedate || !racetype_id) {
+                return res.status(400).json({ error: 'timeCentiseconds, racedate, and racetype_id are required' });
+            }
+
+            const RaceType = require('./models/racetype');
+            const racetype = await RaceType.findById(racetype_id).lean();
+            if (!racetype || !racetype.name || !racetype.surface) return res.json({ agegrade: null });
+
+            const raceDateObj = new Date(racedate);
+            const age = service.calculateAge(raceDateObj, member.dateofbirth);
+            const ag = await service.getAgeGrading(member.sex.toLowerCase(), age, racetype.surface, raceDateObj);
+
+            const key = racetype.name.toLowerCase();
+            if (!ag || !ag[key]) return res.json({ agegrade: null });
+
+            const agegrade = parseFloat(((ag[key] / (Number(timeCentiseconds) / 100)) * 100).toFixed(2));
+            res.json({ agegrade });
+        } catch (err) {
+            console.error('Error calculating age grade:', err);
+            res.status(500).json({ error: 'Error calculating age grade' });
+        }
+    });
+
+    // Member's own recent results (for populating the form dropdown)
+    app.get('/api/members/me/results', service.isLoggedIn, async function (req, res) {
+        try {
+            const member = req.user.member;
+            if (!member) return res.status(400).json({ error: 'No member profile linked' });
+
+            const Result = require('./models/result');
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true })
+                .sort({ 'race.racedate': -1 })
+                .limit(30)
+                .select('time agegrade race.racename race.racedate race.racetype')
+                .lean();
+
+            const recentCount = results.filter(r => r.race && r.race.racedate && new Date(r.race.racedate) >= sixMonthsAgo).length;
+            res.json({ results, recentCount });
+        } catch (err) {
+            console.error('Error fetching member results:', err);
+            res.status(500).json({ error: 'Error fetching results' });
+        }
+    });
+
+    // Captain: list forms created by this user
+    app.get('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const forms = await CompRaceForm.find({ createdBy: req.user._id }).sort({ createdAt: -1 }).lean();
+            const formIds = forms.map(f => f._id);
+            const counts = await CompRaceFormResponse.aggregate([
+                { $match: { form: { $in: formIds } } },
+                { $group: { _id: '$form', count: { $sum: 1 } } }
+            ]);
+            const countMap = {};
+            counts.forEach(c => { countMap[c._id.toString()] = c.count; });
+            forms.forEach(f => { f.responseCount = countMap[f._id.toString()] || 0; });
+            res.json(forms);
+        } catch (err) {
+            res.status(500).json({ error: 'Error fetching forms' });
+        }
+    });
+
+    // Captain: create a new form
+    app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const { title, description, race, numComps, numDiscounts, closesAt, uniqueId, bannerImageUrl } = req.body;
+            if (!title || !race) return res.status(400).json({ error: 'title and race are required' });
+            const formData = { title, description, race, createdBy: req.user._id, numComps: numComps || 0, numDiscounts: numDiscounts || 0, closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null };
+            if (uniqueId) formData.uniqueId = uniqueId;
+            const form = new CompRaceForm(formData);
+            await form.save();
+            res.status(201).json(form);
+        } catch (err) {
+            console.error('Error creating comp race form:', err);
+            if (err.code === 11000) return res.status(409).json({ error: `The URL ID "${uniqueId}" is already taken. Please choose a different one.` });
+            res.status(500).json({ error: err.message || 'Error creating form' });
+        }
+    });
+
+    // Captain: update a form
+    app.put('/api/comprace-forms/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id });
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            const { title, description, isOpen, numComps, numDiscounts, race, closesAt, uniqueId, bannerImageUrl } = req.body;
+
+            const oldRaceTypeId = form.race && form.race.racetype && String(form.race.racetype._id);
+            const newRaceTypeId = race && race.racetype && String(race.racetype._id);
+            const raceTypeChanged = race !== undefined && newRaceTypeId !== oldRaceTypeId;
+
+            if (title !== undefined) form.title = title;
+            if (description !== undefined) form.description = description;
+            if (isOpen !== undefined) form.isOpen = isOpen;
+            if (numComps !== undefined) form.numComps = numComps;
+            if (numDiscounts !== undefined) form.numDiscounts = numDiscounts;
+            if (race !== undefined) form.race = race;
+            if (closesAt !== undefined) form.closesAt = closesAt || null;
+            if (uniqueId !== undefined && uniqueId) form.uniqueId = uniqueId;
+            if (bannerImageUrl !== undefined) form.bannerImageUrl = bannerImageUrl || null;
+            await form.save();
+
+            if (raceTypeChanged) {
+                const Member = require('./models/member');
+                const responses = await CompRaceFormResponse.find({ form: form._id, projectedTimeCentiseconds: { $exists: true, $ne: null } });
+                const memberIds = [...new Set(responses.map(r => r.member).filter(Boolean).map(String))];
+                const members = await Member.find({ _id: { $in: memberIds } }, 'sex dateofbirth').lean();
+                const memberMap = Object.fromEntries(members.map(m => [String(m._id), m]));
+
+                const raceDateObj = form.race.racedate ? new Date(form.race.racedate) : null;
+                const racetype = form.race.racetype;
+                const key = racetype && racetype.name ? racetype.name.toLowerCase() : null;
+
+                await Promise.all(responses.map(async (resp) => {
+                    const member = resp.member ? memberMap[String(resp.member)] : null;
+                    if (!member || !member.sex || !member.dateofbirth || !racetype || !key || !raceDateObj) {
+                        resp.projectedAgeGrade = null;
+                    } else {
+                        try {
+                            const age = service.calculateAge(raceDateObj, member.dateofbirth);
+                            const ag = await service.getAgeGrading(member.sex.toLowerCase(), age, racetype.surface, raceDateObj);
+                            const cs = resp.projectedTimeCentiseconds;
+                            resp.projectedAgeGrade = (ag && ag[key] && cs) ? parseFloat(((ag[key] / (cs / 100)) * 100).toFixed(2)) : null;
+                        } catch (e) {
+                            resp.projectedAgeGrade = null;
+                        }
+                    }
+                    return resp.save();
+                }));
+            }
+
+            res.json(form);
+        } catch (err) {
+            if (err.code === 11000) return res.status(409).json({ error: `The URL ID "${req.body.uniqueId}" is already taken. Please choose a different one.` });
+            res.status(500).json({ error: 'Error updating form' });
+        }
+    });
+
+    // Captain: delete a form and all its responses
+    app.delete('/api/comprace-forms/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id });
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            await CompRaceFormResponse.deleteMany({ form: form._id });
+            await form.deleteOne();
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: 'Error deleting form' });
+        }
+    });
+
+    // Captain: get all responses for a form
+    app.get('/api/comprace-forms/:id/responses', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            const responses = await CompRaceFormResponse.find({ form: form._id })
+                .sort({ submittedAt: 1 })
+                .populate('user', 'username email')
+                .populate('member', 'firstname lastname username membershipDates')
+                .lean();
+            res.json({ form, responses });
+        } catch (err) {
+            res.status(500).json({ error: 'Error fetching responses' });
+        }
+    });
+
+    // Member: get form details (for the standalone page JS to use)
+    app.get('/api/comprace-forms/:uniqueId/detail', service.isLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            res.json(form);
+        } catch (err) {
+            res.status(500).json({ error: 'Error fetching form' });
+        }
+    });
+
+    // Member: check if already submitted
+    app.get('/api/comprace-forms/:uniqueId/my-response', service.isLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            const existing = await CompRaceFormResponse.findOne({ form: form._id, user: req.user._id }).lean();
+            res.json({ submitted: !!existing, response: existing || null });
+        } catch (err) {
+            res.status(500).json({ error: 'Server error' });
+        }
+    });
+
+    // Shared helper: format centiseconds as H:MM:SS or M:SS
+    function centisToString(cs) {
+        if (!cs) return '—';
+        const totalSec = Math.floor(cs / 100);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    // Shared helper: send captain notification email after a form response is submitted or edited
+    function sendCaptainNotification(form, response, memberName, isEdit) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true') return;
+        const captainsEmail = process.env.CAPTAINS_EMAIL;
+        if (!captainsEmail) return;
+
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '');
+        const formUrl = siteUrl + '/comp-race-forms/detail?formId=' + form._id;
+
+        const raceLine = form.race ? form.race.racename + (form.race.racedate
+            ? ' (' + new Date(form.race.racedate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + ')'
+            : '') : '(no race set)';
+
+        const recentLine = response.recentResult
+            ? (response.recentResult.race ? response.recentResult.race.racename + ' — ' : '') + centisToString(response.recentResult.time)
+            + (response.recentResult.agegrade != null ? ' (AG: ' + Number(response.recentResult.agegrade).toFixed(1) + '%)' : '')
+            : 'No recent result provided';
+
+        const projLine = response.projectedTimeCentiseconds
+            ? centisToString(response.projectedTimeCentiseconds)
+            + (response.projectedAgeGrade != null ? ' (AG: ' + Number(response.projectedAgeGrade).toFixed(1) + '%)' : '')
+            : '—';
+
+        const action = isEdit ? 'edited their response to' : 'responded to';
+        const subject = (isEdit ? '[Edited] ' : '') + memberName + ' ' + action + ' ' + form.title;
+
+        const body = [
+            memberName + ' has ' + action + ' ' + form.title + ' for the ' + raceLine + '.',
+            '',
+            'Recent result: ' + recentLine,
+            'Projected time: ' + projLine,
+            'Comments: ' + (response.comments || '—'),
+            '',
+            'View all responses: ' + formUrl,
+        ].join('\n');
+
+        transport.sendMail({
+            from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+            to: captainsEmail,
+            subject,
+            text: body
+        }, function (err) {
+            if (err) console.error('Error sending captain notification email:', err);
+        });
+    }
+
+    // Shared helper: build recentResult snapshot and calculate projected age grade
+    async function buildResponseData(req, form, body) {
+        const { recentResultId, manualResult, projectedTimeCentiseconds, comments } = body;
+
+        let recentResultSnapshot = null;
+        if (recentResultId) {
+            const Result = require('./models/result');
+            const result = await Result.findById(recentResultId).lean();
+            if (result) {
+                recentResultSnapshot = {
+                    _id: result._id,
+                    time: result.time,
+                    agegrade: result.agegrade,
+                    isManual: false,
+                    race: {
+                        racename: result.race && result.race.racename,
+                        racedate: result.race && result.race.racedate,
+                        racetype: result.race && result.race.racetype
+                    }
+                };
+            }
+        } else if (manualResult && manualResult.racename && manualResult.racedate && manualResult.time) {
+            recentResultSnapshot = {
+                time: Number(manualResult.time),
+                agegrade: null,
+                isManual: true,
+                race: {
+                    racename: manualResult.racename,
+                    racedate: manualResult.racedate ? new Date(manualResult.racedate) : null,
+                    racetype: null
+                }
+            };
+        }
+
+        let projectedAgeGrade = null;
+        const cs = Number(projectedTimeCentiseconds);
+        const member = req.user.member;
+        if (cs && member && member.sex && member.dateofbirth && form.race && form.race.racetype) {
+            try {
+                const raceDateObj = new Date(form.race.racedate);
+                const age = service.calculateAge(raceDateObj, member.dateofbirth);
+                const ag = await service.getAgeGrading(member.sex.toLowerCase(), age, form.race.racetype.surface, raceDateObj);
+                const key = form.race.racetype.name ? form.race.racetype.name.toLowerCase() : null;
+                if (ag && key && ag[key]) {
+                    projectedAgeGrade = parseFloat(((ag[key] / (cs / 100)) * 100).toFixed(2));
+                }
+            } catch (agErr) {
+                console.error('Age grade calculation error:', agErr);
+            }
+        }
+
+        return { recentResultSnapshot, projectedAgeGrade };
+    }
+
+    // Member: submit a signup
+    app.post('/api/comprace-forms/:uniqueId/responses', service.isLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            if (!form.isOpen) return res.status(403).json({ error: 'This form is closed' });
+
+            const existing = await CompRaceFormResponse.findOne({ form: form._id, user: req.user._id });
+            if (existing) return res.status(409).json({ error: 'You have already submitted a response' });
+
+            const { projectedTimeCentiseconds, comments } = req.body;
+            const { recentResultSnapshot, projectedAgeGrade } = await buildResponseData(req, form, req.body);
+            const member = req.user.member;
+
+            const response = new CompRaceFormResponse({
+                form: form._id,
+                user: req.user._id,
+                member: member ? member._id : null,
+                recentResult: recentResultSnapshot,
+                projectedTimeCentiseconds: projectedTimeCentiseconds ? Number(projectedTimeCentiseconds) : null,
+                projectedAgeGrade,
+                comments: comments || ''
+            });
+            await response.save();
+            const memberName = (member && member.firstname) ? member.firstname + ' ' + member.lastname : req.user.username;
+            sendCaptainNotification(form, response, memberName, false);
+            res.status(201).json(response);
+        } catch (err) {
+            console.error('Error submitting comp race form response:', err);
+            res.status(500).json({ error: 'Error submitting response' });
+        }
+    });
+
+    // Member: edit own response
+    app.put('/api/comprace-forms/:uniqueId/responses/mine', service.isLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            if (!form.isOpen) return res.status(403).json({ error: 'This form is closed' });
+
+            const response = await CompRaceFormResponse.findOne({ form: form._id, user: req.user._id });
+            if (!response) return res.status(404).json({ error: 'No response found to edit' });
+
+            const { projectedTimeCentiseconds, comments } = req.body;
+            const { recentResultSnapshot, projectedAgeGrade } = await buildResponseData(req, form, req.body);
+
+            response.recentResult = recentResultSnapshot;
+            response.projectedTimeCentiseconds = projectedTimeCentiseconds ? Number(projectedTimeCentiseconds) : null;
+            response.projectedAgeGrade = projectedAgeGrade;
+            response.comments = comments || '';
+            await response.save();
+            const editMember = req.user.member;
+            const editMemberName = (editMember && editMember.firstname) ? editMember.firstname + ' ' + editMember.lastname : req.user.username;
+            sendCaptainNotification(form, response, editMemberName, true);
+            res.json(response);
+        } catch (err) {
+            console.error('Error editing comp race form response:', err);
+            res.status(500).json({ error: 'Error editing response' });
+        }
+    });
+
+    // Member: delete own response
+    app.delete('/api/comprace-forms/:uniqueId/responses/mine', service.isLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ uniqueId: req.params.uniqueId }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            if (!form.isOpen) return res.status(403).json({ error: 'This form is closed' });
+
+            const response = await CompRaceFormResponse.findOneAndDelete({ form: form._id, user: req.user._id });
+            if (!response) return res.status(404).json({ error: 'No response found' });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Error deleting own response:', err);
+            res.status(500).json({ error: 'Error deleting response' });
+        }
+    });
+
+    // Captain: delete a specific response
+    app.delete('/api/comprace-forms/:id/responses/:responseId', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+            if (!form) return res.status(404).json({ error: 'Form not found' });
+            const response = await CompRaceFormResponse.findOneAndDelete({ _id: req.params.responseId, form: form._id });
+            if (!response) return res.status(404).json({ error: 'Response not found' });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Error deleting response:', err);
+            res.status(500).json({ error: 'Error deleting response' });
         }
     });
 

@@ -1,0 +1,98 @@
+<div class="jumbotron">
+
+    <div class="feed-card">
+        <div class="feed-card-header">
+            <h4>
+                <i class="fa fa-list-alt"></i> Comp Race Signup Forms
+                <button class="crf-chip crf-chip-primary" ng-click="createForm()" style="margin-left: auto;">
+                    <i class="fa fa-plus" style="color: white;"></i> New Form
+                </button>
+            </h4>
+        </div>
+
+        <div class="feed-card-body" ng-if="loading" style="text-align: center; padding: 40px;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+            <p style="margin-top: 12px; color: #666;">Loading forms…</p>
+        </div>
+
+        <div class="feed-card-body" ng-if="error">
+            <div class="alert alert-danger">{{ error }}</div>
+        </div>
+
+        <div class="feed-card-body" ng-if="!loading && !error && forms.length === 0"
+            style="text-align:center; padding: 40px; color: #999;">
+            <i class="fa fa-inbox fa-3x" style="margin-bottom: 12px; display:block;"></i>
+            <p>No forms yet. Click <strong>New Form</strong> to get started.</p>
+        </div>
+
+        <ul class="feed-list" ng-if="!loading && forms.length > 0">
+            <li class="feed-item crf-form-item" ng-repeat="form in forms">
+                <div class="feed-row">
+
+                    <!-- Main content -->
+                    <div class="feed-body" style="flex:1; min-width:0; cursor:pointer;" ng-click="viewResponses(form)">
+                        <div class="feed-text">
+                            <strong>{{ form.title }}</strong>
+                            <span ng-if="form.race" class="text-muted" style="font-weight:400;">
+                                &nbsp;&mdash; {{ form.race.racename }}
+                                <span ng-if="form.race.racedate" class="feed-meta"
+                                    style="display:inline; margin-left:4px;">
+                                    {{ form.race.racedate | date:'mediumDate':'UTC' }}
+                                </span>
+                            </span>
+                        </div>
+                        <div ng-if="form.description" class="feed-meta" style="margin-top: 2px;">{{ form.description |
+                            stripTags }}</div>
+                        <div class="feed-meta" style="margin-top: 3px;">
+                            Created {{ form.createdAt | date:'mediumDate' }}
+                            <span ng-if="form.closesAt" style="margin-left:8px;">
+                                &mdash; <i class="fa fa-clock-o"></i> Closes {{ form.closesAt | date:'MMM d, y, h:mm a'
+                                }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="crf-actions" ng-click="$event.stopPropagation()">
+
+                        <span class="crf-chip crf-chip-ghost"
+                            uib-tooltip="{{ form.responseCount }} response{{ form.responseCount !== 1 ? 's' : '' }}">
+                            <i class="fa fa-users"></i> {{ form.responseCount }}
+                        </span>
+
+                        <span class="crf-chip" ng-class="form.isOpen ? 'crf-chip-open' : 'crf-chip-closed'"
+                            ng-click="toggleOpen(form)"
+                            uib-tooltip="{{ form.isOpen ? 'Click to close' : 'Click to reopen' }}">
+                            <i class="fa" ng-class="form.isOpen ? 'fa-unlock' : 'fa-lock'"></i>
+                            {{ form.isOpen ? 'Open' : 'Closed' }}
+                        </span>
+
+
+                        <button class="crf-chip crf-chip-ghost" ng-click="copyLink(form)"
+                            uib-tooltip="Copy signup link">
+                            <i class="fa" ng-class="copyFeedback[form._id] ? 'fa-check' : 'fa-link'"></i>
+                            <span class="hidden-xs"> {{ copyFeedback[form._id] ? 'Copied!' : 'Copy Link' }}</span>
+                        </button>
+
+                        <a class="crf-chip crf-chip-ghost" ng-href="{{ getFormUrl(form) }}" target="_blank"
+                            uib-tooltip="Preview form">
+                            <i class="fa fa-external-link"></i>
+                        </a>
+
+                        <button class="crf-chip crf-chip-ghost" ng-click="editForm(form)" uib-tooltip="Edit form">
+                            <i class="fa fa-pencil"></i>
+                            <span class="hidden-xs"> Edit</span>
+                        </button>
+
+                        <button class="crf-chip crf-chip-danger" ng-click="deleteForm(form)" uib-tooltip="Delete form">
+                            <i class="fa fa-trash"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+            </li>
+        </ul>
+    </div>
+
+</div>

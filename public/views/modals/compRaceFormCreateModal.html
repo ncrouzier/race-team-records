@@ -1,0 +1,115 @@
+<div class="modal-header">
+    <h3 class="modal-title"><i class="fa fa-plus-square"></i> Create Comp Race Signup Form</h3>
+</div>
+<div class="modal-body">
+    <div class="alert alert-danger" ng-if="error">{{ error }}</div>
+
+    <div class="row">
+        <div class="col-sm-8">
+            <div class="form-group">
+                <label>Form Title <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" ng-model="form.title"
+                    placeholder="e.g. Suds & Soles 2054 Comp Request Form" autofocus>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                <label>Status</label>
+                <div style="display:flex; gap:6px;">
+                    <span class="crf-chip" ng-class="form.isOpen ? 'crf-chip-open' : 'crf-chip-ghost'"
+                        ng-click="form.isOpen = true" style="cursor:pointer;">
+                        <i class="fa fa-unlock"></i> Open
+                    </span>
+                    <span class="crf-chip" ng-class="!form.isOpen ? 'crf-chip-closed' : 'crf-chip-ghost'"
+                        ng-click="form.isOpen = false" style="cursor:pointer;">
+                        <i class="fa fa-lock"></i> Closed
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-4">
+            <div class="form-group">
+                <label>Race Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" ng-model="form.racename" placeholder="e.g. Suds & Soles 5K">
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                <label>Race Date <span class="text-muted">(optional)</span></label>
+                <input type="date" class="form-control" ng-model="form.racedate">
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                <label>Race Type <span class="text-muted">(optional)</span></label>
+                <span ng-if="loadingRaceTypes" class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading…</span>
+                <select ng-if="!loadingRaceTypes" class="form-control" ng-model="form.racetype"
+                    ng-options="rt as (rt.name + ' (' + rt.surface + ')') for rt in raceTypes">
+                    <option value="">— No age grade calculation —</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Description <span class="text-muted">(optional)</span></label>
+        <textarea class="form-control" ng-model="form.description" rows="3"
+            placeholder="Any notes for members signing up… (HTML allowed)"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label><i class="fa fa-clock-o"></i> Closes at <span class="text-muted">(optional — form auto-closes at this
+                date &amp; time)</span></label>
+        <div style="display:flex; gap:6px; align-items:center;">
+            <input type="datetime-local" class="form-control" ng-model="form.closesAt">
+            <button class="crf-chip crf-chip-ghost" ng-if="form.closesAt" ng-click="form.closesAt = null"
+                uib-tooltip="Clear deadline" type="button">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label><i class="fa fa-image"></i> Banner Image URL <span class="text-muted">(optional — full-screen background on the signup page)</span></label>
+        <input type="url" class="form-control" ng-model="form.bannerImageUrl" placeholder="https://…">
+    </div>
+
+    <div class="form-group">
+        <label>Form URL ID <span class="text-muted">(optional — auto-generated from race name)</span></label>
+        <div class="input-group">
+            <span class="input-group-addon" style="font-size:12px; color:#888;">/form/</span>
+            <input type="text" class="form-control" ng-model="form.uniqueId" ng-change="onUniqueIdInput()"
+                placeholder="e.g. cherry-blossom-10-mile-run" style="font-family: monospace;">
+        </div>
+        <p class="help-block" style="font-size: 11px; margin-top: 4px;">Only lowercase letters, numbers, and hyphens.
+            Leave blank to auto-generate.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps offered <span
+                        class="text-muted">(optional)</span></label>
+                <input type="number" class="form-control" ng-model="form.numComps" min="0" placeholder="0">
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="form-group">
+                <label><i class="fa fa-tag" style="color:#008cba;"></i> Discount codes <span
+                        class="text-muted">(optional)</span></label>
+                <input type="number" class="form-control" ng-model="form.numDiscounts" min="0" placeholder="0">
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-primary" ng-click="submit()" ng-disabled="saving">
+        <i class="fa fa-spinner fa-spin" ng-if="saving"></i>
+        <i class="fa fa-check" ng-if="!saving"></i>
+        Create Form
+    </button>
+</div>

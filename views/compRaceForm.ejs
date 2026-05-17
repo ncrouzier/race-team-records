@@ -152,7 +152,7 @@
                       <div x-show="response && response.recentResult">
                         <span class="crf-stat-label">Recent result:</span>
                         <span
-                          x-text="response && response.recentResult ? (response.recentResult.race?.racename || '') + ' — ' + centisToString(response.recentResult.time) : ''"></span>
+                          x-text="response && response.recentResult ? (response.recentResult.race?.racename || '') + ' — (' + centisToString(response.recentResult.time) + (response.recentResult.agegrade ? ', ' + formatAg(response.recentResult.agegrade) : '') + ') '  : ''"></span>
                       </div>
                       <div x-show="response && response.projectedTimeCentiseconds">
                         <span class="crf-stat-label">Projected time:</span>
@@ -531,7 +531,7 @@
                 const dateStr = r.race && r.race.racedate
                   ? new Date(r.race.racedate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
                   : '';
-                return (r.race ? r.race.racename : 'Unknown race') + (dateStr ? ' (' + dateStr + ')' : '') + ' — ' + this.centisToString(r.time);
+                return (r.race ? r.race.racename : 'Unknown race') + (dateStr ? ' (' + dateStr + ', ' : '') + ' ' + this.centisToString(r.time) + (r.agegrade ? ', ' + this.formatAg(r.agegrade) + ")" : '');
               },
 
               centisToString(cs) {
@@ -556,7 +556,7 @@
 
               formatAg(val) {
                 if (val == null) return '—';
-                return Number(val).toFixed(1) + '%';
+                return Number(val).toFixed(2) + '%';
               }
             };
           }

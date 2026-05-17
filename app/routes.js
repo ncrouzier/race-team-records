@@ -3975,13 +3975,12 @@ module.exports = async function (app, qs, passport, async, _) {
             const sixMonthsAgo = new Date();
             sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true })
+            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true, 'race.racedate': { $gte: sixMonthsAgo } })
                 .sort({ 'race.racedate': -1 })
-                .limit(30)
                 .select('time agegrade race.racename race.racedate race.racetype')
                 .lean();
 
-            const recentCount = results.filter(r => r.race && r.race.racedate && new Date(r.race.racedate) >= sixMonthsAgo).length;
+            const recentCount = results.length;
             res.json({ results, recentCount });
         } catch (err) {
             console.error('Error fetching member results:', err);

@@ -11,6 +11,7 @@ const compRaceFormResponseSchema = new mongoose.Schema({
         agegrade: Number,
         isManual: { type: Boolean, default: false },
         race: {
+            _id: { type: mongoose.Schema.Types.ObjectId, required: false },
             racename: String,
             racedate: Date,
             racetype: { name: String, surface: String }

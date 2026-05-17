@@ -3991,7 +3991,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: list forms created by this user
     app.get('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const forms = await CompRaceForm.find({ createdBy: req.user._id }).sort({ createdAt: -1 }).lean();
+            const forms = await CompRaceForm.find().sort({ createdAt: -1 }).lean();
             const formIds = forms.map(f => f._id);
             const counts = await CompRaceFormResponse.aggregate([
                 { $match: { form: { $in: formIds } } },
@@ -4026,7 +4026,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: update a form
     app.put('/api/comprace-forms/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id });
+            const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
             const { title, description, isOpen, numComps, numDiscounts, race, closesAt, uniqueId, bannerImageUrl } = req.body;
 
@@ -4084,7 +4084,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: delete a form and all its responses
     app.delete('/api/comprace-forms/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id });
+            const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
             await CompRaceFormResponse.deleteMany({ form: form._id });
             await form.deleteOne();
@@ -4097,7 +4097,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: get all responses for a form
     app.get('/api/comprace-forms/:id/responses', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+            const form = await CompRaceForm.findOne({ _id: req.params.id }).lean();
             if (!form) return res.status(404).json({ error: 'Form not found' });
             const responses = await CompRaceFormResponse.find({ form: form._id })
                 .sort({ submittedAt: 1 })
@@ -4205,6 +4205,7 @@ module.exports = async function (app, qs, passport, async, _) {
                     agegrade: result.agegrade,
                     isManual: false,
                     race: {
+                        _id: result.race && result.race._id,
                         racename: result.race && result.race.racename,
                         racedate: result.race && result.race.racedate,
                         racetype: result.race && result.race.racetype
@@ -4324,7 +4325,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: delete a specific response
     app.delete('/api/comprace-forms/:id/responses/:responseId', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const form = await CompRaceForm.findOne({ _id: req.params.id, createdBy: req.user._id }).lean();
+            const form = await CompRaceForm.findOne({ _id: req.params.id }).lean();
             if (!form) return res.status(404).json({ error: 'Form not found' });
             const response = await CompRaceFormResponse.findOneAndDelete({ _id: req.params.responseId, form: form._id });
             if (!response) return res.status(404).json({ error: 'Response not found' });

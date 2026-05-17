@@ -335,7 +335,8 @@
                                 <span ng-if="r.recentResult && r.recentResult.race"
                                     uib-tooltip="{{ r.recentResult.race.racename }} — {{ r.recentResult.race.racedate | date:'mediumDate':'UTC' }}"
                                     tooltip-placement="top">
-                                    {{ r.recentResult.race.racename }}
+                                    <a ng-if="r.recentResult.race._id" href="" ng-click="showRaceModal(r.recentResult.race)">{{ r.recentResult.race.racename }}</a>
+                                    <span ng-if="!r.recentResult.race._id">{{ r.recentResult.race.racename }}</span>
                                 </span>
                                 <span ng-if="!r.recentResult" class="text-muted">—</span>
                             </td>

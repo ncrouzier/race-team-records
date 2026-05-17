@@ -163,12 +163,18 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$http', '$stateParams', '$transition$', function ($scope, $http, $stateParams, $transition$) {
+angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$http', '$stateParams', '$transition$', 'ResultsService', function ($scope, $http, $stateParams, $transition$, ResultsService) {
 
     $scope.formData = null;
     $scope.responses = [];
     $scope.loading = true;
     $scope.error = null;
+
+    $scope.showRaceModal = function (race) {
+        if (race && race._id) {
+            ResultsService.showRaceFromResultModal(race._id);
+        }
+    };
     $scope.filter = {
         searchQuery: '',
         sortMethod: 'recentAg'

@@ -193,7 +193,7 @@
                     <!-- Recent result selector -->
                     <div class="mb-4">
                       <label class="form-label fw-semibold">
-                        Recent race result <span class="text-muted fw-normal">(optional)</span>
+                        Recent race result
                       </label>
 
                       <div x-show="resultsLoading" class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading your
@@ -209,7 +209,9 @@
                               </option>
                             </template>
                             <option value="__manual__" class="crf-option-manual">✎ Enter a result manually</option>
-                            <option value="__none__">🚑 I have no recent result</option>
+                            <template x-if="dbResults.length === 0">
+                              <option value="__none__">🚑 I have no recent result</option>
+                            </template>
                           </select>
 
                           <!-- Manual result entry -->
@@ -368,9 +370,8 @@
                   const data = await r.json();
                   this.dbResults = data.results || [];
                   this.recentCount = data.recentCount || 0;
-                  // Pre-select manual if runner has 5 or fewer results in the last 6 months
-                  if (this.recentCount == 0) {
-                    this.selectedResultId = '__manual__';
+                  if (this.dbResults.length === 0) {
+                    this.selectedResultId = '__none__';
                   }
                 } catch (_) {
                   this.dbResults = [];
@@ -531,7 +532,7 @@
                 const dateStr = r.race && r.race.racedate
                   ? new Date(r.race.racedate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
                   : '';
-                return (r.race ? r.race.racename : 'Unknown race') + (dateStr ? ' (' + dateStr + ', ' : '') + ' ' + this.centisToString(r.time) + (r.agegrade ? ', ' + this.formatAg(r.agegrade) + ")" : '');
+                return (r.race ? r.race.racename : 'Unknown race') + (dateStr ? ' (' + dateStr + ', ' : '') + ' ' + this.centisToString(r.time) + (r.agegrade ? ', ' + this.formatAg(r.agegrade) + ")" : ')');
               },
 
               centisToString(cs) {

@@ -8281,7 +8281,9 @@ footer {
     white-space: nowrap;
     vertical-align: middle;
 
-    &:focus { outline: none; }
+    &:focus {
+        outline: none;
+    }
 
     // Solid teal — New Form, Responses
     &.crf-chip-primary {
@@ -8395,7 +8397,11 @@ footer {
             color: @gray-light;
             font-size: 10px;
         }
-        .fa-sort-asc, .fa-sort-desc { color: @brand-primary; }
+
+        .fa-sort-asc,
+        .fa-sort-desc {
+            color: @brand-primary;
+        }
 
         &:hover {
             color: @brand-primary;
@@ -8454,7 +8460,7 @@ footer {
     .crf-comment-icon {
         color: @brand-primary;
         font-size: 14px;
-        cursor: default;
+        cursor: pointer;
         opacity: 0.75;
 
         &:hover {
@@ -8501,7 +8507,9 @@ footer {
         color: @gray-light;
         cursor: grab;
 
-        &:active { cursor: grabbing; }
+        &:active {
+            cursor: grabbing;
+        }
     }
 
     // Row slot colours
@@ -8509,23 +8517,33 @@ footer {
         &.crf-row-comp {
             background-color: #f0faf4 !important;
 
-            .crf-slot-icon { color: @brand-success; }
+            .crf-slot-icon {
+                color: @brand-success;
+            }
         }
 
         &.crf-row-discount {
             background-color: #fff8f0 !important;
 
-            .crf-slot-icon { color: #e07b00; }
+            .crf-slot-icon {
+                color: #e07b00;
+            }
         }
 
         &.crf-row-cut {
             opacity: 0.7;
 
-            .crf-slot-icon { color: @brand-danger; }
+            .crf-slot-icon {
+                color: @brand-danger;
+            }
 
-            td { color: @gray-light; }
+            td {
+                color: @gray-light;
+            }
 
-            td.crf-td-name a { color: @gray-light; }
+            td.crf-td-name a {
+                color: @gray-light;
+            }
         }
 
         // Divider between comp and discount sections
@@ -8538,7 +8556,9 @@ footer {
             border-top: 2px solid @brand-danger !important;
         }
 
-        &.crf-row-draggable { cursor: grab; }
+        &.crf-row-draggable {
+            cursor: grab;
+        }
 
         &.crf-row-dragging {
             opacity: 0.4;
@@ -8638,7 +8658,12 @@ footer {
 
     // hide spinner arrows
     &::-webkit-inner-spin-button,
-    &::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+    &::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+    }
+
     -moz-appearance: textfield;
     appearance: textfield;
 }
@@ -8657,7 +8682,9 @@ footer {
         margin-bottom: 3px;
     }
 
-    .form-group { margin-bottom: 10px; }
+    .form-group {
+        margin-bottom: 10px;
+    }
 }
 
 // Discount email copy button — orange tint matching the discount slot colour
@@ -8686,7 +8713,7 @@ footer {
         background: #edf7f1;
         border: 1px solid #a3d6b8;
         border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         min-width: 160px;
         z-index: 100;
         flex-direction: column;
@@ -8711,13 +8738,23 @@ footer {
             background: #d4eedd;
         }
 
-        .fa { margin-right: 4px; }
+        .fa {
+            margin-right: 4px;
+        }
     }
 }
 
-.crf-slot-comp-icon     { color: @brand-success !important; }
-.crf-slot-discount-icon { color: #e07b00 !important; }
-.crf-slot-cut-icon      { color: @brand-danger !important; }
+.crf-slot-comp-icon {
+    color: @brand-success !important;
+}
+
+.crf-slot-discount-icon {
+    color: #e07b00 !important;
+}
+
+.crf-slot-cut-icon {
+    color: @brand-danger !important;
+}
 
 .crf-axe-icon {
     width: 14px;
@@ -8743,7 +8780,18 @@ footer {
     padding: 2px 8px;
     border-radius: 10px;
 
-    &.crf-slot-legend-comp     { background: #e3f5eb; color: @brand-success; }
-    &.crf-slot-legend-discount { background: #fff0d9; color: #e07b00; }
-    &.crf-slot-legend-cut      { background: #fdecea; color: @brand-danger; }
+    &.crf-slot-legend-comp {
+        background: #e3f5eb;
+        color: @brand-success;
+    }
+
+    &.crf-slot-legend-discount {
+        background: #fff0d9;
+        color: #e07b00;
+    }
+
+    &.crf-slot-legend-cut {
+        background: #fdecea;
+        color: @brand-danger;
+    }
 }

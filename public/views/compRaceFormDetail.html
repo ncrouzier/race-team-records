@@ -204,33 +204,45 @@
                     </div>
                     <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;"
                         ng-if="formData.numComps || formData.numDiscounts">
-                        <div ng-if="formData.numComps" class="crf-email-dropdown" ng-class="{'crf-email-dropdown-open': compEmailMenuOpen}">
+                        <div ng-if="formData.numComps" class="crf-email-dropdown"
+                            ng-class="{'crf-email-dropdown-open': compEmailMenuOpen}">
                             <button class="crf-chip crf-chip-open" ng-click="compEmailMenuOpen = !compEmailMenuOpen">
                                 <i class="fa fa-copy"></i> Comp emails <i class="fa fa-caret-down"></i>
                             </button>
                             <div class="crf-email-dropdown-menu">
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp'); compEmailMenuOpen = false">
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp'); compEmailMenuOpen = false">
                                     <i class="fa" ng-class="emailCopyFeedback['comp'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp'] ? 'Copied!' : 'All comp emails' }}
                                 </button>
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-first'); compEmailMenuOpen = false">
-                                    <i class="fa" ng-class="emailCopyFeedback['comp-first'] ? 'fa-check' : 'fa-copy'"></i>
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp-first'); compEmailMenuOpen = false">
+                                    <i class="fa"
+                                        ng-class="emailCopyFeedback['comp-first'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp-first'] ? 'Copied!' : 'First half' }}
                                 </button>
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-second'); compEmailMenuOpen = false">
-                                    <i class="fa" ng-class="emailCopyFeedback['comp-second'] ? 'fa-check' : 'fa-copy'"></i>
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp-second'); compEmailMenuOpen = false">
+                                    <i class="fa"
+                                        ng-class="emailCopyFeedback['comp-second'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp-second'] ? 'Copied!' : 'Second half' }}
                                 </button>
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third1'); compEmailMenuOpen = false">
-                                    <i class="fa" ng-class="emailCopyFeedback['comp-third1'] ? 'fa-check' : 'fa-copy'"></i>
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp-third1'); compEmailMenuOpen = false">
+                                    <i class="fa"
+                                        ng-class="emailCopyFeedback['comp-third1'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp-third1'] ? 'Copied!' : 'First third' }}
                                 </button>
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third2'); compEmailMenuOpen = false">
-                                    <i class="fa" ng-class="emailCopyFeedback['comp-third2'] ? 'fa-check' : 'fa-copy'"></i>
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp-third2'); compEmailMenuOpen = false">
+                                    <i class="fa"
+                                        ng-class="emailCopyFeedback['comp-third2'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp-third2'] ? 'Copied!' : 'Second third' }}
                                 </button>
-                                <button class="crf-email-dropdown-item" ng-click="copyEmails('comp-third3'); compEmailMenuOpen = false">
-                                    <i class="fa" ng-class="emailCopyFeedback['comp-third3'] ? 'fa-check' : 'fa-copy'"></i>
+                                <button class="crf-email-dropdown-item"
+                                    ng-click="copyEmails('comp-third3'); compEmailMenuOpen = false">
+                                    <i class="fa"
+                                        ng-class="emailCopyFeedback['comp-third3'] ? 'fa-check' : 'fa-copy'"></i>
                                     {{ emailCopyFeedback['comp-third3'] ? 'Copied!' : 'Last third' }}
                                 </button>
                             </div>
@@ -293,6 +305,8 @@
                                     class="fa" ng-class="colSortIcon('projTime')"></i></th>
                             <th class="crf-th-sortable text-center" ng-click="setColSort('projAg')">Proj. AG% <i
                                     class="fa" ng-class="colSortIcon('projAg')"></i></th>
+                            <th class="text-center" tooltip-append-to-body="true"
+                                uib-tooltip="Projected AG% minus Recent AG%" tooltip-placement="top">Δ AG%</th>
                             <th class="text-center"><i class="fa fa-comment" style="color:#aaa;"></i></th>
                             <th class="crf-th-sortable text-right" ng-click="setColSort('submitted')">Submitted <i
                                     class="fa" ng-class="colSortIcon('submitted')"></i></th>
@@ -335,7 +349,9 @@
                                 <span ng-if="r.recentResult && r.recentResult.race"
                                     uib-tooltip="{{ r.recentResult.race.racename }} — {{ r.recentResult.race.racedate | date:'mediumDate':'UTC' }}"
                                     tooltip-placement="top">
-                                    <a ng-if="r.recentResult.race._id" href="" ng-click="showRaceModal(r.recentResult.race)">{{ r.recentResult.race.racename }}</a>
+                                    <a ng-if="r.recentResult.race._id" href=""
+                                        ng-click="showRaceModal(r.recentResult.race)">{{ r.recentResult.race.racename
+                                        }}</a>
                                     <span ng-if="!r.recentResult.race._id">{{ r.recentResult.race.racename }}</span>
                                 </span>
                                 <span ng-if="!r.recentResult" class="text-muted">—</span>
@@ -360,6 +376,13 @@
                                 <span ng-if="r.projectedAgeGrade != null" class="crf-ag-value crf-ag-proj">{{
                                     formatAg(r.projectedAgeGrade) }}</span>
                                 <span ng-if="r.projectedAgeGrade == null" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num" ng-init="diff = agDiff(r)">
+                                <span ng-if="diff != null"
+                                    ng-class="diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : 'text-muted')">
+                                    {{ diff > 0 ? '+' : '' }}{{ diff }}%
+                                </span>
+                                <span ng-if="diff == null" class="text-muted">—</span>
                             </td>
                             <td class="text-center crf-td-comments">
                                 <i ng-if="r.comments" class="fa fa-comment crf-comment-icon"

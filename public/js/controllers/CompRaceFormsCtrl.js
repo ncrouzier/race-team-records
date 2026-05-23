@@ -413,6 +413,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         return parseFloat(val).toFixed(1) + '%';
     };
 
+    $scope.agDiff = function (r) {
+        if (r.recentResult == null || r.recentResult.agegrade == null || r.projectedAgeGrade == null) return null;
+        return parseFloat((r.projectedAgeGrade - r.recentResult.agegrade).toFixed(1));
+    };
+
     $scope.getMemberName = function (response) {
         if (response.member) {
             return response.member.firstname + ' ' + response.member.lastname;

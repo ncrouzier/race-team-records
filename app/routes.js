@@ -4010,6 +4010,7 @@ module.exports = async function (app, qs, passport, async, _) {
     app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
             const { title, description, race, numComps, numDiscounts, closesAt, uniqueId, bannerImageUrl } = req.body;
+            console.log(req.body);
             if (!title || !race) return res.status(400).json({ error: 'title and race are required' });
             const formData = { title, description, race, createdBy: req.user._id, numComps: numComps || 0, numDiscounts: numDiscounts || 0, closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null };
             if (uniqueId) formData.uniqueId = uniqueId;
@@ -4018,7 +4019,7 @@ module.exports = async function (app, qs, passport, async, _) {
             res.status(201).json(form);
         } catch (err) {
             console.error('Error creating comp race form:', err);
-            if (err.code === 11000) return res.status(409).json({ error: `The URL ID "${uniqueId}" is already taken. Please choose a different one.` });
+            if (err.code === 11000) return res.status(409).json({ error: `The URL ID "${err.keyValue?.uniqueId || uniqueId}" is already taken. Please choose a different one.` });
             res.status(500).json({ error: err.message || 'Error creating form' });
         }
     });

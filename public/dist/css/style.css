@@ -14027,7 +14027,7 @@ footer {
 .crf-detail-table .crf-comment-icon {
   color: #008cba;
   font-size: 14px;
-  cursor: default;
+  cursor: pointer;
   opacity: 0.75;
 }
 .crf-detail-table .crf-comment-icon:hover {

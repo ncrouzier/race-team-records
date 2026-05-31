@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const service = require('./service');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
+const Banner = require('./models/banner');
 
 const bioSanitizeOptions = {
     allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
@@ -492,6 +495,81 @@ module.exports = async function (app, qs, passport, async, _) {
             }
         } catch (err) {
             res.send(err);
+        }
+    });
+
+    // Banner images for the homepage top banner.
+    // Selection priority: birthday banners > pinned banners > all banners (random pick from pool).
+    app.get('/api/banners', async function (req, res) {
+        try {
+            const banners = await Banner.find().populate('members', 'dateofbirth').lean();
+            if (!banners.length) return res.json([]);
+
+            const now = req.query.date ? new Date(req.query.date) : new Date();
+            const todayMonth = now.getUTCMonth();
+            const todayDay   = now.getUTCDate();
+
+            const hasBirthdayToday = (banner) =>
+                (banner.members || []).some((m) => {
+                    if (!m.dateofbirth) return false;
+                    const dob = new Date(m.dateofbirth);
+                    return dob.getUTCMonth() === todayMonth && dob.getUTCDate() === todayDay;
+                });
+
+            const toResponse = (b) => ({
+                url:        '/images/banners/' + b.filename,
+                titleTheme: b.titleTheme || null,
+                pinned:     !!b.pinned,
+                copyright:  b.copyright || null,
+            });
+
+            const birthdayBanners = banners.filter(hasBirthdayToday);
+            if (birthdayBanners.length) {
+                const pick = birthdayBanners[Math.floor(Math.random() * birthdayBanners.length)];
+                return res.json([toResponse(pick)]);
+            }
+
+            const pinnedBanners = banners.filter((b) => b.pinned);
+            const pool = pinnedBanners.length ? pinnedBanners : banners;
+            const pick = pool[Math.floor(Math.random() * pool.length)];
+            res.json([toResponse(pick)]);
+        } catch (err) {
+            res.status(500).json({ error: 'Could not load banners' });
+        }
+    });
+
+    // Banner admin endpoints (admin/captain only)
+    app.get('/api/admin/banners', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const banners = await Banner.find().populate('members', 'firstname lastname').sort('filename').lean();
+            res.json(banners);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.put('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const { members, pinned, titleTheme, copyright } = req.body;
+            const updated = await Banner.findByIdAndUpdate(
+                req.params.id,
+                { members, pinned, titleTheme, copyright },
+                { new: true, runValidators: true }
+            ).populate('members', 'firstname lastname');
+            if (!updated) return res.status(404).json({ error: 'Banner not found' });
+            res.json(updated);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.delete('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const deleted = await Banner.findByIdAndDelete(req.params.id);
+            if (!deleted) return res.status(404).json({ error: 'Banner not found' });
+            res.json({ ok: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
         }
     });
 

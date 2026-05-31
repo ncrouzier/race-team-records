@@ -172,6 +172,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/users.html');
                 gtag('event', 'page_view');
             }
+        }).state('/banners', {
+            url: "/banners",
+            templateUrl: "views/banners.html",
+            controller: 'BannersController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/banners.html');
+                gtag('event', 'page_view');
+            }
         }).state('/activitylogs', {
             url: "/activitylogs",
             templateUrl: "views/activitylogs.html",

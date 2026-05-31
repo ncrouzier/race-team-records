@@ -8,6 +8,7 @@
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
 	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -41,10 +42,12 @@
 <body ng-controller="MainController">
 	<div class="container">
 
-		<div ng-class="getbg" class="row navimg" style="position: relative">
-			<!-- <div class="titleContainer" >
-					<div  class="titleBox"><div class="titleTop" >Montgomery County Road Runners</div><div class="titleBottom" >RACING TEAM</div></div>					
-				</div> -->
+		<div ng-style="bannerStyle" class="row navimg">
+			<div class="banner-title" ng-class="{'banner-title-hidden': bannerTitleHidden}" ng-click="toggleBannerTitle()" ng-style="bannerTitleStyle">
+				<div class="banner-title-top" ng-style="bannerTitleTopStyle">Montgomery County Road Runners</div>
+				<div class="banner-title-bottom" ng-style="bannerTitleBottomStyle">RACING TEAM</div>
+			</div>
+			<a ng-if="bannerCopyright" class="banner-copyright" ng-href="{{bannerCopyright.url}}" ng-style="bannerCopyrightStyle" target="_blank" rel="noopener noreferrer">&#169; {{bannerCopyright.name}}</a>
 			<div class="">
 				<div class="logo-stats">
 					<!-- <span tooltip-append-to-body="true" tooltip-placement="bottom"
@@ -73,11 +76,7 @@
 							ng-if="birthdays.length >1  && $index < birthdays.length-1 && $index !== birthdays.length-1  && $index === birthdays.length-2">
 							and </span></span>!🎂</span>
 			</div>
-			<div class="copyrightrow">
-				<span ng-bind-html="getcr"></span>
-			</div>
 		</div>
-
 
 		<!-- HEADER -->
 		<nav class="navbar navbar-inverse">
@@ -133,25 +132,25 @@
 								Admin tools <span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu" uib-dropdown-menu>
-								<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a>
-								</li>
 								<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a
 										ui-sref="/tools/resultExtractor">Result Extractor</a></li>
-								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
-										Types</a></li>
+								<li ng-class="{active: $state.includes('/stats/requirements')}"><a
+										ui-sref="/stats/requirements">Team Requirements</a></li>
 								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
 										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
 								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
 								<li ng-class="{active: $state.includes('/activitylogs')}"><a
 										ui-sref="/activitylogs">Activity Log</a></li>
-								<li ng-class="{active: $state.includes('/stats/requirements')}"><a
-										ui-sref="/stats/requirements">Team Requirements</a></li>
 								<li ng-class="{active: $state.includes('/comp-race-forms')}"><a
 										ui-sref="/comp-race-forms">Comp Race Forms</a></li>
+								<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
+								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
+										Types</a></li>
 								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
 										Report</a></li>
 								<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a>
 								</li>
+								<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
 							</ul>
 						</li>
 						<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img

@@ -100,49 +100,25 @@ footer {
 }
 
 .navimg {
-    &-1 {
-        // background: url('../../images/topcover.jpg') left top no-repeat;
-        background-image: linear-gradient(to right, transparent, white 75%), url(../../images/topcover.jpg);
-        // background-size: contain;
-    }
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center top;
+    position: relative;
 
-    &-2 {
-        background: url('../../images/topcover2.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-3 {
-        background: url('../../images/topcover3.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-4 {
-        background: url('../../images/topcover4.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-5 {
-        background: url('../../images/topcover5.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-6 {
-        background: url('../../images/topcover6.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-7 {
-        background: url('../../images/topcover7.jpg') left top no-repeat;
-        background-size: contain;
-    }
-
-    &-8 {
-        background: url('../../images/topcover8.jpg') left top no-repeat;
-        background-size: contain;
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--banner-gradient, linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)));
+        z-index: 0;
+        pointer-events: none;
     }
 
     margin-left: 0px;
     margin-right: 0px;
+    width: 100%;
+
+    height: 200px;
 
     @media (min-width: @screen-md-min) {
         height: 250px;
@@ -154,7 +130,72 @@ footer {
         width: 100%;
     }
 
-    height: 200px;
+    .banner-copyright {
+        position: absolute;
+        bottom: 5px;
+        right: 8px;
+        font-size: 10px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        z-index: 3;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+
+        &:hover {
+            color: #fff;
+        }
+    }
+
+    .banner-title {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        z-index: 1;
+        pointer-events: auto;
+        cursor: pointer;
+        // font-family: 'Playfair Display', Georgia, serif;
+        letter-spacing: 0.01em;
+        background: rgba(225, 233, 244, 0);
+
+        backdrop-filter: blur(1px);
+        -webkit-backdrop-filter: blur(1px);
+        border-radius: 6px;
+        padding: 8px 24px 10px;
+        white-space: nowrap;
+        transition: opacity 0.3s ease;
+
+        &.banner-title-hidden {
+            opacity: 0;
+        }
+
+
+        .banner-title-top {
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1;
+            color: #354082;
+            letter-spacing: 0.01em;
+
+            @media (min-width: @screen-md-min) {
+                font-size: 24px;
+            }
+        }
+
+        .banner-title-bottom {
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1;
+            color: #F47920;
+
+            @media (min-width: @screen-md-min) {
+                font-size: 72px;
+            }
+        }
+    }
 
     .logo-stats {
         padding-top: 8px;
@@ -162,7 +203,7 @@ footer {
         position: absolute;
         right: 0;
         top: 0;
-        z-index: 1;
+        z-index: 2;
 
         .submit-btn {
             display: inline-block;
@@ -183,70 +224,29 @@ footer {
         }
     }
 
-    .copyrightrow {
-        margin-left: 0px;
-        margin-right: 0px;
-        text-align: right;
-        padding-right: 5px;
-        opacity: 0.75;
-        color: #000;
+    .birthdaytext {
         position: absolute;
+        left: 0;
         right: 0;
         bottom: 0;
-        font-size: 12px;
-
-        @media (min-width: @screen-sm-min) {
-            padding-top: 150px;
-        }
-
-        @media (min-width: @screen-md-min) {
-            padding-top: 275px;
-        }
-
-        padding-top: 100px;
-
-        a {
-            color: #2d5185;
-
-            &:hover {
-                text-decoration: none;
-                color: #2d5185;
-            }
-        }
-    }
-
-
-    .birthdaytext {
-        margin-left: 0px;
-        margin-right: 0px;
+        margin: 0;
+        padding: 6px 16px;
         text-align: center;
-        padding-right: 5px;
-        opacity: 1;
-        color: #ff0000;
-        right: 0;
-        bottom: 10px;
+        background: rgba(255, 255, 255, 0.85);
         font-size: 20px;
+        color: red;
+        z-index: 2;
 
-        @media (min-width: @screen-sm-min) {
-            padding-top: 165px;
-        }
+        // a {
+        //     color: #354082;
+        //     font-weight: 700;
 
-        @media (min-width: @screen-md-min) {
-            padding-top: 215px;
-        }
-
-        @media (min-width: @screen-lg-min) {
-            padding-top: 215px;
-        }
+        //     &:hover {
+        //         color: #F47920;
+        //         text-decoration: underline;
+        //     }
+        // }
     }
-
-    // a {
-    //     color: #FFFFFF;
-    //     &:hover {
-    //         text-decoration: none;
-    //         color: #FFFFFF;
-    //     }
-    // }
 }
 
 .navbar-collapse.collapse {

@@ -1,0 +1,214 @@
+<style>
+.banner-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+}
+.banner-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+.banner-card.is-active {
+    border-color: #008cba;
+    box-shadow: 0 0 0 2px #008cba33;
+}
+.banner-preview {
+    position: relative;
+    height: 80px;
+    cursor: pointer;
+    background: #222;
+    overflow: hidden;
+}
+.banner-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.15s;
+}
+.banner-preview:hover img {
+    opacity: 0.85;
+}
+.banner-preview-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: rgba(0,140,186,0.25);
+}
+.banner-preview:hover .banner-preview-overlay {
+    opacity: 1;
+}
+.banner-preview-overlay i {
+    color: #fff;
+    font-size: 22px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.banner-filename {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.banner-card-body {
+    padding: 10px 12px 12px;
+}
+.banner-field-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    margin-top: 8px;
+}
+.banner-field-label:first-child {
+    margin-top: 0;
+}
+.banner-color-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.banner-color-row input[type="color"] {
+    width: 28px;
+    height: 24px;
+    padding: 1px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.banner-color-row input[type="text"] {
+    flex: 1;
+}
+.banner-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+}
+.banner-pin-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    margin: 0;
+}
+</style>
+
+<div class="jumbotron">
+    <div class="racetypes-content">
+        <div style="background: linear-gradient(135deg, #008cba 0%, #006687 100%); color: white; padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h2 style="margin: 0 0 3px; font-weight: 600; font-size: 22px;">Banner Management</h2>
+                <div style="font-size: 12px; opacity: 0.85;">{{banners.length}} banners &mdash; click a preview to display it on the homepage</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-default" ng-click="reset()" ng-disabled="savingAll || !dirty" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); color: white;">
+                    <i class="fa fa-undo"></i> Reset
+                </button>
+                <button class="btn btn-default" ng-click="saveAll()" ng-disabled="savingAll" style="background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); color: white; font-weight: 600;">
+                    <i class="fa" ng-class="savingAll ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    {{savingAll ? 'Saving…' : 'Save all'}}
+                </button>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
+            <div class="banner-card" ng-repeat="banner in banners track by banner._id"
+                 ng-class="{'is-active': activeBannerId === banner._id}">
+
+                <!-- Preview -->
+                <div class="banner-preview" ng-click="setActive(banner)" title="Click to preview on homepage">
+                    <img ng-src="{{'/images/banners/' + banner.filename}}">
+                    <div class="banner-preview-overlay">
+                        <i class="fa fa-eye"></i>
+                    </div>
+                    <div class="banner-filename">{{banner.filename}}</div>
+                </div>
+
+                <!-- Fields -->
+                <div class="banner-card-body">
+
+                    <div class="banner-field-label">Members</div>
+                    <ui-select multiple ng-model="banner._members" theme="select2" style="width: 100%">
+                        <ui-select-match placeholder="Tag members...">{{$item.firstname}} {{$item.lastname}}</ui-select-match>
+                        <ui-select-choices repeat="m in allMembers | filter: memberSearch($select.search) track by m._id">
+                            {{m.firstname}} {{m.lastname}}
+                        </ui-select-choices>
+                    </ui-select>
+
+                    <div class="banner-field-label">Title colors</div>
+                    <div style="display: flex; gap: 6px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px; color: #aaa; margin-bottom: 2px;">Top</div>
+                            <div class="banner-color-row">
+                                <input type="color" ng-model="banner.titleTheme.topColor">
+                                <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.topColor">
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 10px; color: #aaa; margin-bottom: 2px;">Bottom</div>
+                            <div class="banner-color-row">
+                                <input type="color" ng-model="banner.titleTheme.bottomColor">
+                                <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.bottomColor">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="banner-field-label">Title background</div>
+                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.background" placeholder="e.g. transparent">
+
+                    <div class="banner-field-label">Backdrop filter</div>
+                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.backdropFilter" placeholder="e.g. none or blur(2px)">
+
+                    <div class="banner-field-label">Text shadow</div>
+                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.textShadow" placeholder="e.g. none">
+
+                    <div class="banner-field-label">Copyright</div>
+                    <input type="text" class="form-control input-sm" ng-model="banner.copyright.name" placeholder="Name">
+                    <input type="text" class="form-control input-sm" ng-model="banner.copyright.url" placeholder="URL" style="margin-top: 4px;">
+                    <div class="banner-color-row" style="margin-top: 4px;">
+                        <input type="color" ng-model="banner.copyright.color">
+                        <input type="text" class="form-control input-sm" ng-model="banner.copyright.color" placeholder="Color">
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="banner-card-footer">
+                    <label class="banner-pin-label">
+                        <input type="checkbox" ng-model="banner.pinned">
+                        Pinned
+                    </label>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-sm btn-danger" ng-click="deleteBanner(banner)" title="Delete banner">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                        <button class="btn btn-sm" ng-click="save(banner)" ng-disabled="saving[banner._id]"
+                            ng-class="saveError[banner._id] ? 'btn-danger' : (saved[banner._id] ? 'btn-success' : 'btn-primary')">
+                            <i class="fa" ng-class="saving[banner._id] ? 'fa-spinner fa-spin' : (saveError[banner._id] ? 'fa-times' : 'fa-save')"></i>
+                            {{saving[banner._id] ? 'Saving…' : (saveError[banner._id] ? 'Error' : (saved[banner._id] ? 'Saved' : 'Save'))}}
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

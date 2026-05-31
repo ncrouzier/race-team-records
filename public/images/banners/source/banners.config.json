@@ -1,0 +1,1467 @@
+{
+  "aaronA.jpg": {
+    "mode": "gradient",
+    "placement": "right",
+    "srcWidth": 1258,
+    "srcHeight": 1361,
+    "face": {
+      "x": 410,
+      "y": 84,
+      "width": 157,
+      "height": 147
+    },
+    "headTop": 0,
+    "bodyBottom": 746,
+    "cropLeft": 0,
+    "cropRight": 1100,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1779670107546.976",
+    "userOverrides": {
+      "placement": "right",
+      "cropRight": 1100,
+      "status": "good",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-MhxrVhT/A",
+        "color": "#FFFFFF"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-MhxrVhT/A",
+      "color": "#FFFFFF"
+    },
+    "paramsHash": "379bb1679cd1"
+  },
+  "chrisS.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 477,
+      "y": 894,
+      "width": 208,
+      "height": 176
+    },
+    "headTop": 788,
+    "bodyBottom": 1686,
+    "cropLeft": 100,
+    "cropRight": 1707,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1757868370284.9673",
+    "userOverrides": {
+      "cropLeft": 100,
+      "status": "good",
+      "copyright": {
+        "name": "B. Butters",
+        "url": "https://www.mcrrcphotos.com/2017-Photos/Race-Photos/Piece-of-Cake-10K5K/Piece-of-Cake-10K5K-BButters/i-5hgMqmQ/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "paramsHash": "3610e3fd628e",
+    "copyright": {
+      "name": "B. Butters",
+      "url": "https://www.mcrrcphotos.com/2017-Photos/Race-Photos/Piece-of-Cake-10K5K/Piece-of-Cake-10K5K-BButters/i-5hgMqmQ/A",
+      "color": "#354082"
+    }
+  },
+  "jamesA.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1140,
+    "srcHeight": 1530,
+    "face": {
+      "x": 502,
+      "y": 120,
+      "width": 156,
+      "height": 134
+    },
+    "headTop": 40,
+    "bodyBottom": 723,
+    "cropLeft": 30,
+    "cropRight": 1140,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1757803405289.8052",
+    "userOverrides": {
+      "cropLeft": 30,
+      "status": "good",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-jpQsWBd",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "paramsHash": "05e95d22bb1e",
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-jpQsWBd",
+      "color": "#354082"
+    }
+  },
+  "memorial.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 3168,
+    "srcHeight": 2112,
+    "face": {
+      "x": 468,
+      "y": 588,
+      "width": 231,
+      "height": 233
+    },
+    "headTop": 448,
+    "bodyBottom": 1637,
+    "cropLeft": 430,
+    "cropRight": 3168,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1779729944105.0825",
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "userOverrides": {
+      "mode": "gradient",
+      "placement": "left",
+      "cropLeft": 430,
+      "status": "good",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Memorial-4-Miler-DReichmann/i-czGjRt2/A",
+        "color": "#354082"
+      }
+    },
+    "status": "good",
+    "paramsHash": "f687177636ab",
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Memorial-4-Miler-DReichmann/i-czGjRt2/A",
+      "color": "#354082"
+    }
+  },
+  "michelleBrian.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1140,
+    "srcHeight": 891,
+    "face": {
+      "x": 369,
+      "y": 94,
+      "width": 95,
+      "height": 86
+    },
+    "headTop": 0,
+    "bodyBottom": 481,
+    "cropLeft": 200,
+    "cropRight": 1140,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1757804654956.98",
+    "userOverrides": {
+      "headTop": 0,
+      "bodyBottom": 481,
+      "cropLeft": 200,
+      "status": "good",
+      "copyright": {
+        "name": "City of Gaithersburg",
+        "url": "https://www.facebook.com/photo/?fbid=10154376949220741&set=a.10154376948800741",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "paramsHash": "145b29741e8c",
+    "copyright": {
+      "name": "City of Gaithersburg",
+      "url": "https://www.facebook.com/photo/?fbid=10154376949220741&set=a.10154376948800741",
+      "color": "#354082"
+    }
+  },
+  "midsummer.jpg": {
+    "mode": "full",
+    "srcWidth": 1140,
+    "srcHeight": 563,
+    "faces": [],
+    "cropX": 0,
+    "cropY": 23,
+    "cropW": 1140,
+    "cropH": 285,
+    "srcMtime": "1757803672498.5376",
+    "userOverrides": {
+      "titleTheme": {
+        "background": "rgba(0,0,0,0.25)",
+        "backdropFilter": "blur(2px)",
+        "topColor": "#ffffff",
+        "bottomColor": "#ffffff",
+        "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+      },
+      "status": "good",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-Tx6BtTx/A",
+        "color": "#FFFFFF"
+      }
+    },
+    "titleTheme": {
+      "background": "rgba(0,0,0,0.25)",
+      "backdropFilter": "blur(2px)",
+      "topColor": "#ffffff",
+      "bottomColor": "#ffffff",
+      "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+    },
+    "status": "good",
+    "paramsHash": "f3d1c6c55a3b",
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-Tx6BtTx/A",
+      "color": "#FFFFFF"
+    }
+  },
+  "nicoC.jpg": {
+    "mode": "gradient",
+    "placement": "right",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": {
+      "x": 614,
+      "y": 631,
+      "width": 152,
+      "height": 135
+    },
+    "headTop": 550,
+    "bodyBottom": 1239,
+    "cropLeft": 0,
+    "cropRight": 1100,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1779660462384.651",
+    "userOverrides": {
+      "cropRight": 1100,
+      "status": "good",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-XnPjxnZ/A",
+        "color": "#FFFFFF"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-XnPjxnZ/A",
+      "color": "#FFFFFF"
+    },
+    "paramsHash": "4998676ee86f"
+  },
+  "takashiA.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": {
+      "x": 434,
+      "y": 336,
+      "width": 266,
+      "height": 238
+    },
+    "headTop": 193,
+    "bodyBottom": 1300,
+    "cropLeft": 0,
+    "cropRight": 1365,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 90, 100 ] ],
+    "srcMtime": "1779571326981.857",
+    "userOverrides": {
+      "headTop": 193,
+      "bodyBottom": 1300,
+      "cropRight": 1365,
+      "fadeZone": 60,
+      "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 90, 100 ] ],
+      "status": "good",
+      "copyright": {
+        "name": "N.Crouzier",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Capital-for-a-Day-5K/Capital-for-a-Day-5K-NCrouzier/i-SKBdh8P/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "paramsHash": "a0b61f1a7266",
+    "copyright": {
+      "name": "N.Crouzier",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Capital-for-a-Day-5K/Capital-for-a-Day-5K-NCrouzier/i-SKBdh8P/A",
+      "color": "#354082"
+    }
+  },
+  "adrianS_sweat.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 941,
+    "srcHeight": 1076,
+    "face": {
+      "x": 222,
+      "y": 275,
+      "width": 209,
+      "height": 207
+    },
+    "headTop": 100,
+    "bodyBottom": 800,
+    "cropLeft": 50,
+    "cropRight": 850,
+    "fadeZone": 70,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 90 ], [ 100, 100 ] ],
+    "srcMtime": "1779743593392.6416",
+    "userOverrides": {
+      "cropLeft": 50,
+      "cropRight": 850,
+      "headTop": 100,
+      "bodyBottom": 800,
+      "fadeZone": 70,
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2019-Photos/Race-Photos/Going-Green-Track-Meet-/Going-Green-Track-Meet-DReichmann/i-MVnQgnh/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2019-Photos/Race-Photos/Going-Green-Track-Meet-/Going-Green-Track-Meet-DReichmann/i-MVnQgnh/A",
+      "color": "#354082"
+    },
+    "paramsHash": "59b223035e7c"
+  },
+  "charlieS.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 2000,
+    "srcHeight": 1500,
+    "headTop": 200,
+    "bodyBottom": 1000,
+    "cropLeft": 350,
+    "cropRight": 1700,
+    "fadeZone": 80,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1779744851819.4534",
+    "userOverrides": {
+      "mode": "gradient",
+      "copyright": {
+        "name": "B.Lemieux",
+        "url": "https://www.mcrrcphotos.com/2024-Photos/Race-Photos/Matthew-Henson-Trail-5K/Matthew-Henson-Trail-5K-Blemieux/i-HSSsgNz/A",
+        "color": "#354082"
+      },
+      "headTop": 200,
+      "bodyBottom": 1000,
+      "cropLeft": 350,
+      "cropRight": 1700,
+      "fadeZone": 80,
+      "status": "good",
+      "titleTheme": {
+        "background": "rgba(0,0,0,0.25)",
+        "backdropFilter": "blur(2px)",
+        "topColor": "#ffffff",
+        "bottomColor": "#F47920",
+        "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+      }
+    },
+    "titleTheme": {
+      "background": "rgba(0,0,0,0.25)",
+      "backdropFilter": "blur(2px)",
+      "topColor": "#ffffff",
+      "bottomColor": "#F47920",
+      "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+    },
+    "copyright": {
+      "name": "B.Lemieux",
+      "url": "https://www.mcrrcphotos.com/2024-Photos/Race-Photos/Matthew-Henson-Trail-5K/Matthew-Henson-Trail-5K-Blemieux/i-HSSsgNz/A",
+      "color": "#354082"
+    },
+    "status": "good",
+    "paramsHash": "55418b7d0b09"
+  },
+  "chadY.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 3984,
+    "srcHeight": 2656,
+    "face": {
+      "x": 1179,
+      "y": 552,
+      "width": 268,
+      "height": 235
+    },
+    "headTop": 351,
+    "bodyBottom": 2510,
+    "cropLeft": 270,
+    "cropRight": 3984,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780011455660.1675",
+    "userOverrides": {
+      "mode": "gradient",
+      "headTop": 351,
+      "bodyBottom": 2510,
+      "cropLeft": 270,
+      "cropRight": 3984,
+      "copyright": {
+        "name": "Leroy Kelley",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Pikes-Peek-10K/Pikes-Peek-10K-Mid-Course-LKelley/i-nTq3DG6",
+        "color": "#354082"
+      },
+      "status": "good"
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "copyright": {
+      "name": "Leroy Kelley",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Pikes-Peek-10K/Pikes-Peek-10K-Mid-Course-LKelley/i-nTq3DG6",
+      "color": "#354082"
+    },
+    "paramsHash": "6c22f5992ebd"
+  },
+  "megheart.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 3840,
+    "srcHeight": 2560,
+    "face": null,
+    "headTop": 450,
+    "bodyBottom": 2300,
+    "cropLeft": 400,
+    "cropRight": 3840,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780012149188.989",
+    "userOverrides": {
+      "mode": "gradient",
+      "headTop": 450,
+      "bodyBottom": 2300,
+      "cropLeft": 400,
+      "cropRight": 3840,
+      "status": "good",
+      "copyright": {
+        "name": "Leroy Kelley",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Pikes-Peek-10K/Pikes-Peek-10K-Mid-Course-LKelley/i-64LSmNR/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "copyright": {
+      "name": "Leroy Kelley",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Pikes-Peek-10K/Pikes-Peek-10K-Mid-Course-LKelley/i-64LSmNR/A",
+      "color": "#354082"
+    },
+    "paramsHash": "7fa600b226ff"
+  },
+  "alexB.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": null,
+    "headTop": 700,
+    "bodyBottom": 1500,
+    "cropLeft": 400,
+    "cropRight": 1707,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780152797610.4854",
+    "userOverrides": {
+      "headTop": 700,
+      "bodyBottom": 1500,
+      "cropLeft": 400,
+      "cropRight": 1707,
+      "status": "good",
+      "copyright": {
+        "name": "Michelle Miller",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Spin-in-the-Woods-4M/Spin-in-the-Woods-4M-MMiller/i-ptWfGNm/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "status": "good",
+    "copyright": {
+      "name": "Michelle Miller",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Spin-in-the-Woods-4M/Spin-in-the-Woods-4M-MMiller/i-ptWfGNm/A",
+      "color": "#354082"
+    },
+    "paramsHash": "3b7dd4a829c1"
+  },
+  "jamesJ.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": {
+      "x": 651,
+      "y": 328,
+      "width": 189,
+      "height": 166
+    },
+    "headTop": 208,
+    "bodyBottom": 1000,
+    "cropLeft": 200,
+    "cropRight": 1365,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780155854213.9543",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-mPtr7QN",
+        "color": "#354082"
+      },
+      "headTop": 208,
+      "bodyBottom": 1000,
+      "cropLeft": 200,
+      "cropRight": 1365,
+      "fadeZone": 60,
+      "status": "good"
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-mPtr7QN",
+      "color": "#354082"
+    },
+    "status": "good",
+    "paramsHash": "334bca75e29e"
+  },
+  "lizO.jpg": {
+    "mode": "gradient",
+    "srcWidth": 2048,
+    "srcHeight": 1363,
+    "srcMtime": "1780156748826.257",
+    "userOverrides": {
+      "copyright": {
+        "name": "United Way of the Coastal Empire",
+        "url": "https://www.facebook.com/photo.php?fbid=1256301323200869&set=pb.100064630396263.-2207520000&type=3",
+        "color": "#354082"
+      },
+      "headTop": 308,
+      "bodyBottom": 1000,
+      "cropLeft": 500,
+      "cropRight": 1365,
+      "fadeZone": 60,
+      "status": "good"
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "United Way of the Coastal Empire",
+      "url": "https://www.facebook.com/photo.php?fbid=1256301323200869&set=pb.100064630396263.-2207520000&type=3",
+      "color": "#354082"
+    },
+    "headTop": 308,
+    "bodyBottom": 1000,
+    "cropLeft": 500,
+    "cropRight": 1365,
+    "fadeZone": 60,
+    "status": "good",
+    "paramsHash": "55d180b4dbb5"
+  },
+  "davidS.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 598,
+      "y": 465,
+      "width": 250,
+      "height": 219
+    },
+    "headTop": 334,
+    "bodyBottom": 1451,
+    "cropLeft": 0,
+    "cropRight": 1707,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780157467252.623",
+    "userOverrides": {
+      "copyright": {
+        "name": "L.Kelley",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Little-Bennett-XC-10K/Little-Bennett-XC-10K-Hyattstown-Mill-LKelley/i-3zPTRXc/A",
+        "color": "#354082"
+      },
+      "status": "good"
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "L.Kelley",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Little-Bennett-XC-10K/Little-Bennett-XC-10K-Hyattstown-Mill-LKelley/i-3zPTRXc/A",
+      "color": "#354082"
+    },
+    "status": "good",
+    "paramsHash": "5d3de6c79ab0"
+  },
+  "cindyC.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": null,
+    "headTop": 750,
+    "bodyBottom": 1600,
+    "cropLeft": 175,
+    "cropRight": 1707,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780166253077.0154",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2021-Photos/Race-Photos/Rileys-Rumble-Half-Marathon/Rileys-Rumble-Half-Marathon-DReichmann/i-w62wjJL/A",
+        "color": "#354082"
+      },
+      "headTop": 750,
+      "bodyBottom": 1600,
+      "cropLeft": 175,
+      "cropRight": 1707,
+      "fadeZone": 60,
+      "status": "good"
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2021-Photos/Race-Photos/Rileys-Rumble-Half-Marathon/Rileys-Rumble-Half-Marathon-DReichmann/i-w62wjJL/A",
+      "color": "#354082"
+    },
+    "status": "good",
+    "paramsHash": "2585148c6a22"
+  },
+  "kristenK.jpg": {
+    "mode": "gradient",
+    "placement": "right",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": null,
+    "headTop": 500,
+    "bodyBottom": 1650,
+    "cropLeft": 0,
+    "cropRight": 1300,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780174663394.5679",
+    "userOverrides": {
+      "placement": "right",
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Memorial-4-Miler-DReichmann/i-d9zjbzP/A",
+        "color": "#FFFFFF"
+      },
+      "headTop": 500,
+      "bodyBottom": 1650,
+      "cropLeft": 0,
+      "cropRight": 1300,
+      "fadeZone": 40
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Memorial-4-Miler-DReichmann/i-d9zjbzP/A",
+      "color": "#FFFFFF"
+    },
+    "paramsHash": "33329d9ceba9"
+  },
+  "rachelC.jpg": {
+    "mode": "gradient",
+    "placement": "right",
+    "srcWidth": 3840,
+    "srcHeight": 2560,
+    "face": {
+      "x": 338,
+      "y": 637,
+      "width": 511,
+      "height": 470
+    },
+    "headTop": 300,
+    "bodyBottom": 2560,
+    "cropLeft": 0,
+    "cropRight": 3840,
+    "fadeZone": 30,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780175244187.2966",
+    "userOverrides": {
+      "copyright": {
+        "name": "M.Miller",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Piece-of-Cake-5K10K/Piece-of-Cake-5K10K-MMiller/i-rmnrtwZ/A",
+        "color": "#FFFFFF"
+      },
+      "placement": "right",
+      "headTop": 300,
+      "bodyBottom": 2560,
+      "cropLeft": 0,
+      "cropRight": 3840,
+      "fadeZone": 30
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "M.Miller",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Piece-of-Cake-5K10K/Piece-of-Cake-5K10K-MMiller/i-rmnrtwZ/A",
+      "color": "#FFFFFF"
+    },
+    "paramsHash": "7921d70eaa0e"
+  },
+  "monikaS.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": {
+      "x": 678,
+      "y": 553,
+      "width": 178,
+      "height": 142
+    },
+    "headTop": 468,
+    "bodyBottom": 1192,
+    "cropLeft": 200,
+    "cropRight": 1365,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780180649138.4968",
+    "userOverrides": {
+      "copyright": {
+        "name": "J.Solar",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rileys-Rumble-Half-Marathon-JSolar/i-cKc7jGT/A",
+        "color": "#354082"
+      },
+      "placement": "left",
+      "headTop": 468,
+      "bodyBottom": 1192,
+      "cropLeft": 200,
+      "cropRight": 1365,
+      "fadeZone": 40
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "J.Solar",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rileys-Rumble-Half-Marathon-JSolar/i-cKc7jGT/A",
+      "color": "#354082"
+    }
+  },
+  "jeffD.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 748,
+      "y": 653,
+      "width": 183,
+      "height": 175
+    },
+    "headTop": 548,
+    "bodyBottom": 1441,
+    "cropLeft": 200,
+    "cropRight": 1707,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780182314795.1243",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-d7DnXXK/A",
+        "color": "#354082"
+      },
+      "headTop": 548,
+      "bodyBottom": 1441,
+      "cropLeft": 200,
+      "cropRight": 1707,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Suds-n-Soles/Suds-n-Soles-StartFinish-DReichmann/i-d7DnXXK/A",
+      "color": "#354082"
+    }
+  },
+  "andreiR.jpg": {
+    "mode": "gradient",
+    "srcWidth": 2000,
+    "srcHeight": 1500,
+    "srcMtime": "1780182764415.4253",
+    "userOverrides": {
+      "copyright": {
+        "name": "B.Lemieux",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Seneca-Greenway-Trail-Marathon-50K/Seneca-Greenway-Trail-Marathon-50K-BLemieux/i-DSggWJH",
+        "color": "#354082"
+      },
+      "headTop": 100,
+      "bodyBottom": 1400,
+      "cropLeft": 200,
+      "cropRight": 1600,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "B.Lemieux",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Seneca-Greenway-Trail-Marathon-50K/Seneca-Greenway-Trail-Marathon-50K-BLemieux/i-DSggWJH",
+      "color": "#354082"
+    },
+    "headTop": 100,
+    "bodyBottom": 1400,
+    "cropLeft": 200,
+    "cropRight": 1600,
+    "fadeZone": 60
+  },
+  "martyH.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": null,
+    "headTop": 200,
+    "bodyBottom": 1000,
+    "cropLeft": 300,
+    "cropRight": 1365,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780183399697.0598",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-6HKHV8b/A",
+        "color": "#354082"
+      },
+      "headTop": 200,
+      "bodyBottom": 1000,
+      "cropLeft": 300,
+      "cropRight": 1365,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-6HKHV8b/A",
+      "color": "#354082"
+    }
+  },
+  "michelleM.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 713,
+      "y": 404,
+      "width": 166,
+      "height": 156
+    },
+    "headTop": 210,
+    "bodyBottom": 1206,
+    "cropLeft": 300,
+    "cropRight": 1707,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780184031564.4275",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Little-Bennett-XC-10K/Little-Bennett-XC-10K-StartFinish-DReichmann/i-z824K4d/A",
+        "color": "#354082"
+      },
+      "headTop": 210,
+      "bodyBottom": 1206,
+      "cropLeft": 300,
+      "cropRight": 1707,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Little-Bennett-XC-10K/Little-Bennett-XC-10K-StartFinish-DReichmann/i-z824K4d/A",
+      "color": "#354082"
+    }
+  },
+  "verenaM.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": null,
+    "headTop": 350,
+    "bodyBottom": 1100,
+    "cropLeft": 300,
+    "cropRight": 1365,
+    "fadeZone": 60,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780186222007.9604",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-kmSDWkT/A",
+        "color": "#354082"
+      },
+      "headTop": 350,
+      "bodyBottom": 1100,
+      "cropLeft": 300,
+      "cropRight": 1365,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-kmSDWkT/A",
+      "color": "#354082"
+    }
+  },
+  "ianM.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 2112,
+    "srcHeight": 3168,
+    "face": null,
+    "headTop": 500,
+    "bodyBottom": 1568,
+    "cropLeft": 400,
+    "cropRight": 2112,
+    "fadeZone": 50,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780186628942.6646",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-5kMDx9C/A",
+        "color": "#354082"
+      },
+      "headTop": 500,
+      "bodyBottom": 1568,
+      "cropLeft": 400,
+      "cropRight": 2112,
+      "fadeZone": 50
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Run-Aware-5K-XC-DReichmann/i-5kMDx9C/A",
+      "color": "#354082"
+    }
+  },
+  "adrianS.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 6000,
+    "srcHeight": 4000,
+    "face": null,
+    "headTop": 250,
+    "bodyBottom": 4000,
+    "cropLeft": 700,
+    "cropRight": 5012,
+    "fadeZone": 50,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "copyright": {
+      "name": "James Holk",
+      "url": "https://photos.google.com/share/AF1QipMPfrNlUSLgH_r11xcV0uT6lmWq0_PMzZSLr1ki9qjflaUz4SHr2ECjqb2ZA-Dk1A/photo/AF1QipMzi46_moFnd_rLQ-U6BkGCt2AV-1xxSDEUq2Au?key=ZlQyWFRKR0pMWHBic19XU3M0ek9NbjlnekQ5aEx3",
+      "color": "#354082"
+    },
+    "srcMtime": "1780187976274.9753",
+    "userOverrides": {
+      "mode": "gradient",
+      "placement": "left",
+      "copyright": {
+        "name": "James Holk",
+        "url": "https://photos.google.com/share/AF1QipMPfrNlUSLgH_r11xcV0uT6lmWq0_PMzZSLr1ki9qjflaUz4SHr2ECjqb2ZA-Dk1A/photo/AF1QipMzi46_moFnd_rLQ-U6BkGCt2AV-1xxSDEUq2Au?key=ZlQyWFRKR0pMWHBic19XU3M0ek9NbjlnekQ5aEx3",
+        "color": "#354082"
+      },
+      "headTop": 250,
+      "bodyBottom": 4000,
+      "cropLeft": 700,
+      "cropRight": 5012,
+      "fadeZone": 50
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    }
+  },
+  "andrewL.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 2500,
+    "srcHeight": 1667,
+    "face": {
+      "x": 1250,
+      "y": 170,
+      "width": 148,
+      "height": 137
+    },
+    "headTop": 100,
+    "bodyBottom": 1000,
+    "cropLeft": 800,
+    "cropRight": 2000,
+    "fadeZone": 50,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "copyright": {
+      "name": "Ben Sussman",
+      "url": "https://striders.smugmug.com/2026/RRCA-10M-Club-Challenge/RRCA-Club-Challenge-Ben-Sussman/i-V8g4NQ5/A",
+      "color": "#354082"
+    },
+    "srcMtime": "1780188262294.2158",
+    "userOverrides": {
+      "mode": "gradient",
+      "placement": "left",
+      "copyright": {
+        "name": "Ben Sussman",
+        "url": "https://striders.smugmug.com/2026/RRCA-10M-Club-Challenge/RRCA-Club-Challenge-Ben-Sussman/i-V8g4NQ5/A",
+        "color": "#354082"
+      },
+      "headTop": 100,
+      "bodyBottom": 1000,
+      "cropLeft": 800,
+      "cropRight": 2000,
+      "fadeZone": 50
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    }
+  },
+  "group1.jpg": {
+    "mode": "full",
+    "srcWidth": 1600,
+    "srcHeight": 1200,
+    "copyright": {
+      "name": "Meg's phone",
+      "url": "",
+      "color": "#354082"
+    },
+    "srcMtime": "1780188743988.6648",
+    "userOverrides": {
+      "cropX": 0,
+      "cropY": 500,
+      "cropW": 1550,
+      "cropH": 550,
+      "copyright": {
+        "name": "Meg's phone",
+        "url": "",
+        "color": "#354082"
+      },
+      "mode": "full",
+      "titleTheme": {
+        "background": "rgba(0,0,0,0.25)",
+        "backdropFilter": "blur(2px)",
+        "topColor": "#ffffff",
+        "bottomColor": "#ffffff",
+        "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+      }
+    },
+    "cropX": 0,
+    "cropY": 500,
+    "cropW": 1550,
+    "cropH": 550,
+    "titleTheme": {
+      "background": "rgba(0,0,0,0.25)",
+      "backdropFilter": "blur(2px)",
+      "topColor": "#ffffff",
+      "bottomColor": "#ffffff",
+      "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+    }
+  },
+  "brianM.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 732,
+      "y": 496,
+      "width": 201,
+      "height": 166
+    },
+    "headTop": 300,
+    "bodyBottom": 1600,
+    "cropLeft": 200,
+    "cropRight": 1707,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-NpC5BNf/A",
+      "color": "#FFFFFF"
+    },
+    "srcMtime": "1780231700195.6714",
+    "userOverrides": {
+      "headTop": 300,
+      "bodyBottom": 1600,
+      "cropLeft": 200,
+      "cropRight": 1707,
+      "placement": "left",
+      "fadeZone": 40,
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-NpC5BNf/A",
+        "color": "#FFFFFF"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    }
+  },
+  "kevinCamp.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1707,
+    "srcHeight": 2560,
+    "face": {
+      "x": 660,
+      "y": 582,
+      "width": 164,
+      "height": 141
+    },
+    "headTop": 497,
+    "bodyBottom": 1217,
+    "cropLeft": 200,
+    "cropRight": 1400,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780231477360.372",
+    "userOverrides": {
+      "headTop": 497,
+      "bodyBottom": 1217,
+      "cropLeft": 200,
+      "cropRight": 1400,
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-tKTV4G4/A",
+        "color": "#354082"
+      },
+      "fadeZone": 40
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-tKTV4G4/A",
+      "color": "#354082"
+    }
+  },
+  "paulJ.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 1365,
+    "srcHeight": 2048,
+    "face": {
+      "x": 581,
+      "y": 337,
+      "width": 198,
+      "height": 170
+    },
+    "headTop": 235,
+    "bodyBottom": 1102,
+    "cropLeft": 0,
+    "cropRight": 1365,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780232324062.608",
+    "userOverrides": {
+      "copyright": {
+        "name": "D.Reichmann",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-dFjD7F7/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "D.Reichmann",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-dFjD7F7/A",
+      "color": "#354082"
+    }
+  },
+  "kristenL.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 2483,
+    "srcHeight": 1736,
+    "srcMtime": "1780244567175.4019",
+    "userOverrides": {
+      "placement": "left",
+      "headTop": 235,
+      "bodyBottom": 1000,
+      "cropLeft": 500,
+      "cropRight": 2000,
+      "fadeZone": 40,
+      "copyright": {
+        "name": "R.Lerner",
+        "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Piece-of-Cake-5K10K/Piece-of-Cake-5K10K-RLerner/i-f2L88vW/A",
+        "color": "#354082"
+      }
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "R.Lerner",
+      "url": "https://www.mcrrcphotos.com/2026-Photos/Race-Photos/Piece-of-Cake-5K10K/Piece-of-Cake-5K10K-RLerner/i-f2L88vW/A",
+      "color": "#354082"
+    },
+    "headTop": 235,
+    "bodyBottom": 1000,
+    "cropLeft": 500,
+    "cropRight": 2000,
+    "fadeZone": 40
+  },
+  "billM.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 3840,
+    "srcHeight": 2560,
+    "face": null,
+    "headTop": 700,
+    "bodyBottom": 1860,
+    "cropLeft": 700,
+    "cropRight": 3840,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "copyright": {
+      "name": "M.Garcia-Ripa",
+      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Memorial-4-Miler/Memorial-4-Miler-MGarcia-Ripa/i-ptW5VZM/A",
+      "color": "#354082"
+    },
+    "srcMtime": "1780262791211.0623",
+    "userOverrides": {
+      "mode": "gradient",
+      "placement": "left",
+      "copyright": {
+        "name": "M.Garcia-Ripa",
+        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Memorial-4-Miler/Memorial-4-Miler-MGarcia-Ripa/i-ptW5VZM/A",
+        "color": "#354082"
+      },
+      "headTop": 700,
+      "bodyBottom": 1860,
+      "cropLeft": 700,
+      "cropRight": 3840,
+      "fadeZone": 40,
+      "titleTheme": {
+        "background": "rgba(0,0,0,0.25)",
+        "backdropFilter": "blur(2px)",
+        "topColor": "#ffffff",
+        "bottomColor": "#F47920",
+        "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+      }
+    },
+    "titleTheme": {
+      "background": "rgba(0,0,0,0.25)",
+      "backdropFilter": "blur(2px)",
+      "topColor": "#ffffff",
+      "bottomColor": "#F47920",
+      "textShadow": "0 2px 8px rgba(0,0,0,0.55)"
+    }
+  },
+  "kristenErin.jpg": {
+    "mode": "gradient",
+    "srcWidth": 3000,
+    "srcHeight": 2000,
+    "srcMtime": "1780265005755.1765",
+    "userOverrides": {
+      "mode": "gradient",
+      "placement": "left",
+      "copyright": {
+        "name": "Mile 90 Photography",
+        "url": "https://www.mile90.com/Race-Photos/2021-Race-Events/Bighorn-Trail-Run-2021/On-Course/100-Mile/Dry-Fork-Inbound/i-S8WpdHd/buy",
+        "color": "#354082"
+      },
+      "headTop": 200,
+      "bodyBottom": 1800,
+      "cropLeft": 600,
+      "cropRight": 2500,
+      "fadeZone": 60
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "placement": "left",
+    "copyright": {
+      "name": "Mile 90 Photography",
+      "url": "https://www.mile90.com/Race-Photos/2021-Race-Events/Bighorn-Trail-Run-2021/On-Course/100-Mile/Dry-Fork-Inbound/i-S8WpdHd/buy",
+      "color": "#354082"
+    },
+    "headTop": 200,
+    "bodyBottom": 1800,
+    "cropLeft": 600,
+    "cropRight": 2500,
+    "fadeZone": 60
+  }
+}

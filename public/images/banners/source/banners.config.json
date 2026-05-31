@@ -236,7 +236,7 @@
       "copyright": {
         "name": "D.Reichmann",
         "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-Tx6BtTx/A",
-        "color": "#FFFFFF"
+        "color": "#354082"
       }
     },
     "titleTheme": {
@@ -251,33 +251,40 @@
     "copyright": {
       "name": "D.Reichmann",
       "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Going-Green-Track-Meet-DReichmann/i-Tx6BtTx/A",
-      "color": "#FFFFFF"
+      "color": "#354082"
     }
   },
   "nicoC.jpg": {
     "mode": "gradient",
-    "placement": "right",
-    "srcWidth": 1365,
-    "srcHeight": 2048,
-    "face": {
-      "x": 614,
-      "y": 631,
-      "width": 152,
-      "height": 135
-    },
-    "headTop": 550,
-    "bodyBottom": 1239,
-    "cropLeft": 0,
-    "cropRight": 1100,
-    "fadeZone": 40,
+    "placement": "left",
+    "srcWidth": 4898,
+    "srcHeight": 3266,
+    "face": null,
+    "headTop": 500,
+    "bodyBottom": 2166,
+    "cropLeft": 500,
+    "cropRight": 2900,
+    "fadeZone": 60,
     "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
-    "srcMtime": "1779660462384.651",
+    "status": "good",
+    "copyright": {
+      "name": "M.Miller",
+      "url": "",
+      "color": "#FFFFFF"
+    },
+    "srcMtime": "1780268423894.8945",
     "userOverrides": {
-      "cropRight": 1100,
+      "mode": "gradient",
+      "placement": "left",
+      "headTop": 500,
+      "bodyBottom": 2166,
+      "cropLeft": 500,
+      "cropRight": 2900,
+      "fadeZone": 60,
       "status": "good",
       "copyright": {
-        "name": "D.Reichmann",
-        "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-XnPjxnZ/A",
+        "name": "M.Miller",
+        "url": "",
         "color": "#FFFFFF"
       }
     },
@@ -287,14 +294,7 @@
       "topColor": "#354082",
       "bottomColor": "#F47920",
       "textShadow": "none"
-    },
-    "status": "good",
-    "copyright": {
-      "name": "D.Reichmann",
-      "url": "https://www.mcrrcphotos.com/2025-Photos/Race-Photos/Rockville-5K10K/Rockville-5K10K-DReichmann/i-XnPjxnZ/A",
-      "color": "#FFFFFF"
-    },
-    "paramsHash": "4998676ee86f"
+    }
   },
   "takashiA.jpg": {
     "mode": "gradient",
@@ -1183,7 +1183,7 @@
     "copyright": {
       "name": "Meg's phone",
       "url": "",
-      "color": "#354082"
+      "color": "#FFFFFF"
     },
     "srcMtime": "1780188743988.6648",
     "userOverrides": {
@@ -1194,7 +1194,7 @@
       "copyright": {
         "name": "Meg's phone",
         "url": "",
-        "color": "#354082"
+        "color": "#FFFFFF"
       },
       "mode": "full",
       "titleTheme": {

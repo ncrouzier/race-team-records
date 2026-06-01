@@ -1463,5 +1463,48 @@
     "cropLeft": 600,
     "cropRight": 2500,
     "fadeZone": 60
+  },
+  "jimD.jpg": {
+    "mode": "gradient",
+    "placement": "left",
+    "srcWidth": 933,
+    "srcHeight": 1400,
+    "face": {
+      "x": 415,
+      "y": 274,
+      "width": 114,
+      "height": 89
+    },
+    "headTop": 150,
+    "bodyBottom": 685,
+    "cropLeft": 110,
+    "cropRight": 933,
+    "fadeZone": 40,
+    "fadeStops": [ [ 0, 0 ], [ 25, 2 ], [ 50, 10 ], [ 70, 30 ], [ 85, 60 ], [ 95, 88 ], [ 100, 100 ] ],
+    "srcMtime": "1780348951349.375",
+    "userOverrides": {
+      "copyright": {
+        "name": "Kentlands-Lakelands 5K",
+        "url": "https://runsignup.com/Race/Photos/Location/KentlandsLakelands20255KRunWalkRacePhotos/MD/Gaithersburg/KentlandsLakelands5KRunWalk",
+        "color": "#354082"
+      },
+      "headTop": 150,
+      "bodyBottom": 685,
+      "cropLeft": 110,
+      "cropRight": 933,
+      "fadeZone": 40
+    },
+    "titleTheme": {
+      "background": "transparent",
+      "backdropFilter": "none",
+      "topColor": "#354082",
+      "bottomColor": "#F47920",
+      "textShadow": "none"
+    },
+    "copyright": {
+      "name": "Kentlands-Lakelands 5K",
+      "url": "https://runsignup.com/Race/Photos/Location/KentlandsLakelands20255KRunWalkRacePhotos/MD/Gaithersburg/KentlandsLakelands5KRunWalk",
+      "color": "#354082"
+    }
   }
 }

@@ -33,6 +33,7 @@ const compRaceFormSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
     race: {
+        linkedRace: { type: mongoose.Schema.Types.ObjectId, ref: 'Race' },
         racename: String,
         racedate: Date,
         racetype: { _id: mongoose.Schema.Types.ObjectId, name: String, surface: String, meters: Number, miles: Number }

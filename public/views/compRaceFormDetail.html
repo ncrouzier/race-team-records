@@ -1,7 +1,7 @@
 <div class="jumbotron">
 
     <div style="margin-bottom: 16px;">
-        <a ui-sref="/comp-race-forms" class="crf-chip crf-chip-ghost">
+        <a ng-click="goBack()" href="" class="crf-chip crf-chip-ghost">
             <i class="fa fa-arrow-left"></i> Back to Forms
         </a>
     </div>
@@ -89,6 +89,26 @@
                                         <i class="fa fa-lock"></i> Closed
                                     </span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label class="crf-edit-label">Existing Race <span
+                                        class="text-muted">(optional)</span></label>
+                                <ui-select ng-model="editFields.linkedRace" theme="select2"
+                                    on-select="onRaceSelect($item)" style="min-width: 100%;">
+                                    <ui-select-match placeholder="Search for a race..."
+                                        allow-clear="true">{{$select.selected.racename}} <span
+                                            ng-if="$select.selected.racedate">({{$select.selected.racedate |
+                                            date:'longDate'}})</span></ui-select-match>
+                                    <ui-select-choices repeat="race in filterRacesDetail($select.search)">
+                                        <div ng-bind-html="race.racename | highlight: $select.search"></div>
+                                        <small>{{race.racedate | date:'longDate'}} <span ng-if="race.count > 0">-
+                                                {{race.count}} runners</span></small>
+                                    </ui-select-choices>
+                                </ui-select>
                             </div>
                         </div>
                     </div>
@@ -305,8 +325,8 @@
                                     class="fa" ng-class="colSortIcon('projTime')"></i></th>
                             <th class="crf-th-sortable text-center" ng-click="setColSort('projAg')">Proj. AG% <i
                                     class="fa" ng-class="colSortIcon('projAg')"></i></th>
-                            <th class="text-center" tooltip-append-to-body="true"
-                                uib-tooltip="Projected AG% minus Recent AG%" tooltip-placement="top">Δ AG%</th>
+                            <th class="text-center" ng-if="formData.race.linkedRace">Actual Time</th>
+                            <th class="text-center" ng-if="formData.race.linkedRace">Actual AG%</th>
                             <th class="text-center"><i class="fa fa-comment" style="color:#aaa;"></i></th>
                             <th class="crf-th-sortable text-right" ng-click="setColSort('submitted')">Submitted <i
                                     class="fa" ng-class="colSortIcon('submitted')"></i></th>
@@ -374,15 +394,42 @@
                             </td>
                             <td class="text-center crf-td-num">
                                 <span ng-if="r.projectedAgeGrade != null" class="crf-ag-value crf-ag-proj">{{
-                                    formatAg(r.projectedAgeGrade) }}</span>
-                                <span ng-if="r.projectedAgeGrade == null" class="text-muted">—</span>
-                            </td>
-                            <td class="text-center crf-td-num" ng-init="diff = agDiff(r)">
-                                <span ng-if="diff != null"
-                                    ng-class="diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : 'text-muted')">
-                                    {{ diff > 0 ? '+' : '' }}{{ diff }}%
+                                    formatAg(r.projectedAgeGrade) }}</span><br>
+                                <span class="text-center crf-td-num" ng-init="diff = agDiff(r)">
+                                    <span ng-if="diff != null"
+                                        ng-class="diff > 0 ? 'text-success' : (diff < 0 ? 'text-danger' : 'text-success')">
+                                        {{ diff > 0 ? '+' : '' }}{{ diff }}%
+                                    </span>
+                                    <span ng-if="diff == null" class="text-muted">—</span>
                                 </span>
-                                <span ng-if="diff == null" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num" ng-if="formData.race.linkedRace">
+                                <strong class="time" ng-if="r.actualResult">{{ centisToString(r.actualResult.time)
+                                    }}</strong><br>
+                                <span class="text-center crf-td-num" ng-if="formData.race.linkedRace"
+                                    ng-init="actTimeDiff = calculateTimeDiff(r)">
+                                    <span ng-if="actTimeDiff != null"
+                                        ng-class="actTimeDiff > 0 ? 'text-success' : (actTimeDiff < 0 ? 'text-danger' : 'text-success')">
+                                        {{ actTimeDiff > 0 ? '+' : actTimeDiff === 0 ? '' : '-'
+                                        }}{{centisToString(actTimeDiff, true) }}
+                                    </span>
+                                </span>
+                                <span ng-if="!r.actualResult" class="text-muted">—</span>
+                            </td>
+                            <td class="text-center crf-td-num" ng-if="formData.race.linkedRace">
+                                <span ng-if="r.actualResult && r.actualResult.agegrade != null" class="crf-ag-value">{{
+                                    formatAg(r.actualResult.agegrade) }}<br>
+                                    <span class="text-center crf-td-num" ng-if="formData.race.linkedRace"
+                                        ng-init="actDiff = calculateAGDiff(r)">
+                                        <span ng-if="actDiff != null"
+                                            ng-class="actDiff > 0 ? 'text-success' : (actDiff < 0 ? 'text-danger' : 'text-muted')">
+                                            {{ actDiff > 0 ? '+' : '' }}{{ actDiff }}%
+                                        </span>
+                                        <span ng-if="actDiff == null" class="text-muted">—</span>
+                                    </span>
+                                </span>
+                                <span ng-if="!r.actualResult || r.actualResult.agegrade == null"
+                                    class="text-muted">—</span>
                             </td>
                             <td class="text-center crf-td-comments">
                                 <i ng-if="r.comments" class="fa fa-comment crf-comment-icon"

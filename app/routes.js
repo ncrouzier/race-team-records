@@ -507,7 +507,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             const now = req.query.date ? new Date(req.query.date) : new Date();
             const todayMonth = now.getUTCMonth();
-            const todayDay   = now.getUTCDate();
+            const todayDay = now.getUTCDate();
 
             const hasBirthdayToday = (banner) =>
                 (banner.members || []).some((m) => {
@@ -517,10 +517,10 @@ module.exports = async function (app, qs, passport, async, _) {
                 });
 
             const toResponse = (b) => ({
-                url:        '/images/banners/' + b.filename,
+                url: '/images/banners/' + b.filename,
                 titleTheme: b.titleTheme || null,
-                pinned:     !!b.pinned,
-                copyright:  b.copyright || null,
+                pinned: !!b.pinned,
+                copyright: b.copyright || null,
             });
 
             const birthdayBanners = banners.filter(hasBirthdayToday);
@@ -2030,7 +2030,7 @@ module.exports = async function (app, qs, passport, async, _) {
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
         let query = Race.find();
-
+        console.log("req.query", req.query.filters)
         if (req.query.filters) {
             const filters = JSON.parse(req.query.filters);
             if (filters.dateFrom) {
@@ -2038,6 +2038,9 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             if (filters.dateTo) {
                 query.lte('racedate', new Date(filters.dateTo));
+            }
+            if (filters.racename) {
+                query = query.regex('racename', new RegExp(filters.racename, 'i'));
             }
         }
         if (sort) {
@@ -2048,9 +2051,26 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(races => {
-                // if there is an error retrieving, send the error. nothing after res.send(err) will execute           
-                res.json(races); // return all races in JSON format
+            query.exec().then(async races => {
+                if (req.query.withCount === 'true') {
+                    const Result = require('./models/result');
+                    const resultCounts = await Result.aggregate([
+                        { $match: { 'race._id': { $in: races.map(r => r._id) } } },
+                        { $group: { _id: '$race._id', count: { $sum: 1 } } }
+                    ]);
+                    const countMap = {};
+                    resultCounts.forEach(rc => { countMap[rc._id.toString()] = rc.count; });
+                    const racesWithCount = races.map(r => {
+                        const raceObj = r.toObject();
+                        raceObj.resultCount = countMap[r._id.toString()] || 0;
+                        return raceObj;
+                    });
+                    res.json(racesWithCount);
+                } else {
+                    res.json(races);
+                }
+            }).catch(err => {
+                res.send(err);
             });
         } catch (err) {
             res.send(err)
@@ -4183,8 +4203,32 @@ module.exports = async function (app, qs, passport, async, _) {
                 .populate('user', 'username email')
                 .populate('member', 'firstname lastname username membershipDates')
                 .lean();
+
+            if (form.race && form.race.linkedRace) {
+                const Result = require('./models/result');
+                const memberIds = responses.filter(r => r.member).map(r => r.member._id);
+                const actualResults = await Result.find({
+                    'race._id': form.race.linkedRace,
+                    'members._id': { $in: memberIds }
+                }).lean();
+
+                const resultsByMemberId = {};
+                actualResults.forEach(res => {
+                    res.members.forEach(m => {
+                        resultsByMemberId[m._id.toString()] = res;
+                    });
+                });
+
+                responses.forEach(r => {
+                    if (r.member && resultsByMemberId[r.member._id.toString()]) {
+                        r.actualResult = resultsByMemberId[r.member._id.toString()];
+                    }
+                });
+            }
+
             res.json({ form, responses });
         } catch (err) {
+            console.error('Error fetching responses', err);
             res.status(500).json({ error: 'Error fetching responses' });
         }
     });

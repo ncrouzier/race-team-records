@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scope', '$http', '$uibModal', '$state', 'AuthService', function ($scope, $http, $uibModal, $state, AuthService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scope', '$rootScope', '$http', '$uibModal', '$state', 'AuthService', function ($scope, $rootScope, $http, $uibModal, $state, AuthService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -13,7 +13,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
     function loadForms() {
         $scope.loading = true;
         $scope.error = null;
-        $http.get('/api/comprace-forms').then(function (res) {
+        $http.get('/api/comprace-forms', { params: { _: Date.now() } }).then(function (res) {
             $scope.forms = res.data;
         }, function () {
             $scope.error = 'Failed to load forms.';
@@ -23,6 +23,16 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
     }
 
     loadForms();
+
+    // Refresh the list when returning from the detail view after a save.
+    // We use $stateChangeSuccess but the real safety net is that the list
+    // controller always calls loadForms() on init — goBack() forces reload:true.
+    $rootScope.$on('$stateChangeSuccess', function (event, toState) {
+        if (toState.name === '/comp-race-forms' && $rootScope.compRaceFormDirty) {
+            $rootScope.compRaceFormDirty = false;
+            loadForms();
+        }
+    });
 
     $scope.createForm = function () {
         var modalInstance = $uibModal.open({
@@ -72,8 +82,9 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
         $state.go('/comp-race-forms/detail', { formId: form._id }, { custom: { edit: true } });
     };
 
-    $scope.centisToString = function (cs) {
+    $scope.centisToString = function (cs, abs = false) {
         if (!cs) return '—';
+        if (abs) cs = Math.abs(cs);
         var totalSec = Math.floor(cs / 100);
         var h = Math.floor(totalSec / 3600);
         var m = Math.floor((totalSec % 3600) / 60);
@@ -85,7 +96,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', function ($scope, $http, $uibModalInstance) {
+angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', function ($scope, $http, $uibModalInstance, ResultsService) {
 
     $scope.form = { title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '', numComps: 0, numDiscounts: 0, closesAt: null, isOpen: true, bannerImageUrl: '' };
     $scope.raceTypes = [];
@@ -115,6 +126,35 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             .substring(0, 60);
     }
 
+    $scope.allRaces = [];
+    ResultsService.getRaceResultsWithCacheSupport().then(function (races) {
+        // Sort newest-first once; filtering is done client-side
+        $scope.allRaces = races.slice().sort(function (a, b) {
+            return new Date(b.racedate) - new Date(a.racedate);
+        });
+    });
+
+    // Client-side filter used by ui-select repeat expression.
+    // Default (< 3 chars): show 20 newest. With 3+ chars: show all matches.
+    $scope.filterRaces = function (search) {
+        if (!search || search.length < 3) return $scope.allRaces.slice(0, 20);
+        var q = search.toLowerCase();
+        return $scope.allRaces.filter(function (r) {
+            return r.racename && r.racename.toLowerCase().indexOf(q) !== -1;
+        });
+    };
+
+    $scope.onRaceSelect = function ($item) {
+        $scope.form.racename = $item.racename;
+        if ($item.racedate) {
+            $scope.form.racedate = new Date($item.racedate);
+        }
+        if ($item.racetype && $item.racetype._id) {
+            var match = $scope.raceTypes.find(function (rt) { return String(rt._id) === String($item.racetype._id); });
+            if (match) $scope.form.racetype = match;
+        }
+    };
+
     $scope.$watch('form.racename', function (val) {
         if (!$scope.uniqueIdManuallyEdited) {
             $scope.form.uniqueId = toSlug(val);
@@ -136,6 +176,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             title: $scope.form.title,
             description: $scope.form.description,
             race: {
+                linkedRace: $scope.form.linkedRace ? $scope.form.linkedRace._id : null,
                 racename: $scope.form.racename,
                 racedate: $scope.form.racedate || null,
                 racetype: $scope.form.racetype || null
@@ -163,7 +204,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$http', '$stateParams', '$transition$', 'ResultsService', function ($scope, $http, $stateParams, $transition$, ResultsService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$rootScope', '$http', '$stateParams', '$state', '$transition$', 'ResultsService', function ($scope, $rootScope, $http, $stateParams, $state, $transition$, ResultsService) {
 
     $scope.formData = null;
     $scope.responses = [];
@@ -179,6 +220,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         searchQuery: '',
         sortMethod: 'recentAg'
     };
+
 
     // Column sort: when active, takes over as primary sort and sets dropdown to 'custom'
     $scope.colSort = { col: null, dir: 1 };
@@ -368,6 +410,14 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
     $scope.$watch('responses', rebuildDisplay, true);
     $scope.$watch('filter', rebuildDisplay, true);
 
+    // Navigate back to the list. If form was saved, force UI-Router to
+    // re-create the list state so loadForms() runs fresh (reload:true).
+    $scope.goBack = function () {
+        var opts = $rootScope.compRaceFormDirty ? { reload: true } : {};
+        $rootScope.compRaceFormDirty = false;
+        $state.go('/comp-race-forms', {}, opts);
+    };
+
     var formId = $stateParams.formId;
 
     if (!formId) {
@@ -397,8 +447,10 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         return name.indexOf(q) !== -1 || race.indexOf(q) !== -1;
     };
 
-    $scope.centisToString = function (cs) {
-        if (!cs) return '—';
+    $scope.centisToString = function (cs, abs = false) {
+
+        if (cs == null) return '—';
+        if (abs) cs = Math.abs(cs);
         var totalSec = Math.floor(cs / 100);
         var h = Math.floor(totalSec / 3600);
         var m = Math.floor((totalSec % 3600) / 60);
@@ -487,11 +539,54 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             .substring(0, 60);
     }
 
+    $scope.allRacesDetail = [];
+    ResultsService.getRaceResultsWithCacheSupport().then(function (races) {
+        // Sort newest-first once; filtering is done client-side
+        $scope.allRacesDetail = races.slice().sort(function (a, b) {
+            return new Date(b.racedate) - new Date(a.racedate);
+        });
+        // If editing is already open, try to resolve the linkedRace object
+        _resolveLinkedRace();
+    });
+
+    // Client-side filter used by ui-select repeat expression.
+    // Default (< 3 chars): show 20 newest. With 3+ chars: show all matches.
+    $scope.filterRacesDetail = function (search) {
+        if (!search || search.length < 3) return $scope.allRacesDetail.slice(0, 20);
+        var q = search.toLowerCase();
+        return $scope.allRacesDetail.filter(function (r) {
+            return r.racename && r.racename.toLowerCase().indexOf(q) !== -1;
+        });
+    };
+
+    // Resolve editFields.linkedRace from cache by _id so ui-select shows the name+date
+    function _resolveLinkedRace() {
+        if (!$scope.editing || !$scope.editFields.linkedRace || !$scope.allRacesDetail.length) return;
+        var linkedId = $scope.editFields.linkedRace && ($scope.editFields.linkedRace._id || $scope.editFields.linkedRace);
+        if (!linkedId) return;
+        // Already a full object with racename — no need to resolve
+        if ($scope.editFields.linkedRace.racename) return;
+        var match = $scope.allRacesDetail.find(function (r) { return String(r._id) === String(linkedId); });
+        if (match) $scope.editFields.linkedRace = match;
+    }
+
+    $scope.onRaceSelect = function ($item) {
+        $scope.editFields.racename = $item.racename;
+        if ($item.racedate) {
+            $scope.editFields.racedate = new Date($item.racedate);
+        }
+        if ($item.racetype && $item.racetype._id) {
+            var match = $scope.raceTypes.find(function (rt) { return String(rt._id) === String($item.racetype._id); });
+            if (match) $scope.editFields.racetype = match;
+        }
+    };
+
     $scope.startEdit = function () {
         var r = $scope.formData;
         $scope.editFields = {
             title: r.title || '',
             description: r.description || '',
+            linkedRace: r.race && r.race.linkedRace ? r.race.linkedRace : null,
             racename: r.race ? r.race.racename : '',
             racedate: r.race && r.race.racedate ? new Date(r.race.racedate) : null,
             racetype: r.race ? (r.race.racetype || null) : null,
@@ -516,6 +611,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             });
         }
         $scope.editing = true;
+        // Try to resolve the linked race immediately if cache already loaded
+        _resolveLinkedRace();
     };
 
     $scope.onEditUniqueIdInput = function () {
@@ -542,6 +639,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             uniqueId: $scope.editFields.uniqueId || undefined,
             bannerImageUrl: $scope.editFields.bannerImageUrl || null,
             race: {
+                linkedRace: $scope.editFields.linkedRace ? ($scope.editFields.linkedRace._id || $scope.editFields.linkedRace) : null,
                 racename: $scope.editFields.racename,
                 racedate: $scope.editFields.racedate || null,
                 racetype: $scope.editFields.racetype || null
@@ -550,6 +648,10 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         var oldRaceTypeId = $scope.formData.race && $scope.formData.race.racetype && $scope.formData.race.racetype._id;
         var newRaceTypeId = payload.race && payload.race.racetype && payload.race.racetype._id;
         var raceTypeChanged = String(oldRaceTypeId || '') !== String(newRaceTypeId || '');
+
+        var oldLinkedRace = String($scope.formData.race && $scope.formData.race.linkedRace || '');
+        var newLinkedRace = String(payload.race.linkedRace || '');
+        var linkedRaceChanged = oldLinkedRace !== newLinkedRace;
 
         $http.put('/api/comprace-forms/' + formId, payload).then(function (res) {
             $scope.formData.title = res.data.title;
@@ -562,7 +664,9 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             $scope.formData.uniqueId = res.data.uniqueId;
             $scope.formData.bannerImageUrl = res.data.bannerImageUrl;
             $scope.editing = false;
-            if (raceTypeChanged) {
+            // Signal the list controller to reload when the user navigates back
+            $rootScope.compRaceFormDirty = true;
+            if (raceTypeChanged || linkedRaceChanged) {
                 $http.get('/api/comprace-forms/' + formId + '/responses').then(function (r) {
                     $scope.responses = r.data.responses;
                 });
@@ -605,6 +709,22 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
                 $scope.$apply(function () { $scope.emailCopyFeedback[slot] = false; });
             }, 2500);
         });
+    };
+
+    $scope.calculateTimeDiff = function (r) {
+        if (r.actualResult && r.actualResult.time != null && r.projectedTimeCentiseconds != null) {
+            var diff = (r.actualResult.time - r.projectedTimeCentiseconds);
+            return diff;
+        }
+        return null;
+    };
+
+    $scope.calculateAGDiff = function (r) {
+        if (r.actualResult && r.actualResult.agegrade != null && r.projectedAgeGrade != null) {
+            var diff = r.actualResult.agegrade - r.projectedAgeGrade;
+            return parseFloat(diff.toFixed(1));
+        }
+        return null;
     };
 
 

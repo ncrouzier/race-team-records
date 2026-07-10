@@ -29,6 +29,21 @@
         </div>
     </div>
 
+    <!-- <div class="row">
+        <div class="col-sm-12">
+            <div class="form-group">
+                <label>Existing Race <span class="text-muted">(optional, will auto-fill below)</span></label>
+                <ui-select ng-model="form.linkedRace" theme="select2" on-select="onRaceSelect($item)" style="min-width: 100%;">
+                    <ui-select-match placeholder="Search for a race..." allow-clear="true">{{$select.selected.racename}} <span ng-if="$select.selected.racedate">({{$select.selected.racedate | date:'longDate'}})</span></ui-select-match>
+                    <ui-select-choices repeat="race in filterRaces($select.search)">
+                        <div ng-bind-html="race.racename | highlight: $select.search"></div>
+                        <small>{{race.racedate | date:'longDate'}} <span ng-if="race.count > 0">- {{race.count}} runners</span></small>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+        </div>
+    </div> -->
+
     <div class="row">
         <div class="col-sm-4">
             <div class="form-group">
@@ -73,7 +88,8 @@
     </div>
 
     <div class="form-group">
-        <label><i class="fa fa-image"></i> Banner Image URL <span class="text-muted">(optional — full-screen background on the signup page)</span></label>
+        <label><i class="fa fa-image"></i> Banner Image URL <span class="text-muted">(optional — full-screen background
+                on the signup page)</span></label>
         <input type="url" class="form-control" ng-model="form.bannerImageUrl" placeholder="https://…">
     </div>
 

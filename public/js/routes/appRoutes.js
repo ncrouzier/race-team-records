@@ -172,6 +172,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/users.html');
                 gtag('event', 'page_view');
             }
+        }).state('/banners', {
+            url: "/banners",
+            templateUrl: "views/banners.html",
+            controller: 'BannersController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/banners.html');
+                gtag('event', 'page_view');
+            }
         }).state('/activitylogs', {
             url: "/activitylogs",
             templateUrl: "views/activitylogs.html",
@@ -202,6 +210,22 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             controller: 'RecordsController',
             onEnter: function () {
                 gtag('set', 'page_path', '/records.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/records/age', {
+            url: "/records/age",
+            templateUrl: "views/ageRecords.html",
+            controller: 'AgeRecordsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/records/age');
+                gtag('event', 'page_view');
+            }
+        }).state('/records/year', {
+            url: "/records/year",
+            templateUrl: "views/yearRecords.html",
+            controller: 'YearRecordsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/records/year');
                 gtag('event', 'page_view');
             }
         }).state('/stats', {
@@ -343,6 +367,24 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/notacult",
             templateUrl: "views/notacult.html",
             controller: 'ParkrunStatsController'
+        })
+        .state('/comp-race-forms', {
+            url: "/comp-race-forms",
+            templateUrl: "views/compRaceForms.html",
+            controller: 'CompRaceFormsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/comp-race-forms');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/comp-race-forms/detail', {
+            url: "/comp-race-forms/detail?formId",
+            templateUrl: "views/compRaceFormDetail.html",
+            controller: 'CompRaceFormDetailController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/comp-race-forms/detail');
+                gtag('event', 'page_view');
+            }
         });
 
 });

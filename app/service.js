@@ -1354,6 +1354,8 @@ module.exports = {
             // OPTIMIZATION: Use bulk team requirement stats update
             await this.updateTeamRequirementStatsBulk(memberIds);
             // await this.updateMemberStatsBulk(memberIds);
+
+            await this.updateAllTeamRecordAchievements();
             // console.log("startUpUpdate completed");
 
         } catch (error) {
@@ -1458,6 +1460,177 @@ module.exports = {
 
         } catch (err) {
             console.error('Error updating all location achievements:', err);
+        }
+    },
+
+    /**
+     * Rebuilds the "teamRecord" achievement on Result documents.
+     * Records exist in two category buckets: Open (every eligible result
+     * competes) and Master (only Master-category results). A single Master
+     * result can therefore earn both an Open and a Master record on the same
+     * race. Within each (racetype, recordCategory, sex) bucket, walks results
+     * in chronological order grouped by race date: a date-group sets a new
+     * record when its minimum time is strictly faster than the previous best,
+     * and every result in that group at that min time gets the achievement.
+     * Ties against a previously-set record on a later date are not tagged.
+     * Excluded: variable-distance racetypes, Swim/Cycling/Multisport racetypes,
+     * multisport races, non-record-eligible results, and multi-member results.
+     */
+    updateAllTeamRecordAchievements: async function () {
+        try {
+            // Identify excluded racetypes (variable-distance + non-running)
+            const excludedRaceTypes = await RaceType.find({
+                $or: [
+                    { isVariable: true },
+                    { name: 'Swim' },
+                    { name: 'Cycling' },
+                    { name: 'Multisport' }
+                ]
+            }).select('_id').lean();
+            const excludedRaceTypeIds = new Set(excludedRaceTypes.map(rt => rt._id.toString()));
+
+            // Fetch all eligible results, sorted chronologically
+            const results = await Result.find({
+                isRecordEligible: true,
+                'race.isMultisport': { $ne: true },
+                'members.0': { $exists: true }
+            })
+                .sort('race.racedate race.order')
+                .lean();
+
+            // Group eligible results into record-category buckets.
+            // Each Open-eligible result competes in Open; Master results also
+            // compete in Master (so they can hold a Master record alongside Open).
+            // bucketDateGroups: Map<bucketKey, Map<dateKey, Result[]>>
+            const bucketDateGroups = new Map();
+            const bucketDateOrder = new Map();
+
+            const addToBucket = (result, recordCategory, sex, dateKey) => {
+                const bucketKey = `${result.race.racetype._id.toString()}|${recordCategory}|${sex}`;
+                let dateMap = bucketDateGroups.get(bucketKey);
+                if (!dateMap) {
+                    dateMap = new Map();
+                    bucketDateGroups.set(bucketKey, dateMap);
+                    bucketDateOrder.set(bucketKey, []);
+                }
+                let dateGroup = dateMap.get(dateKey);
+                if (!dateGroup) {
+                    dateGroup = [];
+                    dateMap.set(dateKey, dateGroup);
+                    bucketDateOrder.get(bucketKey).push(dateKey);
+                }
+                dateGroup.push(result);
+            };
+
+            for (const result of results) {
+                if (!result.race || !result.race.racetype || !result.race.racetype._id) continue;
+                if (excludedRaceTypeIds.has(result.race.racetype._id.toString())) continue;
+                if (!result.category) continue;
+                const sex = result.members[0].sex;
+                if (!sex) continue;
+                if (typeof result.time !== 'number' || result.time <= 0) continue;
+                if (!result.race.racedate) continue;
+
+                const dateKey = new Date(result.race.racedate).toISOString().slice(0, 10);
+                addToBucket(result, 'Open', sex, dateKey);
+                if (result.category === 'Master') {
+                    addToBucket(result, 'Master', sex, dateKey);
+                }
+            }
+
+            // Walk each bucket chronologically; tag all results at the new min
+            // when a date-group strictly improves on the previous best. Keyed
+            // by (resultId, recordCategory) so a single result can hold both an
+            // Open and a Master teamRecord achievement.
+            // expectedByResultId: Map<resultId, Map<recordCategory, achievement>>
+            const expectedByResultId = new Map();
+
+            for (const [bucketKey, dateMap] of bucketDateGroups) {
+                const recordCategory = bucketKey.split('|')[1];
+                let previousBest;
+                const dateKeys = bucketDateOrder.get(bucketKey);
+                for (const dateKey of dateKeys) {
+                    const dateGroup = dateMap.get(dateKey);
+                    let minTime = Infinity;
+                    for (const r of dateGroup) {
+                        if (r.time < minTime) minTime = r.time;
+                    }
+                    if (previousBest === undefined || minTime < previousBest) {
+                        previousBest = minTime;
+                        for (const r of dateGroup) {
+                            if (r.time !== minTime) continue;
+                            const idStr = r._id.toString();
+                            const sex = r.members[0].sex;
+                            const achievement = {
+                                name: 'teamRecord',
+                                text: `New team record: ${r.race.racetype.name} (${getSurfaceText(r.race.racetype.surface)}) : ${recordCategory} ${sex}!`,
+                                value: {
+                                    time: r.time,
+                                    racetypeId: r.race.racetype._id,
+                                    racetypeName: r.race.racetype.name,
+                                    surface: r.race.racetype.surface,
+                                    category: recordCategory,
+                                    sex: sex
+                                }
+                            };
+                            let perCategory = expectedByResultId.get(idStr);
+                            if (!perCategory) {
+                                perCategory = new Map();
+                                expectedByResultId.set(idStr, perCategory);
+                            }
+                            perCategory.set(recordCategory, achievement);
+                        }
+                    }
+                }
+            }
+
+            // Build bulk operations: replace teamRecord achievements only when
+            // the set differs from what's already on the result. When a result
+            // sets both the Open and Master record, collapse the two into a
+            // single combined achievement (category: "Open").
+            const bulkOperations = [];
+            for (const result of results) {
+                const idStr = result._id.toString();
+                const existing = result.achievements || [];
+                const existingTeamRecords = existing.filter(a => a.name === 'teamRecord');
+                const expectedMap = expectedByResultId.get(idStr) || new Map();
+                const openAch = expectedMap.get('Open');
+                const masterAch = expectedMap.get('Master');
+                let expectedList;
+                if (openAch && masterAch) {
+                    const sex = openAch.value.sex;
+                    expectedList = [{
+                        name: 'teamRecord',
+                        text: `New team record: ${openAch.value.racetypeName} (${getSurfaceText(openAch.value.surface)}) : Open ${sex}!`,
+                        value: {
+                            time: openAch.value.time,
+                            racetypeId: openAch.value.racetypeId,
+                            racetypeName: openAch.value.racetypeName,
+                            surface: openAch.value.surface,
+                            category: 'Open',
+                            sex: sex
+                        }
+                    }];
+                } else {
+                    expectedList = Array.from(expectedMap.values());
+                }
+
+                if (!teamRecordsEqual(existingTeamRecords, expectedList)) {
+                    const others = existing.filter(a => a.name !== 'teamRecord');
+                    bulkOperations.push({
+                        updateOne: {
+                            filter: { _id: result._id },
+                            update: { $set: { achievements: [...others, ...expectedList] } }
+                        }
+                    });
+                }
+            }
+
+            if (bulkOperations.length > 0) {
+                await Result.bulkWrite(bulkOperations);
+            }
+        } catch (err) {
+            console.error('Error updating all team record achievements:', err);
         }
     },
 
@@ -1590,6 +1763,17 @@ function getSurfaceText(surface) {
         ['open water', 'openwater']
     ]);
     return surfaceMap.get(surface);
+}
+
+function teamRecordsEqual(existing, expected) {
+    if (existing.length !== expected.length) return false;
+    const key = a => `${a.value && a.value.category}|${a.value && a.value.sex}|${a.value && a.value.time}|${a.text}`;
+    const existingKeys = existing.map(key).sort();
+    const expectedKeys = expected.map(key).sort();
+    for (let i = 0; i < existingKeys.length; i++) {
+        if (existingKeys[i] !== expectedKeys[i]) return false;
+    }
+    return true;
 }
 
 

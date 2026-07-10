@@ -1,61 +1,76 @@
 <div class="jumbotron ">
 
     <!-- Dashboard for logged-in members -->
-    <div ng-if="user && user.member" class="well"
-        style="margin-bottom: 15px; background: #fff; border: 1px solid #ddd;">
-        <h4 style="margin-top: 0;">
-            Welcome back, {{user.member.firstname}}!
-            <a ui-sref="/members/member({member: user.member.username})" style="margin-left: 8px; font-weight: 600; font-size: 14px;">My Page &raquo;</a>
-        </h4>
-
-        <div class="row">
-            <!-- Latest Race -->
-            <div class="col-sm-4" style="border-right: 1px solid #eee;">
-                <h5><i class="fa fa-flag-checkered"></i> Latest Race</h5>
-                <hr style="margin: 5px 0 10px;">
-                <div ng-if="latestResult">
-                    <a class="hoverhand" ng-click="showRaceByIdModal(latestResult.race._id)">
-                        <b>{{latestResult.race.racename}}</b>
-                    </a>
-                    <br>
-                    <small class="text-muted">{{latestResult.race.racedate | date:'mediumDate':'UTC'}}</small>
-                    <br>
-                    <span>Time: <span class="time">{{latestResult.time | secondsToTimeString}}</span></span>
-                    <span ng-if="latestResult.agegrade"> | AG: {{latestResult.agegrade}}%</span>
-                </div>
-                <p ng-if="!latestResult && dashboardLoaded" class="text-muted"><small>No race results yet.</small></p>
-            </div>
-
-            <!-- Requirement Status -->
-            <div class="col-sm-8" ng-if="dashboardMember.teamRequirementStats">
-                <h5><i class="fa fa-check-square-o"></i> {{currentYear}} Requirements</h5>
-                <hr style="margin: 5px 0 10px;">
-                <div class="row">
-                    <div class="col-sm-6">
-                        <span ng-class="meetsRaceReq ? 'text-success' : 'text-warning'">
-                            <i class="fa" ng-class="meetsRaceReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
-                        </span>
-                        Races:
-                        <b>{{dashboardMember.teamRequirementStats.raceCount}} / {{reqConfig.minRaceCount}}</b>
-                        <br>
-                        <small class="text-muted">
-                            ({{dashboardMember.teamRequirementStats.volunteerJobCount}} volunteer
-                            job{{dashboardMember.teamRequirementStats.volunteerJobCount === 1 ? '' : 's'}})
-                        </small>
+    <div ng-if="user && user.member" class="feed-card feed-card-dashboard">
+        <div class="feed-card-header">
+            <h4>
+                <i class="fa fa-user-circle-o"></i> Welcome back, {{user.member.firstname}}!
+                <a ui-sref="/members/member({member: user.member.username})" class="feed-card-action">My Page
+                    &raquo;</a>
+            </h4>
+        </div>
+        <div class="feed-card-body">
+            <div class="row dashboard-grid">
+                <!-- Latest Race -->
+                <div class="col-sm-4 dashboard-col">
+                    <div class="dashboard-section-title"><i class="fa fa-flag-checkered"></i> Latest Race</div>
+                    <div ng-if="latestResult" class="dashboard-section-body">
+                        <a class="hoverhand dashboard-link" ng-click="showRaceByIdModal(latestResult.race._id)">
+                            <b>{{latestResult.race.racename}}</b>
+                        </a>
+                        <div class="feed-meta">{{latestResult.race.racedate | date:'mediumDate':'UTC'}}</div>
+                        <div class="dashboard-stat-line">
+                            Time: <span class="time">{{latestResult.time | secondsToTimeString}}</span>
+                            <span ng-if="latestResult.agegrade"> &middot; AG: <b>{{latestResult.agegrade}}%</b></span>
+                        </div>
                     </div>
-                    <div class="col-sm-6">
-                        <span ng-class="meetsAgeGradeReq ? 'text-success' : 'text-warning'">
-                            <i class="fa" ng-class="meetsAgeGradeReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
-                        </span>
-                        Best Age Grade:
-                        <b ng-if="dashboardMember.teamRequirementStats.maxAgeGrade !== 'N/A'">
-                            {{dashboardMember.teamRequirementStats.maxAgeGrade}}%
-                            <span ng-if="meetsAgeGradeReq">&ge; {{reqConfig.minAgeGrade}}%</span>
-                            <span ng-if="!meetsAgeGradeReq">&lt; {{reqConfig.minAgeGrade}}%</span>
-                        </b>
-                        <span ng-if="dashboardMember.teamRequirementStats.maxAgeGrade === 'N/A'" class="text-muted">
-                            N/A
-                        </span>
+                    <p ng-if="!latestResult && dashboardLoaded" class="feed-empty feed-empty-inline">No race results
+                        yet.</p>
+                </div>
+
+                <!-- Requirement Status -->
+                <div class="col-sm-8 dashboard-col" ng-if="dashboardMember.teamRequirementStats">
+                    <div class="dashboard-section-title"><i class="fa fa-check-square-o"></i> {{currentYear}}
+                        Requirements</div>
+                    <div class="row dashboard-section-body">
+                        <div class="col-sm-6 requirement-block"
+                            ng-class="meetsRaceReq ? 'requirement-met' : 'requirement-unmet'">
+                            <div class="requirement-icon">
+                                <i class="fa" ng-class="meetsRaceReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
+                            </div>
+                            <div class="requirement-content">
+                                <div class="requirement-label">Races</div>
+                                <div class="requirement-value">
+                                    {{dashboardMember.teamRequirementStats.raceCount}} <span
+                                        class="requirement-target">/ {{reqConfig.minRaceCount}}</span>
+                                </div>
+                                <div class="requirement-sub">
+                                    {{dashboardMember.teamRequirementStats.volunteerJobCount}} volunteer
+                                    job{{dashboardMember.teamRequirementStats.volunteerJobCount === 1 ? '' : 's'}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 requirement-block"
+                            ng-class="meetsAgeGradeReq ? 'requirement-met' : 'requirement-unmet'">
+                            <div class="requirement-icon">
+                                <i class="fa" ng-class="meetsAgeGradeReq ? 'fa-check-circle' : 'fa-circle-o'"></i>
+                            </div>
+                            <div class="requirement-content">
+                                <div class="requirement-label">Best Age Grade</div>
+                                <div class="requirement-value"
+                                    ng-if="dashboardMember.teamRequirementStats.maxAgeGrade !== 'N/A'">
+                                    {{dashboardMember.teamRequirementStats.maxAgeGrade}}%
+                                </div>
+                                <div class="requirement-value requirement-value-muted"
+                                    ng-if="dashboardMember.teamRequirementStats.maxAgeGrade === 'N/A'">
+                                    N/A
+                                </div>
+                                <div class="requirement-sub">
+                                    <span ng-if="meetsAgeGradeReq">&ge; {{reqConfig.minAgeGrade}}% required</span>
+                                    <span ng-if="!meetsAgeGradeReq">&lt; {{reqConfig.minAgeGrade}}% required</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -77,9 +92,14 @@
 
     <div class="row">
         <div class="col-md-12">
-            <h4>Last 5 Races <small> <a ui-sref="/results">View all results</a></small></h4>
-            <div class="row">
-                <div class="col-md-12">
+            <div class="feed-card feed-card-races">
+                <div class="feed-card-header">
+                    <h4>
+                        The team's latest 5 races
+                        <a ui-sref="/results" class="feed-card-action">View all results &raquo;</a>
+                    </h4>
+                </div>
+                <div class="feed-card-body feed-card-body-flush">
                     <race-list races-list="recentRaces" search-query="searchQuery"
                         results-table-properties="resultsTableProperties" user="user">
                     </race-list>
@@ -89,96 +109,173 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-            <h4>Latest Achievements</h4>
-            <ul class="list-group" ng-if="recentAchievements.length > 0">
-                <li class="list-group-item" ng-repeat="ach in recentAchievements">
-                    <div ng-if="ach.achievements.length === 1">
-                        <span ng-switch="ach.achievements[0].name.toLowerCase()">
-                            <span ng-switch-when="pb">
-                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
-                                        {{::ach.result.members[0].firstname}}
-                                        {{::ach.result.members[0].lastname}}</a></b> achieved a new
-                                {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of <span
-                                    class="time">{{::ach.achievements[0].value.time | secondsToTimeString}}</span> with
-                                the team at <b><a class="hoverhand" ng-click="showRaceModal(ach.race)">
-                                        {{::ach.race.racename}}</a></b>!
-                            </span>
-                            <span ng-switch-when="racecount">
-                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
-                                        {{::ach.result.members[0].firstname}}
-                                        {{::ach.result.members[0].lastname}}</a></b> ran their
-                                {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race with the team at <b><a
-                                        class="hoverhand" ng-click="showRaceModal(ach.race)">
-                                        {{::ach.race.racename}}</a></b>!
-                            </span>
-                            <span ng-switch-when="agegrade">
-                                <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
-                                        {{::ach.result.members[0].firstname}}
-                                        {{::ach.result.members[0].lastname}}</a></b> achieved a new age grade
-                                performance best of {{::ach.achievements[0].value.agegrade}}% at <b><a class="hoverhand"
-                                        ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>.
-                            </span>
-                        </span>
-                    </div>
-                    <div ng-if="ach.achievements.length > 1">
-                        <b><a ui-sref="/members/member({ member: ach.result.members[0].username })">
-                                {{::ach.result.members[0].firstname}} {{::ach.result.members[0].lastname}}</a></b>
-                        <span> had the following achievements at </span>
-                        <b><a class="hoverhand" ng-click="showRaceModal(ach.race)"> {{::ach.race.racename}}</a></b>:
-                        <ul>
-                            <li ng-repeat="a in ach.achievements" ng-if="a.name.toLowerCase() !== 'birthday'">
-                                <span ng-switch="a.name.toLowerCase()">
-                                    <span ng-switch-when="pb">
-                                        Achieved a new {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of
-                                        <span class="time">{{::a.value.time | secondsToTimeString}}</span>.
-                                    </span>
-                                    <span ng-switch-when="racecount">
-                                        Ran their {{a.value.raceCount | addOrdinalSuffix}} race with the team.
-                                    </span>
-                                    <span ng-switch-when="agegrade">
-                                        Achieved a new age grade performance best of {{::a.value.agegrade}}%.
-                                    </span>
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-            </ul>
-            <p ng-if="allAchievements.length === 0" class="text-muted">No recent achievements.</p>
-            <div ng-if="achievementsTotalPages > 1" class="text-center">
-                <ul class="pagination pagination-sm">
-                    <li ng-class="{disabled: achievementsPage === 1}">
-                        <a href ng-click="achievementsPrevPage()">&laquo;</a>
-                    </li>
-                    <li class="active"><a href>{{achievementsPage}} / {{achievementsTotalPages}}</a></li>
-                    <li ng-class="{disabled: achievementsPage === achievementsTotalPages}">
-                        <a href ng-click="achievementsNextPage()">&raquo;</a>
+            <div class="feed-card feed-card-compact">
+                <div class="feed-card-header">
+                    <h4><i class="fa fa-trophy"></i> The team's latest achievements</h4>
+                </div>
+                <ul class="feed-list" ng-if="recentAchievements.length > 0">
+                    <li class="feed-item" ng-repeat="ach in recentAchievements">
+                        <div ng-if="ach.achievements.length === 1" ng-switch="ach.achievements[0].name.toLowerCase()">
+                            <div ng-switch-when="pb" class="feed-row">
+                                <span class="feed-icon feed-icon-pb hoverhand" uib-tooltip="Personal Best">🧨</span>
+                                <div class="feed-body">
+                                    <div class="feed-text">
+                                        <b><a
+                                                ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
+                                        achieved a new {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of
+                                        <span class="time">{{::ach.achievements[0].value.time |
+                                            secondsToTimeString}}</span>
+                                        with the team at
+                                        <b><a class="hoverhand"
+                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                    </div>
+                                    <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
+                                </div>
+                            </div>
+                            <div ng-switch-when="racecount" class="feed-row">
+                                <span class="feed-icon feed-icon-racecount raceCountBox hoverhand"
+                                    uib-tooltip="Race Count">{{::ach.achievements[0].value.raceCount}}</span>
+                                <div class="feed-body">
+                                    <div class="feed-text">
+                                        <b><a
+                                                ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
+                                        ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race with
+                                        the team at
+                                        <b><a class="hoverhand"
+                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                    </div>
+                                    <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
+                                </div>
+                            </div>
+                            <div ng-switch-when="agegrade" class="feed-row">
+                                <span class="feed-icon feed-icon-agegrade hoverhand" uib-tooltip="Age Grade"><i
+                                        class="fa fa-percent"></i></span>
+                                <div class="feed-body">
+                                    <div class="feed-text">
+                                        <b><a
+                                                ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
+                                        achieved a new age grade performance best of
+                                        {{::ach.achievements[0].value.agegrade}}% at
+                                        <b><a class="hoverhand"
+                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>.
+                                    </div>
+                                    <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
+                                </div>
+                            </div>
+                            <div ng-switch-when="teamrecord" class="feed-row">
+                                <span class="feed-icon feed-icon-teamrecord hoverhand"
+                                    uib-tooltip="Team Record">🔥</span>
+                                <div class="feed-body">
+                                    <div class="feed-text">
+                                        <b><a
+                                                ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
+                                        set a new {{::ach.achievements[0].value.category}}
+                                        {{::ach.achievements[0].value.sex}} team record of
+                                        <span class="time">{{::ach.achievements[0].value.time |
+                                            secondsToTimeString}}</span>
+                                        for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) at
+                                        <b><a class="hoverhand"
+                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                    </div>
+                                    <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-if="ach.achievements.length > 1" class="feed-row">
+                            <span class="feed-icon feed-icon-multi hoverhand"
+                                uib-tooltip="Multiple Achievements">🌟</span>
+                            <div class="feed-body">
+                                <div class="feed-text">
+                                    <b><a
+                                            ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
+                                    had multiple achievements at
+                                    <b><a class="hoverhand"
+                                            ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>:
+                                </div>
+                                <ul class="feed-sublist">
+                                    <li ng-repeat="a in ach.achievements" ng-if="a.name.toLowerCase() !== 'birthday'"
+                                        ng-switch="a.name.toLowerCase()">
+                                        <span ng-switch-when="pb">
+                                            <!-- <i class="fa fa-bolt feed-sub-icon feed-sub-icon-pb"></i> -->
+                                            🧨 New {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) PR of
+                                            <span class="time bold">{{::a.value.time | secondsToTimeString}}</span>.
+                                        </span>
+                                        <span ng-switch-when="racecount">
+                                            <!-- <i class="fa fa-hashtag feed-sub-icon feed-sub-icon-racecount"></i> -->
+                                            <i class=" fa fa-hashtag"></i>
+                                            {{a.value.raceCount | addOrdinalSuffix}} race with the team. </span>
+                                        <span ng-switch-when="agegrade">
+                                            <!-- <i class="fa fa-percent feed-sub-icon feed-sub-icon-agegrade"></i> -->
+                                            🎖️ New age grade best of <span class="bold">{{::a.value.agegrade}}%</span>.
+                                        </span>
+                                        <span ng-switch-when="teamrecord">
+                                            <!-- <i class="fa fa-fire feed-sub-icon feed-sub-icon-teamrecord"></i> -->
+                                            🔥 New {{::a.value.category}} {{::a.value.sex}} team record of
+                                            <span class="time bold">{{::a.value.time |
+                                                secondsToTimeString}}</span>
+                                            for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}).
+                                        </span>
+                                    </li>
+                                </ul>
+                                <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
+                            </div>
+                        </div>
                     </li>
                 </ul>
+                <p ng-if="allAchievements.length === 0" class="feed-empty"><i class="fa fa-info-circle"></i> No recent
+                    achievements.</p>
+                <div ng-if="achievementsTotalPages > 1" class="feed-pagination">
+                    <ul class="pagination pagination-sm">
+                        <li ng-class="{disabled: achievementsPage === 1}">
+                            <a href ng-click="achievementsPrevPage()">&laquo;</a>
+                        </li>
+                        <li class="active"><a href>{{achievementsPage}} / {{achievementsTotalPages}}</a></li>
+                        <li ng-class="{disabled: achievementsPage === achievementsTotalPages}">
+                            <a href ng-click="achievementsNextPage()">&raquo;</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
         <div class="col-md-6">
-            <h4>Recent Team Ins & Outs <small>(last 60 days)</small></h4>
-            <ul class="list-group" ng-if="recentStatusChanges.length > 0">
-                <li class="list-group-item" ng-repeat="change in recentStatusChanges">
-                    <b><a ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}}
-                            {{change.member.lastname}}</a></b>
-                    <span ng-if="change.type === 'entry'">joined</span>
-                    <span ng-if="change.type === 'exit'">left</span>
-                    <span>the team on {{change.date | date:'mediumDate':'UTC'}}</span>
-                </li>
-            </ul>
-            <p ng-if="allStatusChanges.length === 0" class="text-muted">No changes in the last 60 days.</p>
-            <div ng-if="statusChangesTotalPages > 1" class="text-center">
-                <ul class="pagination pagination-sm">
-                    <li ng-class="{disabled: statusChangesPage === 1}">
-                        <a href ng-click="statusChangesPrevPage()">&laquo;</a>
-                    </li>
-                    <li class="active"><a href>{{statusChangesPage}} / {{statusChangesTotalPages}}</a></li>
-                    <li ng-class="{disabled: statusChangesPage === statusChangesTotalPages}">
-                        <a href ng-click="statusChangesNextPage()">&raquo;</a>
+            <div class="feed-card">
+                <div class="feed-card-header">
+                    <h4><i class="fa fa-exchange"></i> Latest Ins &amp; Outs <small>(last 60 days)</small></h4>
+                </div>
+                <ul class="feed-list" ng-if="recentStatusChanges.length > 0">
+                    <li class="feed-item" ng-repeat="change in recentStatusChanges">
+                        <div class="feed-row">
+                            <span class="feed-icon"
+                                ng-class="change.type === 'entry' ? 'feed-icon-entry' : 'feed-icon-exit'">
+                                <i class="fa" ng-class="change.type === 'entry' ? 'fa-sign-in' : 'fa-sign-out'"></i>
+                            </span>
+                            <div class="feed-body">
+                                <div class="feed-text">
+                                    <b><a
+                                            ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}}&nbsp;{{change.member.lastname}}</a></b>
+                                    <span ng-if="change.type === 'entry'" class="feed-tag feed-tag-entry">joined the
+                                        team</span>
+                                    <span ng-if="change.type === 'exit'" class="feed-tag feed-tag-exit">left the
+                                        team</span>
+                                </div>
+                                <div class="feed-meta">{{change.date | date:'mediumDate':'UTC'}}</div>
+                            </div>
+                        </div>
                     </li>
                 </ul>
+                <p ng-if="allStatusChanges.length === 0" class="feed-empty"><i class="fa fa-info-circle"></i> No changes
+                    in the last 60 days.</p>
+                <div ng-if="statusChangesTotalPages > 1" class="feed-pagination">
+                    <ul class="pagination pagination-sm">
+                        <li ng-class="{disabled: statusChangesPage === 1}">
+                            <a href ng-click="statusChangesPrevPage()">&laquo;</a>
+                        </li>
+                        <li class="active"><a href>{{statusChangesPage}} / {{statusChangesTotalPages}}</a></li>
+                        <li ng-class="{disabled: statusChangesPage === statusChangesTotalPages}">
+                            <a href ng-click="statusChangesNextPage()">&raquo;</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

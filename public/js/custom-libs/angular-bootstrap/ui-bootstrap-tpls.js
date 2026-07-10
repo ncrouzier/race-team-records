@@ -2954,17 +2954,9 @@ function($scope, $element, $attrs, $compile, $log, $parse, $window, $document, $
     evt.stopPropagation();
 
     if (date === 'today') {
-      var today = new Date();      
-      if (angular.isDate($scope.date)) {
-        // date = new Date($scope.date);
-        // date.setUTCFullYear(today.getFullYear(), today.getMonth(), today.getDate());  
-        // date.setUTCHours(0, 0, 0, 0);      
-        date2 = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0));
-        date = new Date(date2.getTime() + (60000 * date2.getTimezoneOffset()));
-      } else {
-        date = dateParser.fromTimezone(today, ngModelOptions.timezone);
-        date.setUTCHours(0, 0, 0, 0);
-      }
+      var today = new Date();
+      date2 = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0));
+      date = new Date(date2.getTime() + (60000 * date2.getTimezoneOffset()));
     }
     if (date === 'jan') {
       var today = new Date();      

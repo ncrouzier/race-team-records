@@ -44,20 +44,44 @@ app.factory('MyCachingRestService', function(Restangular) {
 });
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', 'StatsService', function($scope, AuthService, $state, ResultsService,MembersService,localStorageService, StatsService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$http', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', 'StatsService', function($scope, $http, AuthService, $state, ResultsService,MembersService,localStorageService, StatsService) {
     $scope.$state = $state;
 
-    var navBackGround = ["navimg-2", "navimg-3","navimg-4","navimg-5","navimg-6","navimg-7","navimg-8" ];
-    var navBackGroundCR = ['<a href="http://www.mcrrcphotos.com/2017-Photos/Race-Photos/Piece-of-Cake-10K5K/Piece-of-Cake-10K5K-BButters/i-5hgMqmQ/A" target="_blank" title="Photo by B.Butters at Piece of Cake 10K 2017">© B.Butters</a>',
-    '<a href="https://www.facebook.com/pg/gburgmd/photos/?tab=album&album_id=10154376948800741" target="_blank" title="Photo by the City of Gaithersburg at La Milla de Mayo 2017">© City of Gaithersburg</a>',
-    '<a href="https://www.mcrrcphotos.com/2019-Photos/Race-Photos/Going-Green-Track-Meet-/Going-Green-Track-Meet-DReichmann/i-MVnQgnh/A" target="_blank" title="Photo by D.Reichmann at Going Green Track Meet 2019">© D.Reichmann</a>',
-    '<a href="https://www.mcrrcphotos.com/2018-Photos/Race-Photos/Midsummer-Nights-Mile-DReichmann/i-8rB2WKf/A" target="_blank" title="Photo by D.Reichmann at Midsummer Night\'s Mile 2018">© D.Reichmann</a>',
-    '<a href="https://www.instagram.com/dwhitphoto/" target="_blank" title="Photo by Dustin Whitlow at Army 10 Miler 2018">© Dustin Whitlow</a>',
-    '<a href="https://www.mcrrcphotos.com/2021-Photos/Race-Photos/Rileys-Rumble-Half-Marathon/Rileys-Rumble-Half-Marathon-DReichmann/i-w62wjJL/A" target="_blank" title="Photo by D.Reichmann at Riley\'s Rumble Half Marathon 2021">© D.Reichmann</a>',
-    '<a href="https://www.mile90.com/Race-Photos/2021-Race-Events/Bighorn-Trail-Run-2021/On-Course/100-Mile/Dry-Fork-Inbound/i-S8WpdHd/buy" target="_blank" title="Photo by Mile 90 Photography at BigHorn 100 2021">© Mile 90 Photography</a>'];
-    var random = Math.floor(Math.random() * navBackGround.length );
-    $scope.getbg = navBackGround[random];
-    $scope.getcr = navBackGroundCR[random];
+    $scope.bannerStyle = {};
+    $scope.bannerTitleStyle = {};
+    $scope.bannerTitleTopStyle = {};
+    $scope.bannerTitleBottomStyle = {};
+    $scope.bannerTitleHidden = false;
+    $scope.toggleBannerTitle = function() {
+        $scope.bannerTitleHidden = !$scope.bannerTitleHidden;
+    };
+    function applyBanner(pick) {
+        $scope.bannerStyle = { 'background-image': 'url("' + pick.url + '")' };
+        if (pick.titleTheme) {
+            var t = pick.titleTheme;
+            $scope.bannerTitleStyle = {
+                'background':              t.background     !== undefined ? t.background     : '',
+                'backdrop-filter':         t.backdropFilter !== undefined ? t.backdropFilter : '',
+                '-webkit-backdrop-filter': t.backdropFilter !== undefined ? t.backdropFilter : '',
+            };
+            $scope.bannerTitleTopStyle    = { 'color': t.topColor    || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
+            $scope.bannerTitleBottomStyle = { 'color': t.bottomColor || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
+        }
+        $scope.bannerCopyright      = pick.copyright || null;
+        $scope.bannerCopyrightStyle = (pick.copyright && pick.copyright.color) ? { color: pick.copyright.color } : {};
+    }
+
+    var _now = new Date();
+    var _localDate = _now.getFullYear() + '-' + String(_now.getMonth() + 1).padStart(2, '0') + '-' + String(_now.getDate()).padStart(2, '0');
+    $http.get('/api/banners', { params: { date: _localDate } }).then(function(resp) {
+        var banners = resp.data || [];
+        if (!banners.length) return;
+        applyBanner(banners[0]);
+    });
+
+    $scope.$on('banner:preview', function(evt, pick) {
+        applyBanner(pick);
+    });
 
 
     $scope.currentYear = new Date().getFullYear();

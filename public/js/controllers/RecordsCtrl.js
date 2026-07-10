@@ -75,7 +75,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         $scope.getResults();
     }else{
         $scope.paramModel.sex = '.*';
-        $scope.paramModel.category = '.*';
+        $scope.paramModel.category = '.*'; // Open (all ages)
         $scope.paramModel.mode = 'All';
         $scope.paramModel.racetype = "";
         $scope.paramModel.limit = 5;

@@ -362,6 +362,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     async function _getRaceResultsWithCacheSupportImpl(params) {
+        params = params || {};
         try {
             var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
                 return sysinfo;

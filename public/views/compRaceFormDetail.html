@@ -190,26 +190,63 @@
                 <!-- Allocation row (always visible) -->
                 <div class="crf-allocation-row" style="margin-top: 12px;">
                     <!-- Display mode: read-only counts -->
-                    <div ng-if="!editing" class="crf-allocation-field">
+                    <div ng-if="!editing && !formData.splitByGender" class="crf-allocation-field">
                         <span class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
                             Comps</span>
                         <span class="crf-allocation-value">{{ formData.numComps || 0 }}</span>
                     </div>
-                    <div ng-if="!editing" class="crf-allocation-field">
+                    <div ng-if="!editing && !formData.splitByGender" class="crf-allocation-field">
                         <span class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
                             Discounts</span>
                         <span class="crf-allocation-value">{{ formData.numDiscounts || 0 }}</span>
                     </div>
+                    <div ng-if="!editing && formData.splitByGender" class="crf-allocation-field">
+                        <span class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
+                            Comps (M/F)</span>
+                        <span class="crf-allocation-value">{{ formData.numCompsMale || 0 }} / {{
+                            formData.numCompsFemale || 0 }}</span>
+                    </div>
+                    <div ng-if="!editing && formData.splitByGender" class="crf-allocation-field">
+                        <span class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
+                            Discounts (M/F)</span>
+                        <span class="crf-allocation-value">{{ formData.numDiscountsMale || 0 }} / {{
+                            formData.numDiscountsFemale || 0 }}</span>
+                    </div>
                     <!-- Edit mode: editable inputs -->
-                    <div ng-if="editing" class="crf-allocation-field">
+                    <div ng-if="editing" class="crf-allocation-field" style="flex-basis:100%;">
+                        <label style="font-weight:normal;">
+                            <input type="checkbox" ng-model="editFields.splitByGender"> Split by gender
+                        </label>
+                    </div>
+                    <div ng-if="editing && !editFields.splitByGender" class="crf-allocation-field">
                         <label class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
                             Comps</label>
                         <input type="number" class="crf-allocation-input" ng-model="editFields.numComps" min="0">
                     </div>
-                    <div ng-if="editing" class="crf-allocation-field">
+                    <div ng-if="editing && !editFields.splitByGender" class="crf-allocation-field">
                         <label class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
                             Discounts</label>
                         <input type="number" class="crf-allocation-input" ng-model="editFields.numDiscounts" min="0">
+                    </div>
+                    <div ng-if="editing && editFields.splitByGender" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
+                            Comps (M)</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numCompsMale" min="0">
+                    </div>
+                    <div ng-if="editing && editFields.splitByGender" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-thumbs-up crf-slot-comp-icon"></i>
+                            Comps (F)</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numCompsFemale" min="0">
+                    </div>
+                    <div ng-if="editing && editFields.splitByGender" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
+                            Discounts (M)</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numDiscountsMale" min="0">
+                    </div>
+                    <div ng-if="editing && editFields.splitByGender" class="crf-allocation-field">
+                        <label class="crf-allocation-label"><i class="fa fa-tag crf-slot-discount-icon"></i>
+                            Discounts (F)</label>
+                        <input type="number" class="crf-allocation-input" ng-model="editFields.numDiscountsFemale" min="0">
                     </div>
                     <div class="crf-allocation-legend">
                         <span class="crf-slot-legend crf-slot-legend-comp"><i class="fa fa-thumbs-up"></i> Comp</span>
@@ -223,7 +260,7 @@
                             </svg> Cut</span>
                     </div>
                     <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;"
-                        ng-if="formData.numComps || formData.numDiscounts">
+                        ng-if="!formData.splitByGender && (formData.numComps || formData.numDiscounts)">
                         <div ng-if="formData.numComps" class="crf-email-dropdown"
                             ng-class="{'crf-email-dropdown-open': compEmailMenuOpen}">
                             <button class="crf-chip crf-chip-open" ng-click="compEmailMenuOpen = !compEmailMenuOpen">
@@ -271,6 +308,29 @@
                             ng-if="formData.numDiscounts" uib-tooltip="Copy discount recipients' emails">
                             <i class="fa" ng-class="emailCopyFeedback['discount'] ? 'fa-check' : 'fa-copy'"></i>
                             {{ emailCopyFeedback['discount'] ? 'Copied!' : 'Discount emails' }}
+                        </button>
+                    </div>
+                    <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;"
+                        ng-if="formData.splitByGender && (formData.numCompsMale || formData.numCompsFemale || formData.numDiscountsMale || formData.numDiscountsFemale)">
+                        <button class="crf-chip crf-chip-open" ng-click="copyEmails('comp-male')"
+                            ng-if="formData.numCompsMale" uib-tooltip="Copy male comp recipients' emails">
+                            <i class="fa" ng-class="emailCopyFeedback['comp-male'] ? 'fa-check' : 'fa-copy'"></i>
+                            {{ emailCopyFeedback['comp-male'] ? 'Copied!' : 'Comp emails (M)' }}
+                        </button>
+                        <button class="crf-chip crf-chip-open" ng-click="copyEmails('comp-female')"
+                            ng-if="formData.numCompsFemale" uib-tooltip="Copy female comp recipients' emails">
+                            <i class="fa" ng-class="emailCopyFeedback['comp-female'] ? 'fa-check' : 'fa-copy'"></i>
+                            {{ emailCopyFeedback['comp-female'] ? 'Copied!' : 'Comp emails (F)' }}
+                        </button>
+                        <button class="crf-chip crf-chip-discount-email" ng-click="copyEmails('discount-male')"
+                            ng-if="formData.numDiscountsMale" uib-tooltip="Copy male discount recipients' emails">
+                            <i class="fa" ng-class="emailCopyFeedback['discount-male'] ? 'fa-check' : 'fa-copy'"></i>
+                            {{ emailCopyFeedback['discount-male'] ? 'Copied!' : 'Discount emails (M)' }}
+                        </button>
+                        <button class="crf-chip crf-chip-discount-email" ng-click="copyEmails('discount-female')"
+                            ng-if="formData.numDiscountsFemale" uib-tooltip="Copy female discount recipients' emails">
+                            <i class="fa" ng-class="emailCopyFeedback['discount-female'] ? 'fa-check' : 'fa-copy'"></i>
+                            {{ emailCopyFeedback['discount-female'] ? 'Copied!' : 'Discount emails (F)' }}
                         </button>
                     </div>
                 </div>
@@ -362,6 +422,8 @@
                             <td class="crf-td-name">
                                 <a ng-if="r.member" ng-href="/members/member/{{ r.member.username }}" target="_blank">{{
                                     r.member.firstname }} {{ r.member.lastname }}</a>
+                                <span ng-if="formData.splitByGender && memberGender(r)" class="text-muted"
+                                    style="font-size:11px;">({{ memberGender(r) === 'male' ? 'M' : 'F' }})</span>
                                 <span ng-if="!r.member && r.user">{{ r.user.username }}</span>
                                 <span ng-if="!r.member && !r.user" class="text-muted">—</span>
                             </td>

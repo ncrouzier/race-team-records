@@ -104,7 +104,13 @@
             Leave blank to auto-generate.</p>
     </div>
 
-    <div class="row">
+    <div class="checkbox" style="margin-bottom: 4px;">
+        <label>
+            <input type="checkbox" ng-model="form.splitByGender"> Split comps/discounts by gender
+        </label>
+    </div>
+
+    <div class="row" ng-if="!form.splitByGender">
         <div class="col-sm-6">
             <div class="form-group">
                 <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps offered <span
@@ -117,6 +123,33 @@
                 <label><i class="fa fa-tag" style="color:#008cba;"></i> Discount codes <span
                         class="text-muted">(optional)</span></label>
                 <input type="number" class="form-control" ng-model="form.numDiscounts" min="0" placeholder="0">
+            </div>
+        </div>
+    </div>
+
+    <div class="row" ng-if="form.splitByGender">
+        <div class="col-sm-3">
+            <div class="form-group">
+                <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps (M)</label>
+                <input type="number" class="form-control" ng-model="form.numCompsMale" min="0" placeholder="0">
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="form-group">
+                <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps (F)</label>
+                <input type="number" class="form-control" ng-model="form.numCompsFemale" min="0" placeholder="0">
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="form-group">
+                <label><i class="fa fa-tag" style="color:#008cba;"></i> Discounts (M)</label>
+                <input type="number" class="form-control" ng-model="form.numDiscountsMale" min="0" placeholder="0">
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="form-group">
+                <label><i class="fa fa-tag" style="color:#008cba;"></i> Discounts (F)</label>
+                <input type="number" class="form-control" ng-model="form.numDiscountsFemale" min="0" placeholder="0">
             </div>
         </div>
     </div>

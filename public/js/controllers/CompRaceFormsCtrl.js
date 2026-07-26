@@ -98,7 +98,12 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
 
 angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', function ($scope, $http, $uibModalInstance, ResultsService) {
 
-    $scope.form = { title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '', numComps: 0, numDiscounts: 0, closesAt: null, isOpen: true, bannerImageUrl: '' };
+    $scope.form = {
+        title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '',
+        numComps: 0, numDiscounts: 0,
+        splitByGender: false, numCompsMale: 0, numCompsFemale: 0, numDiscountsMale: 0, numDiscountsFemale: 0,
+        closesAt: null, isOpen: true, bannerImageUrl: ''
+    };
     $scope.raceTypes = [];
     $scope.loadingRaceTypes = true;
     $scope.saving = false;
@@ -184,6 +189,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             uniqueId: $scope.form.uniqueId || undefined,
             numComps: $scope.form.numComps || 0,
             numDiscounts: $scope.form.numDiscounts || 0,
+            splitByGender: !!$scope.form.splitByGender,
+            numCompsMale: $scope.form.numCompsMale || 0,
+            numCompsFemale: $scope.form.numCompsFemale || 0,
+            numDiscountsMale: $scope.form.numDiscountsMale || 0,
+            numDiscountsFemale: $scope.form.numDiscountsFemale || 0,
             closesAt: $scope.form.closesAt || null,
             isOpen: $scope.form.isOpen,
             bannerImageUrl: $scope.form.bannerImageUrl || null
@@ -487,10 +497,47 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         });
     };
 
+    // Normalized 'male' / 'female' / null (unknown) from the linked member's sex.
+    function memberGender(response) {
+        var sex = response.member && response.member.sex;
+        if (!sex) return null;
+        sex = sex.toLowerCase();
+        if (sex === 'male' || sex === 'm') return 'male';
+        if (sex === 'female' || sex === 'f') return 'female';
+        return null;
+    }
+    $scope.memberGender = memberGender;
+
+    // 1-based position of this response among displayedResponses of the same gender.
+    // Returns null if gender is unknown (response isn't linked to a member with a sex on file).
+    function genderRank(response) {
+        var gender = memberGender(response);
+        if (!gender) return null;
+        var group = $scope.displayedResponses.filter(function (r) { return memberGender(r) === gender; });
+        var idx = group.indexOf(response);
+        return idx < 0 ? null : idx + 1;
+    }
+
     // Returns 'comp', 'discount', or 'cut' based on the row's 1-based position
     // in the *full* (unfiltered) sorted list — so slot assignment is stable regardless of search.
+    // When formData.splitByGender is set, ranking and comp/discount counts are computed
+    // separately within each gender group instead of across the combined list.
     $scope.rowSlot = function (response) {
         if (!$scope.formData) return 'cut';
+
+        if ($scope.formData.splitByGender) {
+            var gender = memberGender(response);
+            if (!gender) return null;
+            var comps = (gender === 'male' ? $scope.formData.numCompsMale : $scope.formData.numCompsFemale) || 0;
+            var discounts = (gender === 'male' ? $scope.formData.numDiscountsMale : $scope.formData.numDiscountsFemale) || 0;
+            if (!comps && !discounts) return null;
+            var gPos = genderRank(response);
+            if (gPos == null) return null;
+            if (gPos <= comps) return 'comp';
+            if (gPos <= comps + discounts) return 'discount';
+            return 'cut';
+        }
+
         var numComps = $scope.formData.numComps || 0;
         var numDiscounts = $scope.formData.numDiscounts || 0;
         if (!numComps && !numDiscounts) return null;
@@ -505,21 +552,37 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
     // True if this row is the first "cut" row (where the cut line should appear above it)
     $scope.isCutLine = function (response) {
         if (!$scope.formData) return false;
+
+        if ($scope.formData.splitByGender) {
+            var idx = $scope.displayedResponses.indexOf(response);
+            if (idx < 0 || $scope.rowSlot(response) !== 'cut') return false;
+            if (idx === 0) return true;
+            return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== 'cut';
+        }
+
         var numComps = $scope.formData.numComps || 0;
         var numDiscounts = $scope.formData.numDiscounts || 0;
         if (!numComps && !numDiscounts) return false;
-        var idx = $scope.displayedResponses.indexOf(response);
-        return idx === numComps + numDiscounts;
+        var idx2 = $scope.displayedResponses.indexOf(response);
+        return idx2 === numComps + numDiscounts;
     };
 
     // True if this row is the first "discount" row (line between comp and discount sections)
     $scope.isDiscountLine = function (response) {
         if (!$scope.formData) return false;
+
+        if ($scope.formData.splitByGender) {
+            var idx = $scope.displayedResponses.indexOf(response);
+            if (idx < 0 || $scope.rowSlot(response) !== 'discount') return false;
+            if (idx === 0) return true;
+            return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== 'discount';
+        }
+
         var numComps = $scope.formData.numComps || 0;
         var numDiscounts = $scope.formData.numDiscounts || 0;
         if (!numComps || !numDiscounts) return false;
-        var idx = $scope.displayedResponses.indexOf(response);
-        return idx === numComps;
+        var idx2 = $scope.displayedResponses.indexOf(response);
+        return idx2 === numComps;
     };
 
     // Inline form editing
@@ -595,6 +658,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             closesAt: r.closesAt ? new Date(r.closesAt) : null,
             numComps: r.numComps || 0,
             numDiscounts: r.numDiscounts || 0,
+            splitByGender: !!r.splitByGender,
+            numCompsMale: r.numCompsMale || 0,
+            numCompsFemale: r.numCompsFemale || 0,
+            numDiscountsMale: r.numDiscountsMale || 0,
+            numDiscountsFemale: r.numDiscountsFemale || 0,
             bannerImageUrl: r.bannerImageUrl || ''
         };
         if (!$scope.raceTypes.length) {
@@ -636,6 +704,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             closesAt: $scope.editFields.closesAt || null,
             numComps: $scope.editFields.numComps || 0,
             numDiscounts: $scope.editFields.numDiscounts || 0,
+            splitByGender: !!$scope.editFields.splitByGender,
+            numCompsMale: $scope.editFields.numCompsMale || 0,
+            numCompsFemale: $scope.editFields.numCompsFemale || 0,
+            numDiscountsMale: $scope.editFields.numDiscountsMale || 0,
+            numDiscountsFemale: $scope.editFields.numDiscountsFemale || 0,
             uniqueId: $scope.editFields.uniqueId || undefined,
             bannerImageUrl: $scope.editFields.bannerImageUrl || null,
             race: {
@@ -660,6 +733,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             $scope.formData.closesAt = res.data.closesAt;
             $scope.formData.numComps = res.data.numComps;
             $scope.formData.numDiscounts = res.data.numDiscounts;
+            $scope.formData.splitByGender = res.data.splitByGender;
+            $scope.formData.numCompsMale = res.data.numCompsMale;
+            $scope.formData.numCompsFemale = res.data.numCompsFemale;
+            $scope.formData.numDiscountsMale = res.data.numDiscountsMale;
+            $scope.formData.numDiscountsFemale = res.data.numDiscountsFemale;
             $scope.formData.race = res.data.race;
             $scope.formData.uniqueId = res.data.uniqueId;
             $scope.formData.bannerImageUrl = res.data.bannerImageUrl;
@@ -682,20 +760,23 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
 
     $scope.copyEmails = function (slot) {
         var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
         var half = Math.ceil(numComps / 2);
         var t1 = Math.ceil(numComps / 3);
         var t2 = Math.ceil(numComps * 2 / 3);
         var emails = $scope.displayedResponses
-            .filter(function (_r, idx) {
+            .filter(function (r, idx) {
                 var pos = idx + 1;
-                if (slot === 'comp') return pos <= numComps;
+                if (slot === 'comp') return $scope.rowSlot(r) === 'comp';
+                if (slot === 'discount') return $scope.rowSlot(r) === 'discount';
+                if (slot === 'comp-male') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'male';
+                if (slot === 'comp-female') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'female';
+                if (slot === 'discount-male') return $scope.rowSlot(r) === 'discount' && $scope.memberGender(r) === 'male';
+                if (slot === 'discount-female') return $scope.rowSlot(r) === 'discount' && $scope.memberGender(r) === 'female';
                 if (slot === 'comp-first') return pos <= half;
                 if (slot === 'comp-second') return pos > half && pos <= numComps;
                 if (slot === 'comp-third1') return pos <= t1;
                 if (slot === 'comp-third2') return pos > t1 && pos <= t2;
                 if (slot === 'comp-third3') return pos > t2 && pos <= numComps;
-                if (slot === 'discount') return pos > numComps && pos <= numComps + numDiscounts;
                 return false;
             })
             .map(function (r) { return r.user && r.user.email ? r.user.email : null; })

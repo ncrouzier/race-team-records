@@ -4107,10 +4107,17 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: create a new form
     app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const { title, description, race, numComps, numDiscounts, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const { title, description, race, numComps, numDiscounts, splitByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, closesAt, uniqueId, bannerImageUrl } = req.body;
             console.log(req.body);
             if (!title || !race) return res.status(400).json({ error: 'title and race are required' });
-            const formData = { title, description, race, createdBy: req.user._id, numComps: numComps || 0, numDiscounts: numDiscounts || 0, closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null };
+            const formData = {
+                title, description, race, createdBy: req.user._id,
+                numComps: numComps || 0, numDiscounts: numDiscounts || 0,
+                splitByGender: !!splitByGender,
+                numCompsMale: numCompsMale || 0, numCompsFemale: numCompsFemale || 0,
+                numDiscountsMale: numDiscountsMale || 0, numDiscountsFemale: numDiscountsFemale || 0,
+                closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null
+            };
             if (uniqueId) formData.uniqueId = uniqueId;
             const form = new CompRaceForm(formData);
             await form.save();
@@ -4127,7 +4134,7 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
-            const { title, description, isOpen, numComps, numDiscounts, race, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const { title, description, isOpen, numComps, numDiscounts, splitByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, race, closesAt, uniqueId, bannerImageUrl } = req.body;
 
             const oldRaceTypeId = form.race && form.race.racetype && String(form.race.racetype._id);
             const newRaceTypeId = race && race.racetype && String(race.racetype._id);
@@ -4138,6 +4145,11 @@ module.exports = async function (app, qs, passport, async, _) {
             if (isOpen !== undefined) form.isOpen = isOpen;
             if (numComps !== undefined) form.numComps = numComps;
             if (numDiscounts !== undefined) form.numDiscounts = numDiscounts;
+            if (splitByGender !== undefined) form.splitByGender = !!splitByGender;
+            if (numCompsMale !== undefined) form.numCompsMale = numCompsMale;
+            if (numCompsFemale !== undefined) form.numCompsFemale = numCompsFemale;
+            if (numDiscountsMale !== undefined) form.numDiscountsMale = numDiscountsMale;
+            if (numDiscountsFemale !== undefined) form.numDiscountsFemale = numDiscountsFemale;
             if (race !== undefined) form.race = race;
             if (closesAt !== undefined) form.closesAt = closesAt || null;
             if (uniqueId !== undefined && uniqueId) form.uniqueId = uniqueId;
@@ -4201,7 +4213,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const responses = await CompRaceFormResponse.find({ form: form._id })
                 .sort({ submittedAt: 1 })
                 .populate('user', 'username email')
-                .populate('member', 'firstname lastname username membershipDates')
+                .populate('member', 'firstname lastname username membershipDates sex')
                 .lean();
 
             if (form.race && form.race.linkedRace) {

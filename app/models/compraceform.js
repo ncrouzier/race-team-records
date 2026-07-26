@@ -43,6 +43,11 @@ const compRaceFormSchema = new mongoose.Schema({
     closesAt: { type: Date, default: null },
     numComps: { type: Number, default: 0 },
     numDiscounts: { type: Number, default: 0 },
+    splitByGender: { type: Boolean, default: false },
+    numCompsMale: { type: Number, default: 0 },
+    numCompsFemale: { type: Number, default: 0 },
+    numDiscountsMale: { type: Number, default: 0 },
+    numDiscountsFemale: { type: Number, default: 0 },
     bannerImageUrl: { type: String, default: null }
 }, { timestamps: true });
 

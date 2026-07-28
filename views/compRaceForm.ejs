@@ -53,7 +53,8 @@
                         <p class="crf-deadline">
                           <i class="fa fa-clock-o"></i>
                           Closes <%= new Date(form.closesAt).toLocaleString('en-US', { month: 'long' , day: 'numeric' ,
-                            year: 'numeric' , hour: 'numeric' , minute: '2-digit' , timeZoneName: 'short' }) %>
+                            year: 'numeric' , hour: 'numeric' , minute: '2-digit' ,timeZone: 'America/New_York' ,
+                            timeZoneName: 'short' }) %>
                         </p>
                         <% } %>
         </div>

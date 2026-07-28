@@ -54,7 +54,7 @@
                         </span>
                     </div>
                     <div ng-if="formData.closesAt" style="font-size:0.85em; color:#666; margin-bottom: 6px;">
-                        <i class="fa fa-clock-o"></i> Closes {{ formData.closesAt | date:'MMM d, y, h:mm a' }}
+                        <i class="fa fa-clock-o"></i> Closes {{ formData.closesAt | etDate }}
                     </div>
                     <div style="font-size:0.82em; color:#aaa; margin-bottom: 12px; font-family: monospace;">
                         /form/{{ formData.uniqueId }} <a class="crf-chip crf-chip-ghost"
@@ -147,7 +147,7 @@
 
                     <div class="form-group">
                         <label class="crf-edit-label"><i class="fa fa-clock-o"></i> Closes at <span
-                                class="text-muted">(optional)</span></label>
+                                class="text-muted">(optional — Eastern Time)</span></label>
                         <div style="display:flex; gap:6px; align-items:center;">
                             <input type="datetime-local" class="form-control input-sm" ng-model="editFields.closesAt">
                             <button class="crf-chip crf-chip-ghost" ng-if="editFields.closesAt"

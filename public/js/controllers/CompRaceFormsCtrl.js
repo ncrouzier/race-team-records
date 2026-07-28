@@ -1,3 +1,47 @@
+// Comp race form deadlines are always Washington DC (Eastern) time, regardless of
+// which timezone the captain's or member's browser happens to be in. Native
+// <input type="datetime-local"> always parses/formats using the browser's own
+// local timezone, so we can't bind it directly to a real UTC Date — instead we
+// convert to/from a "fake local" Date whose getFullYear/getMonth/.../getMinutes
+// hold the Eastern wall-clock digits, and let the input read/write those.
+angular.module('mcrrcApp.results').factory('DcTime', [function () {
+    var ZONE = 'America/New_York';
+
+    function easternOffsetMillisForInstant(instantMillis) {
+        var parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        }).formatToParts(new Date(instantMillis));
+        var get = function (type) { return parseInt(parts.find(function (p) { return p.type === type; }).value, 10); };
+        var asIfUtcMillis = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'));
+        return asIfUtcMillis - instantMillis;
+    }
+
+    return {
+        // Real UTC Date -> "fake local" Date holding Eastern wall-clock digits.
+        // Use this to populate a datetime-local ng-model from a stored value.
+        toWallClock: function (utcDate) {
+            if (!utcDate) return null;
+            var parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            }).formatToParts(new Date(utcDate));
+            var get = function (type) { return parseInt(parts.find(function (p) { return p.type === type; }).value, 10); };
+            return new Date(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'));
+        },
+        // "Fake local" Date (as produced above, or as typed into the datetime-local
+        // input) -> the real UTC Date it represents, accounting for EST/EDT.
+        fromWallClock: function (wallClockDate) {
+            if (!wallClockDate) return null;
+            var naiveUtc = Date.UTC(
+                wallClockDate.getFullYear(), wallClockDate.getMonth(), wallClockDate.getDate(),
+                wallClockDate.getHours(), wallClockDate.getMinutes()
+            );
+            return new Date(naiveUtc - easternOffsetMillisForInstant(naiveUtc));
+        }
+    };
+}]);
+
 angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scope', '$rootScope', '$http', '$uibModal', '$state', 'AuthService', function ($scope, $rootScope, $http, $uibModal, $state, AuthService) {
 
     $scope.authService = AuthService;
@@ -96,7 +140,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', function ($scope, $http, $uibModalInstance, ResultsService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', 'DcTime', function ($scope, $http, $uibModalInstance, ResultsService, DcTime) {
 
     $scope.form = {
         title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '',
@@ -194,7 +238,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             numCompsFemale: $scope.form.numCompsFemale || 0,
             numDiscountsMale: $scope.form.numDiscountsMale || 0,
             numDiscountsFemale: $scope.form.numDiscountsFemale || 0,
-            closesAt: $scope.form.closesAt || null,
+            closesAt: $scope.form.closesAt ? DcTime.fromWallClock($scope.form.closesAt) : null,
             isOpen: $scope.form.isOpen,
             bannerImageUrl: $scope.form.bannerImageUrl || null
         };
@@ -214,7 +258,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$rootScope', '$http', '$stateParams', '$state', '$transition$', 'ResultsService', function ($scope, $rootScope, $http, $stateParams, $state, $transition$, ResultsService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$rootScope', '$http', '$stateParams', '$state', '$transition$', 'ResultsService', 'DcTime', function ($scope, $rootScope, $http, $stateParams, $state, $transition$, ResultsService, DcTime) {
 
     $scope.formData = null;
     $scope.responses = [];
@@ -655,7 +699,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             racetype: r.race ? (r.race.racetype || null) : null,
             uniqueId: r.uniqueId || '',
             isOpen: r.isOpen,
-            closesAt: r.closesAt ? new Date(r.closesAt) : null,
+            closesAt: r.closesAt ? DcTime.toWallClock(r.closesAt) : null,
             numComps: r.numComps || 0,
             numDiscounts: r.numDiscounts || 0,
             splitByGender: !!r.splitByGender,
@@ -701,7 +745,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             title: $scope.editFields.title,
             description: $scope.editFields.description,
             isOpen: $scope.editFields.isOpen,
-            closesAt: $scope.editFields.closesAt || null,
+            closesAt: $scope.editFields.closesAt ? DcTime.fromWallClock($scope.editFields.closesAt) : null,
             numComps: $scope.editFields.numComps || 0,
             numDiscounts: $scope.editFields.numDiscounts || 0,
             splitByGender: !!$scope.editFields.splitByGender,

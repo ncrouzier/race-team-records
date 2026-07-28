@@ -1274,3 +1274,19 @@ app.filter('stripTags', function () {
         return String(input).replace(/<[^>]+>/g, '');
     };
 });
+
+// Formats a date in America/New_York (DC-area) time, DST-aware. AngularJS's
+// built-in `date` filter only accepts fixed UTC offsets, which is wrong half
+// the year — Intl.DateTimeFormat handles the EST/EDT switch correctly.
+app.filter('etDate', function () {
+    return function (input) {
+        if (!input) return '';
+        var d = new Date(input);
+        if (isNaN(d.getTime())) return '';
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit',
+            timeZone: 'America/New_York', timeZoneName: 'short'
+        }).format(d);
+    };
+});

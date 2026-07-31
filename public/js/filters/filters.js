@@ -394,6 +394,49 @@ app.filter('memberAgeFilter', function () {
     };
 });
 
+// Total days a member has actually been on the team, summed across their
+// membershipDates periods. Some members have gaps (lapsed and rejoined), so
+// this can't just be "now - first start date" — periods are merged first so
+// overlapping entries aren't double-counted and gaps between periods (lapses)
+// simply aren't counted at all.
+function calculateDaysOnTeam(membershipDates, asOfDate) {
+    if (!membershipDates || !membershipDates.length) return 0;
+    asOfDate = asOfDate ? new Date(asOfDate) : new Date();
+
+    var periods = membershipDates
+        .filter(function (p) { return p && p.start; })
+        .map(function (p) {
+            var start = new Date(p.start);
+            var end = p.end ? new Date(p.end) : asOfDate;
+            if (end > asOfDate) end = asOfDate;
+            return { start: start, end: end };
+        })
+        .filter(function (p) { return p.end > p.start; })
+        .sort(function (a, b) { return a.start - b.start; });
+
+    if (!periods.length) return 0;
+
+    var merged = [periods[0]];
+    for (var i = 1; i < periods.length; i++) {
+        var last = merged[merged.length - 1];
+        var cur = periods[i];
+        if (cur.start <= last.end) {
+            if (cur.end > last.end) last.end = cur.end;
+        } else {
+            merged.push(cur);
+        }
+    }
+
+    var totalMs = merged.reduce(function (sum, p) { return sum + (p.end - p.start); }, 0);
+    return Math.round(totalMs / (1000 * 60 * 60 * 24));
+}
+
+app.filter('daysOnTeamFilter', function () {
+    return function (member) {
+        return calculateDaysOnTeam(member && member.membershipDates);
+    };
+});
+
 
 
 app.filter('membersNamesWithAgeFilter', function () {
@@ -1145,6 +1188,18 @@ app.filter('sortMembers', function () {
                         return 1;
                     }
                     if (nameA > nameB) {
+                        return -1;
+                    }
+                    return 0;
+                });
+            } else if (type === "daysonteam") {
+                sorted.sort(function (a, b) {
+                    var daysA = calculateDaysOnTeam(a.membershipDates);
+                    var daysB = calculateDaysOnTeam(b.membershipDates);
+                    if (daysA < daysB) {
+                        return 1;
+                    }
+                    if (daysA > daysB) {
                         return -1;
                     }
                     return 0;

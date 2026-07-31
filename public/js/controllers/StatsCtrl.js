@@ -1,7 +1,7 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService','UtilsService', 'StatsService', 'dialogs','$filter', '$state', 'MemoryCacheService', function($scope, AuthService, ResultsService, MembersService, UtilsService, StatsService, dialogs,$filter, $state, MemoryCacheService) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'UtilsService', 'StatsService', 'dialogs', '$filter', '$state', 'MemoryCacheService', function ($scope, AuthService, ResultsService, MembersService, UtilsService, StatsService, dialogs, $filter, $state, MemoryCacheService) {
 
     $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function(user) {
+    $scope.$watch('authService.isLoggedIn()', function (user) {
         var hadUser = !!$scope.user;
         $scope.user = user;
         // When user logs in after initial load, only load participation stats (other stats are user-independent)
@@ -31,12 +31,12 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
     $scope.field = 'firstname';
 
-    $scope.current = {memberStatus:"current"};
-    
-    $scope.past = {memberStatus:"past"};
+    $scope.current = { memberStatus: "current" };
 
-    $scope.statusChoice =$scope.current;
-    $scope.reverseSort = false; 
+    $scope.past = { memberStatus: "past" };
+
+    $scope.statusChoice = $scope.current;
+    $scope.reverseSort = false;
     $scope.reverseSortParticipation = false;
 
     var currentYear = new Date().getFullYear();
@@ -48,33 +48,33 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.participationStats = {};
 
     $scope.partdates = {};
-    var start = new Date(Date.UTC(new Date().getFullYear(),0,1,0,0,0,0));
-    var end = new Date(Date.UTC(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),0,0,0,0));
-    $scope.partdates.participationStatsStart =  start;
+    var start = new Date(Date.UTC(new Date().getFullYear(), 0, 1, 0, 0, 0, 0));
+    var end = new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0, 0));
+    $scope.partdates.participationStatsStart = start;
     $scope.partdates.participationStatsEnd = end;
 
     $scope.participationStatsStartPicker = {};
-    $scope.openParticipationStatsStartPicker = function($event) {
+    $scope.openParticipationStatsStartPicker = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
         $scope.participationStatsStartPicker.opened = true;
     };
 
-    
+
     $scope.participationStatsEndPicker = {};
-    $scope.openParticipationStatsEndPicker = function($event) {
+    $scope.openParticipationStatsEndPicker = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
         $scope.participationStatsEndPicker.opened = true;
     };
-    
-    $scope.selectDate= function () {
-       $scope.getParticipationStats();
+
+    $scope.selectDate = function () {
+        $scope.getParticipationStats();
     };
 
     $scope.getParticipationStats = function () {
         $scope.loadingStates.participationStats = true;
-        
+
         return StatsService.getParticipationStats(
             $scope.partdates.participationStatsStart,
             $scope.partdates.participationStatsEnd
@@ -82,14 +82,14 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             $scope.participationStats = stats;
             $scope.loadingStates.participationStats = false;
             return stats;
-        }).catch(function(error) {
+        }).catch(function (error) {
             $scope.loadingStates.participationStats = false;
             throw error;
         });
     };
 
 
-    $scope.getRacesStats = function() {
+    $scope.getRacesStats = function () {
         $scope.loadingStates.raceStats = true;
 
         var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
@@ -105,31 +105,31 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             "sort": '-count',
             "filters": {
                 "dateFrom": fromDate,
-                "dateTo": toDate-1
+                "dateTo": toDate - 1
             }
-        }).then(function(races) {
+        }).then(function (races) {
             // For consistency, also filter on client side using year-based logic
             if ($scope.raceStats.year !== "All Time") {
-                races = races.filter(function(race) {
+                races = races.filter(function (race) {
                     var raceDate = new Date(race.racedate);
                     var raceYear = raceDate.getUTCFullYear();
                     return raceYear === parseInt($scope.raceStats.year);
                 });
             }
-            
+
             $scope.racesList = races;
             $scope.loadingStates.raceStats = false;
             return races;
-        }).catch(function(error) {
+        }).catch(function (error) {
             $scope.loadingStates.raceStats = false;
             throw error;
         });
     };
 
-    $scope.getMiscStats = function() {
+    $scope.getMiscStats = function () {
         $scope.loadingStates.miscStats = true;
-        
-        StatsService.getStats($scope.miscStats.year).then(function(stats) {
+
+        StatsService.getStats($scope.miscStats.year).then(function (stats) {
             // Update scope with stats from service
             $scope.miscStats = {
                 year: $scope.miscStats.year,
@@ -140,175 +140,253 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             $scope.teamRaceTypeBreakdown = stats.teamRaceTypeBreakdown;
             $scope.stateStats = stats.stateStats;
             $scope.countryStats = stats.countryStats;
-            
+
             // Reset loading state
             $scope.loadingStates.miscStats = false;
-            
+
             // Force digest cycle to update UI
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            
+
             return stats;
-        }).catch(function(error) {
+        }).catch(function (error) {
             $scope.loadingStates.miscStats = false;
-            
+
             // Force digest cycle to update UI
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            
+
             throw error;
         });
     };
 
-    $scope.getAttendanceStats = function() {
+    $scope.ageBucketSizes = [1, 2, 5, 10];
+    $scope.ageBucketSize = 1;
+
+    // Ages (sorted) for members matching the given status filter. Shared by
+    // buildAgeDistribution and computeAgeStats so both agree on who's counted.
+    function filteredAges(members, statusValue) {
+        var ageFilter = $filter('memberAgeFilter');
+        return members
+            .filter(function (m) { return !statusValue || m.memberStatus === statusValue; })
+            .map(function (m) { return ageFilter(m); })
+            .filter(function (age) { return age != null && !isNaN(age); })
+            .sort(function (a, b) { return a - b; });
+    }
+
+    // Buckets members into age brackets for the age distribution histogram on
+    // the Team Members Stats page. `statusValue` is 'current', 'past', or falsy
+    // (no restriction — matches the header status selector's "All" option).
+    // When bucketSize is 1, each bucket covers a single age, so the label is
+    // just that age rather than a "X-X" range.
+    function buildAgeDistribution(members, statusValue, bucketSize) {
+        bucketSize = bucketSize || 1;
+        var buckets = {};
+
+        filteredAges(members, statusValue).forEach(function (age) {
+            var lower = Math.floor(age / bucketSize) * bucketSize;
+            buckets[lower] = (buckets[lower] || 0) + 1;
+        });
+
+        var lowers = Object.keys(buckets).map(Number);
+        if (!lowers.length) return [];
+        var min = Math.min.apply(null, lowers);
+        var max = Math.max.apply(null, lowers);
+
+        var result = [];
+        for (var lower = min; lower <= max; lower += bucketSize) {
+            var label = bucketSize === 1 ? String(lower) : (lower + '-' + (lower + bucketSize - 1));
+            result.push({ lower: lower, label: label, count: buckets[lower] || 0 });
+        }
+        return result;
+    }
+
+    // Mean and median age for members matching the given status filter.
+    function computeAgeStats(members, statusValue) {
+        var ages = filteredAges(members, statusValue);
+        if (!ages.length) return { mean: null, median: null };
+
+        var sum = ages.reduce(function (a, b) { return a + b; }, 0);
+        var mean = sum / ages.length;
+
+        var mid = Math.floor(ages.length / 2);
+        var median = ages.length % 2 ? ages[mid] : (ages[mid - 1] + ages[mid]) / 2;
+
+        return { mean: Math.round(mean * 10) / 10, median: median };
+    }
+
+    $scope.getAttendanceStats = function () {
         $scope.loadingStates.attendanceStats = true;
-        
-        return StatsService.getAttendanceStats().then(function(data) {
+
+        return StatsService.getAttendanceStats().then(function (data) {
             $scope.attendanceRacesList = data.races;
-            
+
             var now = new Date();
-            var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),0,0,0);
+            var nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0);
             var nowUTCDate = new Date(nowUTC);
-            data.members.forEach(function(m){
+            data.members.forEach(function (m) {
                 var date = new Date($filter('date')(m.dateofbirth, 'yyyy-MM-dd', 'UTC'));
                 var currentYear = new Date().getUTCFullYear();
-                var birthdayDate =  new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate(),0,0,0));
+                var birthdayDate = new Date(Date.UTC(currentYear, date.getUTCMonth(), date.getUTCDate(), 0, 0, 0));
 
-                 if (birthdayDate.getTime() < nowUTCDate.getTime()){
-                     birthdayDate.setUTCFullYear(currentYear+1);
-                 }
-                 m.fromNow = birthdayDate.getTime() - nowUTCDate.getTime();
+                if (birthdayDate.getTime() < nowUTCDate.getTime()) {
+                    birthdayDate.setUTCFullYear(currentYear + 1);
+                }
+                m.fromNow = birthdayDate.getTime() - nowUTCDate.getTime();
             });
 
             $scope.membersList = data.members;
+            refreshAgeDistribution();
             $scope.loadingStates.attendanceStats = false;
             return data;
-        }).catch(function(error) {
+        }).catch(function (error) {
             $scope.loadingStates.attendanceStats = false;
             throw error;
         });
     };
 
+    // Recomputes both the histogram and the mean/median summary from the
+    // current membersList, status filter, and bucket size.
+    function refreshAgeDistribution() {
+        if (!$scope.membersList) return;
+        var statusValue = $scope.statusChoice && $scope.statusChoice.memberStatus;
+        $scope.ageDistribution = buildAgeDistribution($scope.membersList, statusValue, $scope.ageBucketSize);
+        $scope.ageStats = computeAgeStats($scope.membersList, statusValue);
+    }
+
+    // Keep the age distribution chart in sync with the header status selector
+    // (All/Current/Past) and the bucket size selector.
+    $scope.$watchGroup(['statusChoice', 'ageBucketSize'], refreshAgeDistribution);
+
+    // Human-readable label for the currently selected status filter, used in
+    // panel headings on the Team Members Stats page.
+    $scope.statusChoiceLabel = function () {
+        var s = $scope.statusChoice && $scope.statusChoice.memberStatus;
+        if (s === 'current') return 'Current';
+        if (s === 'past') return 'Past';
+        return 'All';
+    };
 
 
-    $scope.onSelectRace = function(item, model) {
+
+    $scope.onSelectRace = function (item, model) {
         ResultsService.getResults({
-                "sort": 'members.firstname',
-                "filters": {
-                    "raceid": item._id
-                }
-            }).then(function(results) {
-                resultarray = [];
-                numberOfRacer = new Array($scope.membersList.length).fill(0);
-                if($scope.attendanceStats.selectedAttendanceRaces.length===0){
-                    $scope.attendanceStats.racedRaces = new Array($scope.membersList.length).fill(0);
-                }
-                foundRunners = 0;
-                for (i =0;i<$scope.membersList.length;i++){
-                    found =false;
-                    for (j =0;j<results.length;j++){
-                        for(k=0;k<results[j].members.length;k++){
+            "sort": 'members.firstname',
+            "filters": {
+                "raceid": item._id
+            }
+        }).then(function (results) {
+            resultarray = [];
+            numberOfRacer = new Array($scope.membersList.length).fill(0);
+            if ($scope.attendanceStats.selectedAttendanceRaces.length === 0) {
+                $scope.attendanceStats.racedRaces = new Array($scope.membersList.length).fill(0);
+            }
+            foundRunners = 0;
+            for (i = 0; i < $scope.membersList.length; i++) {
+                found = false;
+                for (j = 0; j < results.length; j++) {
+                    for (k = 0; k < results[j].members.length; k++) {
 
-                            if($scope.membersList[i]._id === results[j].members[k]._id){
-                                found = results[j];
-                            }
+                        if ($scope.membersList[i]._id === results[j].members[k]._id) {
+                            found = results[j];
                         }
                     }
-                    if(found){
-                        found.text = "y";
-                        foundRunners++;
-                        $scope.attendanceStats.racedRaces[i]++;
-                        numberOfRacer[i]++;
-                        resultarray.push(found);
-                    }else{
-                        found = {};
-                        found.text = "n";
-                        resultarray.push(found);
-                    }
                 }
-                $scope.attendanceStats.selectedAttendanceRaces.push([item.racename,resultarray,foundRunners,numberOfRacer]);
+                if (found) {
+                    found.text = "y";
+                    foundRunners++;
+                    $scope.attendanceStats.racedRaces[i]++;
+                    numberOfRacer[i]++;
+                    resultarray.push(found);
+                } else {
+                    found = {};
+                    found.text = "n";
+                    resultarray.push(found);
+                }
+            }
+            $scope.attendanceStats.selectedAttendanceRaces.push([item.racename, resultarray, foundRunners, numberOfRacer]);
 
-            });
+        });
     };
-    $scope.getRaceTypeClass = function(s) {
+    $scope.getRaceTypeClass = function (s) {
         if (s !== undefined) {
             return s.replace(/ /g, '') + '-col';
         }
     };
 
-    $scope.removeRace = function(index){
-        for (i =0;i<$scope.attendanceStats.selectedAttendanceRaces[index][3].length;i++){
-            $scope.attendanceStats.racedRaces[i] = $scope.attendanceStats.racedRaces[i]-$scope.attendanceStats.selectedAttendanceRaces[index][3][i];
+    $scope.removeRace = function (index) {
+        for (i = 0; i < $scope.attendanceStats.selectedAttendanceRaces[index][3].length; i++) {
+            $scope.attendanceStats.racedRaces[i] = $scope.attendanceStats.racedRaces[i] - $scope.attendanceStats.selectedAttendanceRaces[index][3][i];
         }
         $scope.attendanceStats.selectedAttendanceRaces.splice(index, 1);
     };
 
 
-    $scope.showRaceModal = function(raceinfo) {
+    $scope.showRaceModal = function (raceinfo) {
         if (raceinfo) {
-            ResultsService.showRaceModal(raceinfo).then(function() {});
+            ResultsService.showRaceModal(raceinfo).then(function () { });
         }
     };
 
-    $scope.showRaceFromRaceIdModal = function(raceId) {
+    $scope.showRaceFromRaceIdModal = function (raceId) {
         if (raceId) {
-            ResultsService.showRaceFromRaceIdModal(raceId).then(function() {});
+            ResultsService.showRaceFromRaceIdModal(raceId).then(function () { });
         }
     };
 
-    $scope.goToResultsWithQuery = function(queryParams) {
+    $scope.goToResultsWithQuery = function (queryParams) {
         // Remove null, undefined, or empty string values
         var cleanedParams = {};
-        Object.keys(queryParams).forEach(function(key) {
+        Object.keys(queryParams).forEach(function (key) {
             var value = queryParams[key];
             if (value !== null && value !== undefined && value !== '') {
                 cleanedParams[key] = value;
             }
         });
-        
+
         var searchQuery = JSON.stringify(cleanedParams);
         $state.go('/results', { search: searchQuery });
     };
 
-   
-  
+
+
     // Pre-load all years in the cache for faster year switching
-    $scope.preloadAllYears = function() {
+    $scope.preloadAllYears = function () {
         $scope.loadingStates.preloadingYears = true;
-        
+
         // Get all years except "All Time" (which is already loaded)
-        var yearsToPreload = $scope.yearsList.filter(function(year) {
+        var yearsToPreload = $scope.yearsList.filter(function (year) {
             return year !== "All Time";
         });
-        
+
         // Pre-load each year with a small delay to avoid overwhelming the system
-        var preloadPromises = yearsToPreload.map(function(year, index) {
-            return new Promise(function(resolve) {
+        var preloadPromises = yearsToPreload.map(function (year, index) {
+            return new Promise(function (resolve) {
                 // Add a small delay between requests to be more user-friendly
-                setTimeout(function() {
-                    StatsService.getStats(year).then(function(stats) {
+                setTimeout(function () {
+                    StatsService.getStats(year).then(function (stats) {
                         resolve({ year: year, stats: stats });
-                    }).catch(function(error) {
+                    }).catch(function (error) {
                         console.error(`[StatsCtrl] Error pre-loading year ${year}:`, error);
                         resolve({ year: year, error: error });
                     });
                 }, index * 100); // 100ms delay between each request
             });
         });
-        
+
         // Wait for all pre-loads to complete
-        Promise.all(preloadPromises).then(function(results) {
-            var successCount = results.filter(function(result) {
+        Promise.all(preloadPromises).then(function (results) {
+            var successCount = results.filter(function (result) {
                 return !result.error;
             }).length;
             $scope.loadingStates.preloadingYears = false;
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-        }).catch(function(error) {
-            console.error('[StatsCtrl] Error pre-loading years:', error);            
+        }).catch(function (error) {
+            console.error('[StatsCtrl] Error pre-loading years:', error);
             $scope.loadingStates.preloadingYears = false;
             if (!$scope.$$phase) {
                 $scope.$apply();
@@ -395,40 +473,40 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.loadAwards();
     }
 
-    $scope.initializeStats = function() {
+    $scope.initializeStats = function () {
         // Create array of promises for stats loading
         var statsPromises = [
             $scope.getRacesStats(),
             $scope.getMiscStats(),
             $scope.getAttendanceStats()
         ];
-        
+
         // Only load participation stats if user is logged in as user or admin
         if ($scope.user && ($scope.user.role === 'user' || $scope.user.role === 'admin')) {
             statsPromises.push($scope.getParticipationStats());
         }
-        
+
         // Start all stats loading in parallel and wait for all to complete
-        Promise.all(statsPromises).then(function(results) {
+        Promise.all(statsPromises).then(function (results) {
             // Trigger a digest cycle to ensure UI updates
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            
+
             // Pre-load all years after main stats are loaded
             $scope.preloadAllYears();
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.error('[StatsCtrl] Error loading stats:', error);
         });
     };
-    
+
     // Initialize stats when controller loads
     $scope.statsInitialized = true;
     $scope.initializeStats();
-    
+
 
 
 }]);

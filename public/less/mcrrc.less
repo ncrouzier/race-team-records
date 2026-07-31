@@ -3730,6 +3730,42 @@ footer {
             }
         }
     }
+
+    .member-status-toggle {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-bottom: 12px;
+
+        .status-toggle-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s ease;
+            color: rgba(255, 255, 255, 0.8);
+
+            input[type="radio"] {
+                margin: 0;
+                cursor: pointer;
+            }
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.18);
+            }
+
+            input[type="radio"]:checked~span {
+                color: #fff;
+                font-weight: 700;
+            }
+        }
+    }
 }
 
 .birthdays-panel {
@@ -3817,6 +3853,55 @@ footer {
     }
 }
 
+.age-distribution-panel {
+    margin-bottom: 25px;
+
+    .panel {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+
+        .panel-heading {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+            padding: 15px 20px;
+
+            h4 {
+                margin: 0;
+                font-weight: 600;
+                font-size: 16px;
+                color: @gray-dark;
+
+                i {
+                    margin-right: 8px;
+                    color: @brand-primary;
+                }
+            }
+
+            .age-bucket-selector {
+                label {
+                    color: @gray-dark;
+                }
+
+                select.form-control {
+                    // Force explicit light styling — without this the select
+                    // picks up the browser's native dark-mode form control
+                    // rendering (white text) on this light panel heading.
+                    color: @gray-dark;
+                    background-color: #fff;
+                    color-scheme: light;
+                    border: 1px solid #ced4da;
+                }
+            }
+        }
+
+        .panel-body {
+            padding: 20px;
+        }
+    }
+}
+
 .members-table-container {
     .panel {
         border: none;
@@ -3888,45 +3973,10 @@ footer {
                     text-align: center;
                 }
 
-                &.status-column {
+                &.days-column {
                     width: 20% !important;
                     max-width: 20% !important;
                     text-align: center;
-
-                    .status-filters {
-                        display: flex;
-                        gap: 15px;
-                        margin-top: 8px;
-                        justify-content: center;
-
-                        .status-filter {
-                            display: flex;
-                            align-items: center;
-                            gap: 5px;
-                            font-size: 11px;
-                            font-weight: 500;
-                            cursor: pointer;
-
-                            input[type="radio"] {
-                                margin: 0;
-                                cursor: pointer;
-                            }
-
-                            span {
-                                color: @gray-dark;
-                                transition: color 0.2s ease;
-                            }
-
-                            &:hover span {
-                                color: @brand-primary;
-                            }
-
-                            input[type="radio"]:checked+span {
-                                color: @brand-primary;
-                                font-weight: 600;
-                            }
-                        }
-                    }
                 }
 
                 .sortable-header {
@@ -4067,31 +4117,15 @@ footer {
                     }
                 }
 
-                &.status-cell {
+                &.days-cell {
                     width: 20% !important;
                     max-width: 20% !important;
                     text-align: center;
 
-                    .status-badge {
-                        display: inline-block;
-                        padding: 4px 8px;
-                        border-radius: 12px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-
-                        &.current {
-                            background: rgba(40, 167, 69, 0.1);
-                            color: #28a745;
-                            border: 1px solid rgba(40, 167, 69, 0.2);
-                        }
-
-                        &.past {
-                            background: rgba(220, 53, 69, 0.1);
-                            color: #dc3545;
-                            border: 1px solid rgba(220, 53, 69, 0.2);
-                        }
+                    .days-value {
+                        font-weight: 500;
+                        color: @gray-dark;
+                        font-size: 14px;
                     }
                 }
             }
@@ -4104,6 +4138,11 @@ footer {
     .members-header {
         padding: 20px;
         text-align: center;
+
+        .member-status-toggle {
+            justify-content: center;
+            margin-top: 15px;
+        }
 
         .stats-summary {
             margin-top: 15px;
@@ -4133,13 +4172,6 @@ footer {
             .table-header th {
                 padding: 8px 6px;
                 font-size: 11px;
-
-                &.status-column {
-                    .status-filters {
-                        flex-direction: column;
-                        gap: 8px;
-                    }
-                }
 
                 .sortable-header {
                     gap: 4px;

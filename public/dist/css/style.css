@@ -10242,6 +10242,37 @@ footer {
   letter-spacing: 0.5px;
   margin-top: 5px;
 }
+.members-header .member-status-toggle {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.members-header .member-status-toggle .status-toggle-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+}
+.members-header .member-status-toggle .status-toggle-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+.members-header .member-status-toggle .status-toggle-option:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.members-header .member-status-toggle .status-toggle-option input[type="radio"]:checked ~ span {
+  color: #fff;
+  font-weight: 700;
+}
 .birthdays-panel {
   margin-bottom: 25px;
 }
@@ -10311,6 +10342,42 @@ footer {
 .birthdays-panel .panel .panel-body .birthdays-list .no-birthdays i {
   color: #008cba;
 }
+.age-distribution-panel {
+  margin-bottom: 25px;
+}
+.age-distribution-panel .panel {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+.age-distribution-panel .panel .panel-heading {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 8px 8px 0 0;
+  padding: 15px 20px;
+}
+.age-distribution-panel .panel .panel-heading h4 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #333333;
+}
+.age-distribution-panel .panel .panel-heading h4 i {
+  margin-right: 8px;
+  color: #008cba;
+}
+.age-distribution-panel .panel .panel-heading .age-bucket-selector label {
+  color: #333333;
+}
+.age-distribution-panel .panel .panel-heading .age-bucket-selector select.form-control {
+  color: #333333;
+  background-color: #fff;
+  color-scheme: light;
+  border: 1px solid #ced4da;
+}
+.age-distribution-panel .panel .panel-body {
+  padding: 20px;
+}
 .members-table-container .panel {
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -10373,39 +10440,10 @@ footer {
   max-width: 20% !important;
   text-align: center;
 }
-.members-table-container .members-table .table-header th.status-column {
+.members-table-container .members-table .table-header th.days-column {
   width: 20% !important;
   max-width: 20% !important;
   text-align: center;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters {
-  display: flex;
-  gap: 15px;
-  margin-top: 8px;
-  justify-content: center;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters .status-filter {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters .status-filter input[type="radio"] {
-  margin: 0;
-  cursor: pointer;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters .status-filter span {
-  color: #333333;
-  transition: color 0.2s ease;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters .status-filter:hover span {
-  color: #008cba;
-}
-.members-table-container .members-table .table-header th.status-column .status-filters .status-filter input[type="radio"]:checked + span {
-  color: #008cba;
-  font-weight: 600;
 }
 .members-table-container .members-table .table-header th .sortable-header {
   color: #333333;
@@ -10523,34 +10561,24 @@ footer {
   font-size: 14px;
   font-family: 'Courier New', monospace;
 }
-.members-table-container .members-table .member-row td.status-cell {
+.members-table-container .members-table .member-row td.days-cell {
   width: 20% !important;
   max-width: 20% !important;
   text-align: center;
 }
-.members-table-container .members-table .member-row td.status-cell .status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.members-table-container .members-table .member-row td.status-cell .status-badge.current {
-  background: rgba(40, 167, 69, 0.1);
-  color: #28a745;
-  border: 1px solid rgba(40, 167, 69, 0.2);
-}
-.members-table-container .members-table .member-row td.status-cell .status-badge.past {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-  border: 1px solid rgba(220, 53, 69, 0.2);
+.members-table-container .members-table .member-row td.days-cell .days-value {
+  font-weight: 500;
+  color: #333333;
+  font-size: 14px;
 }
 @media (max-width: 991px) {
   .members-header {
     padding: 20px;
     text-align: center;
+  }
+  .members-header .member-status-toggle {
+    justify-content: center;
+    margin-top: 15px;
   }
   .members-header .stats-summary {
     margin-top: 15px;
@@ -10569,10 +10597,6 @@ footer {
   .members-table-container .members-table .table-header th {
     padding: 8px 6px;
     font-size: 11px;
-  }
-  .members-table-container .members-table .table-header th.status-column .status-filters {
-    flex-direction: column;
-    gap: 8px;
   }
   .members-table-container .members-table .table-header th .sortable-header {
     gap: 4px;

@@ -145,7 +145,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
     $scope.form = {
         title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '',
         numComps: 0, numDiscounts: 0,
-        splitByGender: false, numCompsMale: 0, numCompsFemale: 0, numDiscountsMale: 0, numDiscountsFemale: 0,
+        splitCompsByGender: false, splitDiscountsByGender: false,
+        numCompsMale: 0, numCompsFemale: 0, numDiscountsMale: 0, numDiscountsFemale: 0,
         closesAt: null, isOpen: true, bannerImageUrl: ''
     };
     $scope.raceTypes = [];
@@ -233,7 +234,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             uniqueId: $scope.form.uniqueId || undefined,
             numComps: $scope.form.numComps || 0,
             numDiscounts: $scope.form.numDiscounts || 0,
-            splitByGender: !!$scope.form.splitByGender,
+            splitCompsByGender: !!$scope.form.splitCompsByGender,
+            splitDiscountsByGender: !!$scope.form.splitDiscountsByGender,
             numCompsMale: $scope.form.numCompsMale || 0,
             numCompsFemale: $scope.form.numCompsFemale || 0,
             numDiscountsMale: $scope.form.numDiscountsMale || 0,
@@ -310,6 +312,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
 
     $scope.sortMethods = [
         { id: 'recentAg', label: 'Recent race age grade' },
+        { id: 'recentTime', label: 'Recent race time' },
         { id: 'projTime', label: 'Projected time' },
         { id: 'projAg', label: 'Projected age grade' },
         { id: 'blendEqual', label: 'Recent AG + Projected AG (equal)' },
@@ -367,6 +370,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             case 'recentAg':
                 return responses.map(function (r) {
                     return { r: r, v: r.recentResult ? (r.recentResult.agegrade || 0) : 0 };
+                });
+            case 'recentTime':
+                return responses.map(function (r) {
+                    var t = r.recentResult ? r.recentResult.time : null;
+                    return { r: r, v: t ? -t : -Infinity };
                 });
             case 'projTime':
                 return responses.map(function (r) {
@@ -552,81 +560,89 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
     }
     $scope.memberGender = memberGender;
 
-    // 1-based position of this response among displayedResponses of the same gender.
-    // Returns null if gender is unknown (response isn't linked to a member with a sex on file).
-    function genderRank(response) {
-        var gender = memberGender(response);
-        if (!gender) return null;
-        var group = $scope.displayedResponses.filter(function (r) { return memberGender(r) === gender; });
-        var idx = group.indexOf(response);
-        return idx < 0 ? null : idx + 1;
+    function hasCompsConfigured() {
+        if (!$scope.formData) return false;
+        return $scope.formData.splitCompsByGender
+            ? !!(($scope.formData.numCompsMale || 0) + ($scope.formData.numCompsFemale || 0))
+            : !!($scope.formData.numComps || 0);
     }
 
-    // Returns 'comp', 'discount', or 'cut' based on the row's 1-based position
-    // in the *full* (unfiltered) sorted list — so slot assignment is stable regardless of search.
-    // When formData.splitByGender is set, ranking and comp/discount counts are computed
-    // separately within each gender group instead of across the combined list.
+    function hasDiscountsConfigured() {
+        if (!$scope.formData) return false;
+        return $scope.formData.splitDiscountsByGender
+            ? !!(($scope.formData.numDiscountsMale || 0) + ($scope.formData.numDiscountsFemale || 0))
+            : !!($scope.formData.numDiscounts || 0);
+    }
+
+    // Picks the top `n` responses (in displayedResponses order) from a candidate
+    // list, either as one combined pool or as separate per-gender pools — used
+    // identically for comp and discount allocation so each can be split
+    // independently.
+    function pickTopN(candidates, byGender, nMale, nFemale, nCombined) {
+        var winners = new Set();
+        if (byGender) {
+            ['male', 'female'].forEach(function (gender) {
+                var n = gender === 'male' ? (nMale || 0) : (nFemale || 0);
+                if (!n) return;
+                candidates
+                    .filter(function (r) { return memberGender(r) === gender; })
+                    .slice(0, n)
+                    .forEach(function (r) { winners.add(r); });
+            });
+        } else {
+            candidates.slice(0, nCombined || 0).forEach(function (r) { winners.add(r); });
+        }
+        return winners;
+    }
+
+    // Comp winners are picked first (from the full displayed list), then discount
+    // winners are picked from whoever is left — so a form can independently split
+    // comps by gender while pooling discounts (or vice versa) and still never
+    // double-allocate a response.
+    function compWinners() {
+        return pickTopN(
+            $scope.displayedResponses, $scope.formData.splitCompsByGender,
+            $scope.formData.numCompsMale, $scope.formData.numCompsFemale, $scope.formData.numComps
+        );
+    }
+
+    function discountWinners(comps) {
+        var remaining = $scope.displayedResponses.filter(function (r) { return !comps.has(r); });
+        return pickTopN(
+            remaining, $scope.formData.splitDiscountsByGender,
+            $scope.formData.numDiscountsMale, $scope.formData.numDiscountsFemale, $scope.formData.numDiscounts
+        );
+    }
+
+    // Returns 'comp', 'discount', or 'cut' for a response, or null if neither
+    // comps nor discounts are configured on this form at all.
     $scope.rowSlot = function (response) {
         if (!$scope.formData) return 'cut';
+        if (!hasCompsConfigured() && !hasDiscountsConfigured()) return null;
 
-        if ($scope.formData.splitByGender) {
-            var gender = memberGender(response);
-            if (!gender) return null;
-            var comps = (gender === 'male' ? $scope.formData.numCompsMale : $scope.formData.numCompsFemale) || 0;
-            var discounts = (gender === 'male' ? $scope.formData.numDiscountsMale : $scope.formData.numDiscountsFemale) || 0;
-            if (!comps && !discounts) return null;
-            var gPos = genderRank(response);
-            if (gPos == null) return null;
-            if (gPos <= comps) return 'comp';
-            if (gPos <= comps + discounts) return 'discount';
-            return 'cut';
-        }
-
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps && !numDiscounts) return null;
-        var idx = $scope.displayedResponses.indexOf(response);
-        if (idx < 0) return null;
-        var pos = idx + 1; // 1-based
-        if (pos <= numComps) return 'comp';
-        if (pos <= numComps + numDiscounts) return 'discount';
+        var comps = compWinners();
+        if (comps.has(response)) return 'comp';
+        if (discountWinners(comps).has(response)) return 'discount';
         return 'cut';
     };
 
-    // True if this row is the first "cut" row (where the cut line should appear above it)
-    $scope.isCutLine = function (response) {
+    // True if this row is the first row of a "cut"/"discount" block (i.e. the
+    // row above it, if any, belongs to a different slot) — used to draw a
+    // section-boundary line. Works uniformly whether comps/discounts are split
+    // by gender or pooled, since it just looks at rowSlot() transitions.
+    function isSlotLine(response, slot) {
         if (!$scope.formData) return false;
+        var idx = $scope.displayedResponses.indexOf(response);
+        if (idx <= 0 || $scope.rowSlot(response) !== slot) return false;
+        return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== slot;
+    }
 
-        if ($scope.formData.splitByGender) {
-            var idx = $scope.displayedResponses.indexOf(response);
-            if (idx < 0 || $scope.rowSlot(response) !== 'cut') return false;
-            if (idx === 0) return true;
-            return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== 'cut';
-        }
-
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps && !numDiscounts) return false;
-        var idx2 = $scope.displayedResponses.indexOf(response);
-        return idx2 === numComps + numDiscounts;
+    $scope.isCutLine = function (response) {
+        return isSlotLine(response, 'cut');
     };
 
-    // True if this row is the first "discount" row (line between comp and discount sections)
     $scope.isDiscountLine = function (response) {
-        if (!$scope.formData) return false;
-
-        if ($scope.formData.splitByGender) {
-            var idx = $scope.displayedResponses.indexOf(response);
-            if (idx < 0 || $scope.rowSlot(response) !== 'discount') return false;
-            if (idx === 0) return true;
-            return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== 'discount';
-        }
-
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps || !numDiscounts) return false;
-        var idx2 = $scope.displayedResponses.indexOf(response);
-        return idx2 === numComps;
+        return isSlotLine(response, 'discount');
     };
 
     // Inline form editing
@@ -702,7 +718,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             closesAt: r.closesAt ? DcTime.toWallClock(r.closesAt) : null,
             numComps: r.numComps || 0,
             numDiscounts: r.numDiscounts || 0,
-            splitByGender: !!r.splitByGender,
+            splitCompsByGender: !!r.splitCompsByGender,
+            splitDiscountsByGender: !!r.splitDiscountsByGender,
             numCompsMale: r.numCompsMale || 0,
             numCompsFemale: r.numCompsFemale || 0,
             numDiscountsMale: r.numDiscountsMale || 0,
@@ -748,7 +765,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             closesAt: $scope.editFields.closesAt ? DcTime.fromWallClock($scope.editFields.closesAt) : null,
             numComps: $scope.editFields.numComps || 0,
             numDiscounts: $scope.editFields.numDiscounts || 0,
-            splitByGender: !!$scope.editFields.splitByGender,
+            splitCompsByGender: !!$scope.editFields.splitCompsByGender,
+            splitDiscountsByGender: !!$scope.editFields.splitDiscountsByGender,
             numCompsMale: $scope.editFields.numCompsMale || 0,
             numCompsFemale: $scope.editFields.numCompsFemale || 0,
             numDiscountsMale: $scope.editFields.numDiscountsMale || 0,
@@ -777,7 +795,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             $scope.formData.closesAt = res.data.closesAt;
             $scope.formData.numComps = res.data.numComps;
             $scope.formData.numDiscounts = res.data.numDiscounts;
-            $scope.formData.splitByGender = res.data.splitByGender;
+            $scope.formData.splitCompsByGender = res.data.splitCompsByGender;
+            $scope.formData.splitDiscountsByGender = res.data.splitDiscountsByGender;
             $scope.formData.numCompsMale = res.data.numCompsMale;
             $scope.formData.numCompsFemale = res.data.numCompsFemale;
             $scope.formData.numDiscountsMale = res.data.numDiscountsMale;
@@ -812,6 +831,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
                 var pos = idx + 1;
                 if (slot === 'comp') return $scope.rowSlot(r) === 'comp';
                 if (slot === 'discount') return $scope.rowSlot(r) === 'discount';
+                if (slot === 'cut') return $scope.rowSlot(r) === 'cut';
                 if (slot === 'comp-male') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'male';
                 if (slot === 'comp-female') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'female';
                 if (slot === 'discount-male') return $scope.rowSlot(r) === 'discount' && $scope.memberGender(r) === 'male';

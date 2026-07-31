@@ -165,29 +165,75 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.ageBucketSizes = [1, 2, 5, 10];
     $scope.ageBucketSize = 1;
 
-    // Ages (sorted) for members matching the given status filter. Shared by
-    // buildAgeDistribution and computeAgeStats so both agree on who's counted.
+    // Members matching the given status filter. `statusValue` is 'current',
+    // 'past', or falsy (no restriction — matches the header status selector's
+    // "All" option). Shared by everything that buckets/aggregates members.
+    function filteredMembers(members, statusValue) {
+        return members.filter(function (m) { return !statusValue || m.memberStatus === statusValue; });
+    }
+
+    // Ages (sorted) for members matching the given status filter.
     function filteredAges(members, statusValue) {
         var ageFilter = $filter('memberAgeFilter');
-        return members
-            .filter(function (m) { return !statusValue || m.memberStatus === statusValue; })
+        return filteredMembers(members, statusValue)
             .map(function (m) { return ageFilter(m); })
             .filter(function (age) { return age != null && !isNaN(age); })
             .sort(function (a, b) { return a - b; });
     }
 
-    // Buckets members into age brackets for the age distribution histogram on
-    // the Team Members Stats page. `statusValue` is 'current', 'past', or falsy
-    // (no restriction — matches the header status selector's "All" option).
-    // When bucketSize is 1, each bucket covers a single age, so the label is
-    // just that age rather than a "X-X" range.
+    // A member's single best (highest) age grade across all their personal
+    // bests, or null if they have none on file.
+    function bestAgeGrade(member) {
+        var bests = member && member.personalBests;
+        if (!bests || !bests.length) return null;
+        var max = null;
+        bests.forEach(function (pb) {
+            var ag = pb && pb.result && pb.result.agegrade;
+            if (ag != null && (max == null || ag > max)) max = ag;
+        });
+        return max;
+    }
+
+    // A member's own average age grade across all their personal bests (as
+    // opposed to bestAgeGrade, their single peak performance), or null if
+    // they have none on file.
+    function memberAvgAgeGrade(member) {
+        var bests = member && member.personalBests;
+        if (!bests || !bests.length) return null;
+        var sum = 0, n = 0;
+        bests.forEach(function (pb) {
+            var ag = pb && pb.result && pb.result.agegrade;
+            if (ag != null) { sum += ag; n++; }
+        });
+        return n ? sum / n : null;
+    }
+
+    // Buckets members into age brackets for the age distribution + age-grade
+    // histograms on the Team Members Stats page. Each bucket carries the
+    // member count (age distribution) plus two age-grade aggregates so the
+    // age-grade chart can switch between them without recomputing:
+    //   - avgBestAgeGrade: bucket average of each member's own best PB
+    //   - avgOfAvgAgeGrade: bucket average of each member's own average PB
+    // Both are null for a bucket where no member in it has a personal best
+    // on file. When bucketSize is 1, each bucket covers a single age, so the
+    // label is just that age rather than a "X-X" range.
     function buildAgeDistribution(members, statusValue, bucketSize) {
         bucketSize = bucketSize || 1;
+        var ageFilter = $filter('memberAgeFilter');
         var buckets = {};
 
-        filteredAges(members, statusValue).forEach(function (age) {
+        filteredMembers(members, statusValue).forEach(function (m) {
+            var age = ageFilter(m);
+            if (age == null || isNaN(age)) return;
             var lower = Math.floor(age / bucketSize) * bucketSize;
-            buckets[lower] = (buckets[lower] || 0) + 1;
+            if (!buckets[lower]) buckets[lower] = { count: 0, bestSum: 0, avgSum: 0, agCount: 0 };
+            buckets[lower].count++;
+            var bestAg = bestAgeGrade(m);
+            if (bestAg != null) {
+                buckets[lower].bestSum += bestAg;
+                buckets[lower].avgSum += memberAvgAgeGrade(m);
+                buckets[lower].agCount++;
+            }
         });
 
         var lowers = Object.keys(buckets).map(Number);
@@ -198,7 +244,15 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         var result = [];
         for (var lower = min; lower <= max; lower += bucketSize) {
             var label = bucketSize === 1 ? String(lower) : (lower + '-' + (lower + bucketSize - 1));
-            result.push({ lower: lower, label: label, count: buckets[lower] || 0 });
+            var b = buckets[lower];
+            result.push({
+                lower: lower,
+                label: label,
+                count: b ? b.count : 0,
+                avgBestAgeGrade: (b && b.agCount) ? Math.round((b.bestSum / b.agCount) * 10) / 10 : null,
+                avgOfAvgAgeGrade: (b && b.agCount) ? Math.round((b.avgSum / b.agCount) * 10) / 10 : null,
+                ageGradeMemberCount: b ? b.agCount : 0
+            });
         }
         return result;
     }
@@ -259,6 +313,43 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     // Keep the age distribution chart in sync with the header status selector
     // (All/Current/Past) and the bucket size selector.
     $scope.$watchGroup(['statusChoice', 'ageBucketSize'], refreshAgeDistribution);
+
+    // Lets the user pick which per-member age-grade figure the second
+    // histogram averages per bucket: their single best PB, or their own
+    // average across all PBs.
+    $scope.ageGradeMetric = 'best';
+    $scope.ageGradeMetricOptions = [
+        { id: 'best', label: "Members' Best AG" },
+        { id: 'average', label: "Members' Average AG" }
+    ];
+
+    // Toggles the age-grade chart's y-axis between the full 0-100% range and
+    // a zoomed-in range fit to the data actually shown (most values cluster
+    // in 60-90%, so the full range makes differences hard to see).
+    $scope.ageGradeZoomed = false;
+
+    // Derives the chart-ready array for the age-grade histogram from
+    // ageDistribution, picking whichever per-bucket aggregate matches the
+    // selected metric — no need to recompute the buckets themselves.
+    function refreshAgeGradeChartData() {
+        var metric = $scope.ageGradeMetric;
+        $scope.ageGradeChartData = ($scope.ageDistribution || []).map(function (b) {
+            return {
+                label: b.label,
+                avgAgeGrade: metric === 'average' ? b.avgOfAvgAgeGrade : b.avgBestAgeGrade,
+                ageGradeMemberCount: b.ageGradeMemberCount
+            };
+        });
+    }
+
+    $scope.$watchGroup(['ageDistribution', 'ageGradeMetric'], refreshAgeGradeChartData);
+
+    // Label of the currently selected age-grade metric, used as the chart's
+    // dataset/axis label so it matches whichever figure is being shown.
+    $scope.selectedAgeGradeMetricLabel = function () {
+        var match = $scope.ageGradeMetricOptions.filter(function (o) { return o.id === $scope.ageGradeMetric; })[0];
+        return match ? match.label : 'Avg Age Grade';
+    };
 
     // Human-readable label for the currently selected status filter, used in
     // panel headings on the Team Members Stats page.

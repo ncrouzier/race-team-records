@@ -1043,6 +1043,115 @@ angular.module('mcrrcApp').directive('ageDistributionChart', ['$timeout', functi
     };
 }]);
 
+// Companion chart to ageDistributionChart — shares the exact same bucketed
+// `data` array (each entry has count + avgAgeGrade + ageGradeMemberCount),
+// so the two charts' brackets always line up. Buckets with no member
+// personal-best data render as a gap (avgAgeGrade is null).
+angular.module('mcrrcApp').directive('ageGradeDistributionChart', ['$timeout', function ($timeout) {
+    return {
+        restrict: 'E',
+        scope: {
+            data: '=',
+            metricLabel: '@',
+            zoomed: '='
+        },
+        template: '<div style="position: relative; height: 250px;"><canvas></canvas></div>',
+        link: function (scope, element) {
+            var chart = null;
+
+            // When zoomed, fits the y-axis tightly around the actual values being
+            // shown (e.g. mostly 60-90%) instead of the full 0-100 range, so small
+            // differences between bars are visible. Recomputed from whatever data
+            // is currently displayed, so it adapts to bucket size/metric/status.
+            function computeYRange(values) {
+                var nums = values.filter(function (v) { return v != null; });
+                if (!nums.length) return null;
+                var min = Math.min.apply(null, nums);
+                var max = Math.max.apply(null, nums);
+                var padding = (max - min) * 0.15 || 5; // flat data gets a flat +/-5 pad
+                return {
+                    min: Math.max(0, Math.floor(min - padding)),
+                    max: Math.ceil(max + padding)
+                };
+            }
+
+            function renderChart() {
+                if (!scope.data || scope.data.length === 0) return;
+
+                var canvas = element.find('canvas')[0];
+                var ctx = canvas.getContext('2d');
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                var label = scope.metricLabel || 'Avg Age Grade';
+                var labels = scope.data.map(function (d) { return d.label; });
+                var values = scope.data.map(function (d) { return d.avgAgeGrade; });
+                var memberCounts = scope.data.map(function (d) { return d.ageGradeMemberCount || 0; });
+                var yRange = scope.zoomed ? computeYRange(values) : null;
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: values,
+                            backgroundColor: '#f39c12',
+                            borderColor: '#f39c12',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        if (context.parsed.y == null) return 'No personal bests on file';
+                                        var n = memberCounts[context.dataIndex];
+                                        return label + ': ' + context.parsed.y + '% (' + n + ' member' + (n === 1 ? '' : 's') + ')';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Age' }
+                            },
+                            y: {
+                                beginAtZero: !yRange,
+                                min: yRange ? yRange.min : undefined,
+                                max: yRange ? yRange.max : undefined,
+                                title: { display: true, text: label + ' (%)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            scope.$watchCollection('data', function (newVal) {
+                if (newVal && newVal.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$watchGroup(['metricLabel', 'zoomed'], function () {
+                if (scope.data && scope.data.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$on('$destroy', function () {
+                if (chart) chart.destroy();
+            });
+        }
+    };
+}]);
+
 angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function ($timeout) {
     return {
         restrict: 'E',

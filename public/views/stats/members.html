@@ -114,6 +114,32 @@
             </div>
         </div>
 
+        <!-- Average Age Grade by Age Bracket Section -->
+        <div class="age-distribution-panel" ng-show="ageDistribution.length">
+            <div class="panel panel-default">
+                <div class="panel-heading"
+                    style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <h4 style="margin:0;"><i class="fa fa-line-chart"></i> {{ statusChoiceLabel() }} {{
+                        selectedAgeGradeMetricLabel() }} by Age</h4>
+                    <div class="age-bucket-selector" style="display:flex; align-items:center; gap:6px;">
+                        <label style="margin:0; font-weight:normal; font-size:12px;">Metric:</label>
+                        <select class="form-control input-sm" style="width:auto; display:inline-block;"
+                            ng-model="ageGradeMetric" ng-options="o.id as o.label for o in ageGradeMetricOptions"></select>
+                        <button type="button" class="btn btn-xs btn-default" ng-class="{active: ageGradeZoomed}"
+                            ng-click="ageGradeZoomed = !ageGradeZoomed"
+                            uib-tooltip="Zoom the y-axis to fit the data shown">
+                            <i class="fa" ng-class="ageGradeZoomed ? 'fa-search-minus' : 'fa-search-plus'"></i>
+                            {{ ageGradeZoomed ? 'Zoomed' : 'Zoom' }}
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <age-grade-distribution-chart data="ageGradeChartData"
+                        metric-label="{{ selectedAgeGradeMetricLabel() }}" zoomed="ageGradeZoomed"></age-grade-distribution-chart>
+                </div>
+            </div>
+        </div>
+
         <!-- Members Table Section -->
         <div class="members-table-container">
             <div class="panel panel-default">

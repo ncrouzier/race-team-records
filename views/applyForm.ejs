@@ -135,8 +135,12 @@
                 <div class="col-12">
                   <label class="form-label" :for="'time-' + i">Finish time <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" :id="'time-' + i" x-model="race.timeStr"
-                    @input="onTimeInput(i)" :placeholder="timePlaceholders[i]" inputmode="numeric" autocomplete="off">
-                  <div class="form-text">Enter as M:SS, MM:SS, or H:MM:SS</div>
+                    @input="onTimeInput(i)" :placeholder="timePlaceholders[i]" inputmode="numeric" autocomplete="off"
+                    maxlength="9">
+                  <div class="form-text">
+                    Just type the digits and the colons appear as you go, e.g. <strong>3210</strong> becomes 32:10 and
+                    <strong>12500</strong> becomes 1:25:00.
+                  </div>
                 </div>
                 <div class="col-12">
                   <label class="form-label" :for="'link-' + i">
@@ -165,8 +169,7 @@
             <i class="fa fa-calendar-check-o"></i> Race commitment <span class="text-danger">*</span>
           </h2>
           <p class="text-muted taf-section-hint">
-            Team members are required to race at least <strong><%= raceCommitment %> times a year</strong> in team-scored
-            races.
+            Team members are required to race at least <strong><%= raceCommitment %> times a year</strong>.
           </p>
           <div class="taf-choice-group">
             <label class="taf-choice" :class="committedToRaces === true ? 'taf-choice-on' : ''">
@@ -188,7 +191,7 @@
             <i class="fa fa-comment-o"></i> Why do you want to join? <span class="text-danger">*</span>
           </h2>
           <p class="text-muted taf-section-hint">
-            Please share with us why you would like to join and anything else you would like to let us know (e.g., what you're training for, injuries, etc.)
+            Please share with us why you would like to join and anything else you would like to let us know (e.g., what you're training for, injuries, lifetime PRs, etc.)
           </p>
           <textarea class="form-control" id="motivation" rows="5" x-model="motivation"
             placeholder="Tell us a bit about yourself and your running…"></textarea>
@@ -268,6 +271,8 @@
         },
 
         onTimeInput(i) {
+          // The numeric keypad on phones has no colon, so punctuate for them
+          this.races[i].timeStr = formatTimeDigits(this.races[i].timeStr);
           clearTimeout(this.races[i].agTimer);
           var self = this;
           this.races[i].agTimer = setTimeout(function () { self.recalc(i); }, 500);
@@ -318,7 +323,10 @@
             if (race.racedate < this.oldestRaceDateStr) return label + ': the race must have taken place in the last ' + this.RACE_MAX_AGE_DAYS + ' days.';
             if (race.racedate > this.todayStr) return label + ': the race date can\'t be in the future.';
             if (!race.racetype_id) return label + ': please select the distance.';
-            if (!parseTime(race.timeStr)) return label + ': please enter a valid finish time (e.g. 42:30).';
+            if (!parseTime(race.timeStr)) {
+              return label + ': please enter a valid finish time — type the digits, e.g. 4230 for 42:30 ' +
+                '(minutes and seconds must be under 60).';
+            }
           }
 
           var picked = this.races.map((r) => this.racetypes.find(function (rt) { return rt._id === r.racetype_id; }));
@@ -383,12 +391,30 @@
       return { racename: '', racedate: '', racetype_id: '', timeStr: '', resultlink: '', agegrade: null, agLoading: false, agTimer: null };
     }
 
+    // Stopwatch-style entry: the digits fill in from the seconds up, so 3210 reads as
+    // 32:10 and 12500 as 1:25:00. Lets the phone keypad stay numeric — it has no colon.
+    function formatTimeDigits(value) {
+      var digits = String(value || '').replace(/\D/g, '').slice(0, 6);
+      if (digits.length <= 2) return digits;
+      var seconds = digits.slice(-2);
+      var minutes = digits.slice(-4, -2);
+      var hours = digits.slice(0, -4);
+      return (hours ? hours + ':' + minutes.padStart(2, '0') : minutes) + ':' + seconds;
+    }
+
     function parseTime(str) {
       if (!str) return null;
       var parts = str.trim().split(':').map(Number);
       if (parts.some(isNaN) || parts.some(function (p) { return p < 0; })) return null;
-      if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 100;
-      if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 100;
+      // Reject nonsense like 19:75 rather than silently grading a wrong time
+      if (parts.length === 2) {
+        if (parts[1] > 59) return null;
+        return (parts[0] * 60 + parts[1]) * 100;
+      }
+      if (parts.length === 3) {
+        if (parts[1] > 59 || parts[2] > 59) return null;
+        return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 100;
+      }
       return null;
     }
   </script>

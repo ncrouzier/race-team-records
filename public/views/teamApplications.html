@@ -1,0 +1,241 @@
+<div class="jumbotron">
+
+    <div class="feed-card">
+        <div class="feed-card-header">
+            <h4>
+                <i class="fa fa-user-plus"></i> Team Applications
+                <a class="crf-chip crf-chip-ghost" href="/apply" target="_blank" style="margin-left: auto;"
+                    uib-tooltip="Open the public application form">
+                    <i class="fa fa-external-link"></i>
+                    <span class="hidden-xs"> View form</span>
+                </a>
+            </h4>
+        </div>
+
+        <div class="feed-card-body ta-filters">
+            <button class="crf-chip" ng-repeat="tab in statusTabs" ng-click="setFilter(tab.key)"
+                ng-class="statusFilter === tab.key ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                <i class="fa" ng-class="tab.icon"></i> {{ tab.label }}
+                <span ng-if="tab.key !== 'all'">({{ statusCounts[tab.key] || 0 }})</span>
+            </button>
+        </div>
+
+        <div class="feed-card-body" ng-if="loading" style="text-align: center; padding: 40px;">
+            <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+            <p style="margin-top: 12px; color: #666;">Loading applications…</p>
+        </div>
+
+        <div class="feed-card-body" ng-if="error">
+            <div class="alert alert-danger">{{ error }}</div>
+        </div>
+
+        <div class="feed-card-body" ng-if="!loading && !error && applications.length === 0"
+            style="text-align:center; padding: 40px; color: #999;">
+            <i class="fa fa-inbox fa-3x" style="margin-bottom: 12px; display:block;"></i>
+            <p ng-if="statusFilter === 'pending'">No applications waiting for review.</p>
+            <p ng-if="statusFilter !== 'pending'">Nothing here yet.</p>
+        </div>
+
+        <ul class="feed-list" ng-if="!loading && applications.length > 0">
+            <li class="feed-item" ng-repeat="application in applications">
+                <div class="feed-row">
+
+                    <div class="feed-body" style="flex:1; min-width:0; cursor:pointer;"
+                        ng-click="toggleExpand(application)">
+                        <div class="feed-text">
+                            <i class="fa" ng-class="expanded[application._id] ? 'fa-caret-down' : 'fa-caret-right'"
+                                style="width:10px; color:#999;"></i>
+                            <strong>{{ fullname(application) }}</strong>
+                            <span class="text-muted" style="font-weight:400;">
+                                &nbsp;{{ application.sex }}<span ng-if="ageOf(application) !== null">, {{
+                                    ageOf(application) }}</span>
+                            </span>
+                            <!-- Status is information, not an action, so it sits with the name -->
+                            <span class="crf-chip ta-status-chip" ng-class="{
+                                    'ta-chip-pending': application.status === 'pending',
+                                    'crf-chip-open': application.status === 'approved',
+                                    'crf-chip-closed': application.status === 'rejected'
+                                }">
+                                {{ application.status }}
+                            </span>
+                        </div>
+                        <div class="feed-meta" style="margin-top: 3px;">
+                            Applied {{ application.createdAt | date:'mediumDate' }}
+                            <span ng-if="application.reviewedAt">
+                                &mdash; {{ application.status }} by {{ application.reviewedByUsername || 'admin' }} on
+                                {{ application.reviewedAt | date:'mediumDate' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="crf-actions" ng-click="$event.stopPropagation()">
+
+                        <!-- Decision letter — sent by hand, after the decision -->
+                        <button class="crf-chip"
+                            ng-if="canReview && (application.status === 'approved' || application.status === 'rejected')"
+                            ng-class="emailSent(application) ? 'crf-chip-open' : 'crf-chip-primary'"
+                            ng-click="sendEmail(application, application.status === 'rejected' ? 'rejection' : 'approval')"
+                            uib-tooltip="{{ emailSent(application) ? (application.status === 'rejected' ? 'Rejection' : 'Approval') + ' email sent by ' + (decisionEmail(application).sentByUsername || 'a captain') + ' — click to review or resend' : 'Send the ' + (application.status === 'rejected' ? 'rejection' : 'approval') + ' email to the applicant' }}">
+                            <i class="fa"
+                                ng-class="emailSent(application) ? 'fa-envelope-o' : 'fa-paper-plane'"
+                                ng-style="emailSent(application) ? {} : {color: 'white'}"></i>
+                            <span class="hidden-xs">
+                                {{ emailSent(application) ? 'Email sent' : (application.status === 'rejected' ? 'Send
+                                rejection' : 'Send approval') }}
+                            </span>
+                        </button>
+
+                        <!-- Follow-up steps — plain on/off records, toggle either way -->
+                        <button class="crf-chip" ng-repeat="flag in flags"
+                            ng-if="application.status === 'approved'"
+                            ng-class="application[flag.field] ? 'crf-chip-open' : 'ta-chip-pending'"
+                            ng-click="toggleFlag(application, flag)"
+                            ng-disabled="!canReview || busy[application._id]"
+                            uib-tooltip="{{ application[flag.field] ? 'Done — click to untick' : 'Tick once ' + flag.tip }}">
+                            <i class="fa" ng-class="application[flag.field] ? 'fa-check-square-o' : 'fa-square-o'"></i>
+                            <span class="hidden-xs"> {{ flag.label }}</span>
+                        </button>
+
+                        <button class="crf-chip crf-chip-primary"
+                            ng-if="canReview && application.status !== 'approved'" ng-click="approve(application)"
+                            ng-disabled="busy[application._id]" uib-tooltip="Approve and create the member">
+                            <i class="fa fa-check" style="color: white;"></i>
+                            <span class="hidden-xs"> Approve</span>
+                        </button>
+
+                        <button class="crf-chip crf-chip-ghost" ng-if="canReview && application.status === 'pending'"
+                            ng-click="reject(application)" ng-disabled="busy[application._id]"
+                            uib-tooltip="Reject this application">
+                            <i class="fa fa-times"></i>
+                            <span class="hidden-xs"> Reject</span>
+                        </button>
+
+                        <button class="crf-chip crf-chip-ghost" ng-if="isAdmin && application.status === 'rejected'"
+                            ng-click="reopen(application)" ng-disabled="busy[application._id]"
+                            uib-tooltip="Move back to pending">
+                            <i class="fa fa-undo"></i>
+                        </button>
+
+                        <button class="crf-chip crf-chip-danger" ng-if="isAdmin" ng-click="remove(application)"
+                            uib-tooltip="Delete application">
+                            <i class="fa fa-trash"></i>
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Detail -->
+                <div class="ta-detail" ng-if="expanded[application._id]">
+
+                    <div class="ta-detail-grid">
+                        <div>
+                            <div class="ta-label">Email</div>
+                            <div><a ng-href="mailto:{{ application.email }}">{{ application.email }}</a></div>
+                        </div>
+                        <div>
+                            <div class="ta-label">Date of birth</div>
+                            <div>{{ application.dateofbirth | date:'mediumDate':'UTC' }}</div>
+                        </div>
+                        <div>
+                            <div class="ta-label">Gender</div>
+                            <div style="text-transform: capitalize;">{{ application.sex }}</div>
+                        </div>
+                        <div>
+                            <div class="ta-label">Commits to {{ raceCommitment }} races/year</div>
+                            <div ng-class="application.committedToRaces ? 'ta-ag-good' : 'ta-ag-low'">
+                                <i class="fa"
+                                    ng-class="application.committedToRaces ? 'fa-check' : 'fa-times'"></i>
+                                {{ application.committedToRaces ? 'Yes' : 'No' }}
+                            </div>
+                        </div>
+                        <div ng-if="application.member">
+                            <div class="ta-label">Member</div>
+                            <div>
+                                <a ui-sref="/members/member({member: application.member.username})">
+                                    {{ application.member.firstname }} {{ application.member.lastname }}
+                                </a>
+                                <span ng-if="application.isReturningMember" class="ta-match-badge">returning</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ta-label" style="margin-top: 14px;">Recent races</div>
+                    <table class="table table-sm ta-races">
+                        <thead>
+                            <tr>
+                                <th>Race</th>
+                                <th>Date</th>
+                                <th>Distance</th>
+                                <th class="text-right">Time</th>
+                                <th class="text-right">Age grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="race in application.races">
+                                <td>
+                                    {{ race.racename }}
+                                    <a ng-if="race.resultlink" ng-href="{{ race.resultlink }}" target="_blank"
+                                        rel="noopener noreferrer" class="ta-result-link"
+                                        uib-tooltip="{{ race.resultlink }}">
+                                        <i class="fa fa-external-link"></i>
+                                    </a>
+                                </td>
+                                <td>{{ race.racedate | date:'mediumDate':'UTC' }}</td>
+                                <td>{{ race.racetype.name }}</td>
+                                <td class="text-right">{{ centisToString(race.timeCentiseconds) }}</td>
+                                <td class="text-right">
+                                    <span ng-if="race.agegrade != null"
+                                        ng-class="race.agegrade >= minAgeGrade ? 'ta-ag-good' : 'ta-ag-low'">
+                                        {{ race.agegrade | number:1 }}%
+                                    </span>
+                                    <span ng-if="race.agegrade == null" class="text-muted">n/a</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div ng-if="application.motivation">
+                        <div class="ta-label" style="margin-top: 14px;">Why they want to join</div>
+                        <div class="ta-motivation">{{ application.motivation }}</div>
+                    </div>
+
+                    <div ng-if="application.reviewNotes">
+                        <div class="ta-label" style="margin-top: 14px;">Review notes</div>
+                        <div class="ta-motivation">{{ application.reviewNotes }}</div>
+                    </div>
+
+                    <div ng-if="emailSent(application)">
+                        <div class="ta-label" style="margin-top: 14px;">
+                            {{ application.status === 'rejected' ? 'Rejection' : 'Approval' }} email sent
+                            {{ decisionEmail(application).sentAt | date:'medium' }}
+                            by {{ decisionEmail(application).sentByUsername || 'a captain' }}
+                        </div>
+                        <div class="ta-motivation">
+                            <strong>{{ decisionEmail(application).subject }}</strong>
+                            <div class="ta-email-preview-inline"
+                                ng-bind-html="decisionEmail(application).body | unsafe"></div>
+                        </div>
+                    </div>
+
+                    <div ng-if="application.teamNotified" class="ta-notified-note">
+                        <i class="fa fa-check"></i>
+                        <div>
+                            Announced to the team by {{ application.teamNotifiedByUsername || 'a captain' }} on {{
+                            application.teamNotifiedAt | date:'mediumDate' }}.
+                        </div>
+                    </div>
+
+                    <div ng-if="application.addedToGroupsIo" class="ta-notified-note">
+                        <i class="fa fa-check"></i>
+                        <div>
+                            Added to Groups.io by {{ application.addedToGroupsIoByUsername || 'a captain' }} on {{
+                            application.addedToGroupsIoAt | date:'mediumDate' }}.
+                        </div>
+                    </div>
+
+                </div>
+            </li>
+        </ul>
+    </div>
+
+</div>

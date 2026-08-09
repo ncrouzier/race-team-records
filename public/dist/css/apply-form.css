@@ -1,0 +1,275 @@
+/* Team application form — layers on top of comprace-form.css */
+
+:root {
+  /* Team orange, matching @orange in public/less/variables.less */
+  --taf-orange: #FF8300;
+}
+
+/* Header brand: club logo above the team name.
+   Sized in rem with a fixed intrinsic width/height on the <img> so the header does
+   not jump while the logo loads. */
+.taf-logo {
+  display: block;
+  width: 6.5rem;
+  height: auto;
+  margin: 0 auto 0.85rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28));
+}
+
+.taf-join {
+  /* Scales with the viewport between a readable floor and a desktop ceiling */
+  font-size: clamp(1.25rem, 6vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: white;
+  margin-bottom: 0.85rem;
+  /* Lifts the orange off the teal gradient */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.taf-brand {
+  /* Scales with the viewport between a readable floor and a desktop ceiling */
+  font-size: clamp(1.25rem, 6vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: var(--taf-orange);
+  margin-bottom: 0.85rem;
+  /* Lifts the orange off the teal gradient */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.taf-description {
+  margin: 0.8rem auto 0;
+  max-width: 560px;
+  opacity: 0.85;
+  font-size: 0.90rem;
+  line-height: 1.5;
+}
+
+.taf-card {
+  max-width: 640px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.taf-section {
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid var(--crf-border);
+}
+
+.taf-section:last-of-type {
+  border-bottom: none;
+}
+
+.taf-section .crf-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.taf-section-hint {
+  font-size: 0.875rem;
+  margin: 0.35rem 0 1rem;
+}
+
+.taf-card .form-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+  color: var(--crf-text);
+}
+
+.taf-card .form-control,
+.taf-card .form-select {
+  border-radius: 8px;
+  border-color: var(--crf-border);
+  padding: 0.55rem 0.8rem;
+}
+
+/* Race blocks */
+.taf-race {
+  background: #f8fafc;
+  border: 1px solid var(--crf-border);
+  border-radius: 10px;
+  padding: 1.1rem 1.15rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.taf-race:last-of-type {
+  margin-bottom: 0;
+}
+
+.taf-race-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.taf-race-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--crf-muted);
+}
+
+/* Age grade badge */
+.taf-ag-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  border-radius: 20px;
+  padding: 0.2em 0.75em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.taf-ag-good {
+  background: #e3f4ea;
+  color: #14603a;
+  border: 1px solid #b7e0c7;
+}
+
+.taf-ag-low {
+  background: #fdf1e3;
+  color: #8a5216;
+  border: 1px solid #f2d5ae;
+}
+
+.taf-ag-busy {
+  background: #eef2f6;
+  color: var(--crf-muted);
+  border: 1px solid var(--crf-border);
+}
+
+/* Yes / no choice */
+.taf-choice-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.taf-choice {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1.5px solid var(--crf-border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.taf-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.taf-choice i {
+  color: #c3ccd6;
+  font-size: 1.1rem;
+  transition: color 0.15s ease;
+}
+
+.taf-choice:hover {
+  border-color: var(--crf-primary);
+  background: #f7fbfd;
+}
+
+.taf-choice.taf-choice-on {
+  border-color: var(--crf-primary);
+  background: #f0f7fa;
+  color: var(--crf-primary-dark);
+}
+
+.taf-choice.taf-choice-on i {
+  color: var(--crf-primary);
+}
+
+/* Inline notes */
+.taf-note {
+  display: flex;
+  gap: 0.6rem;
+  background: #f0f7fa;
+  border: 1px solid #c8e0eb;
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--crf-text);
+  margin-top: 1rem;
+}
+
+.taf-note i {
+  color: var(--crf-primary);
+  margin-top: 0.15em;
+  flex-shrink: 0;
+}
+
+/* Keeps the message a single flex item — without a wrapper, each text node and
+   inline element becomes its own item and the text lays out in columns. */
+.taf-note-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.taf-note-warn {
+  background: #fdf1e3;
+  border-color: #f2d5ae;
+}
+
+.taf-note-warn i {
+  color: #b06a12;
+}
+
+/* Submit */
+.taf-card .alert {
+  margin: 0 2rem;
+}
+
+.taf-submit {
+  width: calc(100% - 4rem) !important;
+  margin: 0 2rem 1.75rem;
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 576px) {
+  .taf-logo {
+    width: 5rem;
+  }
+
+  .taf-section {
+    padding: 1.35rem 1.2rem;
+  }
+
+  .taf-card .alert {
+    margin: 0 1.2rem;
+  }
+
+  .taf-submit {
+    width: calc(100% - 2.4rem) !important;
+    margin: 0 1.2rem 1.35rem;
+  }
+
+  .taf-ag-badge {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

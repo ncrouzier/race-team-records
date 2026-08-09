@@ -1,0 +1,118 @@
+<div class="modal-header">
+    <h4 class="modal-title">
+        <i class="fa fa-check-circle"></i> Approve {{ application.firstname }} {{ application.lastname }}
+    </h4>
+</div>
+
+<div class="modal-body">
+
+    <div ng-if="loading" style="text-align:center; padding: 24px;">
+        <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+        <p style="margin-top: 10px; color:#666;">Checking for an existing member record…</p>
+    </div>
+
+    <div ng-if="!loading">
+
+        <!-- Possible returning member -->
+        <div ng-if="matches.length > 0" class="alert alert-warning ta-match-warning">
+            <i class="fa fa-exclamation-triangle"></i>
+            <div>
+                <strong>This might be a returning member.</strong>
+                We already have {{ matches.length === 1 ? 'a member' : 'members' }} on file whose name matches
+                <strong>{{ application.firstname }} {{ application.lastname }}</strong>.
+                Linking to the existing record keeps their past results, records and history attached.
+            </div>
+        </div>
+
+        <div ng-if="matches.length > 0" class="ta-match-options">
+            <label class="ta-match-option" ng-repeat="m in matches"
+                ng-class="{'ta-match-option-on': selection.choice === m._id}">
+                <input type="radio" name="matchChoice" ng-model="selection.choice" ng-value="m._id">
+                <div class="ta-match-body">
+                    <div class="ta-match-name">
+                        <i class="fa fa-user"></i> {{ m.firstname }} {{ m.lastname }}
+                        <span class="ta-match-badge" ng-class="m.memberStatus === 'current' ? 'ta-ag-good' : ''">{{
+                            m.memberStatus }}</span>
+                    </div>
+                    <div class="ta-match-meta">
+                        Born {{ m.dateofbirth | date:'mediumDate':'UTC' }}
+                        <span ng-if="m.dateofbirth && !sameDob(m)" class="ta-ag-low">
+                            — differs from the application ({{ application.dateofbirth | date:'mediumDate':'UTC' }})
+                        </span>
+                        <span ng-if="m.sex"> · {{ m.sex }}</span>
+                    </div>
+                    <div class="ta-match-meta" ng-if="m.membershipDates.length">
+                        Membership:
+                        <span ng-repeat="d in m.membershipDates">
+                            {{ d.start | date:'MMM yyyy' }}–{{ d.end ? (d.end | date:'MMM yyyy') : 'present'
+                            }}{{ $last ? '' : ', ' }}
+                        </span>
+                    </div>
+                    <div class="ta-match-meta" ng-if="m.alternateFullNames.length">
+                        Also known as: {{ m.alternateFullNames.join(', ') }}
+                    </div>
+                    <div class="ta-match-meta ta-match-why">
+                        <i class="fa fa-link"></i>
+                        <span ng-if="m.matchedOn === 'alternate'">
+                            Matched the alternate name <strong>{{ m.matchedAlternateName }}</strong>
+                        </span>
+                        <span ng-if="m.matchedOn !== 'alternate'">Matched on member name</span>
+                    </div>
+                </div>
+            </label>
+
+            <label class="ta-match-option" ng-class="{'ta-match-option-on': selection.choice === 'new'}">
+                <input type="radio" name="matchChoice" ng-model="selection.choice" ng-value="'new'">
+                <div class="ta-match-body">
+                    <div class="ta-match-name"><i class="fa fa-user-plus"></i> Not the same person — create a new
+                        member</div>
+                    <div class="ta-match-meta">
+                        A brand new member record is created from the application details.
+                    </div>
+                </div>
+            </label>
+        </div>
+
+        <div ng-if="matches.length === 0" class="alert alert-info ta-approve-summary">
+            <i class="fa fa-user-plus"></i>
+            <div>
+                No existing member matches this name. Approving creates a new team member from the application —
+                name, gender and date of birth — with a membership starting today.
+            </div>
+        </div>
+
+        <div class="alert alert-danger ta-approve-final">
+            <i class="fa fa-exclamation-triangle"></i>
+            <div>
+                <strong>This is final.</strong>
+                Approving writes a real member record to the database
+                <span ng-if="selection.choice && selection.choice !== 'new'">
+                    — a new membership period is added to the existing member you selected
+                </span>
+                <span ng-if="selection.choice === 'new'">
+                    — a brand new member is created for {{ application.firstname }} {{ application.lastname }}
+                </span>
+                and they immediately count as a current team member across the site: standings, stats and team
+                requirements. Undoing it means deleting or editing that member by hand.
+            </div>
+        </div>
+
+        <div class="ta-approve-note">
+            <i class="fa fa-envelope-o"></i>
+            <div>No email is sent now. Once approved you can send the approval email from the applications list.</div>
+        </div>
+
+    </div>
+
+    <div class="alert alert-danger" ng-if="error">{{ error }}</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-primary" ng-click="confirm()" ng-disabled="saving || loading">
+        <i class="fa fa-spinner fa-spin" ng-if="saving"></i>
+        <i class="fa fa-check" ng-if="!saving"></i>
+        {{ selection.choice && selection.choice !== 'new' ? 'Approve as Returning Member' : 'Approve & Create Member' }}
+    </button>
+</div>

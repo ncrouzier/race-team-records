@@ -385,6 +385,15 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/comp-race-forms/detail');
                 gtag('event', 'page_view');
             }
+        })
+        .state('/applications', {
+            url: "/applications",
+            templateUrl: "views/teamApplications.html",
+            controller: 'TeamApplicationsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/applications');
+                gtag('event', 'page_view');
+            }
         });
 
 });

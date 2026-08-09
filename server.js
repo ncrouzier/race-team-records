@@ -120,6 +120,16 @@ app.post('/api/signup', authLimiter);
 app.post('/api/forgot', authLimiter);
 app.use('/api/reset', authLimiter);
 
+// The team application form is public — cap submissions per IP
+const applicationLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour window
+    max: 5,
+    message: { error: 'Too many applications submitted, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.post('/api/team-applications', applicationLimiter);
+
 // routes ======================================================================
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 

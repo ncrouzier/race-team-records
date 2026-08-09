@@ -1,0 +1,62 @@
+<div class="modal-header">
+    <h4 class="modal-title">
+        <i class="fa fa-times-circle"></i> Reject {{ application.firstname }} {{ application.lastname }}
+    </h4>
+</div>
+
+<div class="modal-body">
+
+    <div class="ta-reject-summary">
+        <div class="ta-reject-applicant">
+            <div class="ta-match-name">
+                {{ application.firstname }} {{ application.lastname }}
+                <span class="ta-match-badge">{{ application.sex }}</span>
+            </div>
+            <div class="ta-match-meta">{{ application.email }}</div>
+            <div class="ta-match-meta" ng-repeat="race in application.races">
+                {{ race.racename }} — {{ race.racetype.name }}
+                <span ng-if="race.agegrade != null" ng-class="race.agegrade >= minAgeGrade ? 'ta-ag-good' : 'ta-ag-low'">
+                    {{ race.agegrade | number:1 }}%
+                </span>
+                <span ng-if="race.agegrade == null" class="text-muted">age grade n/a</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="reject-notes">
+            Internal note <span class="text-muted" style="font-weight:400;">(optional)</span>
+        </label>
+        <textarea class="form-control" id="reject-notes" rows="4" ng-model="form.notes"
+            placeholder="Why was this application turned down? Visible to captains and admins only."></textarea>
+        <p class="help-block">
+            This note stays on the application for the other captains — it is <strong>not</strong> sent to the
+            applicant.
+        </p>
+    </div>
+
+    <div class="ta-approve-note">
+        <i class="fa fa-envelope-o"></i>
+        <div>
+            No email is sent now. Once rejected you can send the rejection letter from the applications list, and
+            edit its wording before it goes out.
+        </div>
+    </div>
+
+    <div class="ta-approve-note">
+        <i class="fa fa-undo"></i>
+        <div>This can be undone — an admin can move the application back to pending.</div>
+    </div>
+
+    <div class="alert alert-danger" ng-if="error">{{ error }}</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-danger" ng-click="confirm()" ng-disabled="saving">
+        <i class="fa fa-spinner fa-spin" ng-if="saving"></i>
+        <i class="fa fa-times" ng-if="!saving"></i>
+        Reject Application
+    </button>
+</div>

@@ -349,14 +349,17 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     $scope.memberListcolumns = [];
 
+    // Returns undefined for anything that isn't male/female — the list has four
+    // gendered columns and nowhere else to put them. Callers must handle that.
     function getMemberListColumnIndexForType(member) {
-        if (member.sex === 'Male' && getCatergory(member.dateofbirth) === 'Open') {
+        var sex = (member.sex || '').toLowerCase();
+        if (sex === 'male' && getCatergory(member.dateofbirth) === 'Open') {
             return 0;
-        } else if (member.sex === 'Female' && getCatergory(member.dateofbirth) === 'Open') {
+        } else if (sex === 'female' && getCatergory(member.dateofbirth) === 'Open') {
             return 1;
-        } else if (member.sex === 'Male' && getCatergory(member.dateofbirth) === 'Master') {
+        } else if (sex === 'male' && getCatergory(member.dateofbirth) === 'Master') {
             return 2;
-        } else if (member.sex === 'Female' && getCatergory(member.dateofbirth) === 'Master') {
+        } else if (sex === 'female' && getCatergory(member.dateofbirth) === 'Master') {
             return 3;
         }
     }
@@ -408,6 +411,12 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             }
             $scope.membersList.forEach(function (person) {
                 var columnIndex = getMemberListColumnIndexForType(person);
+                // A member with no usable sex has no column to go in — skip them
+                // rather than throwing and taking the whole list down with it.
+                if (columnIndex === undefined) {
+                    console.warn('Member not shown in list — unrecognised sex value:', person.sex, person.username);
+                    return;
+                }
                 $scope.memberListcolumns[columnIndex].push(person);
             });
 

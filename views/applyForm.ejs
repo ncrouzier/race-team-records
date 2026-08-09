@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join the Team — MCRRC Racing Team</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/dist/css/comprace-form.css">
+  <link rel="stylesheet" href="/dist/css/apply-form.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+
+<body>
+
+  <div class="crf-page" x-data="applyApp()">
+
+    <div class="crf-header">
+      <img class="taf-logo" src="/images/mcrrc_logo_256.png" width="256" height="256"
+        alt="Montgomery County Road Runners Club">
+         <div class="taf-join">Join the</div>
+      <div class="taf-brand">MCRRC Racing Team!</div>
+     
+      <div class="taf-description">
+        Please fill out the application below to be considered for the MCRRC Racing Team.
+      </div>
+    </div>
+
+    <div class="crf-body">
+
+      <!-- SUCCESS -->
+      <div x-show="submitted" class="crf-card crf-success" x-cloak>
+        <i class="fa fa-check-circle fa-3x"></i>
+        <h2>Application received</h2>
+        <p class="mb-0">
+          Thanks for applying! The team captains will review your application and get back to you by email at
+          <strong x-text="email"></strong>.
+        </p>
+      </div>
+
+      <!-- FORM -->
+      <form class="crf-card taf-card" x-show="!submitted" @submit.prevent="submit()" novalidate>
+
+        <!-- About you -->
+        <div class="taf-section">
+          <h2 class="crf-section-title"><i class="fa fa-user"></i> About you</h2>
+
+          <div class="row g-3 mt-1">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold" for="firstname">First name <span
+                  class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="firstname" x-model="firstname" autocomplete="given-name"
+                required>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold" for="lastname">Last name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="lastname" x-model="lastname" autocomplete="family-name"
+                required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold" for="email">Email <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" id="email" x-model="email" placeholder="youremail@email.com"
+                autocomplete="email" required>
+              <div class="form-text">We'll use this to let you know about your application.</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold" for="sex">Gender <span class="text-danger">*</span></label>
+              <select class="form-select" id="sex" x-model="sex" @change="recalcAll()" required>
+                <option value="">Select…</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold" for="dob">Date of birth <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="dob" x-model="dateofbirth" @change="recalcAll()"
+                :max="todayStr" required>
+            </div>
+          </div>
+
+          <div class="taf-note mt-3" x-show="sex === 'other'" x-cloak>
+            <i class="fa fa-info-circle"></i>
+            <div class="taf-note-text">
+              Age grading tables only cover male and female standards, so we can't calculate a percentage
+              automatically. Enter your races anyway and the captains will review them by hand.
+            </div>
+          </div>
+        </div>
+
+        <!-- Races -->
+        <div class="taf-section">
+          <h2 class="crf-section-title"><i class="fa fa-flag-checkered"></i> Two recent races</h2>
+          <p class="text-muted taf-section-hint">
+            Please provide two race results at <strong>two different distances</strong> from the <strong>last <%= raceMaxAgeDays %> days</strong> that are age graded <strong><span x-text="MIN_AG"></span>% or higher</strong>.
+            The form will calculate it for you as you enter your times.                       
+          </p>
+
+          <template x-for="(race, i) in races" :key="i">
+            <div class="taf-race">
+              <div class="taf-race-head">
+                <span class="taf-race-number" x-text="'Race ' + (i + 1)"></span>
+                <span class="taf-ag-badge" x-show="race.agegrade !== null" x-cloak
+                  :class="race.agegrade >= MIN_AG ? 'taf-ag-good' : 'taf-ag-low'">
+                  <i class="fa" :class="race.agegrade >= MIN_AG ? 'fa-check' : 'fa-exclamation-triangle'"></i>
+                  <span x-text="Number(race.agegrade).toFixed(1) + '% age grade'"></span>
+                </span>
+                <span class="taf-ag-badge taf-ag-busy" x-show="race.agLoading" x-cloak>
+                  <i class="fa fa-spinner fa-spin"></i> calculating…
+                </span>
+              </div>
+
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" :for="'racename-' + i">Race name <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" :id="'racename-' + i" x-model="race.racename"
+                    :placeholder="namePlaceholders[i]">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label" :for="'racedate-' + i">Date <span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" :id="'racedate-' + i" x-model="race.racedate"
+                    :min="oldestRaceDateStr" :max="todayStr" @change="recalc(i)">
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label" :for="'racetype-' + i">Distance <span class="text-danger">*</span></label>
+                  <select class="form-select" :id="'racetype-' + i" x-model="race.racetype_id"
+                    @change="onDistanceChange(i)">
+                    <option value="">Select…</option>
+                    <template x-for="rt in distanceOptions(i)" :key="rt._id">
+                      <option :value="rt._id" x-text="rt.name + ' (' + rt.surface + ')'"></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" :for="'time-' + i">Finish time <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" :id="'time-' + i" x-model="race.timeStr"
+                    @input="onTimeInput(i)" :placeholder="timePlaceholders[i]" inputmode="numeric" autocomplete="off">
+                  <div class="form-text">Enter as M:SS, MM:SS, or H:MM:SS</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" :for="'link-' + i">
+                    Link to the results <span class="text-muted fw-normal">(optional)</span>
+                  </label>
+                  <input type="url" class="form-control" :id="'link-' + i" x-model="race.resultlink"
+                    placeholder="https://…" inputmode="url" autocomplete="off" spellcheck="false">
+                  <div class="form-text">Helps the captains verify your time.</div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div class="taf-note taf-note-warn" x-show="hasLowAgeGrade" x-cloak>
+            <i class="fa fa-exclamation-triangle"></i>
+            <div class="taf-note-text">
+              One of your races is under <span x-text="MIN_AG"></span>%. You can still apply. The captains review
+              every application individually, but a stronger result helps.
+            </div>
+          </div>
+        </div>
+
+        <!-- Commitment -->
+        <div class="taf-section">
+          <h2 class="crf-section-title">
+            <i class="fa fa-calendar-check-o"></i> Race commitment <span class="text-danger">*</span>
+          </h2>
+          <p class="text-muted taf-section-hint">
+            Team members are required to race at least <strong><%= raceCommitment %> times a year</strong> in team-scored
+            races.
+          </p>
+          <div class="taf-choice-group">
+            <label class="taf-choice" :class="committedToRaces === true ? 'taf-choice-on' : ''">
+              <input type="radio" name="committed" :value="true" @change="committedToRaces = true"
+                :checked="committedToRaces === true">
+              <i class="fa fa-check-circle"></i> Yes, I can commit to <%= raceCommitment %> races a year
+            </label>
+            <label class="taf-choice" :class="committedToRaces === false ? 'taf-choice-on' : ''">
+              <input type="radio" name="committed" :value="false" @change="committedToRaces = false"
+                :checked="committedToRaces === false">
+              <i class="fa fa-times-circle"></i> No, I can't commit to that right now
+            </label>
+          </div>
+        </div>
+
+        <!-- Motivation -->
+        <div class="taf-section">
+          <h2 class="crf-section-title">
+            <i class="fa fa-comment-o"></i> Why do you want to join? <span class="text-danger">*</span>
+          </h2>
+          <p class="text-muted taf-section-hint">
+            Please share with us why you would like to join and anything else you would like to let us know (e.g., what you're training for, injuries, etc.)
+          </p>
+          <textarea class="form-control" id="motivation" rows="5" x-model="motivation"
+            placeholder="Tell us a bit about yourself and your running…"></textarea>
+        </div>
+
+        <div class="alert alert-danger" x-show="error" x-cloak x-text="error"></div>
+
+        <button type="submit" class="btn crf-btn-primary w-100 taf-submit" :disabled="submitting">
+          <i class="fa fa-spinner fa-spin" x-show="submitting"></i>
+          <i class="fa fa-paper-plane" x-show="!submitting"></i>
+          Submit Application
+        </button>
+      </form>
+
+    </div><!-- /.crf-body -->
+
+    <div class="crf-footer">
+      <a href="/" target="_blank">MCRRC Racing Team</a>
+    </div>
+  </div>
+
+  <script>
+    var RACETYPES = <%- JSON.stringify(racetypes || []) %>;
+
+    function applyApp() {
+      return {
+        MIN_AG: 70,
+        RACE_COMMITMENT: <%= raceCommitment %>,
+        RACE_MAX_AGE_DAYS: <%= raceMaxAgeDays %>,
+        racetypes: RACETYPES,
+        firstname: '',
+        lastname: '',
+        email: '',
+        sex: '',
+        dateofbirth: '',
+        motivation: '',
+        committedToRaces: null,
+        races: [emptyRace(), emptyRace()],
+        namePlaceholders: ["e.g. Kensington 8K", "e.g. Riley's Rumble Half Marathon"],
+        timePlaceholders: ['e.g. 32:10', 'e.g. 1:25:00'],
+        error: '',
+        submitting: false,
+        submitted: false,
+        todayStr: new Date().toISOString().split('T')[0],
+        oldestRaceDateStr: (function () {
+          var d = new Date();
+          d.setDate(d.getDate() - <%= raceMaxAgeDays %>);
+          return d.toISOString().split('T')[0];
+        })(),
+
+        get hasLowAgeGrade() {
+          var min = this.MIN_AG;
+          return this.races.some(function (r) { return r.agegrade !== null && r.agegrade < min; });
+        },
+
+        // The other race's distance is dropped from the list — the two races have to
+        // be at different distances, and 5k road / 5000m track are the same distance.
+        distanceOptions(i) {
+          var otherId = this.races[1 - i] ? this.races[1 - i].racetype_id : '';
+          if (!otherId) return this.racetypes;
+          var other = this.racetypes.find(function (rt) { return rt._id === otherId; });
+          if (!other) return this.racetypes;
+          return this.racetypes.filter(function (rt) { return rt.meters !== other.meters; });
+        },
+
+        onDistanceChange(i) {
+          // Clearing a conflict on the other race is handled by distanceOptions, but a
+          // stale selection there has to be dropped explicitly.
+          var other = this.races[1 - i];
+          var picked = this.racetypes.find((rt) => rt._id === this.races[i].racetype_id);
+          var otherPicked = this.racetypes.find(function (rt) { return rt._id === other.racetype_id; });
+          if (picked && otherPicked && picked.meters === otherPicked.meters) {
+            other.racetype_id = '';
+            other.agegrade = null;
+          }
+          this.recalc(i);
+        },
+
+        onTimeInput(i) {
+          clearTimeout(this.races[i].agTimer);
+          var self = this;
+          this.races[i].agTimer = setTimeout(function () { self.recalc(i); }, 500);
+        },
+
+        recalcAll() {
+          for (var i = 0; i < this.races.length; i++) this.recalc(i);
+        },
+
+        async recalc(i) {
+          var race = this.races[i];
+          var cs = parseTime(race.timeStr);
+          if (!cs || !race.racedate || !race.racetype_id || !this.sex || !this.dateofbirth) {
+            race.agegrade = null;
+            return;
+          }
+          race.agLoading = true;
+          try {
+            var params = new URLSearchParams({
+              sex: this.sex,
+              dateofbirth: this.dateofbirth,
+              racetype_id: race.racetype_id,
+              racedate: race.racedate,
+              timeCentiseconds: cs
+            });
+            var r = await fetch('/api/team-applications/agegrade?' + params);
+            var data = await r.json();
+            race.agegrade = data.agegrade !== null && data.agegrade !== undefined ? data.agegrade : null;
+          } catch (_) {
+            race.agegrade = null;
+          } finally {
+            race.agLoading = false;
+          }
+        },
+
+        validate() {
+          if (!this.firstname.trim()) return 'Please enter your first name.';
+          if (!this.lastname.trim()) return 'Please enter your last name.';
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) return 'Please enter a valid email address.';
+          if (!this.sex) return 'Please select your gender.';
+          if (!this.dateofbirth) return 'Please enter your date of birth.';
+
+          for (var i = 0; i < this.races.length; i++) {
+            var race = this.races[i];
+            var label = 'Race ' + (i + 1);
+            if (!race.racename.trim()) return label + ': please enter the race name.';
+            if (!race.racedate) return label + ': please enter the race date.';
+            if (race.racedate < this.oldestRaceDateStr) return label + ': the race must have taken place in the last ' + this.RACE_MAX_AGE_DAYS + ' days.';
+            if (race.racedate > this.todayStr) return label + ': the race date can\'t be in the future.';
+            if (!race.racetype_id) return label + ': please select the distance.';
+            if (!parseTime(race.timeStr)) return label + ': please enter a valid finish time (e.g. 42:30).';
+          }
+
+          var picked = this.races.map((r) => this.racetypes.find(function (rt) { return rt._id === r.racetype_id; }));
+          if (picked[0] && picked[1] && picked[0].meters === picked[1].meters) {
+            return 'Please submit two races at different distances.';
+          }
+
+          if (this.committedToRaces === null) return 'Please answer whether you can commit to ' + this.RACE_COMMITMENT + ' races a year.';
+          if (!this.motivation.trim()) return 'Please tell us why you want to join the team.';
+          return '';
+        },
+
+        async submit() {
+          this.error = this.validate();
+          if (this.error) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+
+          this.submitting = true;
+          try {
+            var payload = {
+              firstname: this.firstname.trim(),
+              lastname: this.lastname.trim(),
+              email: this.email.trim(),
+              sex: this.sex,
+              dateofbirth: this.dateofbirth,
+              motivation: this.motivation,
+              committedToRaces: this.committedToRaces,
+              races: this.races.map(function (r) {
+                return {
+                  racename: r.racename.trim(),
+                  racedate: r.racedate,
+                  racetype_id: r.racetype_id,
+                  timeCentiseconds: parseTime(r.timeStr),
+                  resultlink: r.resultlink.trim()
+                };
+              })
+            };
+            var r = await fetch('/api/team-applications', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            var data = await r.json();
+            if (r.status === 201) {
+              this.submitted = true;
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+              this.error = data.error || 'Submission failed. Please try again.';
+            }
+          } catch (_) {
+            this.error = 'Network error. Please try again.';
+          } finally {
+            this.submitting = false;
+          }
+        }
+      };
+    }
+
+    function emptyRace() {
+      return { racename: '', racedate: '', racetype_id: '', timeStr: '', resultlink: '', agegrade: null, agLoading: false, agTimer: null };
+    }
+
+    function parseTime(str) {
+      if (!str) return null;
+      var parts = str.trim().split(':').map(Number);
+      if (parts.some(isNaN) || parts.some(function (p) { return p < 0; })) return null;
+      if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 100;
+      if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 100;
+      return null;
+    }
+  </script>
+
+</body>
+
+</html>

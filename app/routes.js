@@ -456,6 +456,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
     const ActivityLog = require('./models/activitylog');
+    const TeamApplication = require('./models/teamapplication');
 
 
     // =====================================
@@ -4469,6 +4470,700 @@ module.exports = async function (app, qs, passport, async, _) {
         } catch (err) {
             console.error('Error deleting response:', err);
             res.status(500).json({ error: 'Error deleting response' });
+        }
+    });
+
+    // =====================================
+    // TEAM APPLICATIONS ===================
+    // =====================================
+
+    // Public application form page
+    app.get('/apply', async function (req, res) {
+        try {
+            // Only distances we hold age grading standards for — the two races are
+            // there to be age graded, so anything else is a dead end for the applicant.
+            const racetypes = await RaceType.find({ hasAgeGradedInfo: true, isVariable: { $ne: true } })
+                .sort({ meters: 1 })
+                .select('name surface meters miles')
+                .lean();
+            res.render('applyForm.ejs', { racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+        } catch (err) {
+            console.error('Error loading apply page:', err);
+            res.render('applyForm.ejs', { racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+        }
+    });
+
+    // Minimum age grade we ask applicants to hit on their two submitted races.
+    const APPLICATION_MIN_AGEGRADE = 70;
+    // Races a year we ask team members to commit to. Change it here and the apply
+    // form, the review page and the emails all follow.
+    const APPLICATION_RACE_COMMITMENT = 8;
+    // How far back a submitted race can be and still count as recent.
+    const APPLICATION_RACE_MAX_AGE_DAYS = 365;
+
+    // Age grade for someone who is not (yet) a member — the applicant supplies their
+    // own sex/dob, so this can't reuse /api/agegrade/calculate which reads req.user.member.
+    async function calculateApplicantAgeGrade(sex, dateofbirth, racetype, racedate, timeCentiseconds) {
+        if (!sex || !dateofbirth || !racetype || !racetype.name || !racetype.surface || !racedate || !timeCentiseconds) return null;
+        // Age grading tables only cover male/female; 'other' has no standard to grade against.
+        const gradingSex = sex === 'female' ? 'female' : (sex === 'male' ? 'male' : null);
+        if (!gradingSex) return null;
+        try {
+            const raceDateObj = new Date(racedate);
+            const age = service.calculateAge(raceDateObj, new Date(dateofbirth));
+            const ag = await service.getAgeGrading(gradingSex, age, racetype.surface, raceDateObj);
+            const key = racetype.name.toLowerCase();
+            if (!ag || !ag[key]) return null;
+            return parseFloat(((ag[key] / (Number(timeCentiseconds) / 100)) * 100).toFixed(2));
+        } catch (err) {
+            console.error('Applicant age grade calculation error:', err);
+            return null;
+        }
+    }
+
+    // Public: live age grade preview for the apply form
+    app.get('/api/team-applications/agegrade', async function (req, res) {
+        try {
+            const { sex, dateofbirth, racetype_id, racedate, timeCentiseconds } = req.query;
+            if (!racetype_id) return res.json({ agegrade: null });
+            const racetype = await RaceType.findById(racetype_id).lean();
+            if (!racetype) return res.json({ agegrade: null });
+            const agegrade = await calculateApplicantAgeGrade(sex, dateofbirth, racetype, racedate, timeCentiseconds);
+            res.json({ agegrade, minAgeGrade: APPLICATION_MIN_AGEGRADE });
+        } catch (err) {
+            res.json({ agegrade: null });
+        }
+    });
+
+    // Applicants paste links like "coolrunning.com/results/123" as often as full URLs.
+    // Accept both, but only ever store http(s) — the review page turns this into an
+    // anchor, so a javascript: or data: URL must never survive.
+    function normalizeResultLink(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return { ok: true, url: '' };
+
+        const candidate = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : 'https://' + raw;
+        let parsed;
+        try {
+            parsed = new URL(candidate);
+        } catch (err) {
+            return { ok: false };
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return { ok: false };
+        if (!parsed.hostname || parsed.hostname.indexOf('.') === -1) return { ok: false };
+        return { ok: true, url: parsed.href };
+    }
+
+    // Public: submit a team application
+    app.post('/api/team-applications', async function (req, res) {
+        try {
+            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces } = req.body;
+
+            if (!firstname || !firstname.trim()) return res.status(400).json({ error: 'First name is required' });
+            if (!lastname || !lastname.trim()) return res.status(400).json({ error: 'Last name is required' });
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'A valid email address is required' });
+            if (!['male', 'female', 'other'].includes(sex)) return res.status(400).json({ error: 'Please select a gender' });
+            if (!dateofbirth || isNaN(new Date(dateofbirth).getTime())) return res.status(400).json({ error: 'A valid date of birth is required' });
+            if (!Array.isArray(races) || races.length < 2) return res.status(400).json({ error: 'Please provide two recent races' });
+            if (typeof committedToRaces !== 'boolean') return res.status(400).json({ error: 'Please answer whether you can commit to ' + APPLICATION_RACE_COMMITMENT + ' races a year' });
+            if (!motivation || !String(motivation).trim()) return res.status(400).json({ error: 'Please tell us why you want to join the team' });
+
+            const existingPending = await TeamApplication.findOne({ email: String(email).toLowerCase().trim(), status: 'pending' }).lean();
+            if (existingPending) return res.status(409).json({ error: 'You already have an application under review. The captains will be in touch.' });
+
+            // Races have to be recent enough to say something about current fitness.
+            const oldestAllowedRaceDate = new Date();
+            oldestAllowedRaceDate.setDate(oldestAllowedRaceDate.getDate() - APPLICATION_RACE_MAX_AGE_DAYS);
+            const todayEnd = new Date();
+            todayEnd.setHours(23, 59, 59, 999);
+
+            // Recompute every age grade server-side — never trust the value the browser sends.
+            const racesToSave = [];
+            for (const race of races.slice(0, 2)) {
+                if (!race || !race.racename || !race.racename.trim()) return res.status(400).json({ error: 'Each race needs a name' });
+                if (!race.racedate || isNaN(new Date(race.racedate).getTime())) return res.status(400).json({ error: 'Each race needs a valid date' });
+                if (new Date(race.racedate) < oldestAllowedRaceDate) return res.status(400).json({ error: 'Both races must have taken place in the last ' + APPLICATION_RACE_MAX_AGE_DAYS + ' days' });
+                if (new Date(race.racedate) > todayEnd) return res.status(400).json({ error: 'Race dates can\'t be in the future' });
+                if (!race.timeCentiseconds || Number(race.timeCentiseconds) <= 0) return res.status(400).json({ error: 'Each race needs a valid finish time' });
+
+                let racetypeSnapshot = null;
+                if (race.racetype_id) {
+                    const rt = await RaceType.findById(race.racetype_id).lean();
+                    if (rt) racetypeSnapshot = { _id: rt._id, name: rt.name, surface: rt.surface, meters: rt.meters, miles: rt.miles };
+                }
+                if (!racetypeSnapshot) return res.status(400).json({ error: 'Each race needs a distance' });
+
+                const link = normalizeResultLink(race.resultlink);
+                if (!link.ok) return res.status(400).json({ error: 'The results link for "' + race.racename.trim() + '" doesn\'t look like a valid web address' });
+
+                racesToSave.push({
+                    racename: race.racename.trim(),
+                    racedate: new Date(race.racedate),
+                    racetype: racetypeSnapshot,
+                    timeCentiseconds: Number(race.timeCentiseconds),
+                    agegrade: await calculateApplicantAgeGrade(sex, dateofbirth, racetypeSnapshot, race.racedate, race.timeCentiseconds),
+                    resultlink: link.url
+                });
+            }
+
+            // Two different distances — 5k road and 5000m track are the same distance,
+            // so compare meters rather than race type.
+            if (racesToSave[0].racetype.meters === racesToSave[1].racetype.meters) {
+                return res.status(400).json({ error: 'Please submit two races at different distances' });
+            }
+
+            const application = new TeamApplication({
+                firstname: firstname.trim(),
+                lastname: lastname.trim(),
+                email: email.trim().toLowerCase(),
+                sex,
+                dateofbirth: new Date(dateofbirth),
+                races: racesToSave,
+                motivation: motivation ? String(motivation).trim() : '',
+                committedToRaces: committedToRaces,
+                ipAddress: req.ip
+            });
+            await application.save();
+
+            sendApplicationNotification(application);
+
+            res.status(201).json({ success: true, id: application._id });
+        } catch (err) {
+            console.error('Error submitting team application:', err);
+            res.status(500).json({ error: 'Something went wrong submitting your application. Please try again.' });
+        }
+    });
+
+    // Notify the captains that a new application landed
+    function sendApplicationNotification(application) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true') return;
+        const captainsEmail = process.env.CAPTAINS_EMAIL;
+        if (!captainsEmail) return;
+
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '');
+        const name = application.firstname + ' ' + application.lastname;
+
+        const raceLines = application.races.map(function (r, i) {
+            return '  ' + (i + 1) + '. ' + r.racename
+                + ' (' + new Date(r.racedate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + ')'
+                + ' — ' + (r.racetype ? r.racetype.name : '?')
+                + ' in ' + centisToString(r.timeCentiseconds)
+                + (r.agegrade != null ? ' (AG: ' + Number(r.agegrade).toFixed(1) + '%)' : ' (AG: n/a)')
+                + (r.resultlink ? '\n     ' + r.resultlink : '');
+        }).join('\n');
+
+        const body = [
+            name + ' has applied to join the MCRRC Racing Team.',
+            '',
+            'Email: ' + application.email,
+            'Gender: ' + application.sex,
+            'Date of birth: ' + new Date(application.dateofbirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }),
+            '',
+            'Recent races:',
+            raceLines,
+            '',
+            'Committed to ' + APPLICATION_RACE_COMMITMENT + ' races a year: ' + (application.committedToRaces ? 'Yes' : 'No'),
+            '',
+            'Why they want to join:',
+            application.motivation || '—',
+            '',
+            'Review applications: ' + siteUrl + '/applications',
+        ].join('\n');
+
+        transport.sendMail({
+            from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+            to: captainsEmail,
+            subject: 'New team application — ' + name,
+            text: body
+        }, function (err) {
+            if (err) console.error('Error sending application notification email:', err);
+        });
+    }
+
+    // Decision emails are HTML so the templates can carry links. Captains edit them in
+    // the dialog, so the body is sanitised before it is stored or sent.
+    const emailSanitizeOptions = {
+        allowedTags: ['a', 'b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li',
+            'h1', 'h2', 'h3', 'h4', 'blockquote', 'span', 'div', 'hr'],
+        allowedAttributes: {
+            'a': ['href', 'target', 'title', 'rel'],
+            'span': ['style'], 'div': ['style'], 'p': ['style']
+        },
+        allowedSchemes: ['http', 'https', 'mailto'],
+        transformTags: {
+            // Links in an email client should always open in a new tab
+            'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' })
+        }
+    };
+
+    function sanitizeEmailBody(html) {
+        return sanitizeHtml(html || '', emailSanitizeOptions);
+    }
+
+    // Plain-text alternative for clients that won't render HTML. Link destinations are
+    // spelled out, since a bare label is useless without the URL in a text email.
+    function htmlToPlainText(html) {
+        const withBreaks = String(html || '')
+            .replace(/<a\b[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, function (match, href, label) {
+                const text = label.replace(/<[^>]+>/g, '').trim();
+                const url = href.replace(/^mailto:/i, '');
+                if (!text) return url;
+                return text === url ? text : text + ' (' + url + ')';
+            })
+            .replace(/<\s*br\s*\/?>/gi, '\n')
+            .replace(/<li[^>]*>/gi, '\n  • ')
+            .replace(/<\/li\s*>/gi, '')
+            .replace(/<\/(p|div|h[1-6]|blockquote|ul|ol)\s*>/gi, '\n')
+            .replace(/<hr\s*\/?>/gi, '\n---\n');
+
+        return sanitizeHtml(withBreaks, { allowedTags: [], allowedAttributes: {} })
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            // Keep list items on consecutive lines rather than double-spaced
+            .replace(/\n{2,}(\s*•)/g, '\n$1')
+            .trim();
+    }
+
+    // Generic placeholder templates — meant to be replaced with the real team wording
+    // later. Captains can edit either one in the dialog before it goes out.
+    function buildDecisionTemplate(application, type) {
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+        const captainsEmail = process.env.CAPTAINS_EMAIL || '';
+        const signalUrl = process.env.SIGNAL_URL || '';
+
+        if (type === 'rejection') {
+            return {
+                subject: 'Your MCRRC Racing Team application',
+                body: [
+                    '<p>Hi ' + application.firstname + ',</p>',
+                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
+                    '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
+                    '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
+                    'reapply any time at <a href="' + siteUrl + '/apply">' + siteUrl + '/apply</a>.</p>',
+                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
+                    '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
+                    '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
+
+        return {
+            subject: 'Welcome to the MCRRC Racing Team, ' + application.firstname + '!',
+            body: [
+                '<p>Hi ' + application.firstname + ',</p>',
+                '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
+                '<p>A few things to get you started:</p>',
+                '<ul>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="' + siteUrl + '" target="_blank">' + siteUrl + '</a>. Please <a href="' + siteUrl + '/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
+                '  <li>We require team members to race at least ' + APPLICATION_RACE_COMMITMENT + ' times a year and to help out at club events.</li>',
+                '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
+                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="'+signalUrl+'" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please provide your preferred size.</strong></li>',
+                '</ul>',
+                '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
+                'members. Please take a little time and send yours back with the info below. Everything is optional,',
+                'of course. Have a look at <a href="' + siteUrl + '/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'for inspiration:</p>',                
+                '<ul>',
+                '  <li><strong>A photo</strong></li>',
+                '  <li>Name:</li>',
+                '  <li>Occupation:</li>',
+                '  <li>College/Grad School Alma mater:</li>',
+                '  <li>Hometown:</li>',
+                '  <li>Favorite race (and why):</li>',
+                '  <li>PRs: 5K / 10K / 1/2 Marathon / Marathon:</li>',
+                '  <li>Best running/racing moment:</li>',
+                '  <li>Running goals:</li>',
+                '  <li>Running gear you can\'t live without (and why):</li>',
+                '  <li>Fun fact about yourself:</li>',
+                '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
+                '</ul>',
+
+                '<p>If you have any questions, just reply to this email' + (captainsEmail ? ' or write to <a href="mailto:' + captainsEmail + '">' + captainsEmail + '</a>' : '') + ' and one of the captains will get back to you.</p>',
+                '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
+            ].join('\n')
+        };
+    }
+
+    // Decision mail is relayed by Brevo, so the captains have no copy of what went out
+    // and any reply lands in their inbox with no thread to attach to. Copying them in
+    // fixes both: same Message-ID, so the applicant's reply threads with their copy.
+    //
+    // CAPTAINS_EMAIL_COPY = none (default) | cc | bcc
+    //   none — no copy; only Reply-To routes replies to the captains
+    //   bcc  — captains get the copy and the threading, address stays private
+    //   cc   — captains address is visible to the applicant, and reply-all reaches them
+    function captainsCopyHeaders() {
+        const address = process.env.CAPTAINS_EMAIL;
+        if (!address) return {};
+        const mode = (process.env.CAPTAINS_EMAIL_COPY || 'none').toLowerCase();
+        if (mode === 'cc') return { cc: address };
+        if (mode === 'bcc') return { bcc: address };
+        return {};
+    }
+
+    // What the captain is told in the send dialog, so the copy is never a surprise
+    function captainsCopyInfo() {
+        const address = process.env.CAPTAINS_EMAIL;
+        if (!address) return null;
+        const mode = (process.env.CAPTAINS_EMAIL_COPY || 'none').toLowerCase();
+        if (mode !== 'cc' && mode !== 'bcc') return null;
+        return { mode: mode === 'bcc' ? 'Bcc' : 'Cc', address: address };
+    }
+
+    function sendDecisionEmail(application, subject, htmlBody) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true') {
+            console.log('SEND_EMAIL_FOR_FORM is not enabled — decision email not sent to ' + application.email);
+            return;
+        }
+        if (!application.email) return;
+
+        transport.sendMail(Object.assign({
+            from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+            to: application.email,
+            replyTo: process.env.CAPTAINS_EMAIL || undefined,
+            subject: subject,
+            html: htmlBody,
+            text: htmlToPlainText(htmlBody)
+        }, captainsCopyHeaders()), function (err) {
+            if (err) console.error('Error sending decision email:', err);
+        });
+    }
+
+    // Captain/admin: template to prefill the send-email dialog with
+    app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.query.type === 'rejection' ? 'rejection' : 'approval';
+            const application = await TeamApplication.findById(req.params.id).lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            // An email already sent for this decision comes back as-is, so a resend
+            // starts from what the applicant actually received.
+            const already = type === 'rejection' ? application.rejectionEmail : application.approvalEmail;
+            if (already && already.sentAt) {
+                return res.json({
+                    subject: already.subject, body: already.body,
+                    previouslySentAt: already.sentAt, copy: captainsCopyInfo()
+                });
+            }
+            res.json(Object.assign(buildDecisionTemplate(application, type), { copy: captainsCopyInfo() }));
+        } catch (err) {
+            console.error('Error building email template:', err);
+            res.status(500).json({ error: 'Error building email template' });
+        }
+    });
+
+    // Captain/admin: send the approval or rejection email to the applicant
+    app.post('/api/team-applications/:id/send-email', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.body.type === 'rejection' ? 'rejection' : 'approval';
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            const expectedStatus = type === 'rejection' ? 'rejected' : 'approved';
+            if (application.status !== expectedStatus) {
+                return res.status(400).json({ error: 'This application is ' + application.status + ' — an ' + type + ' email doesn\'t apply' });
+            }
+
+            const subject = (req.body.subject || '').trim();
+            const body = sanitizeEmailBody(req.body.body).trim();
+            if (!subject) return res.status(400).json({ error: 'The email needs a subject' });
+            // Markup with no readable text (or just whitespace) is not a message
+            if (!body || !htmlToPlainText(body)) return res.status(400).json({ error: 'The email needs a message' });
+
+            sendDecisionEmail(application, subject, body);
+
+            const record = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
+            if (type === 'rejection') application.rejectionEmail = record;
+            else application.approvalEmail = record;
+            await application.save();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_email_sent',
+                description: 'Sent ' + type + ' email to ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { type: type, subject: subject },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error sending decision email:', err);
+            res.status(500).json({ error: 'Error sending email' });
+        }
+    });
+
+    // Name comparison for returning-member detection: case-insensitive, accent-insensitive,
+    // and tolerant of stray or repeated whitespace on either side.
+    function normalizeName(str) {
+        return String(str || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // Captain/admin: existing members who might be this applicant coming back.
+    // An entry in alternateFullNames is a whole name ("Jane Smith"), so it is compared
+    // against the application's firstname and lastname joined together — not to either
+    // one on its own.
+    app.get('/api/team-applications/:id/member-matches', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id).lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            const target = normalizeName(application.firstname + ' ' + application.lastname);
+
+            // Compared in JS rather than in the query: normalising the *stored* value
+            // (case, accents, doubled spaces) isn't something a Mongo regex can do.
+            const members = await Member.find()
+                .select('firstname lastname username sex dateofbirth memberStatus membershipDates alternateFullNames')
+                .lean();
+
+            const matches = [];
+            members.forEach(function (member) {
+                if (normalizeName(member.firstname + ' ' + member.lastname) === target) {
+                    matches.push(Object.assign({ matchedOn: 'name' }, member));
+                    return;
+                }
+                const alt = (member.alternateFullNames || []).find(function (name) {
+                    return normalizeName(name) === target;
+                });
+                if (alt) matches.push(Object.assign({ matchedOn: 'alternate', matchedAlternateName: alt }, member));
+            });
+
+            res.json({ matches });
+        } catch (err) {
+            console.error('Error finding member matches:', err);
+            res.status(500).json({ error: 'Error finding member matches' });
+        }
+    });
+
+    // Captain/admin: list applications
+    app.get('/api/team-applications', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const query = {};
+            if (req.query.status) query.status = req.query.status;
+            const applications = await TeamApplication.find(query)
+                .sort({ createdAt: -1 })
+                .populate('member', 'firstname lastname username')
+                .lean();
+            const counts = await TeamApplication.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+            const statusCounts = { pending: 0, approved: 0, rejected: 0 };
+            counts.forEach(function (c) { statusCounts[c._id] = c.count; });
+            res.json({ applications, statusCounts, minAgeGrade: APPLICATION_MIN_AGEGRADE, raceCommitment: APPLICATION_RACE_COMMITMENT });
+        } catch (err) {
+            console.error('Error fetching team applications:', err);
+            res.status(500).json({ error: 'Error fetching applications' });
+        }
+    });
+
+    // Captain/admin: single application
+    app.get('/api/team-applications/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id)
+                .populate('member', 'firstname lastname username')
+                .lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            res.json(application);
+        } catch (err) {
+            res.status(500).json({ error: 'Error fetching application' });
+        }
+    });
+
+    // Captain/admin: approve an application — creates the real Member
+    app.post('/api/team-applications/:id/approve', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            if (application.status === 'approved') return res.status(409).json({ error: 'This application has already been approved' });
+
+            const startDate = req.body.membershipStart ? new Date(req.body.membershipStart) : new Date();
+
+            // Members are stored capitalised ('Male'/'Female') everywhere else in the
+            // app — the members page buckets on that exact string — but the apply form
+            // posts the lowercase enum value.
+            const memberSex = application.sex ? application.sex.charAt(0).toUpperCase() + application.sex.slice(1) : application.sex;
+
+            let member;
+            let isReturning = false;
+
+            if (req.body.existingMemberId) {
+                // Returning runner — attach a new membership period to the member they
+                // already have, so their old results and records stay attached.
+                member = await Member.findById(req.body.existingMemberId);
+                if (!member) return res.status(404).json({ error: 'The existing member you selected no longer exists' });
+
+                const alreadyOpen = (member.membershipDates || []).some(function (d) { return !d.end; });
+                if (alreadyOpen) {
+                    return res.status(409).json({ error: member.firstname + ' ' + member.lastname + ' already has an open membership — no new period was added.' });
+                }
+                member.membershipDates.push({ start: startDate });
+                isReturning = true;
+            } else {
+                member = new Member({
+                    firstname: application.firstname,
+                    lastname: application.lastname,
+                    sex: memberSex,
+                    dateofbirth: application.dateofbirth,
+                    membershipDates: [{ start: startDate }]
+                });
+            }
+
+            await member.save();
+            await service.updateTeamRequirementStats(member);
+
+            application.status = 'approved';
+            application.member = member._id;
+            application.isReturningMember = isReturning;
+            application.reviewedBy = req.user._id;
+            application.reviewedByUsername = req.user.username;
+            application.reviewedAt = new Date();
+            if (req.body.notes !== undefined) application.reviewNotes = req.body.notes;
+            await application.save();
+
+            await service.invalidateSystemInfoCache();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_approved',
+                description: 'Approved team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { memberId: member._id.toString(), memberUsername: member.username, returningMember: isReturning },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: true, application, member, isReturningMember: isReturning });
+        } catch (err) {
+            console.error('Error approving application:', err);
+            res.status(500).json({ error: 'Error approving application' });
+        }
+    });
+
+    // Captain/admin: reject an application
+    app.post('/api/team-applications/:id/reject', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            application.status = 'rejected';
+            application.reviewedBy = req.user._id;
+            application.reviewedByUsername = req.user.username;
+            application.reviewedAt = new Date();
+            if (req.body.notes !== undefined) application.reviewNotes = req.body.notes;
+            await application.save();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_rejected',
+                description: 'Rejected team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { notes: req.body.notes || '' },
+                ipAddress: req.ip
+            });
+
+            // No email here — the captains send the rejection letter separately.
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error rejecting application:', err);
+            res.status(500).json({ error: 'Error rejecting application' });
+        }
+    });
+
+    // Hand-ticked follow-up steps on an approved application. Each stores its own
+    // flag, timestamp and the username that set it, and toggles freely both ways.
+    const APPLICATION_FLAGS = {
+        'team-notified': {
+            field: 'teamNotified',
+            atField: 'teamNotifiedAt',
+            byField: 'teamNotifiedByUsername',
+            description: 'announced to the team'
+        },
+        'groups-io': {
+            field: 'addedToGroupsIo',
+            atField: 'addedToGroupsIoAt',
+            byField: 'addedToGroupsIoByUsername',
+            description: 'added to Groups.io'
+        }
+    };
+
+    // Captain/admin: tick or untick one of the follow-up steps
+    app.put('/api/team-applications/:id/flags/:flag', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const flag = APPLICATION_FLAGS[req.params.flag];
+            if (!flag) return res.status(400).json({ error: 'Unknown flag "' + req.params.flag + '"' });
+
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            if (application.status !== 'approved') {
+                return res.status(400).json({ error: 'Only approved applications can be marked as ' + flag.description });
+            }
+
+            const on = req.body.value !== false;
+            application[flag.field] = on;
+            application[flag.atField] = on ? new Date() : null;
+            application[flag.byField] = on ? req.user.username : null;
+            await application.save();
+
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error updating application flag:', err);
+            res.status(500).json({ error: 'Error updating application' });
+        }
+    });
+
+    // Admin: move an application back to pending (undo a decision).
+    // Any Member already created by an approval is left alone — deleting members is a separate, deliberate action.
+    app.post('/api/team-applications/:id/reopen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            application.status = 'pending';
+            application.reviewedBy = null;
+            application.reviewedByUsername = null;
+            application.reviewedAt = null;
+            await application.save();
+            res.json({ success: true, application });
+        } catch (err) {
+            res.status(500).json({ error: 'Error reopening application' });
+        }
+    });
+
+    // Admin: delete an application
+    app.delete('/api/team-applications/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findByIdAndDelete(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_deleted',
+                description: 'Deleted team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                ipAddress: req.ip
+            });
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: 'Error deleting application' });
         }
     });
 

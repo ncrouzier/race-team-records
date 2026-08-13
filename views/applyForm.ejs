@@ -51,32 +51,38 @@
               <label class="form-label fw-semibold" for="firstname">First name <span
                   class="text-danger">*</span></label>
               <input type="text" class="form-control" id="firstname" x-model="firstname" autocomplete="given-name"
-                required>
+                :class="errors.firstname ? 'is-invalid' : ''" required>
+              <div class="taf-field-error" x-show="errors.firstname" x-cloak x-text="errors.firstname"></div>
             </div>
             <div class="col-sm-6">
               <label class="form-label fw-semibold" for="lastname">Last name <span class="text-danger">*</span></label>
               <input type="text" class="form-control" id="lastname" x-model="lastname" autocomplete="family-name"
-                required>
+                :class="errors.lastname ? 'is-invalid' : ''" required>
+              <div class="taf-field-error" x-show="errors.lastname" x-cloak x-text="errors.lastname"></div>
             </div>
             <div class="col-12">
               <label class="form-label fw-semibold" for="email">Email <span class="text-danger">*</span></label>
               <input type="email" class="form-control" id="email" x-model="email" placeholder="youremail@email.com"
-                autocomplete="email" required>
+                autocomplete="email" :class="errors.email ? 'is-invalid' : ''" required>
               <div class="form-text">We'll use this to let you know about your application.</div>
+              <div class="taf-field-error" x-show="errors.email" x-cloak x-text="errors.email"></div>
             </div>
             <div class="col-sm-6">
               <label class="form-label fw-semibold" for="sex">Gender <span class="text-danger">*</span></label>
-              <select class="form-select" id="sex" x-model="sex" @change="recalcAll()" required>
+              <select class="form-select" id="sex" x-model="sex" @change="recalcAll()"
+                :class="errors.sex ? 'is-invalid' : ''" required>
                 <option value="">Select…</option>
                 <option value="female">Female</option>
                 <option value="male">Male</option>
                 <option value="other">Other</option>
               </select>
+              <div class="taf-field-error" x-show="errors.sex" x-cloak x-text="errors.sex"></div>
             </div>
             <div class="col-sm-6">
               <label class="form-label fw-semibold" for="dob">Date of birth <span class="text-danger">*</span></label>
               <input type="date" class="form-control" id="dob" x-model="dateofbirth" @change="recalcAll()"
-                :max="todayStr" required>
+                :max="todayStr" :class="errors.dateofbirth ? 'is-invalid' : ''" required>
+              <div class="taf-field-error" x-show="errors.dateofbirth" x-cloak x-text="errors.dateofbirth"></div>
             </div>
           </div>
 
@@ -115,32 +121,41 @@
                 <div class="col-12">
                   <label class="form-label" :for="'racename-' + i">Race name <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" :id="'racename-' + i" x-model="race.racename"
-                    :placeholder="namePlaceholders[i]">
+                    :placeholder="namePlaceholders[i]" :class="errors.races[i].racename ? 'is-invalid' : ''">
+                  <div class="taf-field-error" x-show="errors.races[i].racename" x-cloak
+                    x-text="errors.races[i].racename"></div>
                 </div>
                 <div class="col-sm-6">
                   <label class="form-label" :for="'racedate-' + i">Date <span class="text-danger">*</span></label>
                   <input type="date" class="form-control" :id="'racedate-' + i" x-model="race.racedate"
-                    :min="oldestRaceDateStr" :max="todayStr" @change="recalc(i)">
+                    :min="oldestRaceDateStr" :max="todayStr" @change="recalc(i)"
+                    :class="errors.races[i].racedate ? 'is-invalid' : ''">
+                  <div class="taf-field-error" x-show="errors.races[i].racedate" x-cloak
+                    x-text="errors.races[i].racedate"></div>
                 </div>
                 <div class="col-sm-6">
                   <label class="form-label" :for="'racetype-' + i">Distance <span class="text-danger">*</span></label>
                   <select class="form-select" :id="'racetype-' + i" x-model="race.racetype_id"
-                    @change="onDistanceChange(i)">
+                    @change="onDistanceChange(i)" :class="errors.races[i].racetype_id ? 'is-invalid' : ''">
                     <option value="">Select…</option>
                     <template x-for="rt in distanceOptions(i)" :key="rt._id">
                       <option :value="rt._id" x-text="rt.name + ' (' + rt.surface + ')'"></option>
                     </template>
                   </select>
+                  <div class="taf-field-error" x-show="errors.races[i].racetype_id" x-cloak
+                    x-text="errors.races[i].racetype_id"></div>
                 </div>
                 <div class="col-12">
                   <label class="form-label" :for="'time-' + i">Finish time <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" :id="'time-' + i" x-model="race.timeStr"
                     @input="onTimeInput(i)" :placeholder="timePlaceholders[i]" inputmode="numeric" autocomplete="off"
-                    maxlength="9">
+                    maxlength="9" :class="errors.races[i].timeStr ? 'is-invalid' : ''">
                   <div class="form-text">
                     Just type the digits and the colons appear as you go, e.g. <strong>3210</strong> becomes 32:10 and
                     <strong>12500</strong> becomes 1:25:00.
                   </div>
+                  <div class="taf-field-error" x-show="errors.races[i].timeStr" x-cloak
+                    x-text="errors.races[i].timeStr"></div>
                 </div>
                 <div class="col-12">
                   <label class="form-label" :for="'link-' + i">
@@ -171,7 +186,7 @@
           <p class="text-muted taf-section-hint">
             Team members are required to race at least <strong><%= raceCommitment %> times a year</strong>.
           </p>
-          <div class="taf-choice-group">
+          <div class="taf-choice-group" :class="errors.committedToRaces ? 'is-invalid' : ''">
             <label class="taf-choice" :class="committedToRaces === true ? 'taf-choice-on' : ''">
               <input type="radio" name="committed" :value="true" @change="committedToRaces = true"
                 :checked="committedToRaces === true">
@@ -182,6 +197,8 @@
                 :checked="committedToRaces === false">
               <i class="fa fa-times-circle"></i> No, I can't commit to that right now
             </label>
+          </div>
+          <div class="taf-field-error" x-show="errors.committedToRaces" x-cloak x-text="errors.committedToRaces">
           </div>
         </div>
 
@@ -194,7 +211,9 @@
             Please share with us why you would like to join and anything else you would like to let us know (e.g., what you're training for, injuries, lifetime PRs, etc.)
           </p>
           <textarea class="form-control" id="motivation" rows="5" x-model="motivation"
-            placeholder="Tell us a bit about yourself and your running…"></textarea>
+            placeholder="Tell us a bit about yourself and your running…"
+            :class="errors.motivation ? 'is-invalid' : ''"></textarea>
+          <div class="taf-field-error" x-show="errors.motivation" x-cloak x-text="errors.motivation"></div>
         </div>
 
         <div class="alert alert-danger" x-show="error" x-cloak x-text="error"></div>
@@ -233,6 +252,7 @@
         namePlaceholders: ["e.g. Kensington 8K", "e.g. Riley's Rumble Half Marathon"],
         timePlaceholders: ['e.g. 32:10', 'e.g. 1:25:00'],
         error: '',
+        errors: emptyErrors(),
         submitting: false,
         submitted: false,
         todayStr: new Date().toISOString().split('T')[0],
@@ -308,41 +328,66 @@
           }
         },
 
+        // Populates this.errors with one message per invalid field (instead of
+        // stopping at the first problem) so the template can show each error next
+        // to the field it belongs to. Returns whether the form is valid overall.
         validate() {
-          if (!this.firstname.trim()) return 'Please enter your first name.';
-          if (!this.lastname.trim()) return 'Please enter your last name.';
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) return 'Please enter a valid email address.';
-          if (!this.sex) return 'Please select your gender.';
-          if (!this.dateofbirth) return 'Please enter your date of birth.';
+          this.errors = emptyErrors();
+          var ok = true;
+
+          if (!this.firstname.trim()) { this.errors.firstname = 'Please enter your first name.'; ok = false; }
+          if (!this.lastname.trim()) { this.errors.lastname = 'Please enter your last name.'; ok = false; }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email.trim())) {
+            this.errors.email = 'Please enter a valid email address.'; ok = false;
+          }
+          if (!this.sex) { this.errors.sex = 'Please select your gender.'; ok = false; }
+          if (!this.dateofbirth) { this.errors.dateofbirth = 'Please enter your date of birth.'; ok = false; }
 
           for (var i = 0; i < this.races.length; i++) {
             var race = this.races[i];
-            var label = 'Race ' + (i + 1);
-            if (!race.racename.trim()) return label + ': please enter the race name.';
-            if (!race.racedate) return label + ': please enter the race date.';
-            if (race.racedate < this.oldestRaceDateStr) return label + ': the race must have taken place in the last ' + this.RACE_MAX_AGE_DAYS + ' days.';
-            if (race.racedate > this.todayStr) return label + ': the race date can\'t be in the future.';
-            if (!race.racetype_id) return label + ': please select the distance.';
+            var e = this.errors.races[i];
+            if (!race.racename.trim()) { e.racename = 'Please enter the race name.'; ok = false; }
+            if (!race.racedate) {
+              e.racedate = 'Please enter the race date.'; ok = false;
+            } else if (race.racedate < this.oldestRaceDateStr) {
+              e.racedate = 'Must be within the last ' + this.RACE_MAX_AGE_DAYS + ' days.'; ok = false;
+            } else if (race.racedate > this.todayStr) {
+              e.racedate = 'Can\'t be in the future.'; ok = false;
+            }
+            if (!race.racetype_id) { e.racetype_id = 'Please select the distance.'; ok = false; }
             if (!parseTime(race.timeStr)) {
-              return label + ': please enter a valid finish time — type the digits, e.g. 4230 for 42:30 ' +
+              e.timeStr = 'Enter a valid finish time — type the digits, e.g. 4230 for 42:30 ' +
                 '(minutes and seconds must be under 60).';
+              ok = false;
             }
           }
 
           var picked = this.races.map((r) => this.racetypes.find(function (rt) { return rt._id === r.racetype_id; }));
           if (picked[0] && picked[1] && picked[0].meters === picked[1].meters) {
-            return 'Please submit two races at different distances.';
+            var msg = 'Please submit two races at different distances.';
+            this.errors.races[0].racetype_id = this.errors.races[0].racetype_id || msg;
+            this.errors.races[1].racetype_id = this.errors.races[1].racetype_id || msg;
+            ok = false;
           }
 
-          if (this.committedToRaces === null) return 'Please answer whether you can commit to ' + this.RACE_COMMITMENT + ' races a year.';
-          if (!this.motivation.trim()) return 'Please tell us why you want to join the team.';
-          return '';
+          if (this.committedToRaces === null) {
+            this.errors.committedToRaces = 'Please answer whether you can commit to ' + this.RACE_COMMITMENT + ' races a year.';
+            ok = false;
+          }
+          if (!this.motivation.trim()) { this.errors.motivation = 'Please tell us why you want to join the team.'; ok = false; }
+          return ok;
         },
 
         async submit() {
-          this.error = this.validate();
-          if (this.error) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.error = '';
+          if (!this.validate()) {
+            this.$nextTick(function () {
+              var invalid = document.querySelector('.taf-card .is-invalid');
+              if (invalid) {
+                invalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                invalid.focus();
+              }
+            });
             return;
           }
 
@@ -389,6 +434,17 @@
 
     function emptyRace() {
       return { racename: '', racedate: '', racetype_id: '', timeStr: '', resultlink: '', agegrade: null, agLoading: false, agTimer: null };
+    }
+
+    function emptyErrors() {
+      return {
+        firstname: '', lastname: '', email: '', sex: '', dateofbirth: '',
+        races: [
+          { racename: '', racedate: '', racetype_id: '', timeStr: '' },
+          { racename: '', racedate: '', racetype_id: '', timeStr: '' }
+        ],
+        committedToRaces: '', motivation: ''
+      };
     }
 
     // Stopwatch-style entry: the digits fill in from the seconds up, so 3210 reads as

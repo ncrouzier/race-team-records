@@ -199,6 +199,18 @@
   color: var(--crf-primary);
 }
 
+.taf-choice-group.is-invalid .taf-choice {
+  border-color: #b3261e;
+}
+
+/* Per-field validation message, shown next to the field it belongs to */
+.taf-field-error {
+  color: #b3261e;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin-top: 0.35rem;
+}
+
 /* Inline notes */
 .taf-note {
   display: flex;

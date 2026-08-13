@@ -14001,6 +14001,12 @@ footer {
   color: #b8860b;
   text-transform: capitalize;
 }
+.crf-chip.ta-chip-rejected {
+  background: #fdecea;
+  border-color: #f5c2bd;
+  color: #b3261e;
+  text-transform: capitalize;
+}
 .crf-chip.ta-chip-warn {
   background: #fdf1e3;
   border-color: #f2d5ae;

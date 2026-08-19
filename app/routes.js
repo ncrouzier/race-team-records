@@ -114,6 +114,10 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
     // PASSWORD VALIDATION =================
     // =====================================
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     function validatePassword(password) {
         if (!password || password.length < 8) {
             return 'Password must be at least 8 characters long.';
@@ -336,7 +340,7 @@ module.exports = async function (app, qs, passport, async, _) {
         var token = crypto.randomBytes(20).toString('hex');
         var User = require('./models/user');
 
-        User.findOne({ email: req.body.email }).then(function (user) {
+        User.findOne({ email: new RegExp('^' + escapeRegex(req.body.email.trim()) + '$', 'i') }).then(function (user) {
             // Always return same message to prevent email enumeration
             if (!user) {
                 return res.status(200).json({
@@ -444,6 +448,119 @@ module.exports = async function (app, qs, passport, async, _) {
             });
         }).catch(function (err) {
             console.error('Error in reset password:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // =====================================
+    // MAGIC LINK LOGIN ====================
+    // =====================================
+
+    // Only a same-site relative path is allowed here — anything else (an
+    // absolute URL, or a protocol-relative "//host/…") could be used to
+    // redirect a logged-in session to an attacker-controlled site.
+    function isSafeReturnPath(path) {
+        return typeof path === 'string' && /^\/(?!\/)/.test(path);
+    }
+
+    // Request a one-click login link by email
+    app.post('/api/login/magic', function (req, res) {
+        if (!req.body.email) {
+            return res.status(400).json({ message: 'Email address is required.' });
+        }
+
+        var returnTo = isSafeReturnPath(req.body.returnTo) ? req.body.returnTo : null;
+        var token = crypto.randomBytes(20).toString('hex');
+        var User = require('./models/user');
+
+        // Always return the same message to prevent email enumeration
+        var genericResponse = { message: 'If an account with that email exists, a login link has been sent.' };
+
+        User.findOne({ email: new RegExp('^' + escapeRegex(req.body.email.trim()) + '$', 'i') }).then(function (user) {
+            if (!user) {
+                return res.status(200).json(genericResponse);
+            }
+
+            // Disabled accounts can't log in at all — don't hand out a working
+            // link, but keep the response identical either way.
+            if (!user.enabled) {
+                return res.status(200).json(genericResponse);
+            }
+
+            var hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+            user.magicLoginTokenHash = hashedToken;
+            user.magicLoginTokenExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+            user.save().then(function () {
+                var loginUrl = process.env.SITE_URL + '/magic-login/' + token;
+                if (returnTo) {
+                    loginUrl += '?returnTo=' + encodeURIComponent(returnTo);
+                }
+
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Your Login Link',
+                    text: 'You are receiving this because you (or someone else) asked to log in to your MCRRC Racing Team account with an email link.\n\n' +
+                        'Please click on the following link, or paste it into your browser to log in:\n\n' +
+                        loginUrl + '\n\n' +
+                        'This link will expire in 15 minutes and can only be used once.\n\n' +
+                        'If you did not request this, please ignore this email — your account is unaffected.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending magic login email:', error);
+                        return res.status(500).json({ message: 'Error sending email. Please try again later.' });
+                    }
+                    res.status(200).json(genericResponse);
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in magic login request:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // Consume a login link and log the user in. POST rather than GET, and
+    // requires an explicit click on the landing page (no auto-submit on load)
+    // so that email-security link scanners can't burn the single-use token
+    // before the real user gets to it.
+    app.post('/api/login/magic/:token', function (req, res) {
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            magicLoginTokenHash: hashedToken,
+            magicLoginTokenExpires: { $gt: Date.now() }
+        }).then(function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'This login link is invalid or has expired.' });
+            }
+            if (!user.enabled) {
+                return res.status(403).json({ message: 'Your account is pending approval by an administrator.' });
+            }
+
+            // Single use — clear the token before establishing the session
+            user.magicLoginTokenHash = undefined;
+            user.magicLoginTokenExpires = undefined;
+
+            var nowdate = new Date();
+            user.lastLogin = nowdate;
+            user.lastActive = nowdate;
+
+            user.save().then(function () {
+                req.logIn(user, function (err) {
+                    if (err) {
+                        console.error('Error logging in via magic link:', err);
+                        return res.status(500).json({ message: 'An error occurred. Please try again later.' });
+                    }
+                    res.status(200).json({ user: req.user });
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in magic login verify:', err);
             res.status(500).json({ message: 'An error occurred. Please try again later.' });
         });
     });

@@ -11,6 +11,8 @@ var userSchema = mongoose.Schema({
     enabled: { type: Boolean, default: false },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    magicLoginTokenHash: String,
+    magicLoginTokenExpires: Date,
     lastLogin: Date,
     lastActive: Date,
     createdAt: Date,

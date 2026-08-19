@@ -152,6 +152,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/reset-password/:token",
             templateUrl: "views/reset-password.html",
             controller: 'ResetPasswordController'
+        }).state('/email-login', {
+            url: "/email-login",
+            templateUrl: "views/email-login.html",
+            controller: 'EmailLoginController'
+        }).state('/magic-login', {
+            url: "/magic-login/:token",
+            templateUrl: "views/magic-login.html",
+            controller: 'MagicLoginController'
         }).state('/signup', {
             url: "/signup",
             templateUrl: "views/signup.html",

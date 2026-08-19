@@ -7277,6 +7277,10 @@ input[type="checkbox"] {
   color: #6c757d;
   text-align: left;
 }
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
   padding-top: 5px;
   color: #6f6f6f;
@@ -7931,6 +7935,11 @@ footer {
   text-align: left;
   max-width: 500px;
   white-space: nowrap;
+}
+.crf-comment-tooltip .tooltip-inner {
+  max-width: 320px;
+  white-space: normal;
+  word-wrap: break-word;
 }
 .tooltip.in {
   opacity: 1;

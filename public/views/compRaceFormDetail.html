@@ -173,6 +173,13 @@
                         <input type="url" class="form-control input-sm" ng-model="editFields.bannerImageUrl"
                             placeholder="https://…">
                     </div>
+                    <div class="form-group">
+                        <label class="crf-edit-label"><i class="fa fa-history"></i> Look back <span
+                                class="text-muted">(how far back a member's own results can be pulled from, in
+                                months)</span></label>
+                        <input type="number" class="form-control input-sm" style="max-width: 120px;"
+                            ng-model="editFields.resultsLookbackMonths" min="1" placeholder="6">
+                    </div>
                     <div ng-if="editError" class="alert alert-danger" style="margin-bottom: 8px;">{{ editError }}</div>
                     <div style="display:flex; gap:8px;">
                         <button class="crf-chip crf-chip-primary" ng-click="saveForm()"

@@ -49,7 +49,8 @@ const compRaceFormSchema = new mongoose.Schema({
     numCompsFemale: { type: Number, default: 0 },
     numDiscountsMale: { type: Number, default: 0 },
     numDiscountsFemale: { type: Number, default: 0 },
-    bannerImageUrl: { type: String, default: null }
+    bannerImageUrl: { type: String, default: null },
+    resultsLookbackMonths: { type: Number, default: 6 }
 }, { timestamps: true });
 
 module.exports = {

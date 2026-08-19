@@ -4071,10 +4071,11 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!member) return res.status(400).json({ error: 'No member profile linked' });
 
             const Result = require('./models/result');
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            const months = parseInt(req.query.months, 10);
+            const lookbackStart = new Date();
+            lookbackStart.setMonth(lookbackStart.getMonth() - (months > 0 ? months : 6));
 
-            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true, 'race.racedate': { $gte: sixMonthsAgo } })
+            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true, 'race.racedate': { $gte: lookbackStart } })
                 .sort({ 'race.racedate': -1 })
                 .select('time agegrade race.racename race.racedate race.racetype')
                 .lean();
@@ -4108,7 +4109,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain: create a new form
     app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const { title, description, race, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const { title, description, race, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, closesAt, uniqueId, bannerImageUrl, resultsLookbackMonths } = req.body;
             console.log(req.body);
             if (!title || !race) return res.status(400).json({ error: 'title and race are required' });
             const formData = {
@@ -4117,7 +4118,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 splitCompsByGender: !!splitCompsByGender, splitDiscountsByGender: !!splitDiscountsByGender,
                 numCompsMale: numCompsMale || 0, numCompsFemale: numCompsFemale || 0,
                 numDiscountsMale: numDiscountsMale || 0, numDiscountsFemale: numDiscountsFemale || 0,
-                closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null
+                closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null,
+                resultsLookbackMonths: resultsLookbackMonths || 6
             };
             if (uniqueId) formData.uniqueId = uniqueId;
             const form = new CompRaceForm(formData);
@@ -4135,7 +4137,7 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
-            const { title, description, isOpen, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, race, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const { title, description, isOpen, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, race, closesAt, uniqueId, bannerImageUrl, resultsLookbackMonths } = req.body;
 
             const oldRaceTypeId = form.race && form.race.racetype && String(form.race.racetype._id);
             const newRaceTypeId = race && race.racetype && String(race.racetype._id);
@@ -4156,6 +4158,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (closesAt !== undefined) form.closesAt = closesAt || null;
             if (uniqueId !== undefined && uniqueId) form.uniqueId = uniqueId;
             if (bannerImageUrl !== undefined) form.bannerImageUrl = bannerImageUrl || null;
+            if (resultsLookbackMonths !== undefined) form.resultsLookbackMonths = resultsLookbackMonths || 6;
             await form.save();
 
             if (raceTypeChanged) {

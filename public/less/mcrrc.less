@@ -1,6 +1,14 @@
 @import "variables.less";
 @import "tempAdjustment.less";
 
+// Opt out of mobile browsers' font-inflation/text-autosizer heuristic, which
+// boosts font sizes unevenly per-element and was making some text balloon on
+// Android Firefox.
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 body {
     padding-top: 5px;
     color: @gray;
@@ -803,6 +811,14 @@ footer {
     text-align: left;
     max-width: 500px;
     white-space: nowrap;
+}
+
+// Comp race form comments can run long — let them wrap instead of being
+// clipped by the nowrap tooltip default above.
+.crf-comment-tooltip .tooltip-inner {
+    max-width: 320px;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 .tooltip.in {

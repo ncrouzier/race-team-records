@@ -147,7 +147,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
         numComps: 0, numDiscounts: 0,
         splitCompsByGender: false, splitDiscountsByGender: false,
         numCompsMale: 0, numCompsFemale: 0, numDiscountsMale: 0, numDiscountsFemale: 0,
-        closesAt: null, isOpen: true, bannerImageUrl: ''
+        closesAt: null, isOpen: true, bannerImageUrl: '', resultsLookbackMonths: 6
     };
     $scope.raceTypes = [];
     $scope.loadingRaceTypes = true;
@@ -242,7 +242,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             numDiscountsFemale: $scope.form.numDiscountsFemale || 0,
             closesAt: $scope.form.closesAt ? DcTime.fromWallClock($scope.form.closesAt) : null,
             isOpen: $scope.form.isOpen,
-            bannerImageUrl: $scope.form.bannerImageUrl || null
+            bannerImageUrl: $scope.form.bannerImageUrl || null,
+            resultsLookbackMonths: $scope.form.resultsLookbackMonths || 6
         };
 
         $http.post('/api/comprace-forms', payload).then(function (res) {
@@ -724,7 +725,8 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             numCompsFemale: r.numCompsFemale || 0,
             numDiscountsMale: r.numDiscountsMale || 0,
             numDiscountsFemale: r.numDiscountsFemale || 0,
-            bannerImageUrl: r.bannerImageUrl || ''
+            bannerImageUrl: r.bannerImageUrl || '',
+            resultsLookbackMonths: r.resultsLookbackMonths || 6
         };
         if (!$scope.raceTypes.length) {
             $scope.loadingRaceTypes = true;
@@ -773,6 +775,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             numDiscountsFemale: $scope.editFields.numDiscountsFemale || 0,
             uniqueId: $scope.editFields.uniqueId || undefined,
             bannerImageUrl: $scope.editFields.bannerImageUrl || null,
+            resultsLookbackMonths: $scope.editFields.resultsLookbackMonths || 6,
             race: {
                 linkedRace: $scope.editFields.linkedRace ? ($scope.editFields.linkedRace._id || $scope.editFields.linkedRace) : null,
                 racename: $scope.editFields.racename,
@@ -804,6 +807,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             $scope.formData.race = res.data.race;
             $scope.formData.uniqueId = res.data.uniqueId;
             $scope.formData.bannerImageUrl = res.data.bannerImageUrl;
+            $scope.formData.resultsLookbackMonths = res.data.resultsLookbackMonths;
             $scope.editing = false;
             // Signal the list controller to reload when the user navigates back
             $rootScope.compRaceFormDirty = true;

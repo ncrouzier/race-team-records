@@ -317,6 +317,7 @@
           const CRF_UNIQUE_ID = '<%= form.uniqueId %>';
           const CRF_RACE_DATE = '<%= (form.race && form.race.racedate) ? new Date(form.race.racedate).toISOString().split("T")[0] : "" %>';
           const CRF_RACETYPE_ID = '<%= (form.race && form.race.racetype && form.race.racetype._id) ? form.race.racetype._id : "" %>';
+          const CRF_RESULTS_LOOKBACK_MONTHS = <%= form.resultsLookbackMonths || 6 %>;
 
           function crfApp() {
             return {
@@ -367,7 +368,7 @@
               async loadResults() {
                 this.resultsLoading = true;
                 try {
-                  const r = await fetch('/api/members/me/results', { credentials: 'include' });
+                  const r = await fetch('/api/members/me/results?months=' + CRF_RESULTS_LOOKBACK_MONTHS, { credentials: 'include' });
                   const data = await r.json();
                   this.dbResults = data.results || [];
                   this.recentCount = data.recentCount || 0;

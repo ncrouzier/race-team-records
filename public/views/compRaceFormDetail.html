@@ -516,7 +516,8 @@
                             <td class="text-center crf-td-comments">
                                 <i ng-if="r.comments" class="fa fa-comment crf-comment-icon"
                                     uib-tooltip="{{ r.comments }}" tooltip-placement="top"
-                                    tooltip-trigger="'mouseenter click'" tooltip-class="crf-comment-tooltip"></i>
+                                    tooltip-trigger="'mouseenter click'" tooltip-class="crf-comment-tooltip"
+                                    tooltip-append-to-body="true"></i>
                                 <span ng-if="!r.comments" class="text-muted">—</span>
                             </td>
                             <td class="crf-td-num text-right crf-td-submitted">

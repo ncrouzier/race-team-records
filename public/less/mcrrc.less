@@ -816,7 +816,7 @@ footer {
 // Comp race form comments can run long — let them wrap instead of being
 // clipped by the nowrap tooltip default above.
 .crf-comment-tooltip .tooltip-inner {
-    max-width: 320px;
+    max-width: min(320px, 90vw);
     white-space: normal;
     word-wrap: break-word;
 }

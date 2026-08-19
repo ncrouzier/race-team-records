@@ -816,9 +816,19 @@ footer {
 // Comp race form comments can run long — let them wrap instead of being
 // clipped by the nowrap tooltip default above.
 .crf-comment-tooltip .tooltip-inner {
+    // Without an explicit width, this block sitting inside an auto-width
+    // position:absolute ancestor can resolve down to the width of its
+    // longest unbreakable word instead of growing to fill max-width.
+    // width: max-content computes the natural (unwrapped) width first, so
+    // max-width has something to actually clamp.
+    width: max-content;
     max-width: min(320px, 90vw);
     white-space: normal;
     word-wrap: break-word;
+    // Appending to <body> drops the table's 12px ambient font-size, so it
+    // must be restated here or the tooltip falls back to the page base size.
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .tooltip.in {

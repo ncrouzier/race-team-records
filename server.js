@@ -106,6 +106,23 @@ app.use(passport.initialize());
 app.use(passport.session({})); // persistent login sessions
 app.use(flash()); // use connect-flash for flash messages stored in session
 
+// Piggybacks the unseen-activity-log count onto every API response for a
+// logged-in admin (as a header, not a body change) so the nav badge can stay
+// live from whatever the admin is already doing — heartbeat, page loads,
+// any API call — instead of needing its own dedicated poll.
+app.use(async function (req, res, next) {
+    if (req.user && req.user.role === 'admin' && req.path.indexOf('/api/') === 0) {
+        try {
+            const service = require('./app/service');
+            const count = await service.getUnseenActivityLogCount(req.user);
+            res.set('X-Unseen-Activity-Count', String(count));
+        } catch (err) {
+            console.error('Error setting unseen activity count header:', err);
+        }
+    }
+    next();
+});
+
 // Rate limiting for auth endpoints
 const rateLimit = require('express-rate-limit');
 const authLimiter = rateLimit({

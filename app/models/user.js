@@ -13,6 +13,7 @@ var userSchema = mongoose.Schema({
     resetPasswordExpires: Date,
     magicLoginTokenHash: String,
     magicLoginTokenExpires: Date,
+    lastSeenActivityLogAt: Date,
     lastLogin: Date,
     lastActive: Date,
     createdAt: Date,

@@ -7936,6 +7936,29 @@ footer {
   max-width: 500px;
   white-space: nowrap;
 }
+.diff-add {
+  background: #e3f4ea;
+  color: #14603a;
+  text-decoration: none;
+}
+.diff-remove {
+  background: #fdecea;
+  color: #b3261e;
+  text-decoration: line-through;
+}
+.crf-row-unseen {
+  font-weight: 600;
+  background: #f0f7fa;
+}
+.crf-nav-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d9534f;
+  margin-left: 4px;
+  vertical-align: top;
+}
 .crf-comment-tooltip .tooltip-inner {
   width: max-content;
   max-width: min(320px, 90vw);

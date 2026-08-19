@@ -140,8 +140,10 @@
 								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
 										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
 								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
-								<li ng-class="{active: $state.includes('/activitylogs')}"><a
-										ui-sref="/activitylogs">Activity Log</a></li>
+								<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">
+										Activity Log
+										<span ng-if="unseenActivityCount > 0" class="badge bg-danger">{{unseenActivityCount}}</span>
+									</a></li>
 								<li ng-class="{active: $state.includes('/comp-race-forms')}"><a
 										ui-sref="/comp-race-forms">Comp Race Forms</a></li>
 								<li ng-class="{active: $state.includes('/applications')}"><a
@@ -165,10 +167,16 @@
 						<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown
 							on-toggle="toggled(open)">
 							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-								<%= user.username %> <span class="caret"></span>
+								<%= user.username %>
+								<span ng-if="unseenActivityCount > 0" class="crf-nav-dot" title="New activity log entries"></span>
+								<span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu" uib-dropdown-menu>
 								<li><a ui-sref="/profile">My Account</a></li>
+								<li ng-if="unseenActivityCount > 0"><a ui-sref="/activitylogs">
+										<i class="fa fa-list-alt"></i> New activity log entries
+										<span class="badge bg-danger">{{unseenActivityCount}}</span>
+									</a></li>
 								<% if (user.member) { %>
 									<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 											Page</a></li>

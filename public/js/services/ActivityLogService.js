@@ -26,5 +26,21 @@ angular.module('mcrrcApp.admin').factory('ActivityLogService', ['Restangular', f
         });
     };
 
+    factory.getUnseenCount = function() {
+        return Restangular.all('activitylogs').customGET('unseen-count').then(function(data) {
+            return data.count;
+        }, function(res) {
+            console.log('Error fetching unseen activity log count: ' + res.status);
+        });
+    };
+
+    factory.markAllSeen = function() {
+        return Restangular.all('activitylogs').customPOST({}, 'mark-seen');
+    };
+
+    factory.markSeen = function(id) {
+        return Restangular.one('activitylogs', id).customPOST({}, 'seen');
+    };
+
     return factory;
 }]);

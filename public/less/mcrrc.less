@@ -813,6 +813,37 @@ footer {
     white-space: nowrap;
 }
 
+// Inline word-diff highlighting, used in the Activity Log detail modal
+.diff-add {
+    background: #e3f4ea;
+    color: #14603a;
+    text-decoration: none;
+}
+
+.diff-remove {
+    background: #fdecea;
+    color: #b3261e;
+    text-decoration: line-through;
+}
+
+// Unseen activity log row — cleared the moment the entry is opened
+.crf-row-unseen {
+    font-weight: 600;
+    background: #f0f7fa;
+}
+
+// Unseen-activity indicator in the nav — a small red dot next to "Admin
+// tools" so it's noticeable even without opening the dropdown.
+.crf-nav-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d9534f;
+    margin-left: 4px;
+    vertical-align: top;
+}
+
 // Comp race form comments can run long — let them wrap instead of being
 // clipped by the nowrap tooltip default above.
 .crf-comment-tooltip .tooltip-inner {

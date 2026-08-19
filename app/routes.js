@@ -4092,7 +4092,16 @@ module.exports = async function (app, qs, passport, async, _) {
                 .sort('-createdAt')
                 .skip(skip)
                 .limit(limit)
-                .exec();
+                .lean();
+
+            // Same "unseen" definition as /unseen-count: newer than this
+            // admin's last-seen cursor and not individually opened since.
+            const since = req.user.lastSeenActivityLogAt || new Date();
+            const myId = req.user._id.toString();
+            logs.forEach(function (log) {
+                log.unseen = log.createdAt > since && !(log.seenBy || []).some(function (id) { return id.toString() === myId; });
+                delete log.seenBy;
+            });
 
             res.json({
                 logs: logs,
@@ -4125,6 +4134,44 @@ module.exports = async function (app, qs, passport, async, _) {
         } catch (err) {
             console.error('Error deleting activity log:', err);
             res.status(500).json({ error: 'Error deleting activity log entry' });
+        }
+    });
+
+    // How many log entries are still unseen by this admin: created since
+    // their "last seen" cursor (an admin who has never checked gets 0, not
+    // the whole history — the cursor starts now rather than flooding them
+    // with a huge backlog count) AND not individually opened since.
+    app.get('/api/activitylogs/unseen-count', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const count = await service.getUnseenActivityLogCount(req.user);
+            res.json({ count });
+        } catch (err) {
+            console.error('Error fetching unseen activity log count:', err);
+            res.status(500).json({ error: 'Error fetching unseen count' });
+        }
+    });
+
+    // Mark one entry as seen by this admin — called when they open its detail view.
+    app.post('/api/activitylogs/:id/seen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            await ActivityLog.updateOne({ _id: req.params.id }, { $addToSet: { seenBy: req.user._id } });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Error marking activity log entry as seen:', err);
+            res.status(500).json({ error: 'Error marking entry as seen' });
+        }
+    });
+
+    // Mark all current activity log entries as seen by this admin
+    app.post('/api/activitylogs/mark-seen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const User = require('./models/user');
+            const now = new Date();
+            await User.updateOne({ _id: req.user._id }, { lastSeenActivityLogAt: now });
+            res.json({ success: true, lastSeenActivityLogAt: now });
+        } catch (err) {
+            console.error('Error marking activity logs as seen:', err);
+            res.status(500).json({ error: 'Error marking activity logs as seen' });
         }
     });
 
@@ -4223,6 +4270,33 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Plain-object snapshot of the editable fields on a comp race form, used
+    // as the before/after pair in activity log diffs.
+    function snapshotCompRaceForm(form) {
+        return {
+            title: form.title,
+            description: form.description || '',
+            race: form.race ? {
+                racename: form.race.racename || '',
+                racedate: form.race.racedate || null,
+                racetype: (form.race.racetype && form.race.racetype.name) ? form.race.racetype.name : null
+            } : null,
+            isOpen: !!form.isOpen,
+            numComps: form.numComps || 0,
+            numDiscounts: form.numDiscounts || 0,
+            splitCompsByGender: !!form.splitCompsByGender,
+            splitDiscountsByGender: !!form.splitDiscountsByGender,
+            numCompsMale: form.numCompsMale || 0,
+            numCompsFemale: form.numCompsFemale || 0,
+            numDiscountsMale: form.numDiscountsMale || 0,
+            numDiscountsFemale: form.numDiscountsFemale || 0,
+            closesAt: form.closesAt || null,
+            bannerImageUrl: form.bannerImageUrl || null,
+            resultsLookbackMonths: form.resultsLookbackMonths || 6,
+            uniqueId: form.uniqueId
+        };
+    }
+
     // Captain: create a new form
     app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
@@ -4241,6 +4315,16 @@ module.exports = async function (app, qs, passport, async, _) {
             if (uniqueId) formData.uniqueId = uniqueId;
             const form = new CompRaceForm(formData);
             await form.save();
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_form_create',
+                description: 'Created comp race form "' + form.title + '"',
+                targetType: 'compraceform', targetId: form._id.toString(), targetName: form.title,
+                metadata: { newValue: snapshotCompRaceForm(form) },
+                ipAddress: req.ip
+            });
+
             res.status(201).json(form);
         } catch (err) {
             console.error('Error creating comp race form:', err);
@@ -4254,6 +4338,7 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
+            const oldSnapshot = snapshotCompRaceForm(form);
             const { title, description, isOpen, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, race, closesAt, uniqueId, bannerImageUrl, resultsLookbackMonths } = req.body;
 
             const oldRaceTypeId = form.race && form.race.racetype && String(form.race.racetype._id);
@@ -4277,6 +4362,15 @@ module.exports = async function (app, qs, passport, async, _) {
             if (bannerImageUrl !== undefined) form.bannerImageUrl = bannerImageUrl || null;
             if (resultsLookbackMonths !== undefined) form.resultsLookbackMonths = resultsLookbackMonths || 6;
             await form.save();
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_form_edit',
+                description: 'Edited comp race form "' + form.title + '"',
+                targetType: 'compraceform', targetId: form._id.toString(), targetName: form.title,
+                metadata: { oldValue: oldSnapshot, newValue: snapshotCompRaceForm(form) },
+                ipAddress: req.ip
+            });
 
             if (raceTypeChanged) {
                 const Member = require('./models/member');
@@ -4502,6 +4596,22 @@ module.exports = async function (app, qs, passport, async, _) {
         return { recentResultSnapshot, projectedAgeGrade };
     }
 
+    // Plain-object snapshot of a response's editable fields, used as the
+    // before/after pair in activity log diffs.
+    function snapshotCompRaceFormResponse(response) {
+        return {
+            comments: response.comments || '',
+            projectedTimeCentiseconds: response.projectedTimeCentiseconds || null,
+            recentResult: response.recentResult ? {
+                racename: response.recentResult.race ? response.recentResult.race.racename : null,
+                racedate: response.recentResult.race ? response.recentResult.race.racedate : null,
+                time: response.recentResult.time,
+                agegrade: response.recentResult.agegrade,
+                isManual: !!response.recentResult.isManual
+            } : null
+        };
+    }
+
     // Member: submit a signup
     app.post('/api/comprace-forms/:uniqueId/responses', service.isLoggedIn, async function (req, res) {
         try {
@@ -4528,6 +4638,16 @@ module.exports = async function (app, qs, passport, async, _) {
             await response.save();
             const memberName = (member && member.firstname) ? member.firstname + ' ' + member.lastname : req.user.username;
             sendCaptainNotification(form, response, memberName, false);
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_response_submit',
+                description: memberName + ' submitted a comp race form entry for "' + form.title + '"',
+                targetType: 'compraceform_response', targetId: response._id.toString(), targetName: memberName,
+                metadata: { formId: form._id.toString(), formTitle: form.title, newValue: snapshotCompRaceFormResponse(response) },
+                ipAddress: req.ip
+            });
+
             res.status(201).json(response);
         } catch (err) {
             console.error('Error submitting comp race form response:', err);
@@ -4545,6 +4665,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const response = await CompRaceFormResponse.findOne({ form: form._id, user: req.user._id });
             if (!response) return res.status(404).json({ error: 'No response found to edit' });
 
+            const oldResponseSnapshot = snapshotCompRaceFormResponse(response);
             const { projectedTimeCentiseconds, comments } = req.body;
             const { recentResultSnapshot, projectedAgeGrade } = await buildResponseData(req, form, req.body);
 
@@ -4556,6 +4677,16 @@ module.exports = async function (app, qs, passport, async, _) {
             const editMember = req.user.member;
             const editMemberName = (editMember && editMember.firstname) ? editMember.firstname + ' ' + editMember.lastname : req.user.username;
             sendCaptainNotification(form, response, editMemberName, true);
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_response_edit',
+                description: editMemberName + ' edited their comp race form entry for "' + form.title + '"',
+                targetType: 'compraceform_response', targetId: response._id.toString(), targetName: editMemberName,
+                metadata: { formId: form._id.toString(), formTitle: form.title, oldValue: oldResponseSnapshot, newValue: snapshotCompRaceFormResponse(response) },
+                ipAddress: req.ip
+            });
+
             res.json(response);
         } catch (err) {
             console.error('Error editing comp race form response:', err);

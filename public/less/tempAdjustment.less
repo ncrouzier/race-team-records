@@ -118,4 +118,162 @@
     color: @text-muted;
     text-align: left;
   }
+
+  // "Use my current conditions" — deliberately styled to sit in the same
+  // visual family as the map controls below it (white, hairline border,
+  // soft drop shadow) rather than as a generic Bootstrap button.
+  .weather-locate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: @highlight-blue;
+    background: #fff;
+    border: 1px solid #c8dbe4;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    &:hover:not(:disabled),
+    &:focus:not(:disabled) {
+      background: @highlight-blue;
+      border-color: @highlight-blue;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: default;
+    }
+
+    i {
+      font-size: 14px;
+    }
+  }
+
+  .weather-locate-note {
+    margin-left: 10px;
+    font-size: 12px;
+    color: @text-muted;
+  }
+
+  // Map control that arms click-to-read-here
+  .weather-pick-control a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #444;
+
+    &.active {
+      background: @highlight-blue;
+      color: #fff;
+    }
+  }
+
+  .weather-map-picking {
+    cursor: crosshair;
+
+    .leaflet-grab,
+    .leaflet-interactive {
+      cursor: crosshair;
+    }
+  }
+
+  .weather-readout-hint {
+    display: block;
+    margin-bottom: 2px;
+
+    i {
+      color: @highlight-blue;
+    }
+  }
+
+  // Current-conditions readout, shown after "Use my current conditions"
+  .weather-readout {
+    background-color: @bg-light;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid @highlight-blue;
+    border-radius: 4px;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .weather-readout-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .weather-readout-conditions {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .weather-readout-dismiss {
+    padding: 0 4px;
+    color: @text-muted;
+    line-height: 1;
+  }
+
+  .weather-readout-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #444;
+
+    i {
+      width: 14px;
+      color: @text-muted;
+    }
+  }
+
+  // Leaflet needs a real height on its container or the map renders blank
+  .weather-map-container {
+    height: 220px;
+    width: 100%;
+    margin-top: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+  }
+
+  // The tool's table rules set a thick border on every table; Leaflet builds
+  // its tile grid out of tables too, so exclude the map from that styling.
+  .weather-map-container table {
+    border: none;
+    border-collapse: collapse;
+  }
+
+  // Solid backing so the markers stay legible over busy map tiles — a bare
+  // icon disappears against roads and labels.
+  .weather-marker-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid currentColor;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    font-size: 13px;
+  }
+
+  .weather-marker-you {
+    color: @highlight-blue;
+  }
+
+  .weather-marker-source {
+    color: #d9534f;
+  }
+
+  .weather-readout-source {
+    margin-top: 8px;
+    font-size: 11px;
+    color: @text-muted;
+  }
 }

@@ -103,8 +103,8 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
 }]);
 
 angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
-    '$scope', '$analytics', 'AuthService', 'localStorageService',
-    function ($scope, $analytics, AuthService, localStorageService) {
+    '$scope', '$analytics', 'AuthService', 'localStorageService', '$http',
+    function ($scope, $analytics, AuthService, localStorageService, $http) {
 
     // Cache DOM elements and constants
     const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);
@@ -414,6 +414,147 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
                 <div>${$scope.getAdjustment(temp, dew, true).long} ${getPaceFeelingEmoji(temp+dew)} </div>
             </div>
         `;
+    };
+
+    // ---- Auto-fill from the runner's current conditions -------------------
+
+    // WMO weather codes, grouped — Open-Meteo returns these alongside the
+    // temperature. Only used for a short human-readable label.
+    const WEATHER_CODES = {
+        0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog',
+        51: 'Light drizzle', 53: 'Moderate drizzle', 55: 'Dense drizzle',
+        56: 'Light freezing drizzle', 57: 'Dense freezing drizzle',
+        61: 'Slight rain', 63: 'Moderate rain', 65: 'Heavy rain',
+        66: 'Light freezing rain', 67: 'Heavy freezing rain',
+        71: 'Slight snow', 73: 'Moderate snow', 75: 'Heavy snow', 77: 'Snow grains',
+        80: 'Slight rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+        85: 'Slight snow showers', 86: 'Heavy snow showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm with slight hail', 99: 'Thunderstorm with heavy hail'
+    };
+
+    $scope.weather = null;
+    $scope.weatherLoading = false;
+    $scope.weatherError = null;
+
+    // Straight-line distance between the runner and the grid point the
+    // reading actually describes, so a far-off reading is obvious.
+    function milesBetween(lat1, lon1, lat2, lon2) {
+        const toRad = (d) => d * Math.PI / 180;
+        const R = 3958.8; // Earth radius in miles
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Open-Meteo returns local-to-the-location time as "2026-08-21T11:15".
+    // Formatted by hand rather than through Date, which would reinterpret a
+    // zoneless string in the *browser's* timezone and shift the clock.
+    function formatObservedAt(isoLocal) {
+        if (!isoLocal) return null;
+        const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(isoLocal);
+        if (!match) return isoLocal;
+        let hour = parseInt(match[4], 10);
+        const minute = match[5];
+        const suffix = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12;
+        if (hour === 0) hour = 12;
+        return hour + ':' + minute + ' ' + suffix;
+    }
+
+    // origin: 'gps' when the browser located the runner, 'map' when they
+    // clicked a spot themselves. Only affects labelling and the accuracy ring.
+    function fetchWeatherFor(lat, lon, accuracyMeters, origin) {
+        $scope.weatherLoading = true;
+        $scope.weatherError = null;
+
+        $http.get('/api/weather/current', { params: { lat: lat, lon: lon } })
+            .then(function (res) {
+                const d = res.data;
+
+                // The table and adjustment math work in whole degrees.
+                $scope.inputTemp = Math.round(d.temperature);
+                $scope.inputDew = Math.round(d.dewPoint);
+
+                $scope.weather = {
+                    origin: origin || 'gps',
+                    temperature: d.temperature,
+                    dewPoint: d.dewPoint,
+                    humidity: d.humidity,
+                    description: WEATHER_CODES[d.weatherCode] || null,
+                    observedAt: formatObservedAt(d.observedAt),
+                    timezone: d.timezone,
+                    elevation: d.elevation,
+                    userLat: lat,
+                    userLon: lon,
+                    accuracyMeters: accuracyMeters,
+                    sourceLat: d.latitude,
+                    sourceLon: d.longitude,
+                    sourceDistanceMiles: (d.latitude != null && d.longitude != null)
+                        ? milesBetween(lat, lon, d.latitude, d.longitude)
+                        : null
+                };
+                $scope.weatherLoading = false;
+            })
+            .catch(function (res) {
+                $scope.weatherError = (res.data && res.data.error) || 'Could not fetch current conditions.';
+                $scope.weatherLoading = false;
+            });
+    }
+
+    $scope.useMyLocation = function () {
+        $scope.weatherError = null;
+
+        // Browsers only expose geolocation over HTTPS (localhost excepted),
+        // so this is a normal condition on an http:// origin, not a bug.
+        if (!navigator.geolocation) {
+            $scope.weatherError = 'Your browser does not support location lookup.';
+            return;
+        }
+
+        $scope.weatherLoading = true;
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                $scope.$apply(function () {
+                    fetchWeatherFor(
+                        position.coords.latitude,
+                        position.coords.longitude,
+                        position.coords.accuracy,
+                        'gps'
+                    );
+                });
+            },
+            function (error) {
+                $scope.$apply(function () {
+                    $scope.weatherLoading = false;
+                    if (error.code === error.PERMISSION_DENIED) {
+                        $scope.weatherError = 'Location access was denied. You can still enter the temperature and dew point by hand.';
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        $scope.weatherError = 'Your location is unavailable right now. Please enter the values by hand.';
+                    } else if (error.code === error.TIMEOUT) {
+                        $scope.weatherError = 'Timed out getting your location. Please try again.';
+                    } else {
+                        $scope.weatherError = 'Could not get your location. Please enter the values by hand.';
+                    }
+                });
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+    };
+
+    // Called by the map when the runner clicks a spot with pick mode armed —
+    // lets them check conditions somewhere other than where they're standing.
+    $scope.pickWeatherLocation = function (lat, lon) {
+        if (lat == null || lon == null) return;
+        fetchWeatherFor(lat, lon, null, 'map');
+    };
+
+    $scope.clearWeather = function () {
+        $scope.weather = null;
+        $scope.weatherError = null;
     };
 }]);
 

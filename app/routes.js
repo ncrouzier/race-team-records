@@ -4176,6 +4176,63 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // =====================================
+    // WEATHER =============================
+    // =====================================
+
+    // Current conditions for a coordinate, used by the pace adjustment tool to
+    // auto-fill temperature and dew point. Proxied rather than called from the
+    // browser so the provider stays swappable in one place and users' IPs are
+    // never handed to a third party. Open-Meteo is keyless, so there's no
+    // secret here — the proxy is about control, not credentials.
+    app.get('/api/weather/current', async function (req, res) {
+        try {
+            const lat = parseFloat(req.query.lat);
+            const lon = parseFloat(req.query.lon);
+
+            if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                return res.status(400).json({ error: 'Valid lat and lon are required.' });
+            }
+
+            const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
+                params: {
+                    latitude: lat.toFixed(4),
+                    longitude: lon.toFixed(4),
+                    current: 'temperature_2m,dew_point_2m,relative_humidity_2m,weather_code',
+                    temperature_unit: 'fahrenheit',
+                    timezone: 'auto'
+                },
+                timeout: 8000
+            });
+
+            const data = response.data || {};
+            const current = data.current || {};
+
+            if (current.temperature_2m === undefined || current.dew_point_2m === undefined) {
+                return res.status(502).json({ error: 'Weather service did not return temperature and dew point.' });
+            }
+
+            res.json({
+                temperature: current.temperature_2m,
+                dewPoint: current.dew_point_2m,
+                humidity: current.relative_humidity_2m,
+                weatherCode: current.weather_code,
+                observedAt: current.time || null,
+                timezone: data.timezone || null,
+                // Open-Meteo snaps to its own grid cell, so these are the
+                // coordinates the reading actually describes — not the ones
+                // that were requested. Shown in the UI so it's clear how far
+                // the reading is from the user.
+                latitude: data.latitude,
+                longitude: data.longitude,
+                elevation: data.elevation
+            });
+        } catch (err) {
+            console.error('Error fetching current weather:', err.message);
+            res.status(502).json({ error: 'Could not reach the weather service. Please try again.' });
+        }
+    });
+
+    // =====================================
     // COMP RACE FORMS =====================
     // =====================================
 

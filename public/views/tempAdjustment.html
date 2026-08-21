@@ -31,6 +31,76 @@
                     </div>
                 </form>
 
+                <div class="mt-3">
+                    <button type="button" class="weather-locate-btn" ng-click="useMyLocation()"
+                        ng-disabled="weatherLoading">
+                        <i class="fa fa-spinner fa-spin" ng-if="weatherLoading"></i>
+                        <i class="fa fa-location-arrow" ng-if="!weatherLoading"></i>
+                        {{ weatherLoading ? 'Getting conditions…' : 'Use my current conditions' }}
+                    </button>
+                    <span class="weather-locate-note">
+                        Fills in the temperature and dew point where you are right now.
+                    </span>
+                </div>
+
+                <div class="text-danger mt-2" ng-if="weatherError" style="font-size: 14px; font-weight: 500;">
+                    <i class="fa fa-exclamation-circle mr-2"></i>{{ weatherError }}
+                </div>
+
+                <div class="weather-readout mt-3" ng-if="weather">
+                    <div class="weather-readout-head">
+                        <span class="weather-readout-conditions">
+                            <strong>{{ weather.temperature | number:0 }}°F</strong>
+                            <span class="text-muted">/</span>
+                            dew <strong>{{ weather.dewPoint | number:0 }}°F</strong>
+                            <span ng-if="weather.humidity != null" class="text-muted">
+                                &middot; {{ weather.humidity }}% humidity
+                            </span>
+                            <span ng-if="weather.description" class="text-muted">
+                                &middot; {{ weather.description }}
+                            </span>
+                        </span>
+                        <button type="button" class="btn btn-link btn-sm weather-readout-dismiss"
+                            ng-click="clearWeather()" uib-tooltip="Hide this">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="weather-readout-meta">
+                        <div>
+                            <i class="fa" ng-class="weather.origin === 'map' ? 'fa-map-marker' : 'fa-user'"></i>
+                            {{ weather.origin === 'map' ? 'Picked spot' : 'You' }}:
+                            {{ weather.userLat | number:4 }}, {{ weather.userLon | number:4 }}
+                            <span ng-if="weather.accuracyMeters" class="text-muted">
+                                (±{{ weather.accuracyMeters | number:0 }} m)
+                            </span>
+                        </div>
+                        <div>
+                            <i class="fa fa-cloud"></i>
+                            Reading from: {{ weather.sourceLat | number:4 }}, {{ weather.sourceLon | number:4 }}
+                            <span ng-if="weather.sourceDistanceMiles != null" class="text-muted">
+                                ({{ weather.sourceDistanceMiles | number:1 }} mi away)
+                            </span>
+                        </div>
+                        <div ng-if="weather.observedAt" class="text-muted">
+                            <i class="fa fa-clock-o"></i>
+                            Observed {{ weather.observedAt }}
+                            <span ng-if="weather.timezone">({{ weather.timezone }})</span>
+                        </div>
+                    </div>
+
+                    <weather-map weather="weather" on-pick="pickWeatherLocation(lat, lon)"></weather-map>
+
+                    <div class="weather-readout-source">
+                        <span class="weather-readout-hint">
+                            <i class="fa fa-crosshairs"></i>
+                            Use the crosshair on the map to read conditions somewhere else.
+                        </span>
+                        Weather data by
+                        <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.
+                    </div>
+                </div>
+
                 <div class="text-danger mt-2" ng-if="inputError" style="font-size: 14px; font-weight: 500;">
                     <i class="fa fa-exclamation-circle mr-2"></i>{{ inputError }}
                 </div>

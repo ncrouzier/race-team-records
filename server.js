@@ -148,6 +148,17 @@ const applicationLimiter = rateLimit({
 });
 app.post('/api/team-applications', applicationLimiter);
 
+// The weather lookup is public and fans out to a third-party API, so cap it
+// per IP. Generous enough for real use (the tool fetches once per click).
+const weatherLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minute window
+    max: 60,
+    message: { error: 'Too many weather lookups, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.get('/api/weather/current', weatherLimiter);
+
 // routes ======================================================================
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 

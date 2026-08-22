@@ -5,7 +5,7 @@
 
                 <div class="row text-center">
                     <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
-                    <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember.sex}}<span
+                    <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember | memberGenderFilter}}<span
                             ng-if="user.role == 'admin' || user.role == 'captain'">, {{currentMember | memberAgeFilter
                             }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
                             ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i

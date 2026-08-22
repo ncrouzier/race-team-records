@@ -553,6 +553,22 @@ app.filter('categoryFilter', function () {
     };
 
 });
+// What to print where a member's sex is shown next to their category.
+// Members who have told us their pronouns get those instead. Held here
+// rather than inline in each template because the same header block is
+// repeated across every member tab, and because this is the one place to
+// change once `pronouns` becomes a field on the member record.
+app.filter('memberGenderFilter', function () {
+    var PRONOUNS = {
+        'Adrian Spencer': 'He/Him'
+    };
+
+    return function (member) {
+        if (!member) return '';
+        var name = (member.firstname || '') + ' ' + (member.lastname || '');
+        return PRONOUNS[name.trim()] || member.sex || '';
+    };
+});
 app.filter('memberFilter', function () {
     return function (members, query) {
         var filtered = [];

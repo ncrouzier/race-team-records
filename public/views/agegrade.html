@@ -1,94 +1,237 @@
-<div class="jumbotron">
-    <form name="myForm" ng-submit="submitForm()">
-        <div class="row btn-row">
-            <div class="col-md-12 col-sm-12 btn-col-member">
-                <span>Select age and gender:</span>
+<div class="jumbotron ag-tool">
+
+    <h2 class="ag-title">Age Grade Calculator</h2>
+    <p class="ag-subtitle">
+        Age grading compares your time against the world best for your age and gender, so results are
+        comparable across ages, genders and distances.
+    </p>
+
+    <!-- Who you are — shared by both views -->
+    <form name="myForm" class="ag-who" ng-submit="$event.preventDefault()">
+        <div class="ag-field">
+            <label for="age">Age</label>
+            <input class="form-control ag-age-input" type="number" id="age" name="age" ng-model="formData.age"
+                only-digits dir-max="110" min="5" max="110" placeholder="40" required>
+        </div>
+
+        <div class="ag-field">
+            <label>Gender</label>
+            <div class="ag-toggle">
+                <button type="button" class="mcrrc-btn" ng-click="formData.sex = 'Male'"
+                    ng-class="{'is-on': formData.sex === 'Male'}">Men</button>
+                <button type="button" class="mcrrc-btn" ng-click="formData.sex = 'Female'"
+                    ng-class="{'is-on': formData.sex === 'Female'}">Women</button>
             </div>
         </div>
-        <div class="row btn-row" style="display: flex;">
 
-            <div class="col-md-12 col-sm-12 " style="display: inline-flex;">
-                <div style="margin-right: 10px;">
-                    <span>Age:</span>
-                    <br>
-                    <input class="agegradeAgeInput form-control" type="number" id="age" name="age"
-                        ng-model="formData.age" only-digits dir-max="110" min="5" max="110" required>                    
-                </div>
-
-                <div style="margin-right: 10px; min-width: 140px;">
-                    <span>Gender:</span>
-                    <br>
-                    <div class="btn-group">
-                        <label class="btn-ag-gender btn btn-primary" ng-model="formData.sex" ng-click="submitForm()"
-                            uib-btn-radio="'Male'">Men</label>
-                        <label class="btn-ag-gender btn btn-primary" ng-model="formData.sex" ng-click="submitForm()"
-                            uib-btn-radio="'Female'">Women</label>
-                    </div>
-                </div>
-                <div ng-if="user.member.dateofbirth && user.member.sex" style="margin-right: 10px;">
-                    <br>
-                    <button type="button" class="btn btn-default" ng-click="selectMyInfo()">
-                        <i class="fa fa-user"></i> Select my info
-                    </button>
-                </div>
-                <div  ng-show="hasOtherType()" style="margin-left: auto">
-                    <br>
-                    <button  type="button" class="btn btn-primary" ng-click="switchType()">Switch to {{currentType === 'Road' ? 'track' :
-                        'road'}} distances</button>
-                </div>
-            </div>
-            
+        <div class="ag-field" ng-if="canSelectMyInfo()">
+            <label>&nbsp;</label>
+            <button type="button" class="mcrrc-btn" ng-click="selectMyInfo()">
+                <i class="fa fa-user"></i> Use my info
+            </button>
         </div>
-        <div class="row btn-row">
-            <div class="col-md-12 col-sm-2 " style="display: inline-flex;">
-            <small>
-                <span ng-show="myForm.age.$error.min">Age must be at least 5</span>
-                <span ng-show="myForm.age.$error.max">Age must be no more than 110</span>
-            </small>
+
+        <div class="ag-field" ng-if="hasType('Road') && hasType('Track')">
+            <label>Surface</label>
+            <div class="ag-toggle">
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': currentType === 'Road'}"
+                    ng-click="switchType('Road')"><svg class="ag-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4.4 14.6 L6.2 1.6"/><path d="M11.6 14.6 L9.8 1.6"/><path d="M8 3.1 v2.1"/><path d="M8 7.5 v2.3"/><path d="M8 12.1 v2"/></svg> Road</button>
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': currentType === 'Track'}"
+                    ng-click="switchType('Track')"><svg class="ag-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1" y="3.4" width="14" height="9.2" rx="4.6"/><rect x="4.3" y="6.4" width="7.4" height="3.2" rx="1.6"/></svg> Track</button>
             </div>
         </div>
     </form>
+
+    <div class="ag-validation" ng-show="myForm.age.$error.min || myForm.age.$error.max">
+        <i class="fa fa-exclamation-circle"></i>
+        <span ng-show="myForm.age.$error.min">Age must be at least 5.</span>
+        <span ng-show="myForm.age.$error.max">Age must be no more than 110.</span>
+    </div>
+
+    <div class="ag-empty" ng-if="!roadTableData && !trackTableData">
+        <i class="fa fa-arrow-up"></i>
+        Enter an age and pick a gender to get started.
+    </div>
+
     <div ng-if="roadTableData || trackTableData">
-        <table class="agegradeTable">
-            <thead>
-                <th colspan="9" class="agegradeHeader top">Displaying time standards for a {{currentAge}} year old {{formData.sex === "Male" ? 'man' : 'woman'}} in {{currentType === 'Road' ? 'road' : 'track'}} distances  </th>
-            </thead>
-            <thead>
-                <th class="agegradeHeader bottom">Distances ({{currentType === 'Road' ? 'road' : 'track'}})</th>
-                <th colspan="2" class="agegradeHeader bottom">70% Time and Pace <i class="ageregional fa fa-star"></i></th>
-                <th colspan="2" class="agegradeHeader bottom">80% Time and Pace <i class="agenational fa fa-star"></i></th>
-                <th colspan="2" class="agegradeHeader bottom">90% Time and Pace <i class="ageworld fa fa-star"></i></th>              
-                <th colspan="2" class="agegradeHeader bottom">Calculate your age-grade %</th>    
-            </thead>
-            <tbody>
-                <tr class="agegradeRow" ng-repeat="(key, value) in getDistances()">
-                    <td class="agegradeCell distanceName nowrap">{{(key | racenameToDistance).name}}</td>
-                    <td class="agegradeCell time">{{value*100/.70 | secondsToTimeString}} </td>
-                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
-                        milesToPaceforAgegrade:value*100/.70}} <small class="resultPaceTxt">min/mi</small></td>
-                    <td class="agegradeCell time">{{value*100/.80 | secondsToTimeString}}</td>
-                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
-                        milesToPaceforAgegrade:value*100/.80}} <small class="resultPaceTxt">min/mi</small></td>
-                    <td class="agegradeCell time">{{value*100/.90 | secondsToTimeString}}</td>
-                    <td class="agegradeCell pace"> {{(key | racenameToDistance).miles |
-                        milesToPaceforAgegrade:value*100/.90}} <small class="resultPaceTxt">min/mi</small></td>            
-                    <td  class=" agegradeCell customtime nowrap">
-                        <input type="number" min="0" style="width: 29px;" ng-model="time.hours" only-digits class=" text-left" placeholder="0">:<input
-                        type="number" min="0" style="width: 29px;" ng-model="time.minutes" only-digits-for-min-sec class="text-left"
-                            placeholder="0">:<input type="number" min="0"  style="width: 29px;" ng-model="time.seconds" only-digits-for-min-sec
-                            class="text-left" placeholder="0">
-                        </td>
-                        <td class="agegradeCell custompace ">
-                            <div ng-if="time && (time.seconds != undefined || time.minutes != undefined || time.hours != undefined)" class="resultPaceTxt">
-                        {{time| timeToAgeGrade:value:true}}
-                        <i ng-if="getAgeGrade(time, value,false) >=70 && getAgeGrade(time, value,false)<80" class="ageregional fa fa-star"></i>
-                        <i ng-if="getAgeGrade(time, value,false) >=80 && getAgeGrade(time, value,false)<90" class="agenational fa fa-star"></i>
-                        <i ng-if="getAgeGrade(time, value,false) >=90" class="ageworld fa fa-star"></i>
-                        <span > <div>{{(key | racenameToDistance).miles| milesAndTimeToPace:time}} <small class="resultPaceTxt">min/mi</small></div></span>
+
+        <!-- Calculate vs. browse -->
+        <ul class="nav nav-tabs ag-tabs">
+            <li ng-class="{active: mode === 'calculator'}">
+                <a href ng-click="setMode('calculator')"><i class="fa fa-calculator"></i> Calculate my age grade</a>
+            </li>
+            <li ng-class="{active: mode === 'table'}">
+                <a href ng-click="setMode('table')"><i class="fa fa-table"></i> All standards</a>
+            </li>
+        </ul>
+
+        <!-- ============ CALCULATOR ============ -->
+        <div ng-if="mode === 'calculator'" class="ag-panel">
+
+            <div class="ag-calc-inputs">
+                <div class="ag-field">
+                    <label for="agDistance">Distance</label>
+                    <select id="agDistance" class="form-control ag-distance-select" ng-model="calc.selectedDistance"
+                        ng-options="d.key as d.name for d in distances"></select>
+                </div>
+
+                <div class="ag-field">
+                    <label for="agTime">Your time</label>
+                    <div class="ag-time-wrap">
+                        <input id="agTime" type="text" class="form-control ag-time-input" ng-model="calc.timeInput"
+                            stopwatch-time inputmode="numeric" autocomplete="off" maxlength="9" placeholder="22:00"
+                            ng-class="{'ag-time-invalid': timeError}">
+                        <button type="button" class="ag-time-clear" ng-if="calc.timeInput" ng-click="clearTime()"
+                            uib-tooltip="Clear">
+                            <i class="fa fa-times"></i>
+                        </button>
                     </div>
-                    </td>
-                             
-                    </tr>
-        </table>
+                    <small class="ag-hint">
+                        Type the digits and the colons appear as you go — <strong>2200</strong> becomes 22:00.
+                    </small>
+                </div>
+            </div>
+
+            <div class="ag-error" ng-if="timeError">
+                <i class="fa fa-exclamation-circle"></i> {{ timeError }}
+            </div>
+
+            <!-- Result -->
+            <div class="ag-result" ng-if="result">
+                <div class="ag-result-main">
+                    <div class="ag-result-percent" ng-class="'ag-level-' + (result.level.key || 'none')">
+                        {{ result.percent | number:1 }}<span class="ag-result-percent-sign">%</span>
+                    </div>
+                    <div class="ag-result-detail">
+                        <div class="ag-result-level" ng-if="result.level">
+                            <i class="fa fa-star" ng-class="result.level.starClass"
+                                ng-if="result.level.starClass"></i>
+                            {{ result.level.label }}
+                        </div>
+                        <div class="ag-result-summary">
+                            {{ result.distance.name }} in <strong>{{ result.timeText }}</strong>
+                            <span ng-if="result.pace"> &middot; {{ result.pace }} /mi</span>
+                        </div>
+                    </div>
+
+                    <age-podium percent="result.percent" sex="formData.sex"></age-podium>
+                </div>
+
+                <table class="ag-targets">
+                    <thead>
+                        <tr>
+                            <th>Standard</th>
+                            <th>Time</th>
+                            <th>Pace</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="t in result.targets" ng-class="{'ag-target-reached': t.reached}">
+                            <td>
+                                <i class="fa" ng-class="t.percent === teamKitPercent
+                                    ? 'fa-flag ag-kit-flag' : 'fa-star ' + starClassFor(t.percent)"></i>
+                                {{ t.percent }}%
+                                <small ng-if="t.percent === teamKitPercent" class="ag-kit-tag">team standard?</small>
+                            </td>
+                            <td class="ag-mono">{{ t.timeText }}</td>
+                            <td class="ag-mono">{{ t.pace }} <small>/mi</small></td>
+                            <td>
+                                <span ng-if="t.reached" class="ag-target-yes">
+                                    <i class="fa fa-check"></i> reached by {{ t.deltaText }}
+                                </span>
+                                <span ng-if="!t.reached" class="ag-target-no">
+                                    {{ t.deltaText }} faster needed
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="ag-result-placeholder" ng-if="!result && !timeError">
+                <i class="fa fa-clock-o"></i>
+                Enter a time above to see your age grade.
+            </div>
+        </div>
+
+        <!-- ============ TABLE ============ -->
+        <div ng-if="mode === 'table'" class="ag-panel">
+            <p class="ag-table-caption">
+                Time standards for a <strong>{{ currentAge }} year old
+                    {{ formData.sex === 'Male' ? 'man' : 'woman' }}</strong>
+                at {{ currentType === 'Road' ? 'road' : 'track' }} distances.
+                Enter a time on any row to grade it.
+            </p>
+
+            <div class="table-responsive">
+                <table class="table ag-standards-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ag-col-distance">Distance</th>
+                            <th colspan="2" ng-repeat="pct in targetPercents"
+                                ng-class="{'ag-col-kit': pct === teamKitPercent}">
+                                <i class="fa" ng-class="pct === teamKitPercent
+                                    ? 'fa-flag ag-kit-flag' : 'fa-star ' + starClassFor(pct)"></i>
+                                {{ pct }}%
+                                <small ng-if="pct === teamKitPercent" class="ag-kit-tag">Team standard?</small>
+                            </th>
+                            <th rowspan="2" class="ag-col-yourtime">Your time</th>
+                            <th rowspan="2" class="ag-col-yourgrade">Age grade</th>
+                        </tr>
+                        <tr>
+                            <th ng-repeat-start="pct in targetPercents">Time</th>
+                            <th ng-repeat-end>Pace</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="d in distances"
+                            ng-class="{'ag-row-selected': d.key === calc.selectedDistance && mode === 'table',
+                                       'ag-row-graded': d.gradePercent}">
+                            <td class="ag-col-distance">{{ d.name }}</td>
+                            <td ng-repeat-start="pct in targetPercents" class="ag-mono">
+                                {{ standardTimeFor(d.standard, pct) }}
+                            </td>
+                            <td ng-repeat-end class="ag-mono ag-pace-cell">
+                                {{ paceFor(d.standard / (pct / 100), d.miles) }} <small>/mi</small>
+                            </td>
+
+                            <td class="ag-col-yourtime">
+                                <div class="ag-row-time-wrap">
+                                    <input type="text" class="form-control input-sm ag-row-time" ng-model="d.userTime"
+                                        stopwatch-time ng-change="updateRowGrade(d)" inputmode="numeric"
+                                        autocomplete="off" maxlength="9" placeholder="—"
+                                        ng-class="{'ag-time-invalid': d.gradeInvalid}"
+                                        aria-label="Your time for {{ d.name }}">
+                                    <button type="button" class="ag-row-time-clear" ng-if="d.userTime"
+                                        ng-click="clearRowTime(d)" aria-label="Clear time">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td class="ag-col-yourgrade">
+                                <span ng-if="d.gradePercent" class="ag-row-grade">
+                                    <i class="fa fa-star" ng-class="starClassFor(d.gradePercent)"
+                                        ng-if="starClassFor(d.gradePercent)"></i>
+                                    <strong>{{ d.gradePercent | number:1 }}%</strong>
+                                    <small class="ag-row-grade-pace" ng-if="d.gradePace">{{ d.gradePace }} /mi</small>
+                                </span>
+                                <span ng-if="d.gradeInvalid" class="ag-row-grade-invalid">
+                                    <i class="fa fa-exclamation-circle"></i>
+                                </span>
+                                <span ng-if="!d.gradePercent && !d.gradeInvalid" class="ag-row-grade-empty">—</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="ag-table-footnote">
+                Times are graded against the standards on the same row. For a single distance with
+                targets broken down, switch to
+                <a href ng-click="setMode('calculator')">Calculate my age grade</a>.
+            </p>
+        </div>
     </div>
 </div>

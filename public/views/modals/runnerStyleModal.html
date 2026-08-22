@@ -1,0 +1,126 @@
+<div class="modal-header">
+    <h3 class="modal-title">
+        <i class="fa fa-paint-brush"></i>
+        Runner style &mdash; {{ isFemale ? 'women' : 'men' }}
+    </h3>
+</div>
+
+<div class="modal-body rs-body">
+
+    <div class="rs-layout">
+
+        <!-- Live preview -->
+        <div class="rs-preview">
+            <runner-preview look="preview" female="isFemale" team-kit="teamKit"></runner-preview>
+            <div class="rs-preview-note">
+                Saved for {{ isFemale ? 'women' : 'men' }} and remembered next time.
+            </div>
+            <button type="button" class="btn btn-default btn-sm rs-shuffle" ng-click="shufflePreview()">
+                <i class="fa fa-random"></i> Re-roll the random ones
+            </button>
+        </div>
+
+        <!-- Options -->
+        <div class="rs-options">
+
+            <div class="rs-group">
+                <div class="rs-group-title">Hairstyle</div>
+                <div class="rs-choices">
+                    <button type="button" class="rs-hair" ng-class="{'is-on': isRandom('hairStyle')}"
+                        ng-click="setRandom('hairStyle')" title="Random">
+                        <span class="rs-hair-random"><i class="fa fa-random"></i></span>
+                        <span class="rs-hair-name">Random</span>
+                    </button>
+                    <button type="button" class="rs-hair" ng-repeat="s in hairStyles"
+                        ng-class="{'is-on': isSelectedHair($index)}" ng-click="setHairStyle($index)"
+                        title="{{ s.name }}">
+                        <hair-thumb style="s" skin="preview.skin" hair="preview.hair" female="isFemale"></hair-thumb>
+                        <span class="rs-hair-name">{{ s.name }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="rs-group">
+                <div class="rs-group-title">Skin tone</div>
+                <div class="rs-choices">
+                    <button type="button" class="rs-swatch rs-swatch-random"
+                        ng-class="{'is-on': isRandom('skin')}" ng-click="setRandom('skin')" title="Random">
+                        <i class="fa fa-random"></i>
+                    </button>
+                    <button type="button" class="rs-swatch" ng-repeat="c in skinTones"
+                        ng-class="{'is-on': isSelectedColour('skin', c)}" ng-style="{background: c}"
+                        ng-click="setColour('skin', c)" title="{{ c }}"></button>
+                    <label class="rs-custom" title="Custom colour">
+                        <input type="color" ng-model="custom.skin" ng-change="applyCustom('skin')">
+                        <span class="rs-custom-face" ng-style="{background: custom.skin}"></span>
+                        <i class="fa fa-eyedropper"></i>
+                    </label>
+                </div>
+            </div>
+
+            <div class="rs-group">
+                <div class="rs-group-title">Hair colour</div>
+                <div class="rs-choices">
+                    <button type="button" class="rs-swatch rs-swatch-random"
+                        ng-class="{'is-on': isRandom('hair')}" ng-click="setRandom('hair')" title="Random">
+                        <i class="fa fa-random"></i>
+                    </button>
+                    <button type="button" class="rs-swatch" ng-repeat="c in hairColours"
+                        ng-class="{'is-on': isSelectedColour('hair', c)}" ng-style="{background: c}"
+                        ng-click="setColour('hair', c)" title="{{ c }}"></button>
+                    <label class="rs-custom" title="Custom colour">
+                        <input type="color" ng-model="custom.hair" ng-change="applyCustom('hair')">
+                        <span class="rs-custom-face" ng-style="{background: custom.hair}"></span>
+                        <i class="fa fa-eyedropper"></i>
+                    </label>
+                </div>
+            </div>
+
+            <div class="rs-group">
+                <div class="rs-group-title">Shorts</div>
+                <div class="rs-choices">
+                    <button type="button" class="rs-swatch rs-swatch-random"
+                        ng-class="{'is-on': isRandom('shorts')}" ng-click="setRandom('shorts')" title="Random">
+                        <i class="fa fa-random"></i>
+                    </button>
+                    <button type="button" class="rs-swatch" ng-repeat="c in shortsColours"
+                        ng-class="{'is-on': isSelectedColour('shorts', c)}" ng-style="{background: c}"
+                        ng-click="setColour('shorts', c)" title="{{ c }}"></button>
+                    <label class="rs-custom" title="Custom colour">
+                        <input type="color" ng-model="custom.shorts" ng-change="applyCustom('shorts')">
+                        <span class="rs-custom-face" ng-style="{background: custom.shorts}"></span>
+                        <i class="fa fa-eyedropper"></i>
+                    </label>
+                </div>
+            </div>
+
+            <div class="rs-group">
+                <div class="rs-group-title">Shoes</div>
+                <div class="rs-choices">
+                    <button type="button" class="rs-swatch rs-swatch-random"
+                        ng-class="{'is-on': isRandom('shoes')}" ng-click="setRandom('shoes')" title="Random">
+                        <i class="fa fa-random"></i>
+                    </button>
+                    <button type="button" class="rs-swatch" ng-repeat="c in shoeColours"
+                        ng-class="{'is-on': isSelectedColour('shoes', c)}" ng-style="{background: c}"
+                        ng-click="setColour('shoes', c)" title="{{ c }}"></button>
+                    <label class="rs-custom" title="Custom colour">
+                        <input type="color" ng-model="custom.shoes" ng-change="applyCustom('shoes')">
+                        <span class="rs-custom-face" ng-style="{background: custom.shoes}"></span>
+                        <i class="fa fa-eyedropper"></i>
+                    </label>
+                </div>
+            </div>
+
+            <p class="rs-kit-note">
+                The singlet colour is set by your age grade &mdash; the club kit appears at 72% and above.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-link pull-left" ng-click="resetAll()">Reset to all random</button>
+    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-primary" ng-click="save()">Save</button>
+</div>

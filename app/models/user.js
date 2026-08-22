@@ -1,6 +1,18 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcryptjs');
 
+// Appearance of the celebrating runner on the age grade podium. Each field is
+// either the string 'random' — re-rolled on every visit — or a fixed value:
+// a hex colour, or an index into the hairstyle list. Stored per gender so the
+// men's and women's figures can be styled independently.
+var runnerStylePrefSchema = new mongoose.Schema({
+    hairStyle: mongoose.Schema.Types.Mixed,
+    hair: String,
+    skin: String,
+    shorts: String,
+    shoes: String
+}, { _id: false });
+
 // define the schema for our user model
 var userSchema = mongoose.Schema({
     email: String,
@@ -14,6 +26,10 @@ var userSchema = mongoose.Schema({
     magicLoginTokenHash: String,
     magicLoginTokenExpires: Date,
     lastSeenActivityLogAt: Date,
+    runnerStyle: {
+        male: runnerStylePrefSchema,
+        female: runnerStylePrefSchema
+    },
     lastLogin: Date,
     lastActive: Date,
     createdAt: Date,

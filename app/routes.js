@@ -4059,6 +4059,66 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // =====================================
+    // RUNNER STYLE ========================
+    // =====================================
+
+    // Appearance of the age grade podium runner, kept on the account so it
+    // follows the member between browsers. Anonymous visitors keep theirs in
+    // localStorage only.
+
+    // Values land in SVG fill attributes, so only exact shapes are accepted:
+    // the literal 'random', a hex colour, or a small hairstyle index. Anything
+    // else is dropped rather than corrected.
+    const RUNNER_COLOUR_FIELDS = ['hair', 'skin', 'shorts', 'shoes'];
+    const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
+
+    function sanitizeRunnerPref(input) {
+        if (!input || typeof input !== 'object') return null;
+        const clean = {};
+
+        RUNNER_COLOUR_FIELDS.forEach(function (field) {
+            const value = input[field];
+            if (value === 'random' || (typeof value === 'string' && HEX_COLOUR.test(value))) {
+                clean[field] = value;
+            }
+        });
+
+        const style = input.hairStyle;
+        if (style === 'random') {
+            clean.hairStyle = 'random';
+        } else if (Number.isInteger(style) && style >= 0 && style < 20) {
+            clean.hairStyle = style;
+        }
+
+        return Object.keys(clean).length ? clean : null;
+    }
+
+    app.get('/api/users/me/runner-style', service.isLoggedIn, function (req, res) {
+        res.json({ runnerStyle: req.user.runnerStyle || null });
+    });
+
+    app.put('/api/users/me/runner-style', service.isLoggedIn, async function (req, res) {
+        try {
+            const incoming = req.body && req.body.runnerStyle;
+            if (!incoming || typeof incoming !== 'object') {
+                return res.status(400).json({ error: 'runnerStyle is required.' });
+            }
+
+            const runnerStyle = {};
+            const male = sanitizeRunnerPref(incoming.male);
+            const female = sanitizeRunnerPref(incoming.female);
+            if (male) runnerStyle.male = male;
+            if (female) runnerStyle.female = female;
+
+            await User.updateOne({ _id: req.user._id }, { runnerStyle: runnerStyle });
+            res.json({ runnerStyle: runnerStyle });
+        } catch (err) {
+            console.error('Error saving runner style:', err);
+            res.status(500).json({ error: 'Could not save your runner style.' });
+        }
+    });
+
+    // =====================================
     // ACTIVITY LOGS =======================
     // =====================================
 

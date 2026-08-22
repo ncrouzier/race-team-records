@@ -122,37 +122,11 @@
   // "Use my current conditions" — deliberately styled to sit in the same
   // visual family as the map controls below it (white, hairline border,
   // soft drop shadow) rather than as a generic Bootstrap button.
+  // Shares the mixin with the age grade page so the two stay identical.
   .weather-locate-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: @highlight-blue;
-    background: #fff;
-    border: 1px solid #c8dbe4;
-    border-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
-    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-
-    &:hover:not(:disabled),
-    &:focus:not(:disabled) {
-      background: @highlight-blue;
-      border-color: @highlight-blue;
-      color: #fff;
-      text-decoration: none;
-    }
-
-    &:disabled {
-      opacity: 0.65;
-      cursor: default;
-    }
-
-    i {
-      font-size: 14px;
-    }
+    .mcrrc-btn-look();
   }
+
 
   .weather-locate-note {
     margin-left: 10px;

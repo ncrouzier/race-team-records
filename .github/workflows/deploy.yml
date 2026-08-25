@@ -1,0 +1,81 @@
+name: Build and publish image
+
+# Builds the production image on GitHub's native amd64 runners and pushes it to
+# GHCR, so the DigitalOcean droplet only ever pulls and runs. Building on the
+# droplet itself would mean installing ~550MB of devDependencies and running
+# terser next to a live Mongo on a 2GiB box; building on a Mac would mean an
+# emulated amd64 build, since Apple Silicon is arm64 and droplets are not.
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# A second push while one is in flight makes the first result obsolete.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # Provided automatically; no PAT needed to push from within the repo.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Emits both a moving `latest` and an immutable `sha-<commit>`. Deploy the
+      # digest-pinned tag when you want a known-good rollback target.
+      - name: Derive tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Without a cache every run reinstalls all dependencies and re-runs
+          # bower from scratch. mode=max keeps the intermediate build stage too.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Optional. Set the DOKPLOY_DEPLOY_WEBHOOK repository secret to the
+      # application's webhook URL from the Dokploy UI and pushes become
+      # end-to-end deploys. Left unset, the workflow just publishes the image
+      # and you redeploy from the dashboard by hand.
+      #
+      # `secrets` is not available to step-level `if:`, hence the env check.
+      - name: Trigger Dokploy deploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DOKPLOY_DEPLOY_WEBHOOK is not set - image published, skipping deploy trigger."
+            exit 0
+          fi
+          curl -fsS -X POST "$WEBHOOK"
+          echo "Deploy triggered."

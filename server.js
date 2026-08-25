@@ -45,9 +45,19 @@ const schedule = require('node-schedule');
 
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
+
+// On Heroku the dyno terminated TLS itself, so the app had to do the redirect.
+// Behind Dokploy's Traefik the proxy does it, and DYNO is unset there, so this
+// stays dormant. It is kept only so a Heroku rollback still redirects.
 if (process.env.DYNO) {
     app.use(sslRedirect());
 }
+
+// Number of reverse proxies in front of the app. Must be 1 under Dokploy:
+// without it every request appears to originate from Traefik, so the per-IP
+// rate limits further down would pool all users into a single bucket and lock
+// everyone out together. Left at 0 locally, where there is no proxy.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -57,10 +67,28 @@ app.use(compression({
     level: 6
 }));
 
+// Liveness probe for the container healthcheck and for Traefik. Registered
+// before the session middleware on purpose: a probe every 30s should not be
+// minting session documents in Mongo. Reports 503 rather than 200 while the
+// database connection is down, so a container that is up but cannot reach
+// Mongo is not treated as healthy.
+app.get('/api/health', function (req, res) {
+    var connected = mongoose.connection.readyState === 1;
+    res.status(connected ? 200 : 503).json({
+        status: connected ? 'ok' : 'degraded',
+        db: connected ? 'connected' : 'disconnected',
+        uptime: Math.round(process.uptime())
+    });
+});
+
 // configuration ===============================================================
 
 let mongourl;
-if (process.env.MLAB_MONGODB_DB_URL) {
+if (process.env.MONGODB_URI) {
+    // The standard name, and the one Dokploy hands out for its own database
+    // services. Takes precedence over everything below it.
+    mongourl = process.env.MONGODB_URI;
+} else if (process.env.MLAB_MONGODB_DB_URL) {
     mongourl = process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords';
     // mongoose.connect(process.env.MLAB_MONGODB_DB_URL + 'mcrrcrecords');
 } else if (process.env.OPENSHIFT_MONGODB_DB_URL) {

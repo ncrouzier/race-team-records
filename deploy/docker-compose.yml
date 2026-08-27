@@ -1,0 +1,95 @@
+# Production stack for the DigitalOcean droplet. Lives in /opt/mcrrc alongside
+# a .env file (see env.example) and is driven with plain `docker compose`.
+#
+# Three containers, ~150MB of overhead all in: Caddy terminates TLS and proxies
+# to the app, the app is pulled prebuilt from GHCR, Mongo keeps its data in a
+# named volume. Nothing is built on the droplet.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates live here. Losing this volume means re-issuing them, and
+      # Let's Encrypt rate-limits that, so do not prune it casually.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    # Published by .github/workflows/deploy.yml. Override IMAGE_TAG in .env to
+    # pin a specific sha- tag; that is the rollback mechanism.
+    image: ghcr.io/ncrouzier/race-team-records:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Composed here rather than in .env so the password lives in exactly one
+      # place. authSource=admin is required — omitting it is the usual cause of
+      # an auth failure that looks like a wrong password.
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/mcrrcrecords?authSource=admin
+      # Caddy is the one proxy in front of the app. Without this every request
+      # appears to come from Caddy and the per-IP rate limits on login, signup
+      # and the public application form pool all users into one bucket.
+      TRUST_PROXY_HOPS: "1"
+    # No `ports:` — the app is only reachable through Caddy.
+    expose:
+      - "8090"
+    depends_on:
+      mongo:
+        # The app exits rather than degrades when Mongo is unreachable
+        # (service.startUpUpdate runs at boot and its rejection is unhandled),
+        # so waiting for a healthy Mongo avoids a startup crashloop.
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    # WiredTiger defaults to 50% of (RAM - 1GiB), which is far too greedy on a
+    # 2GiB droplet shared with the app and Caddy. Raise this if you size up.
+    command: ["--wiredTigerCacheSizeGB", "0.35"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:?set MONGO_USER in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?set MONGO_PASSWORD in .env}
+    volumes:
+      - mongo_data:/data/db
+    # Deliberately no published ports: Mongo is reachable only from the compose
+    # network. To connect from your laptop, tunnel over SSH instead.
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1})"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # Container visibility — logs, restart, exec, live memory/CPU, volume
+  # browsing. Measured at ~17MB resident, against the ~700MB a full PaaS
+  # control plane would cost for the same convenience.
+  portainer:
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      # Bound to loopback deliberately. Anything with the Docker socket is
+      # effectively root on this box, so it must never be published. Reach it
+      # by tunnelling:  ssh -L 9000:localhost:9000 root@<droplet-ip>
+      # then open http://localhost:9000 — and the firewall stays at 80/443.
+      - "127.0.0.1:9000:9000"
+    volumes:
+      # Not mounted :ro — that flag does not actually restrict the Docker API,
+      # it only affects the socket file, so it would give a false sense of
+      # safety. The loopback binding above is the real control.
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  mongo_data:
+  caddy_data:
+  caddy_config:
+  portainer_data:

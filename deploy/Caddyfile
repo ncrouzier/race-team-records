@@ -1,0 +1,22 @@
+# Caddy obtains and renews the Let's Encrypt certificate on its own — there is
+# no certbot step and no renewal cron. It also redirects HTTP to HTTPS by
+# default, which is the job heroku-ssl-redirect used to do inside the app.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_DOMAIN} {
+	reverse_proxy app:8090
+
+	# The app already gzips its own responses via the compression middleware,
+	# so there is no `encode` directive here — double-compressing would only
+	# burn CPU on a 1 vCPU droplet.
+
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

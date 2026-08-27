@@ -8,7 +8,11 @@ name: Build and publish image
 
 on:
   push:
-    branches: [master]
+    # feature/digitalocean is here so the pipeline can be proven before master
+    # depends on it. Safe to leave: the `latest` tag below is gated on the
+    # default branch, so a feature build publishes only its own sha- and
+    # branch-tagged images and can never become what the server pulls.
+    branches: [master, feature/digitalocean]
   workflow_dispatch:
 
 # A second push while one is in flight makes the first result obsolete.
@@ -39,15 +43,18 @@ jobs:
           # Provided automatically; no PAT needed to push from within the repo.
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Emits both a moving `latest` and an immutable `sha-<commit>`. Deploy the
-      # digest-pinned tag when you want a known-good rollback target.
+      # `latest` is what Dokploy pulls, so it is deliberately restricted to the
+      # default branch — a feature build must never be able to redefine it.
+      # Every build also gets an immutable sha- tag (the rollback target) and a
+      # branch- tag, which is how you deploy a feature build on purpose.
       - name: Derive tags
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
             type=sha,format=long
 
       - name: Build and push
@@ -69,7 +76,13 @@ jobs:
       # and you redeploy from the dashboard by hand.
       #
       # `secrets` is not available to step-level `if:`, hence the env check.
+      #
+      # Default branch only. A feature build does not move `latest`, so firing
+      # the webhook from one would just redeploy the existing image — noise at
+      # best, and misleading when you are trying to tell whether a deploy did
+      # anything.
       - name: Trigger Dokploy deploy
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           WEBHOOK: ${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}
         run: |

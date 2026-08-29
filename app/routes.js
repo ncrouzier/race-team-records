@@ -770,7 +770,7 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.select(select);
         }
         try {
-            query.exec().then(members => {
+            query.lean().exec().then(members => {
                 // if there is an error retrieving, send the error. nothing after res.send(err) will execute                    
                 res.json(members); // return all members in JSON format
             });
@@ -803,7 +803,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!req.isAuthenticated()) {
                 query = query.select('-teamRequirementStats');
             }
-            query.exec().then(member => {
+            query.lean().exec().then(member => {
                 if (member) {
                     res.json(member);
                 } else {
@@ -1177,7 +1177,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(jobs => {
+            query.lean().exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
@@ -1554,7 +1554,7 @@ module.exports = async function (app, qs, passport, async, _) {
         query = query.select("-createdAt -updatedAt");
 
         try {
-            query.exec().then(results => {
+            query.lean().exec().then(results => {
                 let filteredResult = results;
                 if (req.query.filters) {
                     const filters = JSON.parse(req.query.filters);
@@ -2169,7 +2169,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(async races => {
+            query.lean().exec().then(async races => {
                 if (req.query.withCount === 'true') {
                     const Result = require('./models/result');
                     const resultCounts = await Result.aggregate([
@@ -2178,10 +2178,11 @@ module.exports = async function (app, qs, passport, async, _) {
                     ]);
                     const countMap = {};
                     resultCounts.forEach(rc => { countMap[rc._id.toString()] = rc.count; });
+                    // lean() already yields plain objects, so the previous
+                    // toObject() call would throw here.
                     const racesWithCount = races.map(r => {
-                        const raceObj = r.toObject();
-                        raceObj.resultCount = countMap[r._id.toString()] || 0;
-                        return raceObj;
+                        r.resultCount = countMap[r._id.toString()] || 0;
+                        return r;
                     });
                     res.json(racesWithCount);
                 } else {
@@ -3294,7 +3295,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(racetypes => {
+            query.lean().exec().then(racetypes => {
                 res.json(racetypes);
             });
         } catch (err) {

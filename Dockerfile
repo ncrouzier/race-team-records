@@ -56,9 +56,12 @@ COPY --from=build /app/public/images ./public/images
 COPY --from=build /app/public/data ./public/data
 COPY --from=build /app/public/dist ./public/dist
 COPY --from=build /app/public/css ./public/css
-COPY --from=build /app/public/less ./public/less
-COPY --from=build /app/public/js ./public/js
 COPY --from=build /app/public/views ./public/views
+# public/js and public/less are deliberately absent. They are build inputs:
+# the bundle at dist/js/app.min.js and the stylesheet at dist/css/style.min.css
+# are what index.ejs loads, and nothing server-side reads either directory.
+# Shipping them also meant express.static served every unbundled source file —
+# /js/controllers/ToolsCtrl.js and /less/mcrrc.less answered 200 to anyone.
 COPY --from=build /app/views ./views
 COPY --from=build /app/config ./config
 COPY --from=build /app/app ./app

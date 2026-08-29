@@ -100,7 +100,7 @@
             <div class="ag-result" ng-if="result">
                 <div class="ag-result-main">
                     <div class="ag-result-percent" ng-class="'ag-level-' + (result.level.key || 'none')">
-                        {{ result.percent | number:1 }}<span class="ag-result-percent-sign">%</span>
+                        {{ result.percent | number:2 }}<span class="ag-result-percent-sign">%</span>
                     </div>
                     <div class="ag-result-detail">
                         <div class="ag-result-level" ng-if="result.level">
@@ -214,7 +214,7 @@
                                 <span ng-if="d.gradePercent" class="ag-row-grade">
                                     <i class="fa fa-star" ng-class="starClassFor(d.gradePercent)"
                                         ng-if="starClassFor(d.gradePercent)"></i>
-                                    <strong>{{ d.gradePercent | number:1 }}%</strong>
+                                    <strong>{{ d.gradePercent | number:2 }}%</strong>
                                     <small class="ag-row-grade-pace" ng-if="d.gradePace">{{ d.gradePace }} /mi</small>
                                 </span>
                                 <span ng-if="d.gradeInvalid" class="ag-row-grade-invalid">

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const service = require('./service');
@@ -2467,7 +2468,32 @@ module.exports = async function (app, qs, passport, async, _) {
     // });
 
     // get raceinfo list
+    // Holds the gzipped response bytes rather than the result objects. This
+    // endpoint returns ~800KB gzipped (several MB raw), and caching the objects
+    // still meant re-running JSON.stringify and gzip on every hit — which was
+    // essentially its entire response time. Now a cache hit is a buffer write.
     var raceInfosCache = {};
+
+    // The compression middleware skips any response that already carries a
+    // Content-Encoding ("already encoded"), so writing pre-gzipped bytes here
+    // does not get double-compressed.
+    function sendRaceInfos(req, res, entry) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        // Two representations share this URL, so caches must key on the header.
+        res.setHeader('Vary', 'Accept-Encoding');
+
+        if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+            res.setHeader('Content-Encoding', 'gzip');
+            return res.send(entry.gzip);
+        }
+
+        // Effectively never taken by a real browser. Inflating on demand beats
+        // keeping a second, several-MB copy of the JSON resident for it.
+        zlib.gunzip(entry.gzip, function (err, raw) {
+            if (err) return res.status(500).send(err);
+            res.send(raw);
+        });
+    }
 
     app.get('/api/raceinfos', async function (req, res) {
         const sort = req.query.sort;
@@ -2487,7 +2513,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 );
                 const cached = raceInfosCache[cacheKey];
                 if (cached && cached.timestamp >= latestUpdate) {
-                    return res.json(cached.data);
+                    return sendRaceInfos(req, res, cached);
                 }
             }
         } catch (err) {
@@ -2564,12 +2590,23 @@ module.exports = async function (app, qs, passport, async, _) {
                 results.forEach(function (resu) {
                     resu.results = _.sortBy(resu.results, 'time');
                 });
-                // Cache the results
-                raceInfosCache[cacheKey] = {
-                    data: results,
-                    timestamp: Date.now()
-                };
-                res.json(results); // return all members in JSON format
+
+                // Compress once, on the miss, and cache the bytes. Async
+                // rather than gzipSync: this is several MB, and blocking the
+                // event loop for it would stall every other request on what is
+                // a single-core box.
+                zlib.gzip(JSON.stringify(results), function (err, buf) {
+                    if (err) {
+                        // Fall back to the ordinary path rather than 500 —
+                        // the response is still perfectly serveable.
+                        return res.json(results);
+                    }
+                    raceInfosCache[cacheKey] = {
+                        gzip: buf,
+                        timestamp: Date.now()
+                    };
+                    sendRaceInfos(req, res, raceInfosCache[cacheKey]);
+                });
             });
         } catch (err) {
             res.send(err);

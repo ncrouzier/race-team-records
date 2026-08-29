@@ -85,7 +85,10 @@ Fill in `.env`. Notes on the fields that matter:
 
 - `SESSION_SECRET` — carry over from Heroku **unchanged**, or the whole club is
   logged out.
-- `MONGO_PASSWORD` — `openssl rand -base64 24`.
+- `MONGO_PASSWORD` — `openssl rand -hex 24`. Use **hex, not base64**: the value
+  is interpolated into a `mongodb://` URI, where `: / ? # [ ] @` must be
+  percent-encoded, and base64 routinely emits `/`. The failure looks like a
+  wrong password rather than a malformed URI, so it is a slow one to debug.
 - `SITE_DOMAIN` / `ACME_EMAIL` — Caddy uses these to obtain the certificate.
 - `IMAGE_TAG` — leave at `latest` normally; set to a `sha-` tag to roll back.
 - Do **not** set `DYNO`, `MLAB_MONGODB_DB_URL` or `OPENSHIFT_MONGODB_DB_URL`:
@@ -123,8 +126,26 @@ ssh -L 9000:localhost:9000 root@<droplet-ip>
 # then open http://localhost:9000
 ```
 
-Set the admin password on first visit — Portainer locks out the setup screen
-after a few minutes for exactly the reason you would expect.
+On first start Portainer generates a one-time **setup token** and prints it to
+its own logs. The setup screen will not let you create the admin user without
+it — proving you can read the host's logs is what stops a passer-by from
+claiming the instance:
+
+```bash
+docker compose logs portainer | grep setup_token
+```
+
+If that returns nothing the log has rotated past it. The token is generated
+once, when the database is initialised, so start that database over — nothing
+is lost before you have configured anything:
+
+```bash
+docker compose down portainer
+docker volume ls                          # find the real name
+docker volume rm <stack>_portainer_data
+docker compose up -d portainer
+docker compose logs portainer | grep setup_token
+```
 
 Note the socket is deliberately **not** mounted `:ro`. That flag does not
 restrict the Docker API — it only affects the socket file — so using it would
@@ -138,11 +159,16 @@ of the same view on demand and leaves nothing resident.
 
 ## 3. Data migration
 
-```bash
-apt-get install -y mongodb-database-tools
+Nothing needs installing on the droplet: `mongodb-database-tools` is not in
+Ubuntu's repos (it lives in MongoDB's own apt repo), but the `mongo:7` image
+already ships `mongodump`, `mongorestore` and `mongosh`. Run them in a
+throwaway container, which also guarantees the tool version matches the server.
 
-# From Atlas, onto the droplet
-mongodump --uri="<atlas-connection-string>" --archive=/root/atlas.archive --gzip
+```bash
+# From Atlas, onto the droplet. --archive writes to stdout, so the dump lands
+# on the host without mounting anything into the container.
+docker run --rm mongo:7 mongodump \
+  --uri="<atlas-connection-string>" --archive --gzip > /root/atlas.archive
 
 # Into the running Mongo container
 docker compose exec -T mongo mongorestore \
@@ -153,9 +179,14 @@ docker compose exec -T mongo mongorestore \
 Verify before cutting over:
 
 ```bash
+# The system.* filter is not optional. getCollectionNames() lists system.views
+# once the database has any views, and countDocuments() runs an aggregate,
+# which not even the root user is permitted on a system collection. Unfiltered,
+# the loop throws partway through — leaving a partial count that reads like a
+# short restore rather than a permissions quirk.
 docker compose exec mongo mongosh \
   "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
-  --quiet --eval 'db.getCollectionNames().forEach(c => print(c, db[c].countDocuments()))'
+  --quiet --eval 'db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print(c, db[c].countDocuments()))'
 ```
 
 Compare those counts against Atlas. Anything written to Atlas after the dump is

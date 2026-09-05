@@ -185,7 +185,7 @@ Verify before cutting over:
 # the loop throws partway through — leaving a partial count that reads like a
 # short restore rather than a permissions quirk.
 docker compose exec mongo mongosh \
-  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
+  "mongodb://mcrrc:8abc67cad340353f0922891001699268ee8e1ed9c0c13d62@localhost:27017/mcrrcrecords?authSource=admin" \
   --quiet --eval 'db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print(c, db[c].countDocuments()))'
 ```
 
@@ -251,19 +251,27 @@ app`. Every build publishes an immutable `sha-` tag for exactly this.
 
 ## 6. Backups
 
-`deploy/backup.sh` dumps nightly, keeps 14 days, and fails loudly on a
-suspiciously small archive:
+`deploy/backup.sh` dumps weekly, keeps five copies locally, uploads to Google
+Drive, and fails loudly on a suspiciously small archive:
 
 ```bash
-chmod +x /opt/mcrrc/backup.sh
 crontab -e
-# 17 3 * * * /opt/mcrrc/backup.sh >> /var/log/mcrrc-backup.log 2>&1
+# 03:17 UTC every Sunday
+# 17 3 * * 0 /opt/mcrrc/backup.sh >> /var/log/mcrrc-backup.log 2>&1
 ```
 
-Those archives sit on the same droplet as the database, so they do not survive
-losing it. Add **either** DigitalOcean's weekly droplet backups (+20% of droplet
-cost) **or** an off-box copy to Spaces — the script has a commented `s3cmd`
-line. Then test a restore. An untested backup is a guess.
+A local archive sits on the same droplet as the database, so it does not
+survive losing the droplet — which is most of what a backup is for. The Drive
+upload is the copy that does. Setup notes are at the top of the script; the
+OAuth step needs a machine with a browser, so it cannot be done entirely on the
+droplet, and service accounts do not work with a personal Google account.
+
+Run it once by hand before trusting cron — you want to see both the `local
+backup ok` and `uploaded to` lines. Then **test a restore**. An untested backup
+is a guess.
+
+Optionally add DigitalOcean's weekly droplet backups (+20% of droplet cost) on
+top, which cover the whole box rather than just the database.
 
 Also worth a weekly `docker system prune -af` to stop old image layers
 accumulating.

@@ -7500,6 +7500,10 @@ footer {
         color: #fff;
         margin-top: 2px;
 
+        // pb / agegrade / teamrecord / multi render an emoji, which already
+        // has its own colour and stays visible regardless of this container's
+        // `color`. A background here would be a look, not a fix, so those are
+        // left alone.
         &.feed-icon-pb {
             // background: #f5a623;
         }
@@ -7521,12 +7525,18 @@ footer {
             // background: @brand-primary;
         }
 
+        // entry and exit render a Font Awesome glyph via <i>, which has no
+        // colour of its own — it inherits this container's `color: #fff`.
+        // With no background behind it that is a white icon on the feed
+        // card's white background: present in the DOM, invisible on screen.
+        // These need a background for the same reason .raceCountBox has one;
+        // the emoji-based badges above do not.
         &.feed-icon-entry {
-            // background: #2ecc71;
+            background: #2ecc71;
         }
 
         &.feed-icon-exit {
-            // background: #95a5a6;
+            background: #95a5a6;
         }
     }
 

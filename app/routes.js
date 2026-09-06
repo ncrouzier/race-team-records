@@ -800,10 +800,25 @@ module.exports = async function (app, qs, passport, async, _) {
         }
         if (select) {
             query = query.select(select);
+        } else {
+            // This is a list endpoint, so it returns a summary of each member.
+            //
+            // personalBests embeds a whole result document per entry — which
+            // itself nests the full race, members array, legs and achievements
+            // — and accounts for ~86% of the collection's bytes. bio adds
+            // another ~10%. Neither is usable in a list view, and callers that
+            // need them fetch the member individually: both the bio tab and
+            // the stats tab already re-request via getMember() when the object
+            // they were handed has no bio.
+            //
+            // Callers that genuinely want these ask for them with an explicit
+            // `select`, which takes the branch above (StatsService does this to
+            // keep personalBests.result.agegrade for the age-grade histogram).
+            query = query.select('-bio -personalBests');
         }
         try {
             query.lean().exec().then(members => {
-                // if there is an error retrieving, send the error. nothing after res.send(err) will execute                    
+                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
                 res.json(members); // return all members in JSON format
             });
         } catch (err) {

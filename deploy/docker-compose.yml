@@ -50,7 +50,16 @@ services:
         condition: service_healthy
 
   mongo:
-    image: mongo:7
+    # Pinned to a specific series, never the floating `mongo:8`: that tag moves
+    # across rapid releases, and a release whose featureCompatibility floor is
+    # above this data's would refuse to start — turning an unattended
+    # `docker compose pull` into an outage. See "Upgrading MongoDB" in
+    # doc/DEPLOY.md.
+    #
+    # 8.3 is a rapid release: supported only until the next one ships, unlike
+    # the 8.0 major. Expect to revisit this every few months, or move back to
+    # mongo:8.0 for a long support window.
+    image: mongo:8.3
     restart: unless-stopped
     # WiredTiger defaults to 50% of (RAM - 1GiB), which is far too greedy on a
     # 2GiB droplet shared with the app and Caddy. Raise this if you size up.

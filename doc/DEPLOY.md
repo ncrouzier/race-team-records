@@ -160,14 +160,14 @@ of the same view on demand and leaves nothing resident.
 ## 3. Data migration
 
 Nothing needs installing on the droplet: `mongodb-database-tools` is not in
-Ubuntu's repos (it lives in MongoDB's own apt repo), but the `mongo:7` image
+Ubuntu's repos (it lives in MongoDB's own apt repo), but the `mongo:8.3` image
 already ships `mongodump`, `mongorestore` and `mongosh`. Run them in a
 throwaway container, which also guarantees the tool version matches the server.
 
 ```bash
 # From Atlas, onto the droplet. --archive writes to stdout, so the dump lands
 # on the host without mounting anything into the container.
-docker run --rm mongo:7 mongodump \
+docker run --rm mongo:8.3 mongodump \
   --uri="<atlas-connection-string>" --archive --gzip > /root/atlas.archive
 
 # Into the running Mongo container
@@ -185,7 +185,7 @@ Verify before cutting over:
 # the loop throws partway through — leaving a partial count that reads like a
 # short restore rather than a permissions quirk.
 docker compose exec mongo mongosh \
-  "mongodb://mcrrc:8abc67cad340353f0922891001699268ee8e1ed9c0c13d62@localhost:27017/mcrrcrecords?authSource=admin" \
+  "mongodb://mcrrc:<pw>@localhost:27017/mcrrcrecords?authSource=admin" \
   --quiet --eval 'db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print(c, db[c].countDocuments()))'
 ```
 
@@ -275,6 +275,93 @@ top, which cover the whole box rather than just the database.
 
 Also worth a weekly `docker system prune -af` to stop old image layers
 accumulating.
+
+### Upgrading MongoDB
+
+The stack pins an explicit series — currently `mongo:8.3` — never the floating
+`mongo:8`. That tag moves across releases, and **a release refuses to start on
+data whose featureCompatibilityVersion is below its floor**:
+
+```
+UPGRADE PROBLEM: Invalid featureCompatibilityVersion value '7.0'.
+Expected one of: '8.3', '8.2', '8.0'
+```
+
+So a floating tag turns a routine `docker compose pull` into an outage. Upgrade
+one major at a time, deliberately.
+
+**Going from a 7.x volume to 8.0** — the app must be down, because FCV changes
+while writes are in flight are asking for trouble:
+
+```bash
+cd /opt/mcrrc
+./backup.sh                      # non-negotiable: this is the way back
+docker compose stop app
+
+# Edit docker-compose.yml: image: mongo:7  ->  image: mongo:8.0
+docker compose up -d mongo
+sleep 20
+
+docker compose exec -T mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/?authSource=admin" \
+  --quiet --eval 'print(db.version()); db.adminCommand({setFeatureCompatibilityVersion:"8.0", confirm:true}); print(db.adminCommand({getParameter:1,featureCompatibilityVersion:1}).featureCompatibilityVersion.version)'
+
+docker compose start app
+
+# The app publishes no ports — it is reachable only through Caddy — so check it
+# from inside the container rather than from the host.
+docker compose exec app curl -s http://localhost:8090/api/health
+```
+
+`confirm: true` is required from 8.0 onward; without it the command is refused.
+
+Verified on a copy of this stack: a 7.0 volume with 500 documents came up clean
+on 8.0, took FCV 8.0, and was then readable by 8.3 with every document intact.
+Skipping the FCV step and going straight to 8.3 fails as shown above.
+
+**Rolling back** is only possible *before* the FCV change — put `mongo:7` back
+and restart. Once FCV is 8.0 the data files are no longer readable by 7.x, and
+the way back is `restore.sh` with the archive from step one, into a 7.x
+container. That asymmetry is the reason the backup is not optional.
+
+**Moving between 8.x series (8.0 → 8.3)** is much simpler, because FCV 8.0
+already satisfies 8.3's floor. No FCV change is involved:
+
+```bash
+cd /opt/mcrrc
+./backup.sh
+docker compose stop app
+
+# Edit docker-compose.yml: image: mongo:8.0  ->  image: mongo:8.3
+docker compose pull mongo
+docker compose up -d mongo
+sleep 20
+docker compose ps mongo          # Up, not Restarting
+
+docker compose exec -T mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
+  --quiet --eval 'print(db.version()); print("FCV: " + db.adminCommand({getParameter:1,featureCompatibilityVersion:1}).featureCompatibilityVersion.version); db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print("  " + c + " " + db[c].countDocuments()))'
+
+docker compose start app
+
+# The app publishes no ports — it is reachable only through Caddy — so check it
+# from inside the container rather than from the host.
+docker compose exec app curl -s http://localhost:8090/api/health
+```
+
+**Leave FCV at 8.0.** Do not run `setFeatureCompatibilityVersion: "8.3"`. While
+FCV stays at 8.0 you can drop back to `mongo:8.0` by changing the tag and
+restarting — no restore needed. Raising it closes that door for the same reason
+7.x closed behind you.
+
+Be aware of what 8.3 is: 8.0 is the **major** release with a long support
+window, while 8.1/8.2/8.3 are **rapid releases**, supported only until the next
+one ships. Running 8.3 means revisiting this every few months. `mongo:8.0`
+would keep receiving 8.0.x patches for years with no attention at all.
+
+Note the driver matters too: MongoDB 8 support needs a recent driver. This
+project runs mongoose 8.24.x (mongodb driver 6.20), which is fine. The older
+6.5 driver predated MongoDB 8's release entirely.
 
 ### Restoring an archive
 

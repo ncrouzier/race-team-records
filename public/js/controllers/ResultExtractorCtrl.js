@@ -12,6 +12,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         $scope.tableData = null;
         $scope.tableHeaders = null;
         $scope.columnMapping = {};
+        $scope.hiddenColumns = {};
         $scope.processedResults = [];
         $scope.currentTeamMembers = [];
         $scope.isLoading = false;
@@ -31,12 +32,34 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         $scope.countries = UtilsService.countries;
         $scope.resultlink = '';
 
+        // Race metadata is copied onto every processed result, but none of it
+        // affects which rows are produced or which member they match. Patching
+        // it in place keeps the per-row selections and any manual corrections
+        // that a full reprocess would throw away.
+        function applyRaceMetadata() {
+            $scope.processedResults.forEach(function(result) {
+                result.race.racename = $scope.formData.raceName;
+                result.race.racedate = $scope.formData.raceDate
+                    ? new Date($scope.formData.raceDate).getTime()
+                    : null;
+                result.race.racetype = $scope.formData.raceType;
+                result.race.location = $scope.formData.location;
+                result.race.distanceName = $scope.formData.distanceName;
+                result.resultlink = $scope.formData.resultlink;
+                result.isRecordEligible = $scope.formData.isRecordEligible || false;
+            });
+        }
+
         // Watch for any form input changes and reprocess results
         $scope.$watch('formData', function() {
-            if ($scope.tableData && $scope.canProcess().canProcess) {
-                $scope.processResults();
-            }else{
+            if (!$scope.tableData || !$scope.canProcess().canProcess) {
                 $scope.processedResults = [];
+                return;
+            }
+            if ($scope.processedResults.length) {
+                applyRaceMetadata();
+            } else {
+                $scope.processResults();
             }
         }, true);
 
@@ -135,7 +158,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 .then(function(response) {
                     if (response.data.success) {
                         $scope.formData.raceType = null;
-                        $scope.hiddenColumns = [];
+                        $scope.hiddenColumns = {};
                         $scope.tableHeaders = response.data.headers;
                         $scope.tableData = response.data.data;
                         $scope.pageTitle = response.data.pageTitle;
@@ -215,19 +238,23 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                             // Default MCRRC mapping
                             $scope.tableHeaders.forEach(function(header) {
                                 var headerLower = header.toLowerCase();
+                                // Rank columns are tested before the plain
+                                // gender/sex check: MCRRC writes the gender rank
+                                // as "Sex/Tot", which contains "sex" and would
+                                // otherwise be claimed as the gender column.
                                 if (headerLower === 'name') {
                                     $scope.columnMapping[header] = 'name';
                                 } else if (headerLower === 'net time') {
                                     $scope.columnMapping[header] = 'time';
                                 } else if (headerLower.includes('place') || headerLower.includes('overall')) {
                                     $scope.columnMapping[header] = 'place';
-                                } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
-                                    $scope.columnMapping[header] = 'gender';
-                                } else if (headerLower.includes('gen/tot') || headerLower.includes('gender place') || headerLower.includes('gender rank')) {
+                                } else if (headerLower.includes('gen/tot') || headerLower.includes('sex/tot') || headerLower.includes('gender place') || headerLower.includes('gender rank')) {
                                     $scope.columnMapping[header] = 'genderRank';
                                 } else if (headerLower.includes('div/tot') || headerLower.includes('age place') || headerLower.includes('age rank')) {
                                     $scope.columnMapping[header] = 'ageRank';
-                                } 
+                                } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
+                                    $scope.columnMapping[header] = 'gender';
+                                }
                             });
                         } else if ($scope.url.includes('athlinks.com')) {
                             // Athlinks specific column mapping
@@ -780,6 +807,16 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 
         $scope.isColumnHidden = function(header) {
             return $scope.hiddenColumns[header] || false;
+        };
+
+        $scope.hasHiddenColumns = function() {
+            return Object.keys($scope.hiddenColumns || {}).length > 0;
+        };
+
+        // Hiding is a single click on a header, so mis-clicks are easy and
+        // previously only a reload undid them.
+        $scope.restoreHiddenColumns = function() {
+            $scope.hiddenColumns = {};
         };
 
            // =====================================

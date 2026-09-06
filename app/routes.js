@@ -11,6 +11,37 @@ const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const Banner = require('./models/banner');
 
+// Table headers scraped from the wild are routinely blank or repeated. The
+// MCRRC result pages have both: an unlabelled column holding the surname, and
+// "Pace" twice for net and gun pace.
+//
+// Rows are keyed by header name, so the old approach of dropping blanks while
+// still indexing <td>s positionally shifted every later column onto the wrong
+// header — surnames landed under "Sex", ages under "City" — and a repeated name
+// silently overwrote its twin. Keep every column, in place, under a unique name.
+function normaliseTableHeaders(rawHeaders) {
+    const taken = new Set();
+    return rawHeaders.map(function (raw, index) {
+        const base = (raw || '').trim() || 'Column ' + (index + 1);
+        let name = base;
+        let n = 2;
+        // Guard against a source that already contains "Pace (2)" literally.
+        while (taken.has(name)) {
+            name = base + ' (' + n + ')';
+            n++;
+        }
+        taken.add(name);
+        return name;
+    });
+}
+
+// A header row of nothing but numbers is really a data row.
+function looksLikeHeaderRow(rawHeaders) {
+    return rawHeaders.some(function (h) {
+        return h && !/^\d+$/.test(h);
+    });
+}
+
 const bioSanitizeOptions = {
     allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'strike', 'pre', 'img'],
@@ -3637,7 +3668,7 @@ module.exports = async function (app, qs, passport, async, _) {
                         const element = $(selector).first();
                         if (element.length) {
                             // Try to extract headers - be more strict about what constitutes a header
-                            const potentialHeaders = [];
+                            let potentialHeaders = [];
                             const headerRow = element.find('thead tr, tr:first-child').first();
 
                             // Only process if we found a header row
@@ -3646,13 +3677,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                 const allCellsAreTh = headerRow.find('td').length === 0;
 
                                 if (allCellsAreTh) {
+                                    const rawHeaders = [];
                                     headerRow.find('th').each(function () {
-                                        const headerText = $(this).text().trim();
-                                        // Only add if it looks like a header (not empty and not a number)
-                                        if (headerText && !/^\d+$/.test(headerText)) {
-                                            potentialHeaders.push(headerText);
-                                        }
+                                        // Every cell, blank ones included: the
+                                        // array index is what aligns headers to
+                                        // <td>s, so a gap must not close up.
+                                        rawHeaders.push($(this).text().trim());
                                     });
+                                    if (looksLikeHeaderRow(rawHeaders)) {
+                                        potentialHeaders = normaliseTableHeaders(rawHeaders);
+                                    }
                                 }
                             }
 
@@ -3902,19 +3936,21 @@ module.exports = async function (app, qs, passport, async, _) {
                     const element = $(selector).first();
                     if (element.length) {
                         // Try to extract headers - be more strict about what constitutes a header
-                        const potentialHeaders = [];
+                        let potentialHeaders = [];
                         const headerRow = element.find('thead tr, tr:first-child').first();
 
                         // Only process if we found a header row
                         if (headerRow.length) {
-                            // Get all cells from the header row, whether they are th or td
+                            // Every cell, blank ones included: the array index is
+                            // what aligns headers to cells, so a gap must not
+                            // close up. See normaliseTableHeaders.
+                            const rawHeaders = [];
                             headerRow.find('th, td').each(function () {
-                                const headerText = $(this).text().trim();
-                                // Only add if it looks like a header (not empty and not a number)
-                                if (headerText && !/^\d+$/.test(headerText)) {
-                                    potentialHeaders.push(headerText);
-                                }
+                                rawHeaders.push($(this).text().trim());
                             });
+                            if (looksLikeHeaderRow(rawHeaders)) {
+                                potentialHeaders = normaliseTableHeaders(rawHeaders);
+                            }
                         }
 
                         // If we found valid headers, try to extract data
@@ -5635,19 +5671,21 @@ module.exports = async function (app, qs, passport, async, _) {
                 const element = $(selector).first();
                 if (element.length) {
                     // Try to extract headers - be more strict about what constitutes a header
-                    const potentialHeaders = [];
+                    let potentialHeaders = [];
                     const headerRow = element.find('thead tr, tr:first-child').first();
 
                     // Only process if we found a header row
                     if (headerRow.length) {
-                        // Get all cells from the header row, whether they are th or td
+                        // Every cell, blank ones included: the array index is
+                        // what aligns headers to cells, so a gap must not
+                        // close up. See normaliseTableHeaders.
+                        const rawHeaders = [];
                         headerRow.find('th, td').each(function () {
-                            const headerText = $(this).text().trim();
-                            // Only add if it looks like a header (not empty and not a number)
-                            if (headerText && !/^\d+$/.test(headerText)) {
-                                potentialHeaders.push(headerText);
-                            }
+                            rawHeaders.push($(this).text().trim());
                         });
+                        if (looksLikeHeaderRow(rawHeaders)) {
+                            potentialHeaders = normaliseTableHeaders(rawHeaders);
+                        }
                     }
 
                     // If we found valid headers, try to extract data

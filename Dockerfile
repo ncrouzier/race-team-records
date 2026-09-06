@@ -67,6 +67,15 @@ COPY --from=build /app/config ./config
 COPY --from=build /app/app ./app
 COPY --from=build /app/package.json /app/server.js ./
 
+# Stamped by .github/workflows/deploy.yml so the running site can report which
+# image it is. Placed after every COPY on purpose: an ENV change invalidates
+# everything below it, and these two change on every single build — up here
+# they would defeat the layer split above and force a full re-pull each time.
+ARG APP_VERSION=dev
+ARG BUILD_DATE=""
+ENV APP_VERSION=$APP_VERSION
+ENV BUILD_DATE=$BUILD_DATE
+
 USER node
 
 EXPOSE 8090

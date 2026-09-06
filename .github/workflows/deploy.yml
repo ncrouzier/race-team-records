@@ -58,6 +58,11 @@ jobs:
             type=raw,value=latest
             type=sha,format=long
 
+      # github.ref_name is the tag on a tag push, the branch on a manual run.
+      - name: Build metadata
+        id: buildmeta
+        run: echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -66,6 +71,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ steps.buildmeta.outputs.date }}
           # Without a cache every run reinstalls all dependencies and re-runs
           # bower from scratch. mode=max keeps the intermediate build stage too.
           cache-from: type=gha

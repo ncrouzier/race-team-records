@@ -77,7 +77,11 @@ app.get('/api/health', function (req, res) {
     res.status(connected ? 200 : 503).json({
         status: connected ? 'ok' : 'degraded',
         db: connected ? 'connected' : 'disconnected',
-        uptime: Math.round(process.uptime())
+        uptime: Math.round(process.uptime()),
+        // Lets a deploy be confirmed from the command line without loading the
+        // site: curl -s .../api/health | jq .version
+        version: process.env.APP_VERSION || 'dev',
+        builtAt: process.env.BUILD_DATE || null
     });
 });
 

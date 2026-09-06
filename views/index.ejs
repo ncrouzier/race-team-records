@@ -386,6 +386,12 @@
 						title="Montgomery County Road Runners Club" href="https://www.mcrrc.org"
 						target="_blank">MCRRC</a></div>
 			</div>
+			<div class="row">
+				<div class="col-sm-12 text-center site-build">
+					<span title="Docker image version<% if (buildDate) { %>, built <%= buildDate %><% } %>"><%= appVersion %></span><% if (buildDate) { %>
+					<span class="site-build-date">built <%= buildDate.substring(0, 10) %></span><% } %>
+				</div>
+			</div>
 		</footer>
 	</div>
 </body>

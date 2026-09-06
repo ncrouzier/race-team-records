@@ -7450,6 +7450,16 @@ footer {
   padding-bottom: 15px;
   font-size: 0.7em;
 }
+.site-build {
+  margin-top: 6px;
+  opacity: 0.55;
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+}
+.site-build .site-build-date::before {
+  content: '·';
+  margin: 0 4px;
+}
 .logo-title {
   margin-top: 80px;
   margin-left: 350px;

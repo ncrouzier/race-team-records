@@ -276,6 +276,81 @@ top, which cover the whole box rather than just the database.
 Also worth a weekly `docker system prune -af` to stop old image layers
 accumulating.
 
+### Restoring an archive
+
+The archives are `mongodump --archive --gzip` output, so `mongorestore` reads
+them directly. Fetch one first if it only exists in Drive:
+
+```bash
+cd /opt/mcrrc
+ls -lh backups/                            # local copies
+rclone lsl gdrive:mcrrc-backups/           # what is off-box
+rclone copy gdrive:mcrrc-backups/mcrrcrecords-<stamp>.archive.gz backups/
+```
+
+**To verify an archive without touching live data** — this is how you satisfy
+the "test a restore" advice above. It restores into a scratch database
+alongside the real one, so nothing in production is affected:
+
+```bash
+docker compose exec -T mongo mongorestore \
+  --uri="mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/?authSource=admin" \
+  --archive --gzip \
+  --nsFrom='mcrrcrecords.*' --nsTo='restoretest.*' \
+  < backups/mcrrcrecords-<stamp>.archive.gz
+
+docker compose exec mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/restoretest?authSource=admin" \
+  --quiet --eval 'db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print(c, db[c].countDocuments()))'
+
+# then throw the scratch copy away
+docker compose exec mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/restoretest?authSource=admin" \
+  --quiet --eval 'db.dropDatabase()'
+```
+
+**To actually restore over production:**
+
+```bash
+cd /opt/mcrrc
+
+# 1. Dump the current state first. If the restore turns out to be the wrong
+#    archive, this is the only way back.
+./backup.sh
+
+# 2. Stop the app so nothing writes mid-restore.
+docker compose stop app
+
+# 3. Restore. --drop replaces each collection present in the archive.
+docker compose exec -T mongo mongorestore \
+  --uri="mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/?authSource=admin" \
+  --archive --gzip --drop \
+  < backups/mcrrcrecords-<stamp>.archive.gz
+
+# 4. Check the counts look like the database you expected.
+docker compose exec mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
+  --quiet --eval 'db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print(c, db[c].countDocuments()))'
+
+# 5. Back up.
+docker compose start app
+```
+
+Two things about `--drop` worth knowing before you rely on it:
+
+- It drops each collection **that exists in the archive**, immediately before
+  writing that collection. Collections created *since* the backup, which the
+  archive knows nothing about, are left in place — so this is not a clean
+  wipe-and-replace of the whole database.
+- Without `--drop`, `mongorestore` merges: existing documents are kept and
+  duplicates skipped by `_id`. Anything added since the backup survives, which
+  usually produces a half-old, half-new state rather than the restore you
+  wanted. Use `--drop` unless you specifically want a merge.
+
+Restoring the `sessions` collection will sign people in or out according to
+whatever was current when the dump ran. Harmless, just unexpected if you have
+not thought about it.
+
 ---
 
 ## 7. Cleanup, once stable

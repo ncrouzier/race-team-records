@@ -5616,7 +5616,10 @@ module.exports = async function (app, qs, passport, async, _) {
         // console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
             user: req.user,
-            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'
+            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js',
+            // Baked into the image at build time; 'dev' when running locally.
+            appVersion: process.env.APP_VERSION || 'dev',
+            buildDate: process.env.BUILD_DATE || ''
         });
     });
 

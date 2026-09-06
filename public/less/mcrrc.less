@@ -68,17 +68,17 @@ footer {
     font-size: 0.7em;
 }
 
-// Image version and build date. Deliberately quiet — useful when confirming a
-// deploy or chasing a bug report, and ignorable the rest of the time.
+// Image version. Deliberately quiet — useful when confirming a deploy or
+// chasing a bug report, and ignorable the rest of the time. The build date
+// lives in the tooltip, set client-side so it reads in the viewer's timezone.
 .site-build {
     margin-top: 6px;
     opacity: 0.55;
     font-size: 0.9em;
     letter-spacing: 0.02em;
 
-    .site-build-date::before {
-        content: '·';
-        margin: 0 4px;
+    .site-build-version[build-stamp] {
+        cursor: pointer;
     }
 }
 

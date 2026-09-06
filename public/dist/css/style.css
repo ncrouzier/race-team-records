@@ -7456,9 +7456,8 @@ footer {
   font-size: 0.9em;
   letter-spacing: 0.02em;
 }
-.site-build .site-build-date::before {
-  content: '·';
-  margin: 0 4px;
+.site-build .site-build-version[build-stamp] {
+  cursor: pointer;
 }
 .logo-title {
   margin-top: 80px;

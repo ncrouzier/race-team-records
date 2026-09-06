@@ -388,12 +388,12 @@
 			</div>
 			<div class="row">
 				<div class="col-sm-12 text-center site-build">
-					<span title="Docker image version<% if (buildDate) { %>, built <%= buildDate %><% } %>"><%= appVersion %></span><% if (buildDate) { %>
-					<span class="site-build-date">built <%= buildDate.substring(0, 10) %></span><% } %>
+					<span class="site-build-version"<% if (buildDate) { %> build-stamp="<%= buildDate %>"<% } %>><%= appVersion %></span>
 				</div>
 			</div>
 		</footer>
 	</div>
+
 </body>
 
 </html>

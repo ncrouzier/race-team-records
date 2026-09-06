@@ -15,7 +15,7 @@ var systeminfoSchema = mongoose.Schema({
 // methods ======================
 
 // keep track of when users are updated and created
-systeminfoSchema.pre('save', function(next, done) {
+systeminfoSchema.pre('save', function() {
     if (this.isNew) {
         this.createdAt = Date.now();
         this.resultUpdate = Date.now();
@@ -25,7 +25,6 @@ systeminfoSchema.pre('save', function(next, done) {
         this.volunteerJobUpdate = Date.now();
     }
     this.updatedAt = Date.now();
-    next();
 });
 
 

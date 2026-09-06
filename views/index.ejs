@@ -3,6 +3,7 @@
 
 <head>
 	<base href="/">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>MCRRC Racing Team</title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
@@ -139,10 +140,14 @@
 								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
 										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
 								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
-								<li ng-class="{active: $state.includes('/activitylogs')}"><a
-										ui-sref="/activitylogs">Activity Log</a></li>
+								<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">
+										Activity Log
+										<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-unseen-badge">{{unseenActivityCount}}</span>
+									</a></li>
 								<li ng-class="{active: $state.includes('/comp-race-forms')}"><a
 										ui-sref="/comp-race-forms">Comp Race Forms</a></li>
+								<li ng-class="{active: $state.includes('/applications')}"><a
+										ui-sref="/applications">Team Applications</a></li>
 								<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
 								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
 										Types</a></li>
@@ -162,10 +167,16 @@
 						<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown
 							on-toggle="toggled(open)">
 							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-								<%= user.username %> <span class="caret"></span>
+								<%= user.username %>
+								<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-nav-dot" title="New activity log entries"></span>
+								<span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu" uib-dropdown-menu>
 								<li><a ui-sref="/profile">My Account</a></li>
+								<li ng-if="unseenActivityCount > 0" ng-cloak><a ui-sref="/activitylogs">
+										<i class="fa fa-list-alt"></i> New activity log entries
+										<span class="crf-unseen-badge">{{unseenActivityCount}}</span>
+									</a></li>
 								<% if (user.member) { %>
 									<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 											Page</a></li>
@@ -223,6 +234,8 @@
 											ui-sref="/stats/requirements">Team Requirements</a></li>
 								<li ng-class="{active: $state.includes('/comp-race-forms')}"><a
 											ui-sref="/comp-race-forms">Comp Race Forms</a></li>
+									<li ng-class="{active: $state.includes('/applications')}"><a
+											ui-sref="/applications">Team Applications</a></li>
 								</ul>
 							</li>
 							<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img
@@ -373,8 +386,14 @@
 						title="Montgomery County Road Runners Club" href="https://www.mcrrc.org"
 						target="_blank">MCRRC</a></div>
 			</div>
+			<div class="row">
+				<div class="col-sm-12 text-center site-build">
+					<span class="site-build-version"<% if (buildDate) { %> build-stamp="<%= buildDate %>"<% } %>><%= appVersion %></span>
+				</div>
+			</div>
 		</footer>
 	</div>
+
 </body>
 
 </html>

@@ -10,16 +10,19 @@ var activityLogSchema = mongoose.Schema({
     targetName: String,
     metadata: mongoose.Schema.Types.Mixed,
     ipAddress: String,
-    createdAt: Date
+    createdAt: Date,
+    // Admins who have individually opened this entry — lets "seen" be
+    // per-entry (opening one log doesn't silently clear others), alongside
+    // each admin's lastSeenActivityLogAt cursor used for bulk mark-all.
+    seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 activityLogSchema.index({ createdAt: -1 });
 
-activityLogSchema.pre('save', function(next) {
+activityLogSchema.pre('save', function() {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
-    next();
 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

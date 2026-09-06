@@ -1,0 +1,84 @@
+<div class="modal-header">
+    <h4 class="modal-title">
+        <i class="fa fa-envelope"></i>
+        {{ type === 'rejection' ? 'Rejection email' : 'Approval email' }} — {{ application.firstname }} {{
+        application.lastname }}
+    </h4>
+</div>
+
+<div class="modal-body">
+
+    <div ng-if="loading" style="text-align:center; padding: 24px;">
+        <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+    </div>
+
+    <div ng-if="!loading">
+
+        <div class="alert alert-warning ta-approve-summary" ng-if="previouslySentAt">
+            <i class="fa fa-history"></i>
+            <div>
+                An email was already sent {{ previouslySentAt | date:'medium' }}. Sending again will deliver another
+                copy to <strong>{{ application.email }}</strong>.
+            </div>
+        </div>
+
+        <div class="ta-approve-note">
+            <i class="fa fa-user"></i>
+            <div>
+                To: <strong>{{ application.email }}</strong>
+                <span ng-if="copy">
+                    <br>{{ copy.mode }}: <strong>{{ copy.address }}</strong>
+                    <span class="text-muted">
+                        — keeps the sent message and any reply in the captains' inbox{{ copy.mode === 'Cc' ? ', and the
+                        applicant can see this address' : ' without showing the address to the applicant' }}
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email-subject">Subject</label>
+            <input type="text" class="form-control" id="email-subject" ng-model="email.subject">
+        </div>
+
+        <div class="form-group">
+            <label>
+                Message
+                <span class="ta-email-tabs">
+                    <button type="button" class="crf-chip" ng-click="view.tab = 'edit'"
+                        ng-class="view.tab === 'edit' ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                        <i class="fa fa-pencil"></i> Edit
+                    </button>
+                    <button type="button" class="crf-chip" ng-click="view.tab = 'preview'"
+                        ng-class="view.tab === 'preview' ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                        <i class="fa fa-eye"></i> Preview
+                    </button>
+                </span>
+            </label>
+
+            <textarea ng-show="view.tab === 'edit'" class="form-control ta-email-body" id="email-body" rows="16"
+                ng-model="email.body"></textarea>
+
+            <div ng-show="view.tab === 'preview'" class="ta-email-preview" ng-bind-html="email.body | unsafe"></div>
+
+            <p class="help-block">
+                HTML — links are supported, e.g.
+                <code>&lt;a href="https://raceteam.mcrrc.org"&gt;the team site&lt;/a&gt;</code>.
+                Generic template for now; edit it here before sending.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="alert alert-danger" ng-if="error">{{ error }}</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="cancel()">Cancel</button>
+    <button class="btn btn-primary" ng-click="send()" ng-disabled="sending || loading">
+        <i class="fa fa-spinner fa-spin" ng-if="sending"></i>
+        <i class="fa fa-paper-plane" ng-if="!sending"></i>
+        {{ previouslySentAt ? 'Send Again' : 'Send Email' }}
+    </button>
+</div>

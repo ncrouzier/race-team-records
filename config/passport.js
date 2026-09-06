@@ -6,6 +6,12 @@ var LocalStrategy  = require('passport-local').Strategy;
 // load up the user model
 var User = require('../app/models/user');
 
+// Escapes regex special characters so a user-supplied string can be used
+// safely inside a RegExp (avoids both broken matches and ReDoS-style injection).
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // expose this function to our app using module.exports
 module.exports = function(passport) {
 
@@ -56,7 +62,7 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(async user => {
+            User.findOne({ 'email' : new RegExp('^' + escapeRegex(email) + '$', 'i') }).then(async user => {
 
                 // check to see if theres already a user with that email
                 if (user) {
@@ -127,7 +133,7 @@ module.exports = function(passport) {
         // find a user whose email is the same as the forms email
         // we are checking to see if the user trying to login already exists
         try{
-            User.findOne({ 'email' :  email }).then(async user =>{
+            User.findOne({ 'email' : new RegExp('^' + escapeRegex(email) + '$', 'i') }).then(async user =>{
                 // if no user is found, return the message
                 if (!user)
                     return done(null, false, req.flash('loginMessage', 'Invalid email or password.'));

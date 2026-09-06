@@ -19,7 +19,7 @@
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
             <a ui-sref="/stats/members">Team Members Stats</a>
         </li>
     </ul>

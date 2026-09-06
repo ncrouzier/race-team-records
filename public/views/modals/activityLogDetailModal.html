@@ -31,36 +31,96 @@
             <td style="font-weight: 600;">IP Address</td>
             <td>{{log.ipAddress}}</td>
         </tr>
-        <tr ng-if="log.metadata.oldValue !== undefined">
-            <td style="font-weight: 600;">Old Value</td>
+        <!-- Bio edits: a single unified diff (formatting kept intact), plus the full before/after for reference -->
+        <tr ng-if="log.action === 'bio_edit' && bioDiffHtml !== undefined">
+            <td style="font-weight: 600;">Diff</td>
             <td>
-                <div ng-if="log.action === 'bio_edit'" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; background: #fdf2f2;">
-                    <span ng-if="log.metadata.oldValue" ng-bind-html="log.metadata.oldValue"></span>
-                    <span ng-if="!log.metadata.oldValue" class="text-muted"><em>empty</em></span>
-                </div>
-                <div ng-if="log.action === 'photo_edit'">
-                    <span ng-if="log.metadata.oldValue">{{log.metadata.oldValue}}</span>
-                    <span ng-if="!log.metadata.oldValue" class="text-muted"><em>empty</em></span>
-                </div>
-                <div ng-if="log.action !== 'bio_edit' && log.action !== 'photo_edit'">
-                    <span>{{log.metadata.oldValue}}</span>
+                <div style="max-height: 260px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px;">
+                    <span ng-if="bioDiffHtml" ng-bind-html="bioDiffHtml | unsafe"></span>
+                    <span ng-if="!bioDiffHtml" class="text-muted"><em>No text</em></span>
                 </div>
             </td>
         </tr>
-        <tr ng-if="log.metadata.newValue !== undefined">
+        <tr ng-if="log.action === 'bio_edit' && log.metadata.oldValue !== undefined">
+            <td style="font-weight: 600;">Old Value</td>
+            <td>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; background: #fdf2f2;">
+                    <span ng-if="log.metadata.oldValue" ng-bind-html="log.metadata.oldValue | unsafe"></span>
+                    <span ng-if="!log.metadata.oldValue" class="text-muted"><em>empty</em></span>
+                </div>
+            </td>
+        </tr>
+        <tr ng-if="log.action === 'bio_edit' && log.metadata.newValue !== undefined">
             <td style="font-weight: 600;">New Value</td>
             <td>
-                <div ng-if="log.action === 'bio_edit'" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; background: #f2fdf3;">
-                    <span ng-if="log.metadata.newValue" ng-bind-html="log.metadata.newValue"></span>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; background: #f2fdf3;">
+                    <span ng-if="log.metadata.newValue" ng-bind-html="log.metadata.newValue | unsafe"></span>
                     <span ng-if="!log.metadata.newValue" class="text-muted"><em>empty</em></span>
                 </div>
-                <div ng-if="log.action === 'photo_edit'">
-                    <span ng-if="log.metadata.newValue">{{log.metadata.newValue}}</span>
-                    <span ng-if="!log.metadata.newValue" class="text-muted"><em>empty</em></span>
+            </td>
+        </tr>
+
+        <!-- Comp race form entry/form edits: only the fields that changed, old -> new -->
+        <tr ng-if="(log.action === 'comprace_response_edit' || log.action === 'comprace_form_edit') && fieldDiffs">
+            <td style="font-weight: 600;">Changes</td>
+            <td>
+                <table class="table table-condensed" style="margin-bottom: 0;" ng-if="fieldDiffs.length">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Old</th>
+                            <th></th>
+                            <th>New</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="row in fieldDiffs">
+                            <td style="font-weight: 600; white-space: nowrap;">{{row.label}}</td>
+                            <td class="diff-remove">{{row.oldDisplay}}</td>
+                            <td><i class="fa fa-long-arrow-right text-muted"></i></td>
+                            <td class="diff-add">{{row.newDisplay}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <span ng-if="!fieldDiffs.length" class="text-muted"><em>No changes recorded</em></span>
+                <div ng-if="commentsDiff && commentsDiff.length" style="margin-top: 10px;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">Comments diff</div>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 8px; white-space: pre-wrap;">
+                        <span ng-repeat="seg in commentsDiff"
+                            ng-class="{'diff-add': seg.type === 'add', 'diff-remove': seg.type === 'remove'}">{{seg.text}}</span>
+                    </div>
                 </div>
-                <div ng-if="log.action !== 'bio_edit' && log.action !== 'photo_edit'">
-                    <span>{{log.metadata.newValue}}</span>
-                </div>
+            </td>
+        </tr>
+
+        <!-- Comp race form entry/form creation: nothing to diff, just what was set -->
+        <tr ng-if="(log.action === 'comprace_response_submit' || log.action === 'comprace_form_create') && valueRows">
+            <td style="font-weight: 600;">Details</td>
+            <td>
+                <table class="table table-condensed" style="margin-bottom: 0;" ng-if="valueRows.length">
+                    <tbody>
+                        <tr ng-repeat="row in valueRows">
+                            <td style="font-weight: 600; white-space: nowrap;">{{row.label}}</td>
+                            <td>{{row.display}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Everything else (photo_edit, etc.) keeps the plain old/new rows -->
+        <tr ng-if="log.metadata.oldValue !== undefined && log.action === 'photo_edit'">
+            <td style="font-weight: 600;">Old Value</td>
+            <td>
+                <span ng-if="log.metadata.oldValue">{{log.metadata.oldValue}}</span>
+                <span ng-if="!log.metadata.oldValue" class="text-muted"><em>empty</em></span>
+            </td>
+        </tr>
+        <tr ng-if="log.metadata.newValue !== undefined && log.action === 'photo_edit'">
+            <td style="font-weight: 600;">New Value</td>
+            <td>
+                <span ng-if="log.metadata.newValue">{{log.metadata.newValue}}</span>
+                <span ng-if="!log.metadata.newValue" class="text-muted"><em>empty</em></span>
             </td>
         </tr>
     </table>

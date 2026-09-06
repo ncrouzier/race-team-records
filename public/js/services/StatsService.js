@@ -549,7 +549,10 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
             ResultsService.getRaces({ sort: '-racedate' }),
             MembersService.getMembers({
                 sort: 'firstname',
-                select: '-bio -personalBests',
+                // Keep personalBests.result.agegrade (needed for the age-grade
+                // histogram) but drop the heavy embedded race/members/etc.
+                // subdocuments nested under each personal best's result.
+                select: '-bio -personalBests.result.race -personalBests.result.members -personalBests.result.legs -personalBests.result.customOptions -personalBests.result.achievements -personalBests.result.comments -personalBests.result.resultlink -personalBests.result.ranking',
             })
         ]).then(function(results) {
             var data = {

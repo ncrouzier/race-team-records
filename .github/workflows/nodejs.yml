@@ -1,24 +1,44 @@
-name: Node.js CI
+name: CI
 
-on: [push]
+# Lint, build and test on every push. The deploy workflow
+# (.github/workflows/deploy.yml) publishes the image separately; this one only
+# tells you whether the tree is healthy.
+
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [10.x, 12.x]
+    # No Mongo service here: the one suite that needed a database has been
+    # removed. Reinstate one if a test that talks to Mongo comes back.
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - run: npm run build --if-present
-    - run: npm test
-      env:
-        CI: true
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Was pinned to Node 10 and 12, neither of which can run this app.
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # public/libs is gitignored and populated only by bower, yet the LESS
+      # build reads the Bootstrap 3 sources out of it and copy:assets pulls the
+      # webfonts from it. Without this, `npm run build` fails.
+      - name: Install bower packages
+        run: npx bower install --allow-root --config.interactive=false
+
+      - run: npm run lint
+
+      - run: npm run build
+
+      # There are no test files at present, and bare `jest` exits 1 when it
+      # finds none. The step is kept — blocking, so a future failure is a real
+      # failure — and will start doing useful work the moment a test lands
+      # under tests/.
+      - name: Test
+        run: npm test -- --passWithNoTests

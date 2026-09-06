@@ -884,6 +884,274 @@ angular.module('mcrrcApp').directive('parkrunYearlyChart', ['$timeout', function
     };
 }]);
 
+angular.module('mcrrcApp').directive('ageDistributionChart', ['$timeout', function ($timeout) {
+    return {
+        restrict: 'E',
+        scope: {
+            data: '=',
+            meanAge: '=',
+            medianAge: '=',
+            bucketSize: '='
+        },
+        template: '<div style="position: relative; height: 250px;"><canvas></canvas></div>',
+        link: function (scope, element) {
+            var chart = null;
+
+            // Pixel x-position within the bar for `value`, interpolated across
+            // whichever bucket it falls in — works for both whole-number and
+            // fractional values (e.g. a mean of 42.3) at any bucket size.
+            function xForValue(chartInstance, value) {
+                if (value == null || !scope.data.length) return null;
+                var bucketSize = scope.bucketSize || 1;
+                var firstLower = scope.data[0].lower;
+                var idx = Math.floor((value - firstLower) / bucketSize);
+                idx = Math.max(0, Math.min(scope.data.length - 1, idx));
+                var frac = (value - scope.data[idx].lower) / bucketSize;
+                frac = Math.max(0, Math.min(1, frac));
+
+                var bar = chartInstance.getDatasetMeta(0).data[idx];
+                if (!bar) return null;
+                return bar.x - bar.width / 2 + frac * bar.width;
+            }
+
+            // Reserved band above the chart area (via options.layout.padding.top)
+            // where the Avg/Median labels are drawn, so they never sit over the bars.
+            var LABEL_BAND_HEIGHT = 32;
+
+            // Draws a dashed vertical reference line + label for the mean/median age.
+            // The line spans the plot area; the label itself is drawn entirely above
+            // chartArea.top, inside the reserved padding band.
+            var referenceLinesPlugin = {
+                id: 'ageReferenceLines',
+                afterDraw: function (chartInstance) {
+                    var meanX = xForValue(chartInstance, scope.meanAge);
+                    var medianX = xForValue(chartInstance, scope.medianAge);
+                    if (meanX == null && medianX == null) return;
+
+                    var ctx = chartInstance.ctx;
+                    var top = chartInstance.chartArea.top;
+                    var bottom = chartInstance.chartArea.bottom;
+                    // Stack the labels into two rows if the lines land close together
+                    // so the text itself doesn't overlap.
+                    var closeTogether = meanX != null && medianX != null && Math.abs(meanX - medianX) < 55;
+
+                    function drawLine(x, color, text, labelY) {
+                        if (x == null) return;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.setLineDash([5, 4]);
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        ctx.moveTo(x, top);
+                        ctx.lineTo(x, bottom);
+                        ctx.stroke();
+
+                        ctx.setLineDash([]);
+                        ctx.font = 'bold 11px Arial';
+                        ctx.fillStyle = color;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(text, Math.min(Math.max(x, 30), chartInstance.chartArea.right - 30), labelY);
+                        ctx.restore();
+                    }
+
+                    // Both rows live above chartArea.top, in the space reserved by
+                    // layout.padding.top — never inside the plotted bar area.
+                    var lowerRowY = top - 4;
+                    var upperRowY = top - 4 - 16;
+
+                    drawLine(meanX, '#e74c3c', 'Avg ' + scope.meanAge, closeTogether ? upperRowY : lowerRowY);
+                    drawLine(medianX, '#8e44ad', 'Median ' + scope.medianAge, lowerRowY);
+                }
+            };
+
+            function renderChart() {
+                if (!scope.data || scope.data.length === 0) return;
+
+                var canvas = element.find('canvas')[0];
+                var ctx = canvas.getContext('2d');
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                var labels = scope.data.map(function (d) { return d.label; });
+                var counts = scope.data.map(function (d) { return d.count; });
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Members',
+                            data: counts,
+                            backgroundColor: '#3498db',
+                            borderColor: '#3498db',
+                            borderWidth: 1
+                        }]
+                    },
+                    plugins: [referenceLinesPlugin],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: { top: LABEL_BAND_HEIGHT }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return context.parsed.y + ' member' + (context.parsed.y === 1 ? '' : 's');
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Age' }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    precision: 0
+                                },
+                                title: { display: true, text: 'Members' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            scope.$watchCollection('data', function (newVal) {
+                if (newVal && newVal.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$watchGroup(['meanAge', 'medianAge', 'bucketSize'], function () {
+                if (scope.data && scope.data.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$on('$destroy', function () {
+                if (chart) chart.destroy();
+            });
+        }
+    };
+}]);
+
+// Companion chart to ageDistributionChart — shares the exact same bucketed
+// `data` array (each entry has count + avgAgeGrade + ageGradeMemberCount),
+// so the two charts' brackets always line up. Buckets with no member
+// personal-best data render as a gap (avgAgeGrade is null).
+angular.module('mcrrcApp').directive('ageGradeDistributionChart', ['$timeout', function ($timeout) {
+    return {
+        restrict: 'E',
+        scope: {
+            data: '=',
+            metricLabel: '@',
+            zoomed: '='
+        },
+        template: '<div style="position: relative; height: 250px;"><canvas></canvas></div>',
+        link: function (scope, element) {
+            var chart = null;
+
+            // When zoomed, fits the y-axis tightly around the actual values being
+            // shown (e.g. mostly 60-90%) instead of the full 0-100 range, so small
+            // differences between bars are visible. Recomputed from whatever data
+            // is currently displayed, so it adapts to bucket size/metric/status.
+            function computeYRange(values) {
+                var nums = values.filter(function (v) { return v != null; });
+                if (!nums.length) return null;
+                var min = Math.min.apply(null, nums);
+                var max = Math.max.apply(null, nums);
+                var padding = (max - min) * 0.15 || 5; // flat data gets a flat +/-5 pad
+                return {
+                    min: Math.max(0, Math.floor(min - padding)),
+                    max: Math.ceil(max + padding)
+                };
+            }
+
+            function renderChart() {
+                if (!scope.data || scope.data.length === 0) return;
+
+                var canvas = element.find('canvas')[0];
+                var ctx = canvas.getContext('2d');
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                var label = scope.metricLabel || 'Avg Age Grade';
+                var labels = scope.data.map(function (d) { return d.label; });
+                var values = scope.data.map(function (d) { return d.avgAgeGrade; });
+                var memberCounts = scope.data.map(function (d) { return d.ageGradeMemberCount || 0; });
+                var yRange = scope.zoomed ? computeYRange(values) : null;
+
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: values,
+                            backgroundColor: '#f39c12',
+                            borderColor: '#f39c12',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        if (context.parsed.y == null) return 'No personal bests on file';
+                                        var n = memberCounts[context.dataIndex];
+                                        return label + ': ' + context.parsed.y + '% (' + n + ' member' + (n === 1 ? '' : 's') + ')';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Age' }
+                            },
+                            y: {
+                                beginAtZero: !yRange,
+                                min: yRange ? yRange.min : undefined,
+                                max: yRange ? yRange.max : undefined,
+                                title: { display: true, text: label + ' (%)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            scope.$watchCollection('data', function (newVal) {
+                if (newVal && newVal.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$watchGroup(['metricLabel', 'zoomed'], function () {
+                if (scope.data && scope.data.length > 0) {
+                    $timeout(renderChart);
+                }
+            });
+
+            scope.$on('$destroy', function () {
+                if (chart) chart.destroy();
+            });
+        }
+    };
+}]);
+
 angular.module('mcrrcApp').directive('headToHeadBarChart', ['$timeout', function ($timeout) {
     return {
         restrict: 'E',

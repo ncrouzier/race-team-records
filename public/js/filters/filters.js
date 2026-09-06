@@ -394,6 +394,49 @@ app.filter('memberAgeFilter', function () {
     };
 });
 
+// Total days a member has actually been on the team, summed across their
+// membershipDates periods. Some members have gaps (lapsed and rejoined), so
+// this can't just be "now - first start date" — periods are merged first so
+// overlapping entries aren't double-counted and gaps between periods (lapses)
+// simply aren't counted at all.
+function calculateDaysOnTeam(membershipDates, asOfDate) {
+    if (!membershipDates || !membershipDates.length) return 0;
+    asOfDate = asOfDate ? new Date(asOfDate) : new Date();
+
+    var periods = membershipDates
+        .filter(function (p) { return p && p.start; })
+        .map(function (p) {
+            var start = new Date(p.start);
+            var end = p.end ? new Date(p.end) : asOfDate;
+            if (end > asOfDate) end = asOfDate;
+            return { start: start, end: end };
+        })
+        .filter(function (p) { return p.end > p.start; })
+        .sort(function (a, b) { return a.start - b.start; });
+
+    if (!periods.length) return 0;
+
+    var merged = [periods[0]];
+    for (var i = 1; i < periods.length; i++) {
+        var last = merged[merged.length - 1];
+        var cur = periods[i];
+        if (cur.start <= last.end) {
+            if (cur.end > last.end) last.end = cur.end;
+        } else {
+            merged.push(cur);
+        }
+    }
+
+    var totalMs = merged.reduce(function (sum, p) { return sum + (p.end - p.start); }, 0);
+    return Math.round(totalMs / (1000 * 60 * 60 * 24));
+}
+
+app.filter('daysOnTeamFilter', function () {
+    return function (member) {
+        return calculateDaysOnTeam(member && member.membershipDates);
+    };
+});
+
 
 
 app.filter('membersNamesWithAgeFilter', function () {
@@ -509,6 +552,22 @@ app.filter('categoryFilter', function () {
         return calculateCategory(birthdate);
     };
 
+});
+// What to print where a member's sex is shown next to their category.
+// Members who have told us their pronouns get those instead. Held here
+// rather than inline in each template because the same header block is
+// repeated across every member tab, and because this is the one place to
+// change once `pronouns` becomes a field on the member record.
+app.filter('memberGenderFilter', function () {
+    var PRONOUNS = {
+        'Adrian Spencer': 'He/Him'
+    };
+
+    return function (member) {
+        if (!member) return '';
+        var name = (member.firstname || '') + ' ' + (member.lastname || '');
+        return PRONOUNS[name.trim()] || member.sex || '';
+    };
 });
 app.filter('memberFilter', function () {
     return function (members, query) {
@@ -1149,6 +1208,18 @@ app.filter('sortMembers', function () {
                     }
                     return 0;
                 });
+            } else if (type === "daysonteam") {
+                sorted.sort(function (a, b) {
+                    var daysA = calculateDaysOnTeam(a.membershipDates);
+                    var daysB = calculateDaysOnTeam(b.membershipDates);
+                    if (daysA < daysB) {
+                        return 1;
+                    }
+                    if (daysA > daysB) {
+                        return -1;
+                    }
+                    return 0;
+                });
             } else if (type === "numberofraces") {
                 sorted.sort(function (a, b) {
                     if (a.numberofraces < b.numberofraces) {
@@ -1272,5 +1343,21 @@ app.filter('stripTags', function () {
     return function (input) {
         if (!input) return '';
         return String(input).replace(/<[^>]+>/g, '');
+    };
+});
+
+// Formats a date in America/New_York (DC-area) time, DST-aware. AngularJS's
+// built-in `date` filter only accepts fixed UTC offsets, which is wrong half
+// the year — Intl.DateTimeFormat handles the EST/EDT switch correctly.
+app.filter('etDate', function () {
+    return function (input) {
+        if (!input) return '';
+        var d = new Date(input);
+        if (isNaN(d.getTime())) return '';
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit',
+            timeZone: 'America/New_York', timeZoneName: 'short'
+        }).format(d);
     };
 });

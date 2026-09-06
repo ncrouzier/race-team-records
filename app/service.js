@@ -121,7 +121,7 @@ module.exports = {
                 },
                 {
                     upsert: true, // Create if doesn't exist
-                    new: true // Return the updated document
+                    returnDocument: 'after' // Return the updated document
                 }
             );
 
@@ -1654,6 +1654,26 @@ module.exports = {
             console.error('Error logging activity:', err);
             return null;
         }
+    },
+
+    // How many activity log entries are unseen by this admin: newer than
+    // their "last seen" cursor (a first-time check starts the cursor at
+    // now, rather than counting the whole history) and not individually
+    // opened since. Shared by the response-header middleware in server.js
+    // and the GET /api/activitylogs/unseen-count endpoint so both agree.
+    getUnseenActivityLogCount: async function (user) {
+        if (!user || user.role !== 'admin') return 0;
+        const User = require('./models/user');
+        let since = user.lastSeenActivityLogAt;
+        if (!since) {
+            since = new Date();
+            await User.updateOne({ _id: user._id }, { lastSeenActivityLogAt: since });
+            user.lastSeenActivityLogAt = since;
+        }
+        return ActivityLog.countDocuments({
+            createdAt: { $gt: since },
+            seenBy: { $ne: user._id }
+        });
     },
 
     // route middleware to make sure a user is logged in

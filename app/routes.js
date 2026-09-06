@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const service = require('./service');
@@ -9,6 +10,37 @@ const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const Banner = require('./models/banner');
+
+// Table headers scraped from the wild are routinely blank or repeated. The
+// MCRRC result pages have both: an unlabelled column holding the surname, and
+// "Pace" twice for net and gun pace.
+//
+// Rows are keyed by header name, so the old approach of dropping blanks while
+// still indexing <td>s positionally shifted every later column onto the wrong
+// header — surnames landed under "Sex", ages under "City" — and a repeated name
+// silently overwrote its twin. Keep every column, in place, under a unique name.
+function normaliseTableHeaders(rawHeaders) {
+    const taken = new Set();
+    return rawHeaders.map(function (raw, index) {
+        const base = (raw || '').trim() || 'Column ' + (index + 1);
+        let name = base;
+        let n = 2;
+        // Guard against a source that already contains "Pace (2)" literally.
+        while (taken.has(name)) {
+            name = base + ' (' + n + ')';
+            n++;
+        }
+        taken.add(name);
+        return name;
+    });
+}
+
+// A header row of nothing but numbers is really a data row.
+function looksLikeHeaderRow(rawHeaders) {
+    return rawHeaders.some(function (h) {
+        return h && !/^\d+$/.test(h);
+    });
+}
 
 const bioSanitizeOptions = {
     allowedTags: ['span', 'div', 'b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
@@ -114,6 +146,10 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
     // PASSWORD VALIDATION =================
     // =====================================
+    function escapeRegex(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
     function validatePassword(password) {
         if (!password || password.length < 8) {
             return 'Password must be at least 8 characters long.';
@@ -336,7 +372,7 @@ module.exports = async function (app, qs, passport, async, _) {
         var token = crypto.randomBytes(20).toString('hex');
         var User = require('./models/user');
 
-        User.findOne({ email: req.body.email }).then(function (user) {
+        User.findOne({ email: new RegExp('^' + escapeRegex(req.body.email.trim()) + '$', 'i') }).then(function (user) {
             // Always return same message to prevent email enumeration
             if (!user) {
                 return res.status(200).json({
@@ -448,6 +484,119 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     });
 
+    // =====================================
+    // MAGIC LINK LOGIN ====================
+    // =====================================
+
+    // Only a same-site relative path is allowed here — anything else (an
+    // absolute URL, or a protocol-relative "//host/…") could be used to
+    // redirect a logged-in session to an attacker-controlled site.
+    function isSafeReturnPath(path) {
+        return typeof path === 'string' && /^\/(?!\/)/.test(path);
+    }
+
+    // Request a one-click login link by email
+    app.post('/api/login/magic', function (req, res) {
+        if (!req.body.email) {
+            return res.status(400).json({ message: 'Email address is required.' });
+        }
+
+        var returnTo = isSafeReturnPath(req.body.returnTo) ? req.body.returnTo : null;
+        var token = crypto.randomBytes(20).toString('hex');
+        var User = require('./models/user');
+
+        // Always return the same message to prevent email enumeration
+        var genericResponse = { message: 'If an account with that email exists, a login link has been sent.' };
+
+        User.findOne({ email: new RegExp('^' + escapeRegex(req.body.email.trim()) + '$', 'i') }).then(function (user) {
+            if (!user) {
+                return res.status(200).json(genericResponse);
+            }
+
+            // Disabled accounts can't log in at all — don't hand out a working
+            // link, but keep the response identical either way.
+            if (!user.enabled) {
+                return res.status(200).json(genericResponse);
+            }
+
+            var hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+            user.magicLoginTokenHash = hashedToken;
+            user.magicLoginTokenExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+            user.save().then(function () {
+                var loginUrl = process.env.SITE_URL + '/magic-login/' + token;
+                if (returnTo) {
+                    loginUrl += '?returnTo=' + encodeURIComponent(returnTo);
+                }
+
+                transport.sendMail({
+                    from: {
+                        name: 'MCRRC Racing Team',
+                        address: process.env.MCRRC_FROM_EMAIL
+                    },
+                    to: user.email,
+                    subject: 'MCRRC Racing Team - Your Login Link',
+                    text: 'You are receiving this because you (or someone else) asked to log in to your MCRRC Racing Team account with an email link.\n\n' +
+                        'Please click on the following link, or paste it into your browser to log in:\n\n' +
+                        loginUrl + '\n\n' +
+                        'This link will expire in 15 minutes and can only be used once.\n\n' +
+                        'If you did not request this, please ignore this email — your account is unaffected.\n'
+                }, function (error, response) {
+                    if (error) {
+                        console.error('Error sending magic login email:', error);
+                        return res.status(500).json({ message: 'Error sending email. Please try again later.' });
+                    }
+                    res.status(200).json(genericResponse);
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in magic login request:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // Consume a login link and log the user in. POST rather than GET, and
+    // requires an explicit click on the landing page (no auto-submit on load)
+    // so that email-security link scanners can't burn the single-use token
+    // before the real user gets to it.
+    app.post('/api/login/magic/:token', function (req, res) {
+        var hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        var User = require('./models/user');
+
+        User.findOne({
+            magicLoginTokenHash: hashedToken,
+            magicLoginTokenExpires: { $gt: Date.now() }
+        }).then(function (user) {
+            if (!user) {
+                return res.status(400).json({ message: 'This login link is invalid or has expired.' });
+            }
+            if (!user.enabled) {
+                return res.status(403).json({ message: 'Your account is pending approval by an administrator.' });
+            }
+
+            // Single use — clear the token before establishing the session
+            user.magicLoginTokenHash = undefined;
+            user.magicLoginTokenExpires = undefined;
+
+            var nowdate = new Date();
+            user.lastLogin = nowdate;
+            user.lastActive = nowdate;
+
+            user.save().then(function () {
+                req.logIn(user, function (err) {
+                    if (err) {
+                        console.error('Error logging in via magic link:', err);
+                        return res.status(500).json({ message: 'An error occurred. Please try again later.' });
+                    }
+                    res.status(200).json({ user: req.user });
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in magic login verify:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
     const SystemInfo = require('./models/systeminfo');
     const RaceType = require('./models/racetype');
     const Member = require('./models/member');
@@ -456,6 +605,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const AgeGrading = require('./models/agegrading');
     const VolunteerJob = require('./models/volunteerjob');
     const ActivityLog = require('./models/activitylog');
+    const TeamApplication = require('./models/teamapplication');
 
 
     // =====================================
@@ -554,7 +704,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const updated = await Banner.findByIdAndUpdate(
                 req.params.id,
                 { members, pinned, titleTheme, copyright },
-                { new: true, runValidators: true }
+                { returnDocument: 'after', runValidators: true }
             ).populate('members', 'firstname lastname');
             if (!updated) return res.status(404).json({ error: 'Banner not found' });
             res.json(updated);
@@ -652,7 +802,7 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.select(select);
         }
         try {
-            query.exec().then(members => {
+            query.lean().exec().then(members => {
                 // if there is an error retrieving, send the error. nothing after res.send(err) will execute                    
                 res.json(members); // return all members in JSON format
             });
@@ -685,7 +835,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!req.isAuthenticated()) {
                 query = query.select('-teamRequirementStats');
             }
-            query.exec().then(member => {
+            query.lean().exec().then(member => {
                 if (member) {
                     res.json(member);
                 } else {
@@ -1059,7 +1209,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(jobs => {
+            query.lean().exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
@@ -1436,7 +1586,7 @@ module.exports = async function (app, qs, passport, async, _) {
         query = query.select("-createdAt -updatedAt");
 
         try {
-            query.exec().then(results => {
+            query.lean().exec().then(results => {
                 let filteredResult = results;
                 if (req.query.filters) {
                     const filters = JSON.parse(req.query.filters);
@@ -1647,7 +1797,7 @@ module.exports = async function (app, qs, passport, async, _) {
                             customOptions: resultData.customOptions,
                             achievements: resultData.achievements
                         },
-                        { new: true }
+                        { returnDocument: 'after' }
                     );
 
                     if (updatedResult) {
@@ -2051,7 +2201,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(async races => {
+            query.lean().exec().then(async races => {
                 if (req.query.withCount === 'true') {
                     const Result = require('./models/result');
                     const resultCounts = await Result.aggregate([
@@ -2060,10 +2210,11 @@ module.exports = async function (app, qs, passport, async, _) {
                     ]);
                     const countMap = {};
                     resultCounts.forEach(rc => { countMap[rc._id.toString()] = rc.count; });
+                    // lean() already yields plain objects, so the previous
+                    // toObject() call would throw here.
                     const racesWithCount = races.map(r => {
-                        const raceObj = r.toObject();
-                        raceObj.resultCount = countMap[r._id.toString()] || 0;
-                        return raceObj;
+                        r.resultCount = countMap[r._id.toString()] || 0;
+                        return r;
                     });
                     res.json(racesWithCount);
                 } else {
@@ -2348,7 +2499,32 @@ module.exports = async function (app, qs, passport, async, _) {
     // });
 
     // get raceinfo list
+    // Holds the gzipped response bytes rather than the result objects. This
+    // endpoint returns ~800KB gzipped (several MB raw), and caching the objects
+    // still meant re-running JSON.stringify and gzip on every hit — which was
+    // essentially its entire response time. Now a cache hit is a buffer write.
     var raceInfosCache = {};
+
+    // The compression middleware skips any response that already carries a
+    // Content-Encoding ("already encoded"), so writing pre-gzipped bytes here
+    // does not get double-compressed.
+    function sendRaceInfos(req, res, entry) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        // Two representations share this URL, so caches must key on the header.
+        res.setHeader('Vary', 'Accept-Encoding');
+
+        if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+            res.setHeader('Content-Encoding', 'gzip');
+            return res.send(entry.gzip);
+        }
+
+        // Effectively never taken by a real browser. Inflating on demand beats
+        // keeping a second, several-MB copy of the JSON resident for it.
+        zlib.gunzip(entry.gzip, function (err, raw) {
+            if (err) return res.status(500).send(err);
+            res.send(raw);
+        });
+    }
 
     app.get('/api/raceinfos', async function (req, res) {
         const sort = req.query.sort;
@@ -2368,7 +2544,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 );
                 const cached = raceInfosCache[cacheKey];
                 if (cached && cached.timestamp >= latestUpdate) {
-                    return res.json(cached.data);
+                    return sendRaceInfos(req, res, cached);
                 }
             }
         } catch (err) {
@@ -2445,12 +2621,23 @@ module.exports = async function (app, qs, passport, async, _) {
                 results.forEach(function (resu) {
                     resu.results = _.sortBy(resu.results, 'time');
                 });
-                // Cache the results
-                raceInfosCache[cacheKey] = {
-                    data: results,
-                    timestamp: Date.now()
-                };
-                res.json(results); // return all members in JSON format
+
+                // Compress once, on the miss, and cache the bytes. Async
+                // rather than gzipSync: this is several MB, and blocking the
+                // event loop for it would stall every other request on what is
+                // a single-core box.
+                zlib.gzip(JSON.stringify(results), function (err, buf) {
+                    if (err) {
+                        // Fall back to the ordinary path rather than 500 —
+                        // the response is still perfectly serveable.
+                        return res.json(results);
+                    }
+                    raceInfosCache[cacheKey] = {
+                        gzip: buf,
+                        timestamp: Date.now()
+                    };
+                    sendRaceInfos(req, res, raceInfosCache[cacheKey]);
+                });
             });
         } catch (err) {
             res.send(err);
@@ -3176,7 +3363,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.exec().then(racetypes => {
+            query.lean().exec().then(racetypes => {
                 res.json(racetypes);
             });
         } catch (err) {
@@ -3481,7 +3668,7 @@ module.exports = async function (app, qs, passport, async, _) {
                         const element = $(selector).first();
                         if (element.length) {
                             // Try to extract headers - be more strict about what constitutes a header
-                            const potentialHeaders = [];
+                            let potentialHeaders = [];
                             const headerRow = element.find('thead tr, tr:first-child').first();
 
                             // Only process if we found a header row
@@ -3490,13 +3677,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                 const allCellsAreTh = headerRow.find('td').length === 0;
 
                                 if (allCellsAreTh) {
+                                    const rawHeaders = [];
                                     headerRow.find('th').each(function () {
-                                        const headerText = $(this).text().trim();
-                                        // Only add if it looks like a header (not empty and not a number)
-                                        if (headerText && !/^\d+$/.test(headerText)) {
-                                            potentialHeaders.push(headerText);
-                                        }
+                                        // Every cell, blank ones included: the
+                                        // array index is what aligns headers to
+                                        // <td>s, so a gap must not close up.
+                                        rawHeaders.push($(this).text().trim());
                                     });
+                                    if (looksLikeHeaderRow(rawHeaders)) {
+                                        potentialHeaders = normaliseTableHeaders(rawHeaders);
+                                    }
                                 }
                             }
 
@@ -3746,19 +3936,21 @@ module.exports = async function (app, qs, passport, async, _) {
                     const element = $(selector).first();
                     if (element.length) {
                         // Try to extract headers - be more strict about what constitutes a header
-                        const potentialHeaders = [];
+                        let potentialHeaders = [];
                         const headerRow = element.find('thead tr, tr:first-child').first();
 
                         // Only process if we found a header row
                         if (headerRow.length) {
-                            // Get all cells from the header row, whether they are th or td
+                            // Every cell, blank ones included: the array index is
+                            // what aligns headers to cells, so a gap must not
+                            // close up. See normaliseTableHeaders.
+                            const rawHeaders = [];
                             headerRow.find('th, td').each(function () {
-                                const headerText = $(this).text().trim();
-                                // Only add if it looks like a header (not empty and not a number)
-                                if (headerText && !/^\d+$/.test(headerText)) {
-                                    potentialHeaders.push(headerText);
-                                }
+                                rawHeaders.push($(this).text().trim());
                             });
+                            if (looksLikeHeaderRow(rawHeaders)) {
+                                potentialHeaders = normaliseTableHeaders(rawHeaders);
+                            }
                         }
 
                         // If we found valid headers, try to extract data
@@ -3941,6 +4133,66 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // =====================================
+    // RUNNER STYLE ========================
+    // =====================================
+
+    // Appearance of the age grade podium runner, kept on the account so it
+    // follows the member between browsers. Anonymous visitors keep theirs in
+    // localStorage only.
+
+    // Values land in SVG fill attributes, so only exact shapes are accepted:
+    // the literal 'random', a hex colour, or a small hairstyle index. Anything
+    // else is dropped rather than corrected.
+    const RUNNER_COLOUR_FIELDS = ['hair', 'skin', 'shorts', 'shoes'];
+    const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
+
+    function sanitizeRunnerPref(input) {
+        if (!input || typeof input !== 'object') return null;
+        const clean = {};
+
+        RUNNER_COLOUR_FIELDS.forEach(function (field) {
+            const value = input[field];
+            if (value === 'random' || (typeof value === 'string' && HEX_COLOUR.test(value))) {
+                clean[field] = value;
+            }
+        });
+
+        const style = input.hairStyle;
+        if (style === 'random') {
+            clean.hairStyle = 'random';
+        } else if (Number.isInteger(style) && style >= 0 && style < 20) {
+            clean.hairStyle = style;
+        }
+
+        return Object.keys(clean).length ? clean : null;
+    }
+
+    app.get('/api/users/me/runner-style', service.isLoggedIn, function (req, res) {
+        res.json({ runnerStyle: req.user.runnerStyle || null });
+    });
+
+    app.put('/api/users/me/runner-style', service.isLoggedIn, async function (req, res) {
+        try {
+            const incoming = req.body && req.body.runnerStyle;
+            if (!incoming || typeof incoming !== 'object') {
+                return res.status(400).json({ error: 'runnerStyle is required.' });
+            }
+
+            const runnerStyle = {};
+            const male = sanitizeRunnerPref(incoming.male);
+            const female = sanitizeRunnerPref(incoming.female);
+            if (male) runnerStyle.male = male;
+            if (female) runnerStyle.female = female;
+
+            await User.updateOne({ _id: req.user._id }, { runnerStyle: runnerStyle });
+            res.json({ runnerStyle: runnerStyle });
+        } catch (err) {
+            console.error('Error saving runner style:', err);
+            res.status(500).json({ error: 'Could not save your runner style.' });
+        }
+    });
+
+    // =====================================
     // ACTIVITY LOGS =======================
     // =====================================
 
@@ -3974,7 +4226,16 @@ module.exports = async function (app, qs, passport, async, _) {
                 .sort('-createdAt')
                 .skip(skip)
                 .limit(limit)
-                .exec();
+                .lean();
+
+            // Same "unseen" definition as /unseen-count: newer than this
+            // admin's last-seen cursor and not individually opened since.
+            const since = req.user.lastSeenActivityLogAt || new Date();
+            const myId = req.user._id.toString();
+            logs.forEach(function (log) {
+                log.unseen = log.createdAt > since && !(log.seenBy || []).some(function (id) { return id.toString() === myId; });
+                delete log.seenBy;
+            });
 
             res.json({
                 logs: logs,
@@ -4007,6 +4268,101 @@ module.exports = async function (app, qs, passport, async, _) {
         } catch (err) {
             console.error('Error deleting activity log:', err);
             res.status(500).json({ error: 'Error deleting activity log entry' });
+        }
+    });
+
+    // How many log entries are still unseen by this admin: created since
+    // their "last seen" cursor (an admin who has never checked gets 0, not
+    // the whole history — the cursor starts now rather than flooding them
+    // with a huge backlog count) AND not individually opened since.
+    app.get('/api/activitylogs/unseen-count', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const count = await service.getUnseenActivityLogCount(req.user);
+            res.json({ count });
+        } catch (err) {
+            console.error('Error fetching unseen activity log count:', err);
+            res.status(500).json({ error: 'Error fetching unseen count' });
+        }
+    });
+
+    // Mark one entry as seen by this admin — called when they open its detail view.
+    app.post('/api/activitylogs/:id/seen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            await ActivityLog.updateOne({ _id: req.params.id }, { $addToSet: { seenBy: req.user._id } });
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Error marking activity log entry as seen:', err);
+            res.status(500).json({ error: 'Error marking entry as seen' });
+        }
+    });
+
+    // Mark all current activity log entries as seen by this admin
+    app.post('/api/activitylogs/mark-seen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const User = require('./models/user');
+            const now = new Date();
+            await User.updateOne({ _id: req.user._id }, { lastSeenActivityLogAt: now });
+            res.json({ success: true, lastSeenActivityLogAt: now });
+        } catch (err) {
+            console.error('Error marking activity logs as seen:', err);
+            res.status(500).json({ error: 'Error marking activity logs as seen' });
+        }
+    });
+
+    // =====================================
+    // WEATHER =============================
+    // =====================================
+
+    // Current conditions for a coordinate, used by the pace adjustment tool to
+    // auto-fill temperature and dew point. Proxied rather than called from the
+    // browser so the provider stays swappable in one place and users' IPs are
+    // never handed to a third party. Open-Meteo is keyless, so there's no
+    // secret here — the proxy is about control, not credentials.
+    app.get('/api/weather/current', async function (req, res) {
+        try {
+            const lat = parseFloat(req.query.lat);
+            const lon = parseFloat(req.query.lon);
+
+            if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                return res.status(400).json({ error: 'Valid lat and lon are required.' });
+            }
+
+            const response = await axios.get('https://api.open-meteo.com/v1/forecast', {
+                params: {
+                    latitude: lat.toFixed(4),
+                    longitude: lon.toFixed(4),
+                    current: 'temperature_2m,dew_point_2m,relative_humidity_2m,weather_code',
+                    temperature_unit: 'fahrenheit',
+                    timezone: 'auto'
+                },
+                timeout: 8000
+            });
+
+            const data = response.data || {};
+            const current = data.current || {};
+
+            if (current.temperature_2m === undefined || current.dew_point_2m === undefined) {
+                return res.status(502).json({ error: 'Weather service did not return temperature and dew point.' });
+            }
+
+            res.json({
+                temperature: current.temperature_2m,
+                dewPoint: current.dew_point_2m,
+                humidity: current.relative_humidity_2m,
+                weatherCode: current.weather_code,
+                observedAt: current.time || null,
+                timezone: data.timezone || null,
+                // Open-Meteo snaps to its own grid cell, so these are the
+                // coordinates the reading actually describes — not the ones
+                // that were requested. Shown in the UI so it's clear how far
+                // the reading is from the user.
+                latitude: data.latitude,
+                longitude: data.longitude,
+                elevation: data.elevation
+            });
+        } catch (err) {
+            console.error('Error fetching current weather:', err.message);
+            res.status(502).json({ error: 'Could not reach the weather service. Please try again.' });
         }
     });
 
@@ -4070,10 +4426,11 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!member) return res.status(400).json({ error: 'No member profile linked' });
 
             const Result = require('./models/result');
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            const months = parseInt(req.query.months, 10);
+            const lookbackStart = new Date();
+            lookbackStart.setMonth(lookbackStart.getMonth() - (months > 0 ? months : 6));
 
-            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true, 'race.racedate': { $gte: sixMonthsAgo } })
+            const results = await Result.find({ 'members._id': member._id, isRecordEligible: true, 'race.racedate': { $gte: lookbackStart } })
                 .sort({ 'race.racedate': -1 })
                 .select('time agegrade race.racename race.racedate race.racetype')
                 .lean();
@@ -4104,16 +4461,61 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Plain-object snapshot of the editable fields on a comp race form, used
+    // as the before/after pair in activity log diffs.
+    function snapshotCompRaceForm(form) {
+        return {
+            title: form.title,
+            description: form.description || '',
+            race: form.race ? {
+                racename: form.race.racename || '',
+                racedate: form.race.racedate || null,
+                racetype: (form.race.racetype && form.race.racetype.name) ? form.race.racetype.name : null
+            } : null,
+            isOpen: !!form.isOpen,
+            numComps: form.numComps || 0,
+            numDiscounts: form.numDiscounts || 0,
+            splitCompsByGender: !!form.splitCompsByGender,
+            splitDiscountsByGender: !!form.splitDiscountsByGender,
+            numCompsMale: form.numCompsMale || 0,
+            numCompsFemale: form.numCompsFemale || 0,
+            numDiscountsMale: form.numDiscountsMale || 0,
+            numDiscountsFemale: form.numDiscountsFemale || 0,
+            closesAt: form.closesAt || null,
+            bannerImageUrl: form.bannerImageUrl || null,
+            resultsLookbackMonths: form.resultsLookbackMonths || 6,
+            uniqueId: form.uniqueId
+        };
+    }
+
     // Captain: create a new form
     app.post('/api/comprace-forms', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const { title, description, race, numComps, numDiscounts, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const { title, description, race, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, closesAt, uniqueId, bannerImageUrl, resultsLookbackMonths } = req.body;
             console.log(req.body);
             if (!title || !race) return res.status(400).json({ error: 'title and race are required' });
-            const formData = { title, description, race, createdBy: req.user._id, numComps: numComps || 0, numDiscounts: numDiscounts || 0, closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null };
+            const formData = {
+                title, description, race, createdBy: req.user._id,
+                numComps: numComps || 0, numDiscounts: numDiscounts || 0,
+                splitCompsByGender: !!splitCompsByGender, splitDiscountsByGender: !!splitDiscountsByGender,
+                numCompsMale: numCompsMale || 0, numCompsFemale: numCompsFemale || 0,
+                numDiscountsMale: numDiscountsMale || 0, numDiscountsFemale: numDiscountsFemale || 0,
+                closesAt: closesAt || null, bannerImageUrl: bannerImageUrl || null,
+                resultsLookbackMonths: resultsLookbackMonths || 6
+            };
             if (uniqueId) formData.uniqueId = uniqueId;
             const form = new CompRaceForm(formData);
             await form.save();
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_form_create',
+                description: 'Created comp race form "' + form.title + '"',
+                targetType: 'compraceform', targetId: form._id.toString(), targetName: form.title,
+                metadata: { newValue: snapshotCompRaceForm(form) },
+                ipAddress: req.ip
+            });
+
             res.status(201).json(form);
         } catch (err) {
             console.error('Error creating comp race form:', err);
@@ -4127,7 +4529,8 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             const form = await CompRaceForm.findOne({ _id: req.params.id });
             if (!form) return res.status(404).json({ error: 'Form not found' });
-            const { title, description, isOpen, numComps, numDiscounts, race, closesAt, uniqueId, bannerImageUrl } = req.body;
+            const oldSnapshot = snapshotCompRaceForm(form);
+            const { title, description, isOpen, numComps, numDiscounts, splitCompsByGender, splitDiscountsByGender, numCompsMale, numCompsFemale, numDiscountsMale, numDiscountsFemale, race, closesAt, uniqueId, bannerImageUrl, resultsLookbackMonths } = req.body;
 
             const oldRaceTypeId = form.race && form.race.racetype && String(form.race.racetype._id);
             const newRaceTypeId = race && race.racetype && String(race.racetype._id);
@@ -4138,11 +4541,27 @@ module.exports = async function (app, qs, passport, async, _) {
             if (isOpen !== undefined) form.isOpen = isOpen;
             if (numComps !== undefined) form.numComps = numComps;
             if (numDiscounts !== undefined) form.numDiscounts = numDiscounts;
+            if (splitCompsByGender !== undefined) form.splitCompsByGender = !!splitCompsByGender;
+            if (splitDiscountsByGender !== undefined) form.splitDiscountsByGender = !!splitDiscountsByGender;
+            if (numCompsMale !== undefined) form.numCompsMale = numCompsMale;
+            if (numCompsFemale !== undefined) form.numCompsFemale = numCompsFemale;
+            if (numDiscountsMale !== undefined) form.numDiscountsMale = numDiscountsMale;
+            if (numDiscountsFemale !== undefined) form.numDiscountsFemale = numDiscountsFemale;
             if (race !== undefined) form.race = race;
             if (closesAt !== undefined) form.closesAt = closesAt || null;
             if (uniqueId !== undefined && uniqueId) form.uniqueId = uniqueId;
             if (bannerImageUrl !== undefined) form.bannerImageUrl = bannerImageUrl || null;
+            if (resultsLookbackMonths !== undefined) form.resultsLookbackMonths = resultsLookbackMonths || 6;
             await form.save();
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_form_edit',
+                description: 'Edited comp race form "' + form.title + '"',
+                targetType: 'compraceform', targetId: form._id.toString(), targetName: form.title,
+                metadata: { oldValue: oldSnapshot, newValue: snapshotCompRaceForm(form) },
+                ipAddress: req.ip
+            });
 
             if (raceTypeChanged) {
                 const Member = require('./models/member');
@@ -4201,7 +4620,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const responses = await CompRaceFormResponse.find({ form: form._id })
                 .sort({ submittedAt: 1 })
                 .populate('user', 'username email')
-                .populate('member', 'firstname lastname username membershipDates')
+                .populate('member', 'firstname lastname username membershipDates sex')
                 .lean();
 
             if (form.race && form.race.linkedRace) {
@@ -4368,6 +4787,22 @@ module.exports = async function (app, qs, passport, async, _) {
         return { recentResultSnapshot, projectedAgeGrade };
     }
 
+    // Plain-object snapshot of a response's editable fields, used as the
+    // before/after pair in activity log diffs.
+    function snapshotCompRaceFormResponse(response) {
+        return {
+            comments: response.comments || '',
+            projectedTimeCentiseconds: response.projectedTimeCentiseconds || null,
+            recentResult: response.recentResult ? {
+                racename: response.recentResult.race ? response.recentResult.race.racename : null,
+                racedate: response.recentResult.race ? response.recentResult.race.racedate : null,
+                time: response.recentResult.time,
+                agegrade: response.recentResult.agegrade,
+                isManual: !!response.recentResult.isManual
+            } : null
+        };
+    }
+
     // Member: submit a signup
     app.post('/api/comprace-forms/:uniqueId/responses', service.isLoggedIn, async function (req, res) {
         try {
@@ -4394,6 +4829,16 @@ module.exports = async function (app, qs, passport, async, _) {
             await response.save();
             const memberName = (member && member.firstname) ? member.firstname + ' ' + member.lastname : req.user.username;
             sendCaptainNotification(form, response, memberName, false);
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_response_submit',
+                description: memberName + ' submitted a comp race form entry for "' + form.title + '"',
+                targetType: 'compraceform_response', targetId: response._id.toString(), targetName: memberName,
+                metadata: { formId: form._id.toString(), formTitle: form.title, newValue: snapshotCompRaceFormResponse(response) },
+                ipAddress: req.ip
+            });
+
             res.status(201).json(response);
         } catch (err) {
             console.error('Error submitting comp race form response:', err);
@@ -4411,6 +4856,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const response = await CompRaceFormResponse.findOne({ form: form._id, user: req.user._id });
             if (!response) return res.status(404).json({ error: 'No response found to edit' });
 
+            const oldResponseSnapshot = snapshotCompRaceFormResponse(response);
             const { projectedTimeCentiseconds, comments } = req.body;
             const { recentResultSnapshot, projectedAgeGrade } = await buildResponseData(req, form, req.body);
 
@@ -4422,6 +4868,16 @@ module.exports = async function (app, qs, passport, async, _) {
             const editMember = req.user.member;
             const editMemberName = (editMember && editMember.firstname) ? editMember.firstname + ' ' + editMember.lastname : req.user.username;
             sendCaptainNotification(form, response, editMemberName, true);
+
+            service.logActivity({
+                userId: req.user._id, username: req.user.username,
+                action: 'comprace_response_edit',
+                description: editMemberName + ' edited their comp race form entry for "' + form.title + '"',
+                targetType: 'compraceform_response', targetId: response._id.toString(), targetName: editMemberName,
+                metadata: { formId: form._id.toString(), formTitle: form.title, oldValue: oldResponseSnapshot, newValue: snapshotCompRaceFormResponse(response) },
+                ipAddress: req.ip
+            });
+
             res.json(response);
         } catch (err) {
             console.error('Error editing comp race form response:', err);
@@ -4459,6 +4915,700 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // =====================================
+    // TEAM APPLICATIONS ===================
+    // =====================================
+
+    // Public application form page
+    app.get('/apply', async function (req, res) {
+        try {
+            // Only distances we hold age grading standards for — the two races are
+            // there to be age graded, so anything else is a dead end for the applicant.
+            const racetypes = await RaceType.find({ hasAgeGradedInfo: true, isVariable: { $ne: true } })
+                .sort({ meters: 1 })
+                .select('name surface meters miles')
+                .lean();
+            res.render('applyForm.ejs', { racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+        } catch (err) {
+            console.error('Error loading apply page:', err);
+            res.render('applyForm.ejs', { racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+        }
+    });
+
+    // Minimum age grade we ask applicants to hit on their two submitted races.
+    const APPLICATION_MIN_AGEGRADE = 70;
+    // Races a year we ask team members to commit to. Change it here and the apply
+    // form, the review page and the emails all follow.
+    const APPLICATION_RACE_COMMITMENT = 8;
+    // How far back a submitted race can be and still count as recent.
+    const APPLICATION_RACE_MAX_AGE_DAYS = 365;
+
+    // Age grade for someone who is not (yet) a member — the applicant supplies their
+    // own sex/dob, so this can't reuse /api/agegrade/calculate which reads req.user.member.
+    async function calculateApplicantAgeGrade(sex, dateofbirth, racetype, racedate, timeCentiseconds) {
+        if (!sex || !dateofbirth || !racetype || !racetype.name || !racetype.surface || !racedate || !timeCentiseconds) return null;
+        // Age grading tables only cover male/female; 'other' has no standard to grade against.
+        const gradingSex = sex === 'female' ? 'female' : (sex === 'male' ? 'male' : null);
+        if (!gradingSex) return null;
+        try {
+            const raceDateObj = new Date(racedate);
+            const age = service.calculateAge(raceDateObj, new Date(dateofbirth));
+            const ag = await service.getAgeGrading(gradingSex, age, racetype.surface, raceDateObj);
+            const key = racetype.name.toLowerCase();
+            if (!ag || !ag[key]) return null;
+            return parseFloat(((ag[key] / (Number(timeCentiseconds) / 100)) * 100).toFixed(2));
+        } catch (err) {
+            console.error('Applicant age grade calculation error:', err);
+            return null;
+        }
+    }
+
+    // Public: live age grade preview for the apply form
+    app.get('/api/team-applications/agegrade', async function (req, res) {
+        try {
+            const { sex, dateofbirth, racetype_id, racedate, timeCentiseconds } = req.query;
+            if (!racetype_id) return res.json({ agegrade: null });
+            const racetype = await RaceType.findById(racetype_id).lean();
+            if (!racetype) return res.json({ agegrade: null });
+            const agegrade = await calculateApplicantAgeGrade(sex, dateofbirth, racetype, racedate, timeCentiseconds);
+            res.json({ agegrade, minAgeGrade: APPLICATION_MIN_AGEGRADE });
+        } catch (err) {
+            res.json({ agegrade: null });
+        }
+    });
+
+    // Applicants paste links like "coolrunning.com/results/123" as often as full URLs.
+    // Accept both, but only ever store http(s) — the review page turns this into an
+    // anchor, so a javascript: or data: URL must never survive.
+    function normalizeResultLink(value) {
+        const raw = String(value || '').trim();
+        if (!raw) return { ok: true, url: '' };
+
+        const candidate = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : 'https://' + raw;
+        let parsed;
+        try {
+            parsed = new URL(candidate);
+        } catch (err) {
+            return { ok: false };
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return { ok: false };
+        if (!parsed.hostname || parsed.hostname.indexOf('.') === -1) return { ok: false };
+        return { ok: true, url: parsed.href };
+    }
+
+    // Public: submit a team application
+    app.post('/api/team-applications', async function (req, res) {
+        try {
+            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces } = req.body;
+
+            if (!firstname || !firstname.trim()) return res.status(400).json({ error: 'First name is required' });
+            if (!lastname || !lastname.trim()) return res.status(400).json({ error: 'Last name is required' });
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'A valid email address is required' });
+            if (!['male', 'female', 'other'].includes(sex)) return res.status(400).json({ error: 'Please select a gender' });
+            if (!dateofbirth || isNaN(new Date(dateofbirth).getTime())) return res.status(400).json({ error: 'A valid date of birth is required' });
+            if (!Array.isArray(races) || races.length < 2) return res.status(400).json({ error: 'Please provide two recent races' });
+            if (typeof committedToRaces !== 'boolean') return res.status(400).json({ error: 'Please answer whether you can commit to ' + APPLICATION_RACE_COMMITMENT + ' races a year' });
+            if (!motivation || !String(motivation).trim()) return res.status(400).json({ error: 'Please tell us why you want to join the team' });
+
+            const existingPending = await TeamApplication.findOne({ email: String(email).toLowerCase().trim(), status: 'pending' }).lean();
+            if (existingPending) return res.status(409).json({ error: 'You already have an application under review. The captains will be in touch.' });
+
+            // Races have to be recent enough to say something about current fitness.
+            const oldestAllowedRaceDate = new Date();
+            oldestAllowedRaceDate.setDate(oldestAllowedRaceDate.getDate() - APPLICATION_RACE_MAX_AGE_DAYS);
+            const todayEnd = new Date();
+            todayEnd.setHours(23, 59, 59, 999);
+
+            // Recompute every age grade server-side — never trust the value the browser sends.
+            const racesToSave = [];
+            for (const race of races.slice(0, 2)) {
+                if (!race || !race.racename || !race.racename.trim()) return res.status(400).json({ error: 'Each race needs a name' });
+                if (!race.racedate || isNaN(new Date(race.racedate).getTime())) return res.status(400).json({ error: 'Each race needs a valid date' });
+                if (new Date(race.racedate) < oldestAllowedRaceDate) return res.status(400).json({ error: 'Both races must have taken place in the last ' + APPLICATION_RACE_MAX_AGE_DAYS + ' days' });
+                if (new Date(race.racedate) > todayEnd) return res.status(400).json({ error: 'Race dates can\'t be in the future' });
+                if (!race.timeCentiseconds || Number(race.timeCentiseconds) <= 0) return res.status(400).json({ error: 'Each race needs a valid finish time' });
+
+                let racetypeSnapshot = null;
+                if (race.racetype_id) {
+                    const rt = await RaceType.findById(race.racetype_id).lean();
+                    if (rt) racetypeSnapshot = { _id: rt._id, name: rt.name, surface: rt.surface, meters: rt.meters, miles: rt.miles };
+                }
+                if (!racetypeSnapshot) return res.status(400).json({ error: 'Each race needs a distance' });
+
+                const link = normalizeResultLink(race.resultlink);
+                if (!link.ok) return res.status(400).json({ error: 'The results link for "' + race.racename.trim() + '" doesn\'t look like a valid web address' });
+
+                racesToSave.push({
+                    racename: race.racename.trim(),
+                    racedate: new Date(race.racedate),
+                    racetype: racetypeSnapshot,
+                    timeCentiseconds: Number(race.timeCentiseconds),
+                    agegrade: await calculateApplicantAgeGrade(sex, dateofbirth, racetypeSnapshot, race.racedate, race.timeCentiseconds),
+                    resultlink: link.url
+                });
+            }
+
+            // Two different distances — 5k road and 5000m track are the same distance,
+            // so compare meters rather than race type.
+            if (racesToSave[0].racetype.meters === racesToSave[1].racetype.meters) {
+                return res.status(400).json({ error: 'Please submit two races at different distances' });
+            }
+
+            const application = new TeamApplication({
+                firstname: firstname.trim(),
+                lastname: lastname.trim(),
+                email: email.trim().toLowerCase(),
+                sex,
+                dateofbirth: new Date(dateofbirth),
+                races: racesToSave,
+                motivation: motivation ? String(motivation).trim() : '',
+                committedToRaces: committedToRaces,
+                ipAddress: req.ip
+            });
+            await application.save();
+
+            sendApplicationNotification(application);
+
+            res.status(201).json({ success: true, id: application._id });
+        } catch (err) {
+            console.error('Error submitting team application:', err);
+            res.status(500).json({ error: 'Something went wrong submitting your application. Please try again.' });
+        }
+    });
+
+    // Notify the captains that a new application landed
+    function sendApplicationNotification(application) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true') return;
+        const captainsEmail = process.env.CAPTAINS_EMAIL;
+        if (!captainsEmail) return;
+
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '');
+        const name = application.firstname + ' ' + application.lastname;
+
+        const raceLines = application.races.map(function (r, i) {
+            return '  ' + (i + 1) + '. ' + r.racename
+                + ' (' + new Date(r.racedate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + ')'
+                + ' — ' + (r.racetype ? r.racetype.name : '?')
+                + ' in ' + centisToString(r.timeCentiseconds)
+                + (r.agegrade != null ? ' (AG: ' + Number(r.agegrade).toFixed(1) + '%)' : ' (AG: n/a)')
+                + (r.resultlink ? '\n     ' + r.resultlink : '');
+        }).join('\n');
+
+        const body = [
+            name + ' has applied to join the MCRRC Racing Team.',
+            '',
+            'Email: ' + application.email,
+            'Gender: ' + application.sex,
+            'Date of birth: ' + new Date(application.dateofbirth).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }),
+            '',
+            'Recent races:',
+            raceLines,
+            '',
+            'Committed to ' + APPLICATION_RACE_COMMITMENT + ' races a year: ' + (application.committedToRaces ? 'Yes' : 'No'),
+            '',
+            'Why they want to join:',
+            application.motivation || '—',
+            '',
+            'Review applications: ' + siteUrl + '/applications',
+        ].join('\n');
+
+        transport.sendMail({
+            from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+            to: captainsEmail,
+            subject: 'New team application — ' + name,
+            text: body
+        }, function (err) {
+            if (err) console.error('Error sending application notification email:', err);
+        });
+    }
+
+    // Decision emails are HTML so the templates can carry links. Captains edit them in
+    // the dialog, so the body is sanitised before it is stored or sent.
+    const emailSanitizeOptions = {
+        allowedTags: ['a', 'b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li',
+            'h1', 'h2', 'h3', 'h4', 'blockquote', 'span', 'div', 'hr'],
+        allowedAttributes: {
+            'a': ['href', 'target', 'title', 'rel'],
+            'span': ['style'], 'div': ['style'], 'p': ['style']
+        },
+        allowedSchemes: ['http', 'https', 'mailto'],
+        transformTags: {
+            // Links in an email client should always open in a new tab
+            'a': sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' })
+        }
+    };
+
+    function sanitizeEmailBody(html) {
+        return sanitizeHtml(html || '', emailSanitizeOptions);
+    }
+
+    // Plain-text alternative for clients that won't render HTML. Link destinations are
+    // spelled out, since a bare label is useless without the URL in a text email.
+    function htmlToPlainText(html) {
+        const withBreaks = String(html || '')
+            .replace(/<a\b[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, function (match, href, label) {
+                const text = label.replace(/<[^>]+>/g, '').trim();
+                const url = href.replace(/^mailto:/i, '');
+                if (!text) return url;
+                return text === url ? text : text + ' (' + url + ')';
+            })
+            .replace(/<\s*br\s*\/?>/gi, '\n')
+            .replace(/<li[^>]*>/gi, '\n  • ')
+            .replace(/<\/li\s*>/gi, '')
+            .replace(/<\/(p|div|h[1-6]|blockquote|ul|ol)\s*>/gi, '\n')
+            .replace(/<hr\s*\/?>/gi, '\n---\n');
+
+        return sanitizeHtml(withBreaks, { allowedTags: [], allowedAttributes: {} })
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            // Keep list items on consecutive lines rather than double-spaced
+            .replace(/\n{2,}(\s*•)/g, '\n$1')
+            .trim();
+    }
+
+    // Generic placeholder templates — meant to be replaced with the real team wording
+    // later. Captains can edit either one in the dialog before it goes out.
+    function buildDecisionTemplate(application, type) {
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+        const captainsEmail = process.env.CAPTAINS_EMAIL || '';
+        const signalUrl = process.env.SIGNAL_URL || '';
+
+        if (type === 'rejection') {
+            return {
+                subject: 'Your MCRRC Racing Team application',
+                body: [
+                    '<p>Hi ' + application.firstname + ',</p>',
+                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
+                    '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
+                    '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
+                    'reapply any time at <a href="' + siteUrl + '/apply">' + siteUrl + '/apply</a>.</p>',
+                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
+                    '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
+                    '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
+
+        return {
+            subject: 'Welcome to the MCRRC Racing Team, ' + application.firstname + '!',
+            body: [
+                '<p>Hi ' + application.firstname + ',</p>',
+                '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
+                '<p>A few things to get you started:</p>',
+                '<ul>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="' + siteUrl + '" target="_blank">' + siteUrl + '</a>. Please <a href="' + siteUrl + '/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
+                '  <li>We require team members to race at least ' + APPLICATION_RACE_COMMITMENT + ' times a year and to help out at club events.</li>',
+                '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
+                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="'+signalUrl+'" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please provide your preferred size.</strong></li>',
+                '</ul>',
+                '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
+                'members. Please take a little time and send yours back with the info below. Everything is optional,',
+                'of course. Have a look at <a href="' + siteUrl + '/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'for inspiration:</p>',                
+                '<ul>',
+                '  <li><strong>A photo</strong></li>',
+                '  <li>Name:</li>',
+                '  <li>Occupation:</li>',
+                '  <li>College/Grad School Alma mater:</li>',
+                '  <li>Hometown:</li>',
+                '  <li>Favorite race (and why):</li>',
+                '  <li>PRs: 5K / 10K / 1/2 Marathon / Marathon:</li>',
+                '  <li>Best running/racing moment:</li>',
+                '  <li>Running goals:</li>',
+                '  <li>Running gear you can\'t live without (and why):</li>',
+                '  <li>Fun fact about yourself:</li>',
+                '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
+                '</ul>',
+
+                '<p>If you have any questions, just reply to this email' + (captainsEmail ? ' or write to <a href="mailto:' + captainsEmail + '">' + captainsEmail + '</a>' : '') + ' and one of the captains will get back to you.</p>',
+                '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
+            ].join('\n')
+        };
+    }
+
+    // Decision mail is relayed by Brevo, so the captains have no copy of what went out
+    // and any reply lands in their inbox with no thread to attach to. Copying them in
+    // fixes both: same Message-ID, so the applicant's reply threads with their copy.
+    //
+    // CAPTAINS_EMAIL_COPY = none (default) | cc | bcc
+    //   none — no copy; only Reply-To routes replies to the captains
+    //   bcc  — captains get the copy and the threading, address stays private
+    //   cc   — captains address is visible to the applicant, and reply-all reaches them
+    function captainsCopyHeaders() {
+        const address = process.env.CAPTAINS_EMAIL;
+        if (!address) return {};
+        const mode = (process.env.CAPTAINS_EMAIL_COPY || 'none').toLowerCase();
+        if (mode === 'cc') return { cc: address };
+        if (mode === 'bcc') return { bcc: address };
+        return {};
+    }
+
+    // What the captain is told in the send dialog, so the copy is never a surprise
+    function captainsCopyInfo() {
+        const address = process.env.CAPTAINS_EMAIL;
+        if (!address) return null;
+        const mode = (process.env.CAPTAINS_EMAIL_COPY || 'none').toLowerCase();
+        if (mode !== 'cc' && mode !== 'bcc') return null;
+        return { mode: mode === 'bcc' ? 'Bcc' : 'Cc', address: address };
+    }
+
+    function sendDecisionEmail(application, subject, htmlBody) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true') {
+            console.log('SEND_EMAIL_FOR_FORM is not enabled — decision email not sent to ' + application.email);
+            return;
+        }
+        if (!application.email) return;
+
+        transport.sendMail(Object.assign({
+            from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+            to: application.email,
+            replyTo: process.env.CAPTAINS_EMAIL || undefined,
+            subject: subject,
+            html: htmlBody,
+            text: htmlToPlainText(htmlBody)
+        }, captainsCopyHeaders()), function (err) {
+            if (err) console.error('Error sending decision email:', err);
+        });
+    }
+
+    // Captain/admin: template to prefill the send-email dialog with
+    app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.query.type === 'rejection' ? 'rejection' : 'approval';
+            const application = await TeamApplication.findById(req.params.id).lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            // An email already sent for this decision comes back as-is, so a resend
+            // starts from what the applicant actually received.
+            const already = type === 'rejection' ? application.rejectionEmail : application.approvalEmail;
+            if (already && already.sentAt) {
+                return res.json({
+                    subject: already.subject, body: already.body,
+                    previouslySentAt: already.sentAt, copy: captainsCopyInfo()
+                });
+            }
+            res.json(Object.assign(buildDecisionTemplate(application, type), { copy: captainsCopyInfo() }));
+        } catch (err) {
+            console.error('Error building email template:', err);
+            res.status(500).json({ error: 'Error building email template' });
+        }
+    });
+
+    // Captain/admin: send the approval or rejection email to the applicant
+    app.post('/api/team-applications/:id/send-email', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.body.type === 'rejection' ? 'rejection' : 'approval';
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            const expectedStatus = type === 'rejection' ? 'rejected' : 'approved';
+            if (application.status !== expectedStatus) {
+                return res.status(400).json({ error: 'This application is ' + application.status + ' — an ' + type + ' email doesn\'t apply' });
+            }
+
+            const subject = (req.body.subject || '').trim();
+            const body = sanitizeEmailBody(req.body.body).trim();
+            if (!subject) return res.status(400).json({ error: 'The email needs a subject' });
+            // Markup with no readable text (or just whitespace) is not a message
+            if (!body || !htmlToPlainText(body)) return res.status(400).json({ error: 'The email needs a message' });
+
+            sendDecisionEmail(application, subject, body);
+
+            const record = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
+            if (type === 'rejection') application.rejectionEmail = record;
+            else application.approvalEmail = record;
+            await application.save();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_email_sent',
+                description: 'Sent ' + type + ' email to ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { type: type, subject: subject },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error sending decision email:', err);
+            res.status(500).json({ error: 'Error sending email' });
+        }
+    });
+
+    // Name comparison for returning-member detection: case-insensitive, accent-insensitive,
+    // and tolerant of stray or repeated whitespace on either side.
+    function normalizeName(str) {
+        return String(str || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    // Captain/admin: existing members who might be this applicant coming back.
+    // An entry in alternateFullNames is a whole name ("Jane Smith"), so it is compared
+    // against the application's firstname and lastname joined together — not to either
+    // one on its own.
+    app.get('/api/team-applications/:id/member-matches', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id).lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            const target = normalizeName(application.firstname + ' ' + application.lastname);
+
+            // Compared in JS rather than in the query: normalising the *stored* value
+            // (case, accents, doubled spaces) isn't something a Mongo regex can do.
+            const members = await Member.find()
+                .select('firstname lastname username sex dateofbirth memberStatus membershipDates alternateFullNames')
+                .lean();
+
+            const matches = [];
+            members.forEach(function (member) {
+                if (normalizeName(member.firstname + ' ' + member.lastname) === target) {
+                    matches.push(Object.assign({ matchedOn: 'name' }, member));
+                    return;
+                }
+                const alt = (member.alternateFullNames || []).find(function (name) {
+                    return normalizeName(name) === target;
+                });
+                if (alt) matches.push(Object.assign({ matchedOn: 'alternate', matchedAlternateName: alt }, member));
+            });
+
+            res.json({ matches });
+        } catch (err) {
+            console.error('Error finding member matches:', err);
+            res.status(500).json({ error: 'Error finding member matches' });
+        }
+    });
+
+    // Captain/admin: list applications
+    app.get('/api/team-applications', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const query = {};
+            if (req.query.status) query.status = req.query.status;
+            const applications = await TeamApplication.find(query)
+                .sort({ createdAt: -1 })
+                .populate('member', 'firstname lastname username')
+                .lean();
+            const counts = await TeamApplication.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+            const statusCounts = { pending: 0, approved: 0, rejected: 0 };
+            counts.forEach(function (c) { statusCounts[c._id] = c.count; });
+            res.json({ applications, statusCounts, minAgeGrade: APPLICATION_MIN_AGEGRADE, raceCommitment: APPLICATION_RACE_COMMITMENT });
+        } catch (err) {
+            console.error('Error fetching team applications:', err);
+            res.status(500).json({ error: 'Error fetching applications' });
+        }
+    });
+
+    // Captain/admin: single application
+    app.get('/api/team-applications/:id', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id)
+                .populate('member', 'firstname lastname username')
+                .lean();
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            res.json(application);
+        } catch (err) {
+            res.status(500).json({ error: 'Error fetching application' });
+        }
+    });
+
+    // Captain/admin: approve an application — creates the real Member
+    app.post('/api/team-applications/:id/approve', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            if (application.status === 'approved') return res.status(409).json({ error: 'This application has already been approved' });
+
+            const startDate = req.body.membershipStart ? new Date(req.body.membershipStart) : new Date();
+
+            // Members are stored capitalised ('Male'/'Female') everywhere else in the
+            // app — the members page buckets on that exact string — but the apply form
+            // posts the lowercase enum value.
+            const memberSex = application.sex ? application.sex.charAt(0).toUpperCase() + application.sex.slice(1) : application.sex;
+
+            let member;
+            let isReturning = false;
+
+            if (req.body.existingMemberId) {
+                // Returning runner — attach a new membership period to the member they
+                // already have, so their old results and records stay attached.
+                member = await Member.findById(req.body.existingMemberId);
+                if (!member) return res.status(404).json({ error: 'The existing member you selected no longer exists' });
+
+                const alreadyOpen = (member.membershipDates || []).some(function (d) { return !d.end; });
+                if (alreadyOpen) {
+                    return res.status(409).json({ error: member.firstname + ' ' + member.lastname + ' already has an open membership — no new period was added.' });
+                }
+                member.membershipDates.push({ start: startDate });
+                isReturning = true;
+            } else {
+                member = new Member({
+                    firstname: application.firstname,
+                    lastname: application.lastname,
+                    sex: memberSex,
+                    dateofbirth: application.dateofbirth,
+                    membershipDates: [{ start: startDate }]
+                });
+            }
+
+            await member.save();
+            await service.updateTeamRequirementStats(member);
+
+            application.status = 'approved';
+            application.member = member._id;
+            application.isReturningMember = isReturning;
+            application.reviewedBy = req.user._id;
+            application.reviewedByUsername = req.user.username;
+            application.reviewedAt = new Date();
+            if (req.body.notes !== undefined) application.reviewNotes = req.body.notes;
+            await application.save();
+
+            await service.invalidateSystemInfoCache();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_approved',
+                description: 'Approved team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { memberId: member._id.toString(), memberUsername: member.username, returningMember: isReturning },
+                ipAddress: req.ip
+            });
+
+            res.json({ success: true, application, member, isReturningMember: isReturning });
+        } catch (err) {
+            console.error('Error approving application:', err);
+            res.status(500).json({ error: 'Error approving application' });
+        }
+    });
+
+    // Captain/admin: reject an application
+    app.post('/api/team-applications/:id/reject', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+
+            application.status = 'rejected';
+            application.reviewedBy = req.user._id;
+            application.reviewedByUsername = req.user.username;
+            application.reviewedAt = new Date();
+            if (req.body.notes !== undefined) application.reviewNotes = req.body.notes;
+            await application.save();
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_rejected',
+                description: 'Rejected team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                metadata: { notes: req.body.notes || '' },
+                ipAddress: req.ip
+            });
+
+            // No email here — the captains send the rejection letter separately.
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error rejecting application:', err);
+            res.status(500).json({ error: 'Error rejecting application' });
+        }
+    });
+
+    // Hand-ticked follow-up steps on an approved application. Each stores its own
+    // flag, timestamp and the username that set it, and toggles freely both ways.
+    const APPLICATION_FLAGS = {
+        'team-notified': {
+            field: 'teamNotified',
+            atField: 'teamNotifiedAt',
+            byField: 'teamNotifiedByUsername',
+            description: 'announced to the team'
+        },
+        'groups-io': {
+            field: 'addedToGroupsIo',
+            atField: 'addedToGroupsIoAt',
+            byField: 'addedToGroupsIoByUsername',
+            description: 'added to Groups.io'
+        }
+    };
+
+    // Captain/admin: tick or untick one of the follow-up steps
+    app.put('/api/team-applications/:id/flags/:flag', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const flag = APPLICATION_FLAGS[req.params.flag];
+            if (!flag) return res.status(400).json({ error: 'Unknown flag "' + req.params.flag + '"' });
+
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            if (application.status !== 'approved') {
+                return res.status(400).json({ error: 'Only approved applications can be marked as ' + flag.description });
+            }
+
+            const on = req.body.value !== false;
+            application[flag.field] = on;
+            application[flag.atField] = on ? new Date() : null;
+            application[flag.byField] = on ? req.user.username : null;
+            await application.save();
+
+            res.json({ success: true, application });
+        } catch (err) {
+            console.error('Error updating application flag:', err);
+            res.status(500).json({ error: 'Error updating application' });
+        }
+    });
+
+    // Admin: move an application back to pending (undo a decision).
+    // Any Member already created by an approval is left alone — deleting members is a separate, deliberate action.
+    app.post('/api/team-applications/:id/reopen', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findById(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            application.status = 'pending';
+            application.reviewedBy = null;
+            application.reviewedByUsername = null;
+            application.reviewedAt = null;
+            await application.save();
+            res.json({ success: true, application });
+        } catch (err) {
+            res.status(500).json({ error: 'Error reopening application' });
+        }
+    });
+
+    // Admin: delete an application
+    app.delete('/api/team-applications/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const application = await TeamApplication.findByIdAndDelete(req.params.id);
+            if (!application) return res.status(404).json({ error: 'Application not found' });
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'application_deleted',
+                description: 'Deleted team application for ' + application.firstname + ' ' + application.lastname,
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: application.firstname + ' ' + application.lastname,
+                ipAddress: req.ip
+            });
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: 'Error deleting application' });
+        }
+    });
+
     app.get('*', function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
         // console.log('Request URL:', req.url);
@@ -4466,7 +5616,10 @@ module.exports = async function (app, qs, passport, async, _) {
         // console.log('NODE_ENV:', process.env.NODE_ENV);
         res.render('index.ejs', {
             user: req.user,
-            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js'
+            scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js',
+            // Baked into the image at build time; 'dev' when running locally.
+            appVersion: process.env.APP_VERSION || 'dev',
+            buildDate: process.env.BUILD_DATE || ''
         });
     });
 
@@ -4521,19 +5674,21 @@ module.exports = async function (app, qs, passport, async, _) {
                 const element = $(selector).first();
                 if (element.length) {
                     // Try to extract headers - be more strict about what constitutes a header
-                    const potentialHeaders = [];
+                    let potentialHeaders = [];
                     const headerRow = element.find('thead tr, tr:first-child').first();
 
                     // Only process if we found a header row
                     if (headerRow.length) {
-                        // Get all cells from the header row, whether they are th or td
+                        // Every cell, blank ones included: the array index is
+                        // what aligns headers to cells, so a gap must not
+                        // close up. See normaliseTableHeaders.
+                        const rawHeaders = [];
                         headerRow.find('th, td').each(function () {
-                            const headerText = $(this).text().trim();
-                            // Only add if it looks like a header (not empty and not a number)
-                            if (headerText && !/^\d+$/.test(headerText)) {
-                                potentialHeaders.push(headerText);
-                            }
+                            rawHeaders.push($(this).text().trim());
                         });
+                        if (looksLikeHeaderRow(rawHeaders)) {
+                            potentialHeaders = normaliseTableHeaders(rawHeaders);
+                        }
                     }
 
                     // If we found valid headers, try to extract data

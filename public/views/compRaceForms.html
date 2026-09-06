@@ -41,8 +41,8 @@
                                 </span>
                             </span>
                         </div>
-                        <div ng-if="form.description" class="feed-meta" style="margin-top: 2px;">{{ form.description |
-                            stripTags }}</div>
+                        <div ng-if="form.description" class="feed-meta" style="margin-top: 2px;">{{ (form.description |
+                            stripTags | limitTo:50) }}{{ (form.description | stripTags).length > 50 ? '…' : '' }}</div>
                         <div class="feed-meta" style="margin-top: 3px;">
                             Created {{ form.createdAt | date:'mediumDate' }}
                             <span ng-if="form.closesAt" style="margin-left:8px;">

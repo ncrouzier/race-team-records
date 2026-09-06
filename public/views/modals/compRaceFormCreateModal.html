@@ -76,8 +76,8 @@
     </div>
 
     <div class="form-group">
-        <label><i class="fa fa-clock-o"></i> Closes at <span class="text-muted">(optional — form auto-closes at this
-                date &amp; time)</span></label>
+        <label><i class="fa fa-clock-o"></i> Closes at <span class="text-muted">(optional — Eastern Time; form
+                auto-closes at this date &amp; time)</span></label>
         <div style="display:flex; gap:6px; align-items:center;">
             <input type="datetime-local" class="form-control" ng-model="form.closesAt">
             <button class="crf-chip crf-chip-ghost" ng-if="form.closesAt" ng-click="form.closesAt = null"
@@ -94,6 +94,13 @@
     </div>
 
     <div class="form-group">
+        <label><i class="fa fa-history"></i> Look back
+            <span class="text-muted">(how far back a member's own results can be pulled from, in months)</span></label>
+        <input type="number" class="form-control" style="max-width: 120px;" ng-model="form.resultsLookbackMonths"
+            min="1" placeholder="6">
+    </div>
+
+    <div class="form-group">
         <label>Form URL ID <span class="text-muted">(optional — auto-generated from race name)</span></label>
         <div class="input-group">
             <span class="input-group-addon" style="font-size:12px; color:#888;">/form/</span>
@@ -106,17 +113,59 @@
 
     <div class="row">
         <div class="col-sm-6">
-            <div class="form-group">
+            <div class="checkbox" style="margin-bottom: 4px;">
+                <label>
+                    <input type="checkbox" ng-model="form.splitCompsByGender"> Split comps by gender
+                </label>
+            </div>
+            <div ng-if="!form.splitCompsByGender" class="form-group">
                 <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps offered <span
                         class="text-muted">(optional)</span></label>
                 <input type="number" class="form-control" ng-model="form.numComps" min="0" placeholder="0">
             </div>
+            <div ng-if="form.splitCompsByGender" class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps (M)</label>
+                        <input type="number" class="form-control" ng-model="form.numCompsMale" min="0"
+                            placeholder="0">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label><i class="fa fa-thumbs-up" style="color:#43ac6a;"></i> Comps (F)</label>
+                        <input type="number" class="form-control" ng-model="form.numCompsFemale" min="0"
+                            placeholder="0">
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-sm-6">
-            <div class="form-group">
+            <div class="checkbox" style="margin-bottom: 4px;">
+                <label>
+                    <input type="checkbox" ng-model="form.splitDiscountsByGender"> Split discounts by gender
+                </label>
+            </div>
+            <div ng-if="!form.splitDiscountsByGender" class="form-group">
                 <label><i class="fa fa-tag" style="color:#008cba;"></i> Discount codes <span
                         class="text-muted">(optional)</span></label>
                 <input type="number" class="form-control" ng-model="form.numDiscounts" min="0" placeholder="0">
+            </div>
+            <div ng-if="form.splitDiscountsByGender" class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label><i class="fa fa-tag" style="color:#008cba;"></i> Discounts (M)</label>
+                        <input type="number" class="form-control" ng-model="form.numDiscountsMale" min="0"
+                            placeholder="0">
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <label><i class="fa fa-tag" style="color:#008cba;"></i> Discounts (F)</label>
+                        <input type="number" class="form-control" ng-model="form.numDiscountsFemale" min="0"
+                            placeholder="0">
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,24 @@
+<div class="text-center">
+    <div class="col-sm-6 col-sm-offset-3">
+
+        <h1>Log In</h1>
+
+        <div ng-show="failed" class="alert alert-danger">
+            {{message}}
+            <div style="margin-top: 8px;">
+                <a ng-href="/email-login{{returnTo ? '?returnTo=' + returnTo : ''}}">Request a new link</a>
+            </div>
+        </div>
+
+        <div ng-hide="failed">
+            <p>Click below to finish logging in.</p>
+            <button class="btn btn-warning btn-lg" ng-click="completeLogin()" ng-disabled="working">
+                <span ng-show="working"><i class="fa fa-spinner fa-spin"></i> Logging in…</span>
+                <span ng-hide="working">Log In</span>
+            </button>
+        </div>
+
+        <hr>
+        <p><a ui-sref="/login">Back to Login</a></p>
+    </div>
+</div>

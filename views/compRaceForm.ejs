@@ -53,7 +53,8 @@
                         <p class="crf-deadline">
                           <i class="fa fa-clock-o"></i>
                           Closes <%= new Date(form.closesAt).toLocaleString('en-US', { month: 'long' , day: 'numeric' ,
-                            year: 'numeric' , hour: 'numeric' , minute: '2-digit' , timeZoneName: 'short' }) %>
+                            year: 'numeric' , hour: 'numeric' , minute: '2-digit' ,timeZone: 'America/New_York' ,
+                            timeZoneName: 'short' }) %>
                         </p>
                         <% } %>
         </div>
@@ -91,7 +92,7 @@
                 <div x-show="success" class="alert alert-success" x-text="success"></div>
 
                 <!-- Login form -->
-                <form x-show="tab === 'login'" @submit.prevent="login()">
+                <form x-show="tab === 'login' && !magicMode" @submit.prevent="login()">
                   <p class="text-muted mb-3">Log in to your MCRRC Racing Team account to complete this form.</p>
                   <div class="mb-3">
                     <label class="form-label" for="login-email">Email</label>
@@ -107,6 +108,29 @@
                     <i class="fa fa-spinner fa-spin" x-show="busy && tab === 'login'"></i>
                     <i class="fa fa-sign-in" x-show="!busy || tab !== 'login'"></i>
                     Log In &amp; Continue
+                  </button>
+                  <button type="button" class="btn btn-link w-100 mt-1"
+                    @click="magicMode = true; error = ''; success = ''">
+                    Email me a login link instead
+                  </button>
+                </form>
+
+                <!-- Email-a-login-link form -->
+                <form x-show="tab === 'login' && magicMode" @submit.prevent="requestMagicLink()">
+                  <p class="text-muted mb-3">We'll email you a link that logs you in — no password needed.</p>
+                  <div class="mb-3">
+                    <label class="form-label" for="magic-email">Email</label>
+                    <input type="email" class="form-control" id="magic-email" x-model="loginEmail"
+                      placeholder="your@email.com" required>
+                  </div>
+                  <button type="submit" class="btn crf-btn-primary w-100" :disabled="busy || magicSent">
+                    <i class="fa fa-spinner fa-spin" x-show="busy"></i>
+                    <i class="fa fa-envelope" x-show="!busy"></i>
+                    Send Login Link
+                  </button>
+                  <button type="button" class="btn btn-link w-100 mt-1"
+                    @click="magicMode = false; magicSent = false; error = ''; success = ''">
+                    Use my password instead
                   </button>
                 </form>
 
@@ -316,6 +340,7 @@
           const CRF_UNIQUE_ID = '<%= form.uniqueId %>';
           const CRF_RACE_DATE = '<%= (form.race && form.race.racedate) ? new Date(form.race.racedate).toISOString().split("T")[0] : "" %>';
           const CRF_RACETYPE_ID = '<%= (form.race && form.race.racetype && form.race.racetype._id) ? form.race.racetype._id : "" %>';
+          const CRF_RESULTS_LOOKBACK_MONTHS = <%= form.resultsLookbackMonths || 6 %>;
 
           function crfApp() {
             return {
@@ -366,7 +391,7 @@
               async loadResults() {
                 this.resultsLoading = true;
                 try {
-                  const r = await fetch('/api/members/me/results', { credentials: 'include' });
+                  const r = await fetch('/api/members/me/results?months=' + CRF_RESULTS_LOOKBACK_MONTHS, { credentials: 'include' });
                   const data = await r.json();
                   this.dbResults = data.results || [];
                   this.recentCount = data.recentCount || 0;
@@ -577,6 +602,35 @@
                   regUsername: '',
                   regEmail: '',
                   regPassword: '',
+                  magicMode: false,
+                  magicSent: false,
+
+                  async requestMagicLink() {
+                    this.error = ''; this.success = '';
+                    this.busy = true;
+                    try {
+                      const r = await fetch('/api/login/magic', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email: this.loginEmail,
+                          returnTo: window.location.pathname
+                        })
+                      });
+                      const data = await r.json();
+                      if (r.ok) {
+                        this.success = data.message || 'If an account with that email exists, a login link has been sent.';
+                        this.magicSent = true;
+                      } else {
+                        this.error = (data && data.message) || 'Something went wrong. Please try again.';
+                      }
+                    } catch (_) {
+                      this.error = 'Network error. Please try again.';
+                    } finally {
+                      this.busy = false;
+                    }
+                  },
 
                   async login() {
                     this.error = ''; this.success = '';

@@ -19,7 +19,7 @@
         <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
             <a ui-sref="/stats/participation">Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
             <a ui-sref="/stats/members">Team Members Stats</a>
         </li>
     </ul>
@@ -291,7 +291,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="wp in waypoints track by wp.order" ng-class="{'success': wp.reached, 'my-member-row': view.mapMode === 'members' && user.member.username && wp.reachedByMemberUsername === user.member.username}"
+                        <tr ng-repeat="wp in waypoints track by wp.order"
+                            ng-class="{'success': wp.reached, 'my-member-row': view.mapMode === 'members' && user.member.username && wp.reachedByMemberUsername === user.member.username}"
                             ng-if="!wp.isStart">
                             <td>{{wp.order}}</td>
                             <td>

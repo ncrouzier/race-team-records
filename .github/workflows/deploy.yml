@@ -1,0 +1,115 @@
+name: Build and publish image
+
+# Builds the production image on GitHub's native amd64 runners and pushes it to
+# GHCR, so the DigitalOcean droplet only ever pulls and runs. Building on the
+# droplet itself would mean installing ~550MB of devDependencies and running
+# terser next to a live Mongo on a 2GiB box; building on a Mac would mean an
+# emulated amd64 build, since Apple Silicon is arm64 and droplets are not.
+
+on:
+  push:
+    # Releases are cut by tagging. A tag is not tied to a branch, so this fires
+    # wherever the tagged commit lives. Branch pushes deliberately do not build:
+    # publishing on every merge would mean `latest` no longer corresponds to the
+    # tag you released.
+    tags:
+      - '*'
+  workflow_dispatch:
+
+# Tags are unique, so this only ever collapses a re-run of the same tag.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # Provided automatically; no PAT needed to push from within the repo.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The git tag becomes the image version verbatim — tag v1.4.0 publishes
+      # ghcr.io/<owner>/<repo>:v1.4.0. `latest` moves to whichever tag was built
+      # most recently, and the sha- tag is the immutable rollback target when
+      # you need to name an exact commit rather than a release.
+      - name: Derive tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+            type=sha,format=long
+
+      # github.ref_name is the tag on a tag push, the branch on a manual run.
+      - name: Build metadata
+        id: buildmeta
+        run: echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ steps.buildmeta.outputs.date }}
+          # Without a cache every run reinstalls all dependencies and re-runs
+          # bower from scratch. mode=max keeps the intermediate build stage too.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Pulls the freshly published image on the droplet and restarts the app
+      # container. Optional: set the DEPLOY_HOST / DEPLOY_USER / DEPLOY_SSH_KEY
+      # repository secrets to turn a push into an end-to-end deploy. Leave them
+      # unset and the workflow just publishes the image, and you deploy by hand
+      # with `docker compose pull app && docker compose up -d app`.
+      #
+      # `secrets` is not available to step-level `if:`, hence the env check
+      # inside the script rather than in the `if:`.
+      #
+      # Tag pushes only. A manual workflow_dispatch run republishes an image
+      # without necessarily intending a release, so it does not deploy.
+      - name: Deploy to droplet
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "Deploy secrets not set - image published, skipping deploy."
+            exit 0
+          fi
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pin the host key rather than accepting whatever answers, so a
+          # hijacked DNS record cannot collect the deploy key.
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -i ~/.ssh/deploy_key "${DEPLOY_USER:-root}@$DEPLOY_HOST" \
+            'cd /opt/mcrrc && docker compose pull app && docker compose up -d app && docker image prune -f'
+
+          echo "Deployed."

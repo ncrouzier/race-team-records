@@ -1,3 +1,47 @@
+// Comp race form deadlines are always Washington DC (Eastern) time, regardless of
+// which timezone the captain's or member's browser happens to be in. Native
+// <input type="datetime-local"> always parses/formats using the browser's own
+// local timezone, so we can't bind it directly to a real UTC Date — instead we
+// convert to/from a "fake local" Date whose getFullYear/getMonth/.../getMinutes
+// hold the Eastern wall-clock digits, and let the input read/write those.
+angular.module('mcrrcApp.results').factory('DcTime', [function () {
+    var ZONE = 'America/New_York';
+
+    function easternOffsetMillisForInstant(instantMillis) {
+        var parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+        }).formatToParts(new Date(instantMillis));
+        var get = function (type) { return parseInt(parts.find(function (p) { return p.type === type; }).value, 10); };
+        var asIfUtcMillis = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'));
+        return asIfUtcMillis - instantMillis;
+    }
+
+    return {
+        // Real UTC Date -> "fake local" Date holding Eastern wall-clock digits.
+        // Use this to populate a datetime-local ng-model from a stored value.
+        toWallClock: function (utcDate) {
+            if (!utcDate) return null;
+            var parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            }).formatToParts(new Date(utcDate));
+            var get = function (type) { return parseInt(parts.find(function (p) { return p.type === type; }).value, 10); };
+            return new Date(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'));
+        },
+        // "Fake local" Date (as produced above, or as typed into the datetime-local
+        // input) -> the real UTC Date it represents, accounting for EST/EDT.
+        fromWallClock: function (wallClockDate) {
+            if (!wallClockDate) return null;
+            var naiveUtc = Date.UTC(
+                wallClockDate.getFullYear(), wallClockDate.getMonth(), wallClockDate.getDate(),
+                wallClockDate.getHours(), wallClockDate.getMinutes()
+            );
+            return new Date(naiveUtc - easternOffsetMillisForInstant(naiveUtc));
+        }
+    };
+}]);
+
 angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scope', '$rootScope', '$http', '$uibModal', '$state', 'AuthService', function ($scope, $rootScope, $http, $uibModal, $state, AuthService) {
 
     $scope.authService = AuthService;
@@ -96,9 +140,15 @@ angular.module('mcrrcApp.results').controller('CompRaceFormsController', ['$scop
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', function ($scope, $http, $uibModalInstance, ResultsService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController', ['$scope', '$http', '$uibModalInstance', 'ResultsService', 'DcTime', function ($scope, $http, $uibModalInstance, ResultsService, DcTime) {
 
-    $scope.form = { title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '', numComps: 0, numDiscounts: 0, closesAt: null, isOpen: true, bannerImageUrl: '' };
+    $scope.form = {
+        title: '', description: '', racename: '', racedate: null, racetype: '', uniqueId: '',
+        numComps: 0, numDiscounts: 0,
+        splitCompsByGender: false, splitDiscountsByGender: false,
+        numCompsMale: 0, numCompsFemale: 0, numDiscountsMale: 0, numDiscountsFemale: 0,
+        closesAt: null, isOpen: true, bannerImageUrl: '', resultsLookbackMonths: 6
+    };
     $scope.raceTypes = [];
     $scope.loadingRaceTypes = true;
     $scope.saving = false;
@@ -184,9 +234,16 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
             uniqueId: $scope.form.uniqueId || undefined,
             numComps: $scope.form.numComps || 0,
             numDiscounts: $scope.form.numDiscounts || 0,
-            closesAt: $scope.form.closesAt || null,
+            splitCompsByGender: !!$scope.form.splitCompsByGender,
+            splitDiscountsByGender: !!$scope.form.splitDiscountsByGender,
+            numCompsMale: $scope.form.numCompsMale || 0,
+            numCompsFemale: $scope.form.numCompsFemale || 0,
+            numDiscountsMale: $scope.form.numDiscountsMale || 0,
+            numDiscountsFemale: $scope.form.numDiscountsFemale || 0,
+            closesAt: $scope.form.closesAt ? DcTime.fromWallClock($scope.form.closesAt) : null,
             isOpen: $scope.form.isOpen,
-            bannerImageUrl: $scope.form.bannerImageUrl || null
+            bannerImageUrl: $scope.form.bannerImageUrl || null,
+            resultsLookbackMonths: $scope.form.resultsLookbackMonths || 6
         };
 
         $http.post('/api/comprace-forms', payload).then(function (res) {
@@ -204,7 +261,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormCreateModalController
 
 }]);
 
-angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$rootScope', '$http', '$stateParams', '$state', '$transition$', 'ResultsService', function ($scope, $rootScope, $http, $stateParams, $state, $transition$, ResultsService) {
+angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['$scope', '$rootScope', '$http', '$stateParams', '$state', '$transition$', 'ResultsService', 'DcTime', function ($scope, $rootScope, $http, $stateParams, $state, $transition$, ResultsService, DcTime) {
 
     $scope.formData = null;
     $scope.responses = [];
@@ -256,6 +313,7 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
 
     $scope.sortMethods = [
         { id: 'recentAg', label: 'Recent race age grade' },
+        { id: 'recentTime', label: 'Recent race time' },
         { id: 'projTime', label: 'Projected time' },
         { id: 'projAg', label: 'Projected age grade' },
         { id: 'blendEqual', label: 'Recent AG + Projected AG (equal)' },
@@ -313,6 +371,11 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             case 'recentAg':
                 return responses.map(function (r) {
                     return { r: r, v: r.recentResult ? (r.recentResult.agegrade || 0) : 0 };
+                });
+            case 'recentTime':
+                return responses.map(function (r) {
+                    var t = r.recentResult ? r.recentResult.time : null;
+                    return { r: r, v: t ? -t : -Infinity };
                 });
             case 'projTime':
                 return responses.map(function (r) {
@@ -487,39 +550,100 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
         });
     };
 
-    // Returns 'comp', 'discount', or 'cut' based on the row's 1-based position
-    // in the *full* (unfiltered) sorted list — so slot assignment is stable regardless of search.
+    // Normalized 'male' / 'female' / null (unknown) from the linked member's sex.
+    function memberGender(response) {
+        var sex = response.member && response.member.sex;
+        if (!sex) return null;
+        sex = sex.toLowerCase();
+        if (sex === 'male' || sex === 'm') return 'male';
+        if (sex === 'female' || sex === 'f') return 'female';
+        return null;
+    }
+    $scope.memberGender = memberGender;
+
+    function hasCompsConfigured() {
+        if (!$scope.formData) return false;
+        return $scope.formData.splitCompsByGender
+            ? !!(($scope.formData.numCompsMale || 0) + ($scope.formData.numCompsFemale || 0))
+            : !!($scope.formData.numComps || 0);
+    }
+
+    function hasDiscountsConfigured() {
+        if (!$scope.formData) return false;
+        return $scope.formData.splitDiscountsByGender
+            ? !!(($scope.formData.numDiscountsMale || 0) + ($scope.formData.numDiscountsFemale || 0))
+            : !!($scope.formData.numDiscounts || 0);
+    }
+
+    // Picks the top `n` responses (in displayedResponses order) from a candidate
+    // list, either as one combined pool or as separate per-gender pools — used
+    // identically for comp and discount allocation so each can be split
+    // independently.
+    function pickTopN(candidates, byGender, nMale, nFemale, nCombined) {
+        var winners = new Set();
+        if (byGender) {
+            ['male', 'female'].forEach(function (gender) {
+                var n = gender === 'male' ? (nMale || 0) : (nFemale || 0);
+                if (!n) return;
+                candidates
+                    .filter(function (r) { return memberGender(r) === gender; })
+                    .slice(0, n)
+                    .forEach(function (r) { winners.add(r); });
+            });
+        } else {
+            candidates.slice(0, nCombined || 0).forEach(function (r) { winners.add(r); });
+        }
+        return winners;
+    }
+
+    // Comp winners are picked first (from the full displayed list), then discount
+    // winners are picked from whoever is left — so a form can independently split
+    // comps by gender while pooling discounts (or vice versa) and still never
+    // double-allocate a response.
+    function compWinners() {
+        return pickTopN(
+            $scope.displayedResponses, $scope.formData.splitCompsByGender,
+            $scope.formData.numCompsMale, $scope.formData.numCompsFemale, $scope.formData.numComps
+        );
+    }
+
+    function discountWinners(comps) {
+        var remaining = $scope.displayedResponses.filter(function (r) { return !comps.has(r); });
+        return pickTopN(
+            remaining, $scope.formData.splitDiscountsByGender,
+            $scope.formData.numDiscountsMale, $scope.formData.numDiscountsFemale, $scope.formData.numDiscounts
+        );
+    }
+
+    // Returns 'comp', 'discount', or 'cut' for a response, or null if neither
+    // comps nor discounts are configured on this form at all.
     $scope.rowSlot = function (response) {
         if (!$scope.formData) return 'cut';
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps && !numDiscounts) return null;
-        var idx = $scope.displayedResponses.indexOf(response);
-        if (idx < 0) return null;
-        var pos = idx + 1; // 1-based
-        if (pos <= numComps) return 'comp';
-        if (pos <= numComps + numDiscounts) return 'discount';
+        if (!hasCompsConfigured() && !hasDiscountsConfigured()) return null;
+
+        var comps = compWinners();
+        if (comps.has(response)) return 'comp';
+        if (discountWinners(comps).has(response)) return 'discount';
         return 'cut';
     };
 
-    // True if this row is the first "cut" row (where the cut line should appear above it)
-    $scope.isCutLine = function (response) {
+    // True if this row is the first row of a "cut"/"discount" block (i.e. the
+    // row above it, if any, belongs to a different slot) — used to draw a
+    // section-boundary line. Works uniformly whether comps/discounts are split
+    // by gender or pooled, since it just looks at rowSlot() transitions.
+    function isSlotLine(response, slot) {
         if (!$scope.formData) return false;
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps && !numDiscounts) return false;
         var idx = $scope.displayedResponses.indexOf(response);
-        return idx === numComps + numDiscounts;
+        if (idx <= 0 || $scope.rowSlot(response) !== slot) return false;
+        return $scope.rowSlot($scope.displayedResponses[idx - 1]) !== slot;
+    }
+
+    $scope.isCutLine = function (response) {
+        return isSlotLine(response, 'cut');
     };
 
-    // True if this row is the first "discount" row (line between comp and discount sections)
     $scope.isDiscountLine = function (response) {
-        if (!$scope.formData) return false;
-        var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
-        if (!numComps || !numDiscounts) return false;
-        var idx = $scope.displayedResponses.indexOf(response);
-        return idx === numComps;
+        return isSlotLine(response, 'discount');
     };
 
     // Inline form editing
@@ -592,10 +716,17 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             racetype: r.race ? (r.race.racetype || null) : null,
             uniqueId: r.uniqueId || '',
             isOpen: r.isOpen,
-            closesAt: r.closesAt ? new Date(r.closesAt) : null,
+            closesAt: r.closesAt ? DcTime.toWallClock(r.closesAt) : null,
             numComps: r.numComps || 0,
             numDiscounts: r.numDiscounts || 0,
-            bannerImageUrl: r.bannerImageUrl || ''
+            splitCompsByGender: !!r.splitCompsByGender,
+            splitDiscountsByGender: !!r.splitDiscountsByGender,
+            numCompsMale: r.numCompsMale || 0,
+            numCompsFemale: r.numCompsFemale || 0,
+            numDiscountsMale: r.numDiscountsMale || 0,
+            numDiscountsFemale: r.numDiscountsFemale || 0,
+            bannerImageUrl: r.bannerImageUrl || '',
+            resultsLookbackMonths: r.resultsLookbackMonths || 6
         };
         if (!$scope.raceTypes.length) {
             $scope.loadingRaceTypes = true;
@@ -633,11 +764,18 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             title: $scope.editFields.title,
             description: $scope.editFields.description,
             isOpen: $scope.editFields.isOpen,
-            closesAt: $scope.editFields.closesAt || null,
+            closesAt: $scope.editFields.closesAt ? DcTime.fromWallClock($scope.editFields.closesAt) : null,
             numComps: $scope.editFields.numComps || 0,
             numDiscounts: $scope.editFields.numDiscounts || 0,
+            splitCompsByGender: !!$scope.editFields.splitCompsByGender,
+            splitDiscountsByGender: !!$scope.editFields.splitDiscountsByGender,
+            numCompsMale: $scope.editFields.numCompsMale || 0,
+            numCompsFemale: $scope.editFields.numCompsFemale || 0,
+            numDiscountsMale: $scope.editFields.numDiscountsMale || 0,
+            numDiscountsFemale: $scope.editFields.numDiscountsFemale || 0,
             uniqueId: $scope.editFields.uniqueId || undefined,
             bannerImageUrl: $scope.editFields.bannerImageUrl || null,
+            resultsLookbackMonths: $scope.editFields.resultsLookbackMonths || 6,
             race: {
                 linkedRace: $scope.editFields.linkedRace ? ($scope.editFields.linkedRace._id || $scope.editFields.linkedRace) : null,
                 racename: $scope.editFields.racename,
@@ -660,9 +798,16 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
             $scope.formData.closesAt = res.data.closesAt;
             $scope.formData.numComps = res.data.numComps;
             $scope.formData.numDiscounts = res.data.numDiscounts;
+            $scope.formData.splitCompsByGender = res.data.splitCompsByGender;
+            $scope.formData.splitDiscountsByGender = res.data.splitDiscountsByGender;
+            $scope.formData.numCompsMale = res.data.numCompsMale;
+            $scope.formData.numCompsFemale = res.data.numCompsFemale;
+            $scope.formData.numDiscountsMale = res.data.numDiscountsMale;
+            $scope.formData.numDiscountsFemale = res.data.numDiscountsFemale;
             $scope.formData.race = res.data.race;
             $scope.formData.uniqueId = res.data.uniqueId;
             $scope.formData.bannerImageUrl = res.data.bannerImageUrl;
+            $scope.formData.resultsLookbackMonths = res.data.resultsLookbackMonths;
             $scope.editing = false;
             // Signal the list controller to reload when the user navigates back
             $rootScope.compRaceFormDirty = true;
@@ -682,20 +827,24 @@ angular.module('mcrrcApp.results').controller('CompRaceFormDetailController', ['
 
     $scope.copyEmails = function (slot) {
         var numComps = $scope.formData.numComps || 0;
-        var numDiscounts = $scope.formData.numDiscounts || 0;
         var half = Math.ceil(numComps / 2);
         var t1 = Math.ceil(numComps / 3);
         var t2 = Math.ceil(numComps * 2 / 3);
         var emails = $scope.displayedResponses
-            .filter(function (_r, idx) {
+            .filter(function (r, idx) {
                 var pos = idx + 1;
-                if (slot === 'comp') return pos <= numComps;
+                if (slot === 'comp') return $scope.rowSlot(r) === 'comp';
+                if (slot === 'discount') return $scope.rowSlot(r) === 'discount';
+                if (slot === 'cut') return $scope.rowSlot(r) === 'cut';
+                if (slot === 'comp-male') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'male';
+                if (slot === 'comp-female') return $scope.rowSlot(r) === 'comp' && $scope.memberGender(r) === 'female';
+                if (slot === 'discount-male') return $scope.rowSlot(r) === 'discount' && $scope.memberGender(r) === 'male';
+                if (slot === 'discount-female') return $scope.rowSlot(r) === 'discount' && $scope.memberGender(r) === 'female';
                 if (slot === 'comp-first') return pos <= half;
                 if (slot === 'comp-second') return pos > half && pos <= numComps;
                 if (slot === 'comp-third1') return pos <= t1;
                 if (slot === 'comp-third2') return pos > t1 && pos <= t2;
                 if (slot === 'comp-third3') return pos > t2 && pos <= numComps;
-                if (slot === 'discount') return pos > numComps && pos <= numComps + numDiscounts;
                 return false;
             })
             .map(function (r) { return r.user && r.user.email ? r.user.email : null; })

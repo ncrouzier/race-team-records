@@ -30,6 +30,12 @@
         <div class="card-body">
             <h4 class="card-title mb-3">Map Table Columns {{tableData.length}}</h4>
 
+            <div ng-show="hasHiddenColumns()" class="mb-2 text-right">
+                <button type="button" class="btn btn-xs btn-default" ng-click="restoreHiddenColumns()">
+                    <i class="fa fa-undo"></i> Restore hidden columns
+                </button>
+            </div>
+
             <div class="table-responsive mb-3">
                 <table class="table table-bordered table-striped">
                     <thead class="thead-light">

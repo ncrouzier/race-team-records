@@ -658,3 +658,21 @@ app.directive('d3PieChart', function () {
     }
   };
 });
+
+// Turns the image's build timestamp into a tooltip on the footer version.
+//
+// BUILD_DATE is stamped into the image in UTC and rendered into index.ejs by
+// the server, which has no idea what timezone the reader is in — so the
+// conversion has to happen in the browser.
+app.directive('buildStamp', function () {
+  return {
+    restrict: 'A',
+    link: function (scope, element, attrs) {
+      var built = new Date(attrs.buildStamp);
+      if (isNaN(built.getTime())) {
+        return;
+      }
+      element.attr('title', 'built: ' + built.toLocaleString());
+    }
+  };
+});

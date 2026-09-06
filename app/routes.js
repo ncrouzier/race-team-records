@@ -704,7 +704,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const updated = await Banner.findByIdAndUpdate(
                 req.params.id,
                 { members, pinned, titleTheme, copyright },
-                { new: true, runValidators: true }
+                { returnDocument: 'after', runValidators: true }
             ).populate('members', 'firstname lastname');
             if (!updated) return res.status(404).json({ error: 'Banner not found' });
             res.json(updated);
@@ -1797,7 +1797,7 @@ module.exports = async function (app, qs, passport, async, _) {
                             customOptions: resultData.customOptions,
                             achievements: resultData.achievements
                         },
-                        { new: true }
+                        { returnDocument: 'after' }
                     );
 
                     if (updatedResult) {

@@ -60,7 +60,7 @@ const resultSchema = mongoose.Schema({
 });
 
 // keep track of when results are updated and created
-resultSchema.pre('save', function( next) {
+resultSchema.pre('save', function() {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
@@ -68,18 +68,16 @@ resultSchema.pre('save', function( next) {
     this.updatedAt = date;
     this.updateCategory();
     this.updateSystemInfo('mcrrc',date);
-    next();
 });
 
 //or deleted
-resultSchema.post('deleteOne', function(doc, next) {
+resultSchema.post('deleteOne', function(doc) {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
     }
     this.updatedAt = date;    
     resultSchema.methods.updateSystemInfo('mcrrc',date);
-    next();
 }); 
 
 

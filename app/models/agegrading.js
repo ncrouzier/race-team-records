@@ -49,12 +49,11 @@ var agegradingSchema = mongoose.Schema({
 });
 
 // keep track of when members are updated and created
-agegradingSchema.pre('save', function(next, done) {
+agegradingSchema.pre('save', function() {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
     this.updatedAt = Date.now();
-    next();
 });
 
 

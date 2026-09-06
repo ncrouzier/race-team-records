@@ -19,11 +19,10 @@ var activityLogSchema = mongoose.Schema({
 
 activityLogSchema.index({ createdAt: -1 });
 
-activityLogSchema.pre('save', function(next) {
+activityLogSchema.pre('save', function() {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
-    next();
 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

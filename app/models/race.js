@@ -39,7 +39,7 @@ var raceSchema = mongoose.Schema({
 });
 
 // keep track of when results are updated and created
-raceSchema.pre('save', function(next, done) {
+raceSchema.pre('save', function() {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
@@ -47,18 +47,16 @@ raceSchema.pre('save', function(next, done) {
     this.updatedAt = date;
 
     this.updateSystemInfo('mcrrc',date);
-    next();
 });
 
 //or deleted
-raceSchema.post('deleteOne', function(doc, next) {
+raceSchema.post('deleteOne', function(doc) {
     var date = Date.now();
     if (this.isNew) {
         this.createdAt = date;
     }
     this.updatedAt = date;    
     raceSchema.methods.updateSystemInfo('mcrrc',date);
-    next();
 }); 
 
 

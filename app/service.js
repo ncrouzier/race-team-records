@@ -121,7 +121,7 @@ module.exports = {
                 },
                 {
                     upsert: true, // Create if doesn't exist
-                    new: true // Return the updated document
+                    returnDocument: 'after' // Return the updated document
                 }
             );
 

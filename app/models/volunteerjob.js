@@ -23,7 +23,7 @@ volunteerJobSchema.index({ 'member._id': 1 });
 volunteerJobSchema.index({ jobDate: 1 });
 
 // keep track of when volunteer jobs are updated and created
-volunteerJobSchema.pre('save', function(next, done) {
+volunteerJobSchema.pre('save', function() {
     const currentDate = Date.now();
 
     if (this.isNew) {
@@ -31,7 +31,6 @@ volunteerJobSchema.pre('save', function(next, done) {
     }
     this.updatedAt = currentDate;
     volunteerJobSchema.methods.updateSystemInfo('mcrrc', currentDate);
-    next();
 });
 
 volunteerJobSchema.methods.updateSystemInfo = function(name, date) {

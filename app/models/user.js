@@ -39,12 +39,11 @@ var userSchema = mongoose.Schema({
 // methods ======================
 
 // keep track of when users are updated and created
-userSchema.pre('save', function (next, done) {
+userSchema.pre('save', function () {
     if (this.isNew) {
         this.createdAt = Date.now();
     }
     this.updatedAt = Date.now();
-    next();
 });
 
 // generating a hash (async — does not block the event loop)

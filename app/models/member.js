@@ -42,7 +42,7 @@ var memberSchema = mongoose.Schema({
 });
 
 // keep track of when members are updated and created
-memberSchema.pre('save', function(next, done) {
+memberSchema.pre('save', function() {
 
     //set memberStatus
     this.memberStatus = 'past';
@@ -69,7 +69,6 @@ memberSchema.pre('save', function(next, done) {
     }
     this.updatedAt = currentDate;
     memberSchema.methods.updateSystemInfo('mcrrc',currentDate);
-    next();
 });
 
 memberSchema.methods.updateSystemInfo = function(name,date) {

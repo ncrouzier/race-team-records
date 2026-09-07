@@ -156,7 +156,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         raceTypes: [],
         countries: [],
         states: [],
-        selectedMembers: []
+        selectedMembers: [],
+        // {month, day, label} — a single day of the year, matched across every
+        // year. Set by clicking a cell in the racing calendar on the stats pages.
+        calendarDay: null,
+        // {racetype, surfaces, sex, maxTime, label} — the performances behind one
+        // milestone counter on the team stats page.
+        milestone: null
     };
 
     // Distance range for slider
@@ -275,7 +281,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             raceTypes: [],
             countries: [],
             states: [],
-            selectedMembers: []
+            selectedMembers: [],
+            calendarDay: null,
+            milestone: null
         };
         $scope.applyFilters();
     };
@@ -410,7 +418,9 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                ($scope.filters.raceTypes && $scope.filters.raceTypes.length > 0) ||
                ($scope.filters.countries && $scope.filters.countries.length > 0) ||
                ($scope.filters.states && $scope.filters.states.length > 0) ||
-               ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0);
+               ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0) ||
+               !!$scope.filters.calendarDay ||
+               !!$scope.filters.milestone;
     };
 
     $scope.getActiveFilterCount = function() {
@@ -436,6 +446,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         if ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0) {
             count += $scope.filters.selectedMembers.length;
         }
+        if ($scope.filters.calendarDay) count++;
+        if ($scope.filters.milestone) count++;
         
         return count;
     };
@@ -522,6 +534,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                         23, 59, 59, 999
                     ));
                     if (raceDate > toDate) {
+                        return false;
+                    }
+                }
+
+                // Day-of-year filter: the same calendar day in every year, so
+                // "Jul 4" keeps thirteen years of Independence Day races.
+                if ($scope.filters.calendarDay) {
+                    if (raceDate.getUTCMonth() !== $scope.filters.calendarDay.month ||
+                        raceDate.getUTCDate() !== $scope.filters.calendarDay.day) {
                         return false;
                     }
                 }
@@ -641,6 +662,33 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
 
             return true;
         });
+
+        // The milestone filter is the only one that narrows a race's results
+        // rather than just keeping or dropping the race. Without it a "sub-16
+        // 5k" link would list every team result in those races, and the rows on
+        // screen would not add up to the number that was clicked. The race is
+        // shallow-copied so the shared cached list is never mutated.
+        if ($scope.filters.milestone) {
+            var ms = $scope.filters.milestone;
+            $scope.filteredRacesList = $scope.filteredRacesList.reduce(function(acc, race) {
+                if (race.racetype.name !== ms.racetype) return acc;
+                if (ms.surfaces && ms.surfaces.indexOf(race.racetype.surface) === -1) return acc;
+
+                var kept = (race.results || []).filter(function(result) {
+                    if (!result.members || result.members.length !== 1) return false;
+                    if (result.isRecordEligible === false) return false;
+                    if (ms.maxTime && (!result.time || result.time >= ms.maxTime)) return false;
+                    // The age-grade view has no gender restriction — age grading
+                    // already normalises for it.
+                    if (ms.minAgeGrade && !(parseFloat(result.agegrade) >= ms.minAgeGrade)) return false;
+                    return !ms.sex || result.members[0].sex === ms.sex;
+                });
+                if (kept.length) {
+                    acc.push(angular.extend({}, race, { results: kept }));
+                }
+                return acc;
+            }, []);
+        }
     };
 
     // Watch for changes in search query and apply filters
@@ -1164,6 +1212,14 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                     }
                     
                    
+                }
+                if (searchParams.milestone &&
+                    (searchParams.milestone.maxTime || searchParams.milestone.minAgeGrade)) {
+                    $scope.filters.milestone = searchParams.milestone;
+                }
+                if (searchParams.calendarDay &&
+                    searchParams.calendarDay.month != null && searchParams.calendarDay.day != null) {
+                    $scope.filters.calendarDay = searchParams.calendarDay;
                 }
                 if (searchParams.year) {
                     // Create Date objects in local timezone for proper display in date inputs

@@ -1,0 +1,105 @@
+<div class="jumbotron agt-tool">
+
+    <div class="agt-header">
+        <div>
+            <h2 class="agt-title">Age Grading Tables</h2>
+            <p class="agt-subtitle">
+                The raw standards behind every graded result: the world-best time for each age and distance, as
+                stored in the database. A result is graded as <code>standard &divide; time &times; 100</code>.
+            </p>
+        </div>
+        <div class="agt-header-actions">
+            <button class="mcrrc-btn" ng-click="exportCsv()" ng-disabled="!table">
+                <i class="fa fa-download"></i> Export CSV
+            </button>
+            <button class="mcrrc-btn" ng-click="refreshCache()" ng-disabled="refreshing">
+                <i class="fa fa-refresh" ng-class="{'fa-spin': refreshing}"></i> Refresh server cache
+            </button>
+        </div>
+    </div>
+
+    <form class="agt-controls" ng-if="meta.tables.length" ng-submit="$event.preventDefault()">
+        <div class="agt-field">
+            <label>Surface</label>
+            <div class="agt-toggle">
+                <button type="button" class="mcrrc-btn" ng-repeat="t in types()"
+                    ng-class="{'is-on': selection.type === t}" ng-click="selectType(t)">{{t}}</button>
+            </div>
+        </div>
+
+        <div class="agt-field">
+            <label>Gender</label>
+            <div class="agt-toggle">
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': selection.sex === 'male'}"
+                    ng-click="selectSex('male')">Men</button>
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': selection.sex === 'female'}"
+                    ng-click="selectSex('female')">Women</button>
+            </div>
+        </div>
+
+        <div class="agt-field">
+            <label>Version</label>
+            <div class="agt-toggle">
+                <button type="button" class="mcrrc-btn" ng-repeat="v in versionsFor(selection.type)"
+                    ng-class="{'is-on': selection.version === v}" ng-click="selectVersion(v)">{{v}}</button>
+            </div>
+        </div>
+
+        <div class="agt-field">
+            <label>Show as</label>
+            <div class="agt-toggle">
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': !showSeconds}"
+                    ng-click="setShowSeconds(false)">Time</button>
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': showSeconds}"
+                    ng-click="setShowSeconds(true)">Seconds</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="agt-summary" ng-if="table">
+        <div class="agt-stat">
+            <span class="agt-stat-value">{{table.rows.length}}</span>
+            <span class="agt-stat-label">ages, {{currentInfo().minAge}}&ndash;{{currentInfo().maxAge}}</span>
+        </div>
+        <div class="agt-stat">
+            <span class="agt-stat-value">{{table.distances.length}}</span>
+            <span class="agt-stat-label">distances</span>
+        </div>
+        <div class="agt-stat agt-stat-wide" ng-if="table.appliesTo">
+            <span class="agt-stat-value">{{table.version}}</span>
+            <span class="agt-stat-label">used for {{table.appliesTo}}</span>
+        </div>
+    </div>
+
+    <div class="agt-note" ng-if="table">
+        <i class="fa fa-info-circle"></i>
+        Older versions are kept because a result is always graded against the table in force on its race date.
+        Editing these values requires a database migration &mdash; they are read-only here.
+    </div>
+
+    <div class="agt-empty" ng-if="loading">
+        <i class="fa fa-spinner fa-spin"></i> Loading standards&hellip;
+    </div>
+
+    <div class="agt-empty" ng-if="!loading && !meta.tables.length">
+        <i class="fa fa-info-circle"></i> No age grading data found in the database.
+    </div>
+
+    <div class="agt-table-wrap" ng-if="!loading && table.rows.length">
+        <table class="agt-table">
+            <thead>
+                <tr>
+                    <th class="agt-age-col">Age</th>
+                    <th ng-repeat="d in table.distances track by d">{{d}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="row in table.rows track by row.age" ng-class="{'agt-decade': row.age % 10 === 0}">
+                    <th class="agt-age-col">{{row.age}}</th>
+                    <td ng-repeat="d in table.distances track by d"
+                        ng-class="{'agt-missing': row.values[d] === null}">{{cellValue(row, d)}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

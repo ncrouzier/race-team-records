@@ -4,6 +4,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
     $scope.$watch('authService.isLoggedIn()', function (user) {
         var hadUser = !!$scope.user;
         $scope.user = user;
+        defaultMilestoneView(user);
         // When user logs in after initial load, only load participation stats (other stats are user-independent)
         if ($scope.statsInitialized && !hadUser && user && (user.role === 'user' || user.role === 'admin' || user.role === 'captain')) {
             $scope.getParticipationStats();
@@ -138,6 +139,8 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 ...stats.teamMemberStats
             };
             $scope.teamRaceTypeBreakdown = stats.teamRaceTypeBreakdown;
+            $scope.raceCalendar = stats.raceCalendar;
+            $scope.milestones = stats.milestones;
             $scope.stateStats = stats.stateStats;
             $scope.countryStats = stats.countryStats;
 
@@ -439,6 +442,74 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
 
         var searchQuery = JSON.stringify(cleanedParams);
         $state.go('/results', { search: searchQuery });
+    };
+
+    // 'Male' | 'Female' | 'AgeGrade'. Set through a function, not a bare
+    // assignment in ng-click: the panel sits inside an ng-if, whose child scope
+    // would shadow the value otherwise.
+    $scope.milestoneView = 'Male';
+    // Once the reader picks a view themselves, stop steering it for them — the
+    // auth watcher below fires again on any login state change.
+    var milestoneViewPicked = false;
+    $scope.setMilestoneView = function (view) {
+        milestoneViewPicked = true;
+        $scope.milestoneView = view;
+    };
+
+    // Open on the reader's own side of the table when we know it.
+    function defaultMilestoneView(user) {
+        if (milestoneViewPicked) return;
+        var sex = user && user.member && user.member.sex;
+        if (sex === 'Female' || sex === 'Male') {
+            $scope.milestoneView = sex;
+        }
+    }
+
+    // Index of the hardest tier the logged-in reader has cleared in this row,
+    // or -1. Time rows only count for the reader's own gender — a man's times
+    // say nothing against the women's thresholds — while the age-grade rows
+    // apply to everyone, since age grading is already gender-neutral.
+    $scope.myBestTier = function (row) {
+        var member = $scope.user && $scope.user.member;
+        if (!member || !row || !row.bestTierByMember) return -1;
+        if (row.kind !== 'agegrade' && row.sex !== member.sex) return -1;
+        var index = row.bestTierByMember[member._id];
+        return index === undefined ? -1 : index;
+    };
+
+    // A milestone tile opens the results page showing exactly the performances
+    // it counted — same distance, surfaces, gender and time cutoff — so the rows
+    // listed there add up to the number that was clicked.
+    $scope.goToMilestone = function (row, tier) {
+        if (!row || !tier || !tier.count) return;
+        var isAgeGrade = row.kind === 'agegrade';
+        $scope.goToResultsWithQuery({
+            milestone: {
+                racetype: row.racetype,
+                surfaces: row.surfaces,
+                // Age grade is already normalised for gender, so that view is
+                // not restricted to one.
+                sex: row.sex,
+                maxTime: tier.maxTime,
+                minAgeGrade: tier.minAgeGrade,
+                label: isAgeGrade
+                    ? row.distance + ' at ' + tier.label + ' age grade'
+                    : (row.sex === 'Female' ? 'Women' : 'Men') + ', ' +
+                        row.distance + ' ' + tier.label
+            },
+            year: $scope.miscStats.year !== 'All Time' ? $scope.miscStats.year : undefined
+        });
+    };
+
+    // A calendar cell opens the results page filtered to that day of the year,
+    // across every year — the same set the cell is counting. Days the team has
+    // never raced have nothing to show, so they are not clickable.
+    $scope.goToCalendarDay = function (day) {
+        if (!day || !day.count) return;
+        $scope.goToResultsWithQuery({
+            calendarDay: { month: day.month, day: day.day, label: day.label },
+            year: $scope.miscStats.year !== 'All Time' ? $scope.miscStats.year : undefined
+        });
     };
 
 

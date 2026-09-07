@@ -1817,11 +1817,14 @@ footer {
     }
 }
 
+// Deliberately mirrors .location-stats above: the two sit side by side as
+// list panels on the member stats page and should read as the same component.
 .team-members-stats {
     .team-member-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
         padding: 8px 0;
         border-bottom: 1px solid #e9ecef;
 
@@ -1830,9 +1833,24 @@ footer {
         }
 
         .team-member-name {
-
             font-weight: 600;
             color: @gray-dark;
+            // Long names shorten rather than wrapping the row onto a second
+            // line, which is what made these rows twice the height of the
+            // neighbouring location rows.
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        // Count and head-to-head sit on one line together. Previously the
+        // button lived inside the count pill, which stretched the pill into a
+        // two-line block and hid the button against its own background.
+        .team-member-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
         }
 
         .team-member-count {
@@ -1842,6 +1860,30 @@ footer {
             border-radius: 12px;
             font-size: 0.8em;
             font-weight: 600;
+            white-space: nowrap;
+        }
+
+        // Icon-only: the label is redundant next to a trophy, and spelling it
+        // out on every row is what made this panel so tall.
+        .team-member-h2h {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 11px;
+            color: @brand-primary;
+            background: @brand-primary-very-light;
+            border: 1px solid #dce9ef;
+
+            &:hover,
+            &:focus {
+                background: @brand-primary;
+                border-color: @brand-primary;
+                color: #fff;
+                text-decoration: none;
+            }
         }
     }
 }
@@ -10224,4 +10266,621 @@ footer {
         animation: none;
     }
 
+}
+
+// =====================================================================
+// AGE GRADING TABLES (admin) — the raw standards, as stored.
+// Shares the .mcrrc-btn / caption-label vocabulary with the age grade
+// tool above, so the two age-grading pages read as one family.
+// =====================================================================
+.agt-tool {
+
+    .agt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .agt-title {
+        margin-top: 0;
+        margin-bottom: 6px;
+        font-size: 26px;
+    }
+
+    .agt-subtitle {
+        max-width: 640px;
+        margin-bottom: 0;
+        font-size: 14px;
+        color: @gray-light;
+
+        code {
+            white-space: nowrap;
+        }
+    }
+
+    .agt-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .agt-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px;
+        margin-top: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #e4e8eb;
+    }
+
+    .agt-field {
+        display: flex;
+        flex-direction: column;
+
+        // Direct child only, so the toggle buttons nested below do not pick
+        // up the small uppercase caption styling.
+        > label {
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: @gray-light;
+        }
+    }
+
+    // Gap'd rather than a bootstrap .btn-group: these buttons carry their own
+    // border and shadow, which look wrong butted together.
+    .agt-toggle {
+        display: flex;
+        gap: 6px;
+    }
+
+    .agt-toggle .mcrrc-btn {
+        height: 36px;
+        text-transform: capitalize;
+    }
+
+    .agt-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .agt-stat {
+        display: flex;
+        align-items: baseline;
+        gap: 7px;
+        padding: 8px 14px;
+        background: @brand-primary-very-light;
+        border: 1px solid #dce9ef;
+        border-radius: 4px;
+    }
+
+    .agt-stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: @brand-primary;
+        line-height: 1;
+    }
+
+    .agt-stat-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: @gray;
+    }
+
+    .agt-note {
+        margin-top: 12px;
+        font-size: 13px;
+        color: @gray-light;
+
+        i {
+            margin-right: 5px;
+        }
+    }
+
+    .agt-empty {
+        margin-top: 22px;
+        padding: 26px;
+        text-align: center;
+        font-size: 15px;
+        color: @gray-light;
+        background: #f8f9fa;
+        border: 1px dashed #d6dde2;
+        border-radius: 6px;
+
+        i {
+            margin-right: 6px;
+        }
+    }
+
+    // The grid runs to 106 rows by 22 columns, so it scrolls inside its own
+    // box with the header row and the age column pinned — otherwise you lose
+    // track of which cell you are reading.
+    .agt-table-wrap {
+        margin-top: 18px;
+        max-height: 70vh;
+        overflow: auto;
+        border: 1px solid #e4e8eb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .agt-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+        white-space: nowrap;
+
+        th,
+        td {
+            padding: 5px 12px;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f4f7f9;
+            text-align: right;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: @gray;
+            // A real border would scroll away from a sticky cell, so the rule
+            // under the header is drawn as a shadow instead.
+            box-shadow: inset 0 -1px 0 #d6dde2;
+        }
+
+        tbody td {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            color: @gray-dark;
+        }
+
+        tbody tr:nth-child(even) td,
+        tbody tr:nth-child(even) .agt-age-col {
+            background: #fbfcfd;
+        }
+
+        // Every tenth year gets a rule above it: at ~100 rows the eye needs
+        // decade anchors to stay on the right line.
+        tbody tr.agt-decade th,
+        tbody tr.agt-decade td {
+            box-shadow: inset 0 1px 0 #dfe6ea;
+        }
+
+        .agt-age-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #fff;
+            text-align: left;
+            font-weight: 700;
+            color: @gray-dark;
+            box-shadow: inset -1px 0 0 #e4e8eb;
+        }
+
+        thead .agt-age-col {
+            z-index: 3;
+            background: #f4f7f9;
+            box-shadow: inset -1px 0 0 #d6dde2, inset 0 -1px 0 #d6dde2;
+        }
+
+        tbody tr:hover td,
+        tbody tr:hover .agt-age-col {
+            background: @brand-primary-very-light;
+        }
+
+        // A distance the table does not carry, rather than a zero.
+        .agt-missing {
+            background-image: linear-gradient(135deg, transparent 45%, #eef1f3 45%, #eef1f3 55%, transparent 55%);
+        }
+    }
+}
+
+// =====================================================================
+// TEAM RACING CALENDAR — a 12 x 31 heatmap of the club's racing year.
+// The blank cells are the feature, not the background: they are the
+// calendar days the team has never raced.
+// =====================================================================
+@cal-blank: #e9edf0;
+// Eight steps from a pale tint to a shade darker than the brand blue, so the
+// busiest bands still separate from each other at the top of the scale.
+@cal-l1: lighten(@brand-primary, 52%);
+@cal-l2: lighten(@brand-primary, 45%);
+@cal-l3: lighten(@brand-primary, 38%);
+@cal-l4: lighten(@brand-primary, 30%);
+@cal-l5: lighten(@brand-primary, 22%);
+@cal-l6: lighten(@brand-primary, 14%);
+@cal-l7: lighten(@brand-primary, 6%);
+@cal-l8: darken(@brand-primary, 8%);
+
+.cal-panel {
+
+    .cal-headline {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .cal-score {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .cal-score-value {
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1;
+        color: @brand-primary;
+    }
+
+    .cal-score-total {
+        font-size: 18px;
+        font-weight: 600;
+        color: @gray-light;
+    }
+
+    .cal-score-text {
+        font-size: 13px;
+        color: @gray;
+
+        strong {
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 12px;
+            color: @gray-darkish;
+        }
+    }
+
+    // The whole point of the panel: the handful of days still unraced,
+    // called out as a to-do list rather than left to be hunted for.
+    .cal-todo {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        padding: 10px 12px;
+        background: #fff9ec;
+        border: 1px solid #f0e2c4;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .cal-todo-label {
+        font-weight: 700;
+        color: @brand-warning;
+    }
+
+    .cal-todo-day {
+        padding: 2px 8px;
+        background: #fff;
+        border: 1px solid #e6d5ae;
+        border-radius: 10px;
+        font-weight: 600;
+        color: @gray-dark;
+        white-space: nowrap;
+    }
+
+    // 31 columns never fit a phone; the grid keeps its cell size and scrolls
+    // rather than shrinking into unreadable slivers.
+    .cal-grid-wrap {
+        margin-top: 16px;
+        overflow-x: auto;
+    }
+
+    // Centred rather than flush left: the grid is narrower than a full-width
+    // panel, and left-aligned it reads as though it were cut off.
+    .cal-grid {
+        margin: 0 auto;
+        border-collapse: separate;
+        border-spacing: 3px;
+
+        thead th {
+            font-size: 10px;
+            font-weight: 600;
+            color: @gray-light;
+            text-align: center;
+            padding: 0;
+        }
+
+        .cal-month-label {
+            padding-right: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: @gray;
+            text-align: right;
+            white-space: nowrap;
+        }
+    }
+
+    .cal-legend {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        font-size: 12px;
+        color: @gray-light;
+    }
+
+    .cal-legend-item,
+    .cal-legend-scale {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .cal-legend-note {
+        margin-left: auto;
+    }
+}
+
+// Calendar cell tooltips carry two lines — the day's totals, then the races
+// on it — so they have to opt out of the nowrap default set on .tooltip-inner
+// above, and be given a width to wrap a long list of race names against.
+.cal-tooltip .tooltip-inner {
+    width: max-content;
+    max-width: min(320px, 90vw);
+    // pre-line keeps the newline between the two lines while still wrapping
+    // the race list; nowrap would run both off the edge as one line.
+    white-space: pre-line;
+    // Appending to <body> drops the grid's ambient font-size, so restate it.
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+// Also used in the legend, which sits outside the grid.
+.cal-cell {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 2px;
+    background: @cal-blank;
+
+    &.cal-level-1 { background: @cal-l1; }
+    &.cal-level-2 { background: @cal-l2; }
+    &.cal-level-3 { background: @cal-l3; }
+    &.cal-level-4 { background: @cal-l4; }
+    &.cal-level-5 { background: @cal-l5; }
+    &.cal-level-6 { background: @cal-l6; }
+    &.cal-level-7 { background: @cal-l7; }
+    &.cal-level-8 { background: @cal-l8; }
+
+    // A day never raced. Plain by default; only the grids where the gaps are
+    // few (the team's all-time view) outline them in amber, where they read as
+    // a short list of days left to collect rather than as a wall of warnings.
+    &.cal-blank {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px darken(@cal-blank, 6%);
+    }
+
+    .cal-highlight-gaps &.cal-blank {
+        box-shadow: inset 0 0 0 1px @brand-warning;
+    }
+
+    // Padding for the 29th to 31st of short months: no day, no marker.
+    &.cal-pad {
+        background: transparent;
+    }
+
+    // The single busiest day of the year. Colour alone cannot carry this — it
+    // already sits in the darkest band with its neighbours — so it gets a gold
+    // ring and a star that read at a glance.
+    &.cal-busiest {
+        position: relative;
+        box-shadow: 0 0 0 2px @gold, 0 0 6px fade(@gold, 70%);
+
+        &:after {
+            content: "\2605";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            line-height: 1;
+            color: @gold;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+        }
+    }
+
+    &.cal-clickable {
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 0 0 2px @gray-dark;
+        }
+
+        &.cal-busiest:hover {
+            box-shadow: 0 0 0 2px @gray-dark, 0 0 6px fade(@gold, 70%);
+        }
+    }
+}
+
+.cal-legend .cal-cell {
+    display: inline-block;
+}
+
+// =====================================================================
+// MILESTONE COUNTERS — round-number time barriers per distance.
+// =====================================================================
+// Opts out of the nowrap default on .tooltip-inner; restates font-size because
+// appending to <body> drops the panel's ambient size.
+.ms-tooltip .tooltip-inner {
+    width: max-content;
+    max-width: min(300px, 90vw);
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.ms-panel {
+
+    .ms-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #e4e8eb;
+    }
+
+    .ms-intro {
+        max-width: 620px;
+        margin: 0;
+        font-size: 13px;
+        color: @gray-light;
+    }
+
+    .ms-toggle {
+        display: flex;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
+    .ms-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid @gray-lighter;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    // Fixed width so every distance's tiers line up in a column, which is what
+    // makes the ladder readable down the page as well as across.
+    .ms-distance {
+        flex: 0 0 130px;
+        font-weight: 700;
+        color: @gray-dark;
+
+        small {
+            display: block;
+            font-weight: 400;
+            font-size: 11px;
+            color: @gray-light;
+        }
+    }
+
+    .ms-tiers {
+        display: flex;
+        gap: 10px;
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+    }
+
+    .ms-tier {
+        flex: 1 1 0;
+        min-width: 110px;
+        padding: 8px 10px;
+        text-align: center;
+        background: @brand-primary-very-light;
+        border: 1px solid #dce9ef;
+        border-radius: 4px;
+
+        // The hardest barrier the logged-in reader has cleared at this distance.
+        // Amber rather than another blue: it has to separate from the tiles
+        // around it, which are already the panel's brand colour.
+        &.is-mine {
+            position: relative;
+            background: #fff8e9;
+            border-color: @brand-warning;
+            box-shadow: inset 0 0 0 1px @brand-warning;
+
+            .ms-tier-primary {
+                color: darken(@brand-warning, 8%);
+            }
+        }
+
+        &.is-clickable {
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+            &:hover {
+                border-color: @brand-primary;
+                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+            }
+        }
+
+        // A barrier nobody has broken yet is still worth showing — it is the
+        // next thing to chase — but it should not read as a live counter.
+        &.is-empty {
+            background: #fafbfc;
+            border-color: @gray-lighter;
+
+            .ms-tier-primary {
+                color: @gray-light;
+            }
+        }
+    }
+
+    .ms-tier-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: @gray;
+    }
+
+    // The headline figure is how many different runners have cleared the
+    // barrier; the caption is how many times it has been done.
+    .ms-tier-primary {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: @brand-primary;
+    }
+
+    .ms-tier-secondary {
+        font-size: 11px;
+        color: @gray-light;
+    }
+
+    .ms-mine-flag {
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 1px 7px;
+        border-radius: 8px;
+        background: @brand-warning;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1.5;
+    }
+}
+
+@media (max-width: 767px) {
+    .ms-panel .ms-row {
+        display: block;
+    }
+
+    .ms-panel .ms-distance {
+        margin-bottom: 8px;
+    }
 }

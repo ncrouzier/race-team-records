@@ -196,6 +196,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/activitylogs.html');
                 gtag('event', 'page_view');
             }
+        }).state('/agegrading-tables', {
+            url: "/agegrading-tables",
+            templateUrl: "views/ageGradingTables.html",
+            controller: 'AgeGradingTablesController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/agegradingTables.html');
+                gtag('event', 'page_view');
+            }
         }).state('/volunteer-jobs', {
             url: "/volunteer-jobs",
             templateUrl: "views/volunteerJobs.html",

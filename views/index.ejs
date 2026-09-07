@@ -127,7 +127,7 @@
 								</li>
 							</ul>
 						</li>
-						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs') || $state.includes('/agegrading-tables'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span class="caret"></span>
@@ -151,6 +151,8 @@
 								<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
 								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
 										Types</a></li>
+								<li ng-class="{active: $state.includes('/agegrading-tables')}"><a
+										ui-sref="/agegrading-tables">Age Grading Tables</a></li>
 								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
 										Report</a></li>
 								<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a>

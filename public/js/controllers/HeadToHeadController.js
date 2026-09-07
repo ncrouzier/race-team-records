@@ -433,8 +433,8 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             bestAgeGradeRace: null,
             avgAgeGrade: 0,
             totalMiles: 0,
-            uniqueLocations: new Set(),
             uniqueStates: new Set(),
+            uniqueOtherCountries: new Set(),
             uniqueCountries: new Set(),
             raceTypeBreakdown: {},
             locationBreakdown: {}
@@ -449,11 +449,18 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             const raceYear = new Date(result.race.racedate).getUTCFullYear();
             years.add(raceYear);
 
-            // Track locations
+            // Places raced: US states plus non-US countries, matching the
+            // "Most Traveled Runners" definition in StatsService. A race abroad
+            // has no state, and adding '' for it used to inflate the state
+            // count by one for anyone who had raced outside the US.
             if (result.race.location) {
-                const locationKey = result.race.location.country + (result.race.location.state ? ' - ' + result.race.location.state : '');
-                stats.uniqueLocations.add(locationKey);
-                stats.uniqueStates.add(result.race.location.state || '');
+                if (result.race.location.country === 'USA') {
+                    if (result.race.location.state) {
+                        stats.uniqueStates.add(result.race.location.state);
+                    }
+                } else if (result.race.location.country) {
+                    stats.uniqueOtherCountries.add(result.race.location.country);
+                }
                 stats.uniqueCountries.add(result.race.location.country);
             }
 
@@ -499,9 +506,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
         stats.yearsRacing = years.size;
         stats.avgRacesPerYear = results.length / years.size;
         stats.avgAgeGrade = ageGradeCount > 0 ? totalAgeGrade / ageGradeCount : 0;
-        stats.uniqueLocations = stats.uniqueLocations.size;
         stats.uniqueStates = stats.uniqueStates.size;
+        stats.uniqueOtherCountries = stats.uniqueOtherCountries.size;
         stats.uniqueCountries = stats.uniqueCountries.size;
+        stats.uniqueLocations = stats.uniqueStates + stats.uniqueOtherCountries;
 
         return stats;
     };

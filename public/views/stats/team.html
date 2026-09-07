@@ -184,9 +184,11 @@
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
                                                 ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small>{{member.uniqueCountries}} {{member.uniqueCountries === 1 ? 'country'
-                                            : 'countries'}}, {{member.uniqueStates}} {{member.uniqueStates === 1 ?
-                                            'state' : 'states'}}</small>
+                                        <br><small>{{member.uniqueStates}} US {{member.uniqueStates === 1 ? 'state' :
+                                            'states'}}<span ng-if="member.uniqueOtherCountries">,
+                                                {{member.uniqueOtherCountries}} other
+                                                {{member.uniqueOtherCountries === 1 ? 'country' :
+                                                'countries'}}</span></small>
                                     </div>
                                     <div class="col-sm-4 text-right">
                                         {{member.uniqueLocations}} locations
@@ -311,6 +313,131 @@
                                 </div>
                             </li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-if="milestones">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4><i class="fa fa-tachometer"></i> Milestone Counters</h4>
+                    </div>
+                    <div class="panel-body ms-panel">
+
+                        <div class="ms-head">
+                            <p class="ms-intro">
+                                How many runners have broken each barrier, with the number of results below.
+                                Time thresholds differ for men and women; age grade is one shared set.
+                            </p>
+                            <div class="ms-toggle">
+                                <button type="button" class="mcrrc-btn"
+                                    ng-class="{'is-on': milestoneView === 'Male'}"
+                                    ng-click="setMilestoneView('Male')">Men</button>
+                                <button type="button" class="mcrrc-btn"
+                                    ng-class="{'is-on': milestoneView === 'Female'}"
+                                    ng-click="setMilestoneView('Female')">Women</button>
+                                <button type="button" class="mcrrc-btn"
+                                    ng-class="{'is-on': milestoneView === 'AgeGrade'}"
+                                    ng-click="setMilestoneView('AgeGrade')">Age grade</button>
+                            </div>
+                        </div>
+
+                        <div class="ms-row" ng-repeat="row in milestones[milestoneView] track by row.distance">
+                            <div class="ms-distance">
+                                {{row.distance}}
+                                <small>{{row.pool}} results</small>
+                            </div>
+                            <div class="ms-tiers">
+                                <div class="ms-tier" ng-repeat="tier in row.tiers track by tier.label"
+                                    ng-class="{'is-empty': !tier.count, 'is-clickable': tier.count,
+                                               'is-mine': $index === myBestTier(row)}"
+                                    ng-click="goToMilestone(row, tier)"
+                                    uib-tooltip="{{tier.percent}}% of all {{row.kind === 'agegrade' ? 'members' : (milestoneView === 'Female' ? 'women' : 'men')}} who have ever been on the team ({{tier.achievers}} of {{tier.memberTotal}}) have {{row.kind === 'agegrade' ? 'age graded ' + tier.label : 'gone ' + tier.label}} at {{row.distance}}"
+                                    tooltip-class="ms-tooltip" tooltip-placement="top"
+                                    tooltip-append-to-body="true" tooltip-popup-delay="120">
+                                    <div class="ms-tier-label">{{tier.label}}</div>
+                                    <span class="ms-mine-flag" ng-if="$index === myBestTier(row)">you</span>
+                                    <div class="ms-tier-primary">{{tier.runners}}</div>
+                                    <div class="ms-tier-secondary">{{tier.count}}
+                                        {{tier.count === 1 ? 'result' : 'results'}}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" ng-if="raceCalendar">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4><i class="fa fa-calendar-check-o"></i> Racing Calendar</h4>
+                    </div>
+                    <div class="panel-body cal-panel"
+                            ng-class="{'cal-highlight-gaps': raceCalendar.highlightMissing}">
+
+                        <div class="cal-headline">
+                            <div class="cal-score">
+                                <span class="cal-score-value">{{raceCalendar.daysRaced}}</span><span
+                                    class="cal-score-total">/ {{raceCalendar.totalDays}}</span>
+                            </div>
+                            <div class="cal-score-text">
+                                <strong>calendar days raced</strong>
+                                <span ng-if="miscStats.year === 'All Time'">The team has lined up on
+                                    {{raceCalendar.daysRaced}} of the {{raceCalendar.totalDays}} days in the year at
+                                    some point in its history.</span>
+                                <span ng-if="miscStats.year !== 'All Time'">Days of the year the team raced on in
+                                    {{miscStats.year}}.</span>
+                            </div>
+                        </div>
+
+                        <div class="cal-todo" ng-if="raceCalendar.showMissingList">
+                            <span class="cal-todo-label"><i class="fa fa-flag-o"></i> Still to fill:</span>
+                            <span class="cal-todo-day" ng-repeat="day in raceCalendar.missingDays track by day.label">
+                                {{day.label}}
+                            </span>
+                        </div>
+
+                        <div class="cal-grid-wrap">
+                            <table class="cal-grid">
+                                <thead>
+                                    <tr>
+                                        <th class="cal-month-label"></th>
+                                        <th ng-repeat="n in raceCalendar.dayNumbers track by n">{{n}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="month in raceCalendar.months track by month.short">
+                                        <th class="cal-month-label">{{month.short}}</th>
+                                        <td ng-repeat="day in month.days track by $index" class="cal-cell"
+                                            ng-class="[day ? (day.count ? 'cal-level-' + day.level : 'cal-blank') : 'cal-pad',
+                                                       day.isBusiest ? 'cal-busiest' : '',
+                                                       day.count ? 'cal-clickable' : '']"
+                                            uib-tooltip="{{day.title}}" tooltip-class="cal-tooltip"
+                                                tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120" ng-click="goToCalendarDay(day)"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="cal-legend">
+                            <span class="cal-legend-item"><span class="cal-cell cal-blank"></span> never raced</span>
+                            <span class="cal-legend-scale">
+                                quieter
+                                <span class="cal-cell cal-level-{{n}}"
+                                    ng-repeat="n in raceCalendar.levels track by n"></span>
+                                busier
+                            </span>
+                            <span class="cal-legend-item" ng-if="raceCalendar.hasBusiest"><span
+                                        class="cal-cell cal-level-8 cal-busiest"></span>
+                                busiest: {{raceCalendar.busiestLabelText}} ({{raceCalendar.busiestCount}} {{raceCalendar.busiestCount === 1 ? 'result' : 'results'}}<span ng-if="raceCalendar.busiestTies > 1"> each</span>)</span>
+                            <span class="cal-legend-note">click any day to see those races</span>
+                        </div>
+
                     </div>
                 </div>
             </div>

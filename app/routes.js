@@ -3133,6 +3133,112 @@ module.exports = async function (app, qs, passport, async, _) {
 
     });
 
+    // ---- Raw age-grading standards tables (admin only) ----
+    const AGEGRADING_NON_DISTANCE_FIELDS = ['_id', '__v', 'type', 'sex', 'age', 'version', 'createdAt', 'updatedAt'];
+
+    // Columns are discovered from the documents, not from the schema: the
+    // collection holds distances the schema never declared (7 miles), and a
+    // schema-driven list would silently drop them. Ordering by the standard
+    // time itself puts them in true short-to-long order without needing a
+    // hand-maintained distance list.
+    function ageGradingDistanceColumns(docs) {
+        const sums = {};
+        const counts = {};
+        docs.forEach(function (doc) {
+            Object.keys(doc).forEach(function (key) {
+                if (AGEGRADING_NON_DISTANCE_FIELDS.indexOf(key) !== -1) return;
+                if (typeof doc[key] !== 'number') return;
+                sums[key] = (sums[key] || 0) + doc[key];
+                counts[key] = (counts[key] || 0) + 1;
+            });
+        });
+        return Object.keys(sums).sort(function (a, b) {
+            return (sums[a] / counts[a]) - (sums[b] / counts[b]);
+        });
+    }
+
+    // Which race dates each stored table is used for — mirrors the version
+    // selection in service.getAgeGrading, so the admin can see at a glance
+    // which table a given result was graded against.
+    function ageGradingVersionRange(type, version) {
+        const road = { '2015': 'races before 2020', '2020': 'races in 2020–2024', '2025': 'races from 2025 on' };
+        const track = { '2005': 'races before 2023', '2023': 'races from 2023 on' };
+        return (type === 'road' ? road[version] : track[version]) || null;
+    }
+
+    // The (sex, type, version) combinations that actually exist, so the UI
+    // never offers a table that would come back empty.
+    app.get('/api/agegrading/meta', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const combos = await AgeGrading.aggregate([
+                {
+                    $group: {
+                        _id: { sex: '$sex', type: '$type', version: '$version' },
+                        count: { $sum: 1 },
+                        minAge: { $min: '$age' },
+                        maxAge: { $max: '$age' }
+                    }
+                },
+                { $sort: { '_id.type': 1, '_id.version': -1, '_id.sex': 1 } }
+            ]);
+
+            res.json({
+                tables: combos.map(function (c) {
+                    return {
+                        sex: c._id.sex,
+                        type: c._id.type,
+                        version: c._id.version,
+                        appliesTo: ageGradingVersionRange(c._id.type, c._id.version),
+                        count: c.count,
+                        minAge: c.minAge,
+                        maxAge: c.maxAge
+                    };
+                })
+            });
+        } catch (err) {
+            console.error('Error fetching age grading meta:', err);
+            res.status(500).json({ error: 'Error fetching age grading meta' });
+        }
+    });
+
+    // One full standards table: every age for a (sex, type, version), with
+    // only the distance columns that table actually populates.
+    app.get('/api/agegrading/table', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const sex = (req.query.sex || '').toLowerCase();
+            const type = (req.query.type || '').toLowerCase();
+            const version = req.query.version;
+
+            if (!sex || !type || !version) {
+                return res.status(400).json({ error: 'sex, type and version are all required' });
+            }
+
+            const docs = await AgeGrading.find({ sex: sex, type: type, version: version })
+                .sort('age')
+                .lean();
+
+            const distances = ageGradingDistanceColumns(docs);
+
+            res.json({
+                sex: sex,
+                type: type,
+                version: version,
+                appliesTo: ageGradingVersionRange(type, version),
+                distances: distances,
+                rows: docs.map(function (doc) {
+                    const values = {};
+                    distances.forEach(function (d) {
+                        values[d] = typeof doc[d] === 'number' ? doc[d] : null;
+                    });
+                    return { age: doc.age, values: values };
+                })
+            });
+        } catch (err) {
+            console.error('Error fetching age grading table:', err);
+            res.status(500).json({ error: 'Error fetching age grading table' });
+        }
+    });
+
 
 
 

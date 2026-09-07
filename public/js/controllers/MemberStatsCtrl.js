@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
+angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'StatsService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, StatsService) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -365,13 +365,28 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
 
         // Calculate top team members
         $scope.calculateTopTeamMembers(results, raceList);
+
+        // Same grid as the team stats page, counting only this member's races.
+        $scope.memberCalendar = StatsService.buildRaceCalendar(results.map(function (result) {
+            return { date: result.race.racedate, count: 1, name: result.race.racename };
+        }), 'All Time');
     };
     
     // Navigation functions for stats links
     $scope.goToResultsWithQuery = function(query) {
-        if (query && (query.members || query.distance || query.year)) {
+        if (query && (query.members || query.distance || query.year || query.calendarDay)) {
             $state.go('/results', { search: JSON.stringify(query) });
         }
+    };
+
+    // A calendar cell opens this member's results for that day of the year,
+    // across every year. Days they have never raced are not clickable.
+    $scope.goToMemberCalendarDay = function(day) {
+        if (!day || !day.count || !$scope.currentMember) return;
+        $scope.goToResultsWithQuery({
+            members: [{ username: $scope.currentMember.username }],
+            calendarDay: { month: day.month, day: day.day, label: day.label }
+        });
     };
 
     $scope.goToResultsWithLocationQuery = function(members, countries, states) {

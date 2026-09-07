@@ -221,6 +221,14 @@
                             To: {{filters.dateTo | date:'MMM dd, yyyy':'UTC'}}
                             <i class="fa fa-times" ng-click="filters.dateTo=''; applyFilters()"></i>
                         </span>
+                        <span class="selected-item" ng-show="filters.milestone">
+                            {{filters.milestone.label}}
+                            <i class="fa fa-times" ng-click="filters.milestone=null; applyFilters()"></i>
+                        </span>
+                        <span class="selected-item" ng-show="filters.calendarDay">
+                            Every {{filters.calendarDay.label}}
+                            <i class="fa fa-times" ng-click="filters.calendarDay=null; applyFilters()"></i>
+                        </span>
                         <span class="selected-item" ng-show="filters.distanceMin > 0 || filters.distanceMax < distanceRange.max">
                             Distance: {{filters.distanceMin}}-{{filters.distanceMax}} mi
                             <i class="fa fa-times" ng-click="clearDistanceFilter()"></i>

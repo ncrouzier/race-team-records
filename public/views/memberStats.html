@@ -399,7 +399,7 @@
 
                             <!-- Top Team Members -->
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <h4><i class="fa fa-users"></i> Top Team Members Raced With</h4>
@@ -410,22 +410,22 @@
                                                     dir-paginate="member in memberStats.topTeamMembers | itemsPerPage: 10 track by $index"
                                                     pagination-id="team-member-pagination">
                                                     <div class="team-member-name">
-                                                        <a class="hoverhand"
-                                                            ui-sref="/members/member({ member: member.username })">
+                                                        <a ui-sref="/members/member({ member: member.username })">
                                                             {{member.firstname}} {{member.lastname}}
                                                         </a>
                                                     </div>
-                                                    <div class="team-member-count">
-                                                        <span
+                                                    <div class="team-member-actions">
+                                                        <span class="team-member-count hoverhand"
                                                             ng-click="goToResultsWithQuery({members:[{username: currentMember.username}, {username: member.username}]})"
-                                                            class="hoverhand"
-                                                            title="View all races where {{currentMember.firstname}} {{currentMember.lastname}} and {{member.firstname}} {{member.lastname}} both participated">{{member.count}}
-                                                            races together</span>
-                                                        <br>
-                                                        <a ui-sref="/members/member/head-to-head-compare({member: currentMember.username, member2: member.username})"
-                                                            class="btn btn-xs btn-primary"
-                                                            title="Compare {{currentMember.firstname}} {{currentMember.lastname}} vs {{member.firstname}} {{member.lastname}} head-to-head">
-                                                            <i class="fa fa-trophy"></i> Head-to-Head
+                                                            uib-tooltip="All races {{currentMember.firstname}} and {{member.firstname}} both ran"
+                                                            tooltip-placement="left"
+                                                            tooltip-append-to-body="true">{{member.count}}
+                                                            {{member.count === 1 ? 'race' : 'races'}}</span>
+                                                        <a class="team-member-h2h"
+                                                            ui-sref="/members/member/head-to-head-compare({member: currentMember.username, member2: member.username})"
+                                                            uib-tooltip="Head-to-head vs {{member.firstname}} {{member.lastname}}"
+                                                            tooltip-placement="left" tooltip-append-to-body="true">
+                                                            <i class="fa fa-trophy"></i>
                                                         </a>
                                                     </div>
                                                 </div>
@@ -453,6 +453,89 @@
                                             <member-best-time-chart member="currentMember"
                                                 race-type-breakdown="memberStats.raceTypeBreakdown">
                                             </member-best-time-chart>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Racing Calendar -->
+                            <div class="row" ng-if="memberCalendar">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-calendar-check-o"></i> Racing Calendar</h4>
+                                        </div>
+                                        <div class="panel-body cal-panel"
+                            ng-class="{'cal-highlight-gaps': memberCalendar.highlightMissing}">
+
+                                            <div class="cal-headline">
+                                                <div class="cal-score">
+                                                    <span
+                                                        class="cal-score-value">{{memberCalendar.daysRaced}}</span><span
+                                                        class="cal-score-total">/ {{memberCalendar.totalDays}}</span>
+                                                </div>
+                                                <div class="cal-score-text">
+                                                    <strong>calendar days raced</strong>
+                                                    <span>{{currentMember.firstname}} has raced on
+                                                        {{memberCalendar.daysRaced}} of the
+                                                        {{memberCalendar.totalDays}} days in the year.</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="cal-todo" ng-if="memberCalendar.showMissingList">
+                                                <span class="cal-todo-label"><i class="fa fa-flag-o"></i> Still to
+                                                    fill:</span>
+                                                <span class="cal-todo-day"
+                                                    ng-repeat="day in memberCalendar.missingDays track by day.label">
+                                                    {{day.label}}
+                                                </span>
+                                            </div>
+
+                                            <div class="cal-grid-wrap">
+                                                <table class="cal-grid">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="cal-month-label"></th>
+                                                            <th ng-repeat="n in memberCalendar.dayNumbers track by n">
+                                                                {{n}}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr
+                                                            ng-repeat="month in memberCalendar.months track by month.short">
+                                                            <th class="cal-month-label">{{month.short}}</th>
+                                                            <td ng-repeat="day in month.days track by $index"
+                                                                class="cal-cell"
+                                                                ng-class="[day ? (day.count ? 'cal-level-' + day.level : 'cal-blank') : 'cal-pad',
+                                                                           day.isBusiest ? 'cal-busiest' : '',
+                                                                           day.count ? 'cal-clickable' : '']"
+                                                                uib-tooltip="{{day.title}}" tooltip-class="cal-tooltip"
+                                                tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120"
+                                                                ng-click="goToMemberCalendarDay(day)"></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="cal-legend">
+                                                <span class="cal-legend-item"><span
+                                                        class="cal-cell cal-blank"></span> never raced</span>
+                                                <span class="cal-legend-scale">
+                                                    quieter
+                                                    <span class="cal-cell cal-level-{{n}}"
+                                                        ng-repeat="n in memberCalendar.levels track by n"></span>
+                                                    busier
+                                                </span>
+                                                <span class="cal-legend-item"
+                                                    ng-if="memberCalendar.hasBusiest"><span
+                                                        class="cal-cell cal-level-8 cal-busiest"></span>
+                                                    busiest: {{memberCalendar.busiestLabelText}}
+                                                    ({{memberCalendar.busiestCount}}
+                                                    {{memberCalendar.busiestCount === 1 ? 'race' : 'races'}}<span
+                                                        ng-if="memberCalendar.busiestTies > 1"> each</span>)</span>
+                                                <span class="cal-legend-note">click any day to see those races</span>
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>

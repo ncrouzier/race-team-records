@@ -18,3 +18,5 @@ node_modules
 public/libs
 .env
 deploy/.env
+
+doc/DEPLOY.md

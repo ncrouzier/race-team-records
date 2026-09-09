@@ -960,8 +960,92 @@ footer {
     cursor: hand;
 }
 
-.introtext {
-    line-height: 1.1;
+// The welcome card shown to logged-out visitors and non-members.
+.intro-card {
+    // Copy left, actions right: the paragraph is capped at a readable measure,
+    // which otherwise leaves the right half of a full-width card empty.
+    .intro-body {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+
+    .intro-copy {
+        flex: 1 1 420px;
+    }
+
+    .intro-title {
+        margin: 0 0 10px;
+        font-size: 22px;
+        font-weight: 700;
+        color: @gray-darker;
+    }
+
+    // Body copy, not a footnote: this used to be wrapped in <small><i>, which
+    // rendered the whole paragraph italic and cramped it against a 1.1
+    // line-height.
+    .introtext {
+        margin: 0;
+        max-width: 80ch;
+        font-size: 15px;
+        line-height: 1.6;
+        color: @gray;
+    }
+
+    .intro-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+
+    // Built on the shared button look used by the age grade and pace tools, so
+    // the site has one button vocabulary rather than a bootstrap default here
+    // and a custom one there.
+    .intro-btn {
+        .mcrrc-btn-look();
+        justify-content: center;
+        min-width: 210px;
+        padding: 11px 20px;
+        font-size: 14px;
+
+        i {
+            font-size: 0.95em;
+        }
+    }
+
+    // Red, matching the nav's Submit button: this is the one call to action on
+    // the page for a visitor who is not on the team, so it should not read as
+    // just another blue link among the blue cards below it.
+    .intro-btn-primary {
+        background: @brand-danger;
+        border-color: @brand-danger;
+        color: #fff;
+        box-shadow: 0 2px 6px fade(@brand-danger, 35%);
+
+        // Has to repeat the mixin's :not(:disabled) — without it this selector
+        // is a pseudo-class less specific than the shared hover rule and the
+        // button turns brand-blue on hover.
+        &:hover:not(:disabled),
+        &:focus:not(:disabled) {
+            background: darken(@brand-danger, 8%);
+            border-color: darken(@brand-danger, 8%);
+            color: #fff;
+        }
+    }
+}
+
+// Below the card's flex breakpoint the actions stack under the copy; let them
+// span the width there rather than sitting as two narrow buttons on the left.
+@media (max-width: 767px) {
+    .intro-card .intro-actions {
+        width: 100%;
+    }
+
+    .intro-card .intro-btn {
+        width: 100%;
+    }
 }
 
 

@@ -8163,8 +8163,88 @@ footer {
   cursor: pointer;
   cursor: hand;
 }
-.introtext {
-  line-height: 1.1;
+.intro-card .intro-body {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.intro-card .intro-copy {
+  flex: 1 1 420px;
+}
+.intro-card .intro-title {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #222222;
+}
+.intro-card .introtext {
+  margin: 0;
+  max-width: 80ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #6f6f6f;
+}
+.intro-card .intro-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.intro-card .intro-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #008cba;
+  background: #fff;
+  border: 1px solid #c8dbe4;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  justify-content: center;
+  min-width: 210px;
+  padding: 11px 20px;
+  font-size: 14px;
+}
+.intro-card .intro-btn:hover:not(:disabled),
+.intro-card .intro-btn:focus:not(:disabled) {
+  background: #008cba;
+  border-color: #008cba;
+  color: #fff;
+  text-decoration: none;
+}
+.intro-card .intro-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.intro-card .intro-btn i {
+  font-size: 14px;
+}
+.intro-card .intro-btn i {
+  font-size: 0.95em;
+}
+.intro-card .intro-btn-primary {
+  background: #F04124;
+  border-color: #F04124;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(240, 65, 36, 0.35);
+}
+.intro-card .intro-btn-primary:hover:not(:disabled),
+.intro-card .intro-btn-primary:focus:not(:disabled) {
+  background: #dc2c0f;
+  border-color: #dc2c0f;
+  color: #fff;
+}
+@media (max-width: 767px) {
+  .intro-card .intro-actions {
+    width: 100%;
+  }
+  .intro-card .intro-btn {
+    width: 100%;
+  }
 }
 .raceTypeClear {
   cursor: pointer;

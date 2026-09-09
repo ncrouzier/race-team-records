@@ -78,16 +78,33 @@
     </div>
 
     <!-- Welcome for non-members / anonymous visitors -->
-    <div ng-if="!user || !user.member">
-        <p class="text-left">Welcome to the MCRRC racing team results and records site.</p>
-        <p class="introtext"><small><i>The MCRRC racing team was established in the spring of 2013 to assemble and
-                    recognize
-                    highly talented and competitive members of MCRRC, promote competitive distance running among club
-                    members, and increase the visibility of MCRRC within the broader running community. The program
-                    establishes racing teams to compete at races in the metropolitan Washington, DC area. <a
-                        href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank"><b>learn
-                            more...</b></a></i></small>
-        </p>
+    <div ng-if="authResolved && (!user || !user.member)" class="feed-card intro-card">
+        <div class="feed-card-body intro-body">
+            <div class="intro-copy">
+                <h3 class="intro-title">Welcome to the MCRRC Racing Team</h3>
+                <p class="introtext">
+                    Established in the spring of 2013, the MCRRC Competitive Race Team is a co-ed racing team based in
+                    the greater Montgomery County, Maryland area. The team was established to recognize highly talented
+                    runners within MCRRC, promote competitive racing among club members, and increase the visibility of
+                    MCRRC at area races. We compete in road, track, cross country, and trail races. Our members are
+                    locally-competitive adult runners of various ages, united by a love of running fast, competing hard,
+                    and a desire to represent MCRRC.
+                </p>
+            </div>
+            <div class="intro-actions">
+                <!-- A plain href, not ui-sref: /apply is served by Express, not by
+                     ui-router, so there is no state for ui-sref to resolve and it
+                     rendered a link that went nowhere. rewriteLinks is off, so this
+                     does the full page load the server-rendered form needs. -->
+                <a href="/apply" class="intro-btn intro-btn-primary">
+                    <i class="fa fa-paper-plane"></i> Apply to the team
+                </a>
+                <a href="https://www.mcrrc.org/teams/competitive-racing-team" target="_blank" rel="noopener"
+                    class="intro-btn">
+                    Learn more <i class="fa fa-external-link"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="row">

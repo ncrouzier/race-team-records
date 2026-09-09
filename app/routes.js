@@ -5045,7 +5045,13 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             // Only distances we hold age grading standards for — the two races are
             // there to be age graded, so anything else is a dead end for the applicant.
-            const racetypes = await RaceType.find({ hasAgeGradedInfo: true, isVariable: { $ne: true } })
+            // The mile is the floor: shorter track events (60m through 1500m) say
+            // little about the distance running the team is asking about.
+            const racetypes = await RaceType.find({
+                hasAgeGradedInfo: true,
+                isVariable: { $ne: true },
+                meters: { $gte: APPLICATION_MIN_RACE_METERS }
+            })
                 .sort({ meters: 1 })
                 .select('name surface meters miles')
                 .lean();
@@ -5063,6 +5069,10 @@ module.exports = async function (app, qs, passport, async, _) {
     const APPLICATION_RACE_COMMITMENT = 8;
     // How far back a submitted race can be and still count as recent.
     const APPLICATION_RACE_MAX_AGE_DAYS = 365;
+    // Shortest distance the apply form will offer, in metres: one mile. Nothing
+    // sits between 1500m and the mile's 1609.34m, so the exact value only has to
+    // be at or below the mile to include it and above 1500 to drop the sprints.
+    const APPLICATION_MIN_RACE_METERS = 1609;
 
     // Age grade for someone who is not (yet) a member — the applicant supplies their
     // own sex/dob, so this can't reuse /api/agegrade/calculate which reads req.user.member.

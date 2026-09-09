@@ -52,11 +52,17 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         });
     };
 
+    // Until this resolves nothing knows whether anyone is signed in, and a
+    // template testing `!user` would briefly render its logged-out branch to a
+    // logged-in visitor. Anything whose logged-out state is visibly different
+    // should wait on authResolved rather than on user alone.
+    $rootScope.authResolved = false;
+
     $http.get("/api/login").success(function(data, status) {
         AuthService.setUser(data.user);
+        $rootScope.authResolved = true;
     }).error(function(data) {
-        $scope.message = data[0];
-        $state.go('/login');
+        $rootScope.authResolved = true;
     });
 
     function pingHeartbeat() {

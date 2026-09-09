@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'fs';
 import { execSync } from 'child_process';
 import CleanCSS from 'clean-css';
 
@@ -42,3 +42,16 @@ if (minified.errors.length > 0) {
 }
 writeFileSync('public/dist/css/style.min.css', minified.styles);
 console.log(`CSS minified to public/dist/css/style.min.css (${Math.round(combined.length / 1024)}KB → ${Math.round(minified.styles.length / 1024)}KB)`);
+
+// Step 3: Copy the hand-written stylesheets for the standalone public pages.
+// These are not part of the SPA bundle — applyForm.ejs and compRaceForm.ejs
+// load them directly — but they still have to be copied rather than merely
+// committed: .dockerignore excludes public/dist from the build context, so
+// anything living only in that directory is absent at runtime and every
+// request for it falls through to the SPA catch-all, which answers with
+// text/html and makes the browser refuse the stylesheet.
+const standaloneCss = ['apply-form.css', 'comprace-form.css'];
+standaloneCss.forEach(name => {
+    copyFileSync(`public/css/${name}`, `public/dist/css/${name}`);
+});
+console.log(`Copied ${standaloneCss.length} standalone stylesheets to public/dist/css/`);

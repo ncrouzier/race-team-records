@@ -30,6 +30,11 @@
 // The "RACING TEAM" wordmark in the page banner — the orange people recognise
 // as the team's, as distinct from the brighter @orange used for highlights.
 @team-orange:           #F47920;
+// Same hue a shade deeper (#D6600B), for filled buttons carrying white text.
+// The wordmark orange only reaches 2.8:1 against white, which is hard to read
+// at button sizes; this lifts it to roughly 3.8:1 while still reading as the
+// team's colour.
+@team-orange-cta:       darken(@team-orange, 5%);
 @blue-dark:				darken(@brand-primary, 10%);
 @red:					#FF0000;
 

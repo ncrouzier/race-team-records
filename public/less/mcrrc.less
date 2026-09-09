@@ -1035,18 +1035,18 @@ footer {
     // on the page for a visitor who is not on the team, so it should not read as
     // just another blue link among the blue cards below it.
     .intro-btn-primary {
-        background: @team-orange;
-        border-color: @team-orange;
+        background: @team-orange-cta;
+        border-color: @team-orange-cta;
         color: #fff;
-        box-shadow: 0 2px 6px fade(@team-orange, 35%);
+        box-shadow: 0 2px 6px fade(@team-orange-cta, 35%);
 
         // Has to repeat the mixin's :not(:disabled) — without it this selector
         // is a pseudo-class less specific than the shared hover rule and the
         // button turns brand-blue on hover.
         &:hover:not(:disabled),
         &:focus:not(:disabled) {
-            background: darken(@team-orange, 8%);
-            border-color: darken(@team-orange, 8%);
+            background: darken(@team-orange-cta, 8%);
+            border-color: darken(@team-orange-cta, 8%);
             color: #fff;
         }
     }

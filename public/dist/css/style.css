@@ -8239,15 +8239,15 @@ footer {
   }
 }
 .intro-card .intro-btn-primary {
-  background: #F47920;
-  border-color: #F47920;
+  background: #ef6b0c;
+  border-color: #ef6b0c;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(244, 121, 32, 0.35);
+  box-shadow: 0 2px 6px rgba(239, 107, 12, 0.35);
 }
 .intro-card .intro-btn-primary:hover:not(:disabled),
 .intro-card .intro-btn-primary:focus:not(:disabled) {
-  background: #e0650b;
-  border-color: #e0650b;
+  background: #c85a0a;
+  border-color: #c85a0a;
   color: #fff;
 }
 .raceTypeClear {

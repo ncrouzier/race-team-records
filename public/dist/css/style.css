@@ -8170,7 +8170,8 @@ footer {
   flex-wrap: wrap;
 }
 .intro-card .intro-copy {
-  flex: 1 1 420px;
+  flex: 1 1 260px;
+  min-width: 0;
 }
 .intro-card .intro-title {
   margin: 0 0 10px;
@@ -8208,6 +8209,7 @@ footer {
   min-width: 210px;
   padding: 11px 20px;
   font-size: 14px;
+  white-space: nowrap;
 }
 .intro-card .intro-btn:hover:not(:disabled),
 .intro-card .intro-btn:focus:not(:disabled) {
@@ -8226,25 +8228,27 @@ footer {
 .intro-card .intro-btn i {
   font-size: 0.95em;
 }
+@media (max-width: 767px) {
+  .intro-card .intro-body {
+    gap: 18px;
+  }
+  .intro-card .intro-btn {
+    min-width: 150px;
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+}
 .intro-card .intro-btn-primary {
-  background: #F04124;
-  border-color: #F04124;
+  background: #F47920;
+  border-color: #F47920;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(240, 65, 36, 0.35);
+  box-shadow: 0 2px 6px rgba(244, 121, 32, 0.35);
 }
 .intro-card .intro-btn-primary:hover:not(:disabled),
 .intro-card .intro-btn-primary:focus:not(:disabled) {
-  background: #dc2c0f;
-  border-color: #dc2c0f;
+  background: #e0650b;
+  border-color: #e0650b;
   color: #fff;
-}
-@media (max-width: 767px) {
-  .intro-card .intro-actions {
-    width: 100%;
-  }
-  .intro-card .intro-btn {
-    width: 100%;
-  }
 }
 .raceTypeClear {
   cursor: pointer;

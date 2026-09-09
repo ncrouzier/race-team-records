@@ -971,8 +971,11 @@ footer {
         flex-wrap: wrap;
     }
 
+    // Shrinks rather than holding a wide basis, so the actions stay beside the
+    // copy instead of dropping underneath and stretching across the card.
     .intro-copy {
-        flex: 1 1 420px;
+        flex: 1 1 260px;
+        min-width: 0;
     }
 
     .intro-title {
@@ -1009,44 +1012,46 @@ footer {
         min-width: 210px;
         padding: 11px 20px;
         font-size: 14px;
+        white-space: nowrap;
 
         i {
             font-size: 0.95em;
         }
     }
 
-    // Red, matching the nav's Submit button: this is the one call to action on
-    // the page for a visitor who is not on the team, so it should not read as
+    @media (max-width: 767px) {
+        .intro-body {
+            gap: 18px;
+        }
+
+        .intro-btn {
+            min-width: 150px;
+            padding: 9px 14px;
+            font-size: 13px;
+        }
+    }
+
+    // Team orange, matching the banner wordmark: this is the one call to action
+    // on the page for a visitor who is not on the team, so it should not read as
     // just another blue link among the blue cards below it.
     .intro-btn-primary {
-        background: @brand-danger;
-        border-color: @brand-danger;
+        background: @team-orange;
+        border-color: @team-orange;
         color: #fff;
-        box-shadow: 0 2px 6px fade(@brand-danger, 35%);
+        box-shadow: 0 2px 6px fade(@team-orange, 35%);
 
         // Has to repeat the mixin's :not(:disabled) — without it this selector
         // is a pseudo-class less specific than the shared hover rule and the
         // button turns brand-blue on hover.
         &:hover:not(:disabled),
         &:focus:not(:disabled) {
-            background: darken(@brand-danger, 8%);
-            border-color: darken(@brand-danger, 8%);
+            background: darken(@team-orange, 8%);
+            border-color: darken(@team-orange, 8%);
             color: #fff;
         }
     }
 }
 
-// Below the card's flex breakpoint the actions stack under the copy; let them
-// span the width there rather than sitting as two narrow buttons on the left.
-@media (max-width: 767px) {
-    .intro-card .intro-actions {
-        width: 100%;
-    }
-
-    .intro-card .intro-btn {
-        width: 100%;
-    }
-}
 
 
 

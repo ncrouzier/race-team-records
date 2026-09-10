@@ -199,9 +199,25 @@
                     </div>
                     </div>
             </div>
-            
 
-            
+            <!-- Admin only: find races that still need ranking data filled in -->
+            <div class="row" ng-if="user.role == 'admin'">
+                <div class="col-sm-4">
+                    <div class="form-group">
+                        <label class="hoverhand filter-label"
+                            uib-tooltip="Only show races that still have at least one result missing this ranking field"
+                            uib-tooltip-append-to-body="true" tooltip-placement="top">
+                            <i class="fa fa-exclamation-triangle"></i> Missing Ranking Data
+                        </label>
+                        <select class="form-control" ng-model="filters.missingRanking"
+                            ng-change="applyFilters()"
+                            ng-options="option.label for option in missingRankingOptions track by option.key">
+                            <option value="">Not filtered</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <!-- Active Filters Display -->
             <div class="active-filters" ng-show="hasActiveFilters()">
                 <div class="active-filters-label">
@@ -228,6 +244,10 @@
                         <span class="selected-item" ng-show="filters.calendarDay">
                             Every {{filters.calendarDay.label}}
                             <i class="fa fa-times" ng-click="filters.calendarDay=null; applyFilters()"></i>
+                        </span>
+                        <span class="selected-item" ng-show="filters.missingRanking">
+                            Missing: {{filters.missingRanking.label}}
+                            <i class="fa fa-times" ng-click="filters.missingRanking=null; applyFilters()"></i>
                         </span>
                         <span class="selected-item" ng-show="filters.distanceMin > 0 || filters.distanceMax < distanceRange.max">
                             Distance: {{filters.distanceMin}}-{{filters.distanceMax}} mi

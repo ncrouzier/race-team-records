@@ -162,7 +162,41 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         calendarDay: null,
         // {racetype, surfaces, sex, maxTime, label} — the performances behind one
         // milestone counter on the team stats page.
-        milestone: null
+        milestone: null,
+        // Admin data-cleanup filter: keep only races that still have at least one
+        // result missing the chosen ranking field. One of MISSING_RANKING_OPTIONS.
+        missingRanking: null
+    };
+
+    // Ranking fields an admin can hunt for gaps in. 'any' covers all four, which
+    // is the usual starting point when working through the backlog.
+    var MISSING_RANKING_OPTIONS = [
+        { key: 'any', label: 'Any ranking field', fields: ['overallrank', 'genderrank', 'overalltotal', 'gendertotal'] },
+        { key: 'overallrank', label: 'Overall ranking', fields: ['overallrank'] },
+        { key: 'genderrank', label: 'Gender ranking', fields: ['genderrank'] },
+        { key: 'overalltotal', label: 'Overall total', fields: ['overalltotal'] },
+        { key: 'gendertotal', label: 'Gender total', fields: ['gendertotal'] },
+        { key: 'ranks', label: 'Either ranking', fields: ['overallrank', 'genderrank'] },
+        { key: 'totals', label: 'Either total', fields: ['overalltotal', 'gendertotal'] }
+    ];
+    $scope.missingRankingOptions = MISSING_RANKING_OPTIONS;
+
+    // Absent, null and non-positive all mean "not filled in yet"
+    function isRankingFieldMissing(result, field) {
+        var value = result.ranking ? result.ranking[field] : undefined;
+        return value === undefined || value === null || value <= 0;
+    }
+
+    // How many of a race's results are missing any of the chosen fields — shown
+    // on the race row so an admin can see how much work each race needs.
+    $scope.missingRankingCount = function(race) {
+        var option = $scope.filters.missingRanking;
+        if (!option || !race || !race.results) return 0;
+        return race.results.filter(function(result) {
+            return option.fields.some(function(field) {
+                return isRankingFieldMissing(result, field);
+            });
+        }).length;
     };
 
     // Distance range for slider
@@ -283,7 +317,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
             states: [],
             selectedMembers: [],
             calendarDay: null,
-            milestone: null
+            milestone: null,
+            missingRanking: null
         };
         $scope.applyFilters();
     };
@@ -420,7 +455,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                ($scope.filters.states && $scope.filters.states.length > 0) ||
                ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0) ||
                !!$scope.filters.calendarDay ||
-               !!$scope.filters.milestone;
+               !!$scope.filters.milestone ||
+               !!$scope.filters.missingRanking;
     };
 
     $scope.getActiveFilterCount = function() {
@@ -448,7 +484,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }
         if ($scope.filters.calendarDay) count++;
         if ($scope.filters.milestone) count++;
-        
+        if ($scope.filters.missingRanking) count++;
+
         return count;
     };
 
@@ -655,6 +692,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                     });
                     
                     if (!allMembersValid) {
+                        return false;
+                    }
+                }
+
+                // Admin: keep only races that still need ranking data filled in
+                if ($scope.filters.missingRanking) {
+                    if ($scope.missingRankingCount(race) === 0) {
                         return false;
                     }
                 }

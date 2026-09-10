@@ -1221,6 +1221,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                     searchParams.calendarDay.month != null && searchParams.calendarDay.day != null) {
                     $scope.filters.calendarDay = searchParams.calendarDay;
                 }
+                // 'yyyy-MM-dd' strings, built from the race dates' UTC parts, so
+                // they line up with the UTC comparison done in applyFilters
+                ['dateFrom', 'dateTo'].forEach(function(key) {
+                    if (!searchParams[key]) return;
+                    var parts = searchParams[key].split('-');
+                    if (parts.length === 3) {
+                        $scope.filters[key] = new Date(parts[0], parts[1] - 1, parts[2]);
+                    }
+                });
                 if (searchParams.year) {
                     // Create Date objects in local timezone for proper display in date inputs
                     $scope.filters.dateFrom = new Date(searchParams.year, 0, 1); // January 1st

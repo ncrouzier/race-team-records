@@ -506,50 +506,46 @@ footer {
     }
 }
 
-.pb-list {
-    .pblistheader {
-        padding: 15px;
-        border: 0px;
-        border-bottom: 2px solid #dee2e6;
-        font-weight: bold;
-        color: @brand-primary;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 8px 8px 0 0;
-        font-size: 1.1em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .pblistrow {
-        padding: 12px 15px;
-        border: 0px;
+// Deliberately mirrors .location-stats / .team-members-stats further down: all
+// three are list panels on the member stats page and should read as one component.
+.pb-stats {
+    .pb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
         border-bottom: 1px solid #e9ecef;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-            background-color: #f8f9fa;
-            transform: translateX(2px);
-        }
 
         &:last-child {
             border-bottom: none;
-            border-radius: 0 0 8px 8px;
         }
 
-        .row {
-            align-items: center;
-        }
-
-        .resultEvent {
+        .pb-name {
             font-weight: 600;
-            color: @brand-primary;
-            transition: color 0.2s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
 
-            &:hover {
-                color: @brand-primary-dark;
-                text-decoration: none;
+            a {
+                color: @gray-dark;
+
+                &:hover,
+                &:focus {
+                    color: @brand-primary;
+                }
             }
+        }
 
+        .pb-time {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            white-space: nowrap;
+            flex: 0 0 auto;
         }
     }
 }
@@ -1744,11 +1740,72 @@ footer {
         margin-bottom: 5px;
     }
 
+    // for values too long to read at the full size, like "12d 3h 45m 12s"
+    .stat-number.stat-number-long {
+        font-size: 1.6em;
+        // keeps the same overall height as a full-size stat number, so the box
+        // still lines up with its neighbours
+        line-height: (2.5 * @line-height-base / 1.6);
+    }
+
     .stat-label {
         font-size: 0.9em;
         color: @gray;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+}
+
+// Paginated panel of stat boxes (member Racing Activity)
+.stat-carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 12px;
+
+    .fa {
+        color: @gray-light;
+        padding: 0 8px;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: @brand-primary;
+        }
+    }
+
+    .stat-carousel-dot {
+        width: 9px;
+        height: 9px;
+        margin: 0 4px;
+        border-radius: 50%;
+        background-color: @gray-lighter;
+        border: 1px solid @gray-light;
+        display: inline-block;
+
+        &.active {
+            background-color: @brand-primary;
+            border-color: @brand-primary;
+        }
+    }
+}
+
+.stat-carousel {
+    overflow: hidden;
+    // the last row of stat boxes already carries its own bottom margin
+    padding-bottom: 0;
+
+    // kept in sync with the translateX offset set by the controller
+    @stat-carousel-gap: 30px;
+
+    .stat-carousel-track {
+        display: flex;
+        gap: @stat-carousel-gap;
+        transition: transform 0.35s ease;
+    }
+
+    .stat-carousel-page {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
 }
 

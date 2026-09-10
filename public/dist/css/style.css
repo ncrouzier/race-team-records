@@ -7802,43 +7802,39 @@ footer {
   color: #FFF;
   font-weight: bold;
 }
-.pb-list .pblistheader {
-  padding: 15px;
-  border: 0px;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: bold;
-  color: #008cba;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 8px 8px 0 0;
-  font-size: 1.1em;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.pb-list .pblistrow {
-  padding: 12px 15px;
-  border: 0px;
-  border-bottom: 1px solid #e9ecef;
-  transition: background-color 0.2s ease;
-}
-.pb-list .pblistrow:hover {
-  background-color: #f8f9fa;
-  transform: translateX(2px);
-}
-.pb-list .pblistrow:last-child {
-  border-bottom: none;
-  border-radius: 0 0 8px 8px;
-}
-.pb-list .pblistrow .row {
+.pb-stats .pb-item {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
 }
-.pb-list .pblistrow .resultEvent {
+.pb-stats .pb-item:last-child {
+  border-bottom: none;
+}
+.pb-stats .pb-item .pb-name {
   font-weight: 600;
-  color: #008cba;
-  transition: color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.pb-list .pblistrow .resultEvent:hover {
-  color: #006687;
-  text-decoration: none;
+.pb-stats .pb-item .pb-name a {
+  color: #333333;
+}
+.pb-stats .pb-item .pb-name a:hover,
+.pb-stats .pb-item .pb-name a:focus {
+  color: #008cba;
+}
+.pb-stats .pb-item .pb-time {
+  background-color: #008cba;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 @media (min-width: 2px) {
   .member-picture {
@@ -8775,11 +8771,55 @@ footer {
   color: #008cba;
   margin-bottom: 5px;
 }
+.stat-box .stat-number.stat-number-long {
+  font-size: 1.6em;
+  line-height: 2.1875;
+}
 .stat-box .stat-label {
   font-size: 0.9em;
   color: #6f6f6f;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+.stat-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 12px;
+}
+.stat-carousel-nav .fa {
+  color: #999999;
+  padding: 0 8px;
+  transition: color 0.2s ease;
+}
+.stat-carousel-nav .fa:hover {
+  color: #008cba;
+}
+.stat-carousel-nav .stat-carousel-dot {
+  width: 9px;
+  height: 9px;
+  margin: 0 4px;
+  border-radius: 50%;
+  background-color: #eeeeee;
+  border: 1px solid #999999;
+  display: inline-block;
+}
+.stat-carousel-nav .stat-carousel-dot.active {
+  background-color: #008cba;
+  border-color: #008cba;
+}
+.stat-carousel {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.stat-carousel .stat-carousel-track {
+  display: flex;
+  gap: 30px;
+  transition: transform 0.35s ease;
+}
+.stat-carousel .stat-carousel-page {
+  flex: 0 0 100%;
+  max-width: 100%;
 }
 .race-type-stats .race-type-item {
   margin-bottom: 15px;

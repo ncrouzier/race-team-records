@@ -177,7 +177,16 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         { key: 'overalltotal', label: 'Overall total', fields: ['overalltotal'] },
         { key: 'gendertotal', label: 'Gender total', fields: ['gendertotal'] },
         { key: 'ranks', label: 'Either ranking', fields: ['overallrank', 'genderrank'] },
-        { key: 'totals', label: 'Either total', fields: ['overalltotal', 'gendertotal'] }
+        { key: 'totals', label: 'Either total', fields: ['overalltotal', 'gendertotal'] },
+        // requireAll narrows to results missing every listed field rather than
+        // any one of them: a result with no placing recorded at all, which is a
+        // different job from topping up one missing number.
+        {
+            key: 'noRanks',
+            label: 'Both rankings missing (overall and gender)',
+            fields: ['overallrank', 'genderrank'],
+            requireAll: true
+        }
     ];
     $scope.missingRankingOptions = MISSING_RANKING_OPTIONS;
 
@@ -187,15 +196,18 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         return value === undefined || value === null || value <= 0;
     }
 
-    // How many of a race's results are missing any of the chosen fields — shown
-    // on the race row so an admin can see how much work each race needs.
+    // How many of a race's results match the chosen gap — shown on the race row
+    // so an admin can see how much work each race needs. Most options match a
+    // result missing any one of their fields; the requireAll ones need every
+    // field to be missing.
     $scope.missingRankingCount = function(race) {
         var option = $scope.filters.missingRanking;
         if (!option || !race || !race.results) return 0;
         return race.results.filter(function(result) {
-            return option.fields.some(function(field) {
+            var test = function(field) {
                 return isRankingFieldMissing(result, field);
-            });
+            };
+            return option.requireAll ? option.fields.every(test) : option.fields.some(test);
         }).length;
     };
 

@@ -2072,7 +2072,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
 }]);
 
 // Race Edit Modal Controller
-angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', 'race', 'ResultsService', 'UtilsService', function($scope, $uibModalInstance, race, ResultsService, UtilsService) {
+angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', '$q', 'race', 'ResultsService', 'UtilsService', 'MembersService', 'ResultExtractionService', 'NotificationService', function($scope, $uibModalInstance, $q, race, ResultsService, UtilsService, MembersService, ResultExtractionService, NotificationService) {
     
 
     
@@ -2225,7 +2225,370 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.markResultsModified = function() {
         $scope.resultsModified = true;
     };
-       
+
+    // --- Retrieving ranking data from a results link -----------------------
+    //
+    // Same scrape the result extractor page does, but instead of creating
+    // results it lines the scraped rows up against the results already stored
+    // for this race and offers the differences as edits to confirm.
+
+    $scope.extraction = {
+        url: '',
+        htmlSource: '',
+        showPasteBox: false,
+        loading: false,
+        // Team members in the scraped results who have no result stored on this
+        // race at all — offered as results to create.
+        additions: [],
+        // One entry per existing result with at least one differing field.
+        proposals: null,
+        // Every results table found on the page, so a wrong guess can be swapped
+        tables: [],
+        tableIndex: null,
+        // The scraped table is kept so the column mapping can be corrected and
+        // the proposals rebuilt without fetching the page again.
+        tableHeaders: [],
+        tableData: [],
+        columnMapping: {},
+        rowOptions: {},
+        showMapping: false,
+        error: null
+    };
+
+    $scope.mappableFields = ResultExtractionService.mappableFields;
+
+    $scope.availableFieldsFor = function(header) {
+        return ResultExtractionService.availableFieldsFor($scope.extraction.columnMapping, header);
+    };
+
+    // First non-empty value under a column, shown beside the dropdown so the
+    // admin can tell what they are mapping without opening the source page.
+    $scope.columnSample = function(header) {
+        var row = ($scope.extraction.tableData || []).find(function(candidate) {
+            return candidate[header];
+        });
+        return row ? row[header] : '';
+    };
+
+    // A field can only describe one column, so claiming it releases the other.
+    $scope.onColumnMappingChange = function(header) {
+        var field = $scope.extraction.columnMapping[header];
+        if (field) {
+            Object.keys($scope.extraction.columnMapping).forEach(function(other) {
+                if (other !== header && $scope.extraction.columnMapping[other] === field) {
+                    $scope.extraction.columnMapping[other] = '';
+                }
+            });
+        }
+        rebuildProposals();
+    };
+
+    // The fields offered as edits, in the order they appear in the table.
+    var EXTRACTABLE_FIELDS = [
+        { key: 'time', label: 'Time', isTime: true },
+        { key: 'agerank', label: 'Age rank' },
+        { key: 'agetotal', label: 'Age total' },
+        { key: 'genderrank', label: 'Gender rank' },
+        { key: 'gendertotal', label: 'Gender total' },
+        { key: 'overallrank', label: 'Overall rank' },
+        { key: 'overalltotal', label: 'Overall total' }
+    ];
+
+    // Members who were on the team on race day, used for name matching. A race
+    // from 2014 should match the 2014 roster, not today's.
+    $scope.raceDayMembers = [];
+    MembersService.getMembers({
+        'filters[memberStatus]': 'all',
+        'sort': 'firstname lastname'
+    }).then(function(members) {
+        $scope.allMembersForExtraction = members;
+        $scope.raceDayMembers = ResultExtractionService.membersActiveOn(members, $scope.race.racedate);
+    });
+
+    function currentValue(result, field) {
+        return field === 'time' ? result.time : (result.ranking ? result.ranking[field] : undefined);
+    }
+
+    // Centiseconds split into the h/m/s/cs inputs the results table binds to
+    function timeExpFor(centiseconds) {
+        return {
+            hours: Math.floor(centiseconds / 360000),
+            minutes: Math.floor(((centiseconds % 8640000) % 360000) / 6000),
+            seconds: Math.floor((((centiseconds % 8640000) % 360000) % 6000) / 100),
+            centiseconds: Math.floor((((centiseconds % 8640000) % 360000) % 6000) % 100)
+        };
+    }
+
+    function isEmptyValue(value) {
+        return value === undefined || value === null || value === '' || value <= 0;
+    }
+
+    // Keep a freshly scraped table, guess its columns, and build the first set
+    // of proposals. Shared by the two ways of getting one: fetching a URL, and
+    // pasting page source.
+    function receiveTable(data, sourceUrl) {
+        if (!data || !data.success) {
+            $scope.extraction.error = (data && data.error) || 'Failed to load the results table';
+            $scope.extraction.loading = false;
+            return;
+        }
+
+        var url = sourceUrl || '';
+        var isParkrun = url.includes('parkrun.') || data.source === 'parkrun';
+
+        $scope.extraction.tables = data.tables || [];
+        $scope.extraction.tableHeaders = data.headers || [];
+        $scope.extraction.tableData = data.data || [];
+        $scope.extraction.columnMapping = ResultExtractionService.guessColumnMapping(
+            isParkrun ? 'parkrun.' : url, data.headers, { fallbackToGenericHeaders: true });
+        $scope.extraction.rowOptions = {
+            stripPersonalBest: isParkrun,
+            stripDigitsFromGender: isParkrun
+        };
+
+        rebuildProposals(true);
+    }
+
+    // Re-derive the proposals from the stored table and the current mapping.
+    // Called again whenever the admin corrects a column.
+    function rebuildProposals(isFirstRun) {
+            var columnMapping = $scope.extraction.columnMapping;
+            var options = $scope.extraction.rowOptions;
+            var tableData = $scope.extraction.tableData || [];
+
+            // Race-day roster, falling back to whatever is loaded if the member
+            // list has not come back yet.
+            var members = $scope.raceDayMembers && $scope.raceDayMembers.length
+                ? $scope.raceDayMembers
+                : ($scope.allMembersForExtraction || []);
+
+            var proposals = [];
+            var additions = [];
+
+            tableData.forEach(function(row) {
+                var parsed = ResultExtractionService.parseRow(row, columnMapping, tableData, options);
+                if (!parsed) return;
+
+                var member = ResultExtractionService.matchMember(parsed.firstname, parsed.lastname, members);
+                if (!member) return; // not one of ours, ignore silently
+
+                // Find the stored result for that member on this race
+                var existing = $scope.raceResults.find(function(result) {
+                    return (result.members || []).some(function(resultMember) {
+                        return resultMember._id === member._id;
+                    });
+                });
+
+                // On the team on race day and in the results, but with nothing
+                // stored — offer to create the result rather than just noting it.
+                if (!existing) {
+                    additions.push({
+                        name: member.firstname + ' ' + member.lastname,
+                        member: member,
+                        parsed: parsed,
+                        values: EXTRACTABLE_FIELDS.map(function(field) {
+                            var scraped = field.key === 'time' ? parsed.time : parsed.ranking[field.key];
+                            if (isEmptyValue(scraped)) return null;
+                            return { label: field.label, value: scraped, isTime: field.isTime };
+                        }).filter(function(value) { return value !== null; }),
+                        add: true
+                    });
+                    return;
+                }
+
+                var changes = EXTRACTABLE_FIELDS.map(function(field) {
+                    var scraped = field.key === 'time' ? parsed.time : parsed.ranking[field.key];
+                    if (isEmptyValue(scraped)) return null;
+
+                    var current = currentValue(existing, field.key);
+                    if (!isEmptyValue(current) && Number(current) === Number(scraped)) return null;
+
+                    return {
+                        key: field.key,
+                        label: field.label,
+                        isTime: field.isTime,
+                        current: current,
+                        scraped: scraped,
+                        // Filling a blank is nearly always right, so it starts
+                        // ticked; overwriting a value an admin may have entered
+                        // by hand does not.
+                        wasEmpty: isEmptyValue(current),
+                        apply: isEmptyValue(current)
+                    };
+                }).filter(function(change) { return change !== null; });
+
+                if (changes.length > 0) {
+                    proposals.push({
+                        result: existing,
+                        name: member.firstname + ' ' + member.lastname,
+                        changes: changes
+                    });
+                }
+            });
+
+            $scope.extraction.proposals = proposals;
+            $scope.extraction.additions = additions;
+            $scope.extraction.loading = false;
+
+            if (isFirstRun && proposals.length === 0 && additions.length === 0) {
+                // Most often a column was read wrongly, so point at the fix
+                $scope.extraction.showMapping = true;
+                NotificationService.showNotifiction(true,
+                    'Nothing matched — check the column mapping below');
+            }
+    }
+
+    function extractionFailed(response) {
+        $scope.extraction.error = (response && response.data && response.data.error) ||
+            'Failed to load the results table';
+        $scope.extraction.loading = false;
+    }
+
+    function startExtraction() {
+        $scope.extraction.loading = true;
+        $scope.extraction.error = null;
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+    }
+
+    // Re-read the page, taking a different one of the tables found on it
+    $scope.useTable = function(tableIndex) {
+        $scope.extraction.tableIndex = tableIndex;
+        if (($scope.extraction.htmlSource || '').trim()) {
+            $scope.parsePastedResults(tableIndex);
+        } else {
+            $scope.fetchResultsFromLink(tableIndex);
+        }
+    };
+
+    $scope.fetchResultsFromLink = function(tableIndex) {
+        var url = ($scope.extraction.url || '').trim();
+        if (!url) return;
+
+        startExtraction();
+        ResultExtractionService.fetchTable(url, tableIndex).then(function(data) {
+            receiveTable(data, url);
+        }).catch(extractionFailed);
+    };
+
+    // For sites that block server-side requests: the admin opens the page in
+    // their browser, copies the source, and pastes it here.
+    $scope.parsePastedResults = function(tableIndex) {
+        var html = ($scope.extraction.htmlSource || '').trim();
+        if (!html) return;
+
+        startExtraction();
+        ResultExtractionService.parseHtmlSource(html, tableIndex).then(function(data) {
+            // The URL box may still hold the page the source came from; it is
+            // used for the per-site column guesses and stored on edited results.
+            receiveTable(data, ($scope.extraction.url || '').trim());
+        }).catch(extractionFailed);
+    };
+
+    $scope.proposedChangeCount = function() {
+        if (!$scope.extraction.proposals) return 0;
+        return $scope.extraction.proposals.reduce(function(count, proposal) {
+            return count + proposal.changes.filter(function(change) { return change.apply; }).length;
+        }, 0);
+    };
+
+    $scope.proposedAdditionCount = function() {
+        return ($scope.extraction.additions || []).filter(function(addition) {
+            return addition.add;
+        }).length;
+    };
+
+    $scope.setAllProposedChanges = function(apply) {
+        ($scope.extraction.proposals || []).forEach(function(proposal) {
+            proposal.changes.forEach(function(change) { change.apply = apply; });
+        });
+        ($scope.extraction.additions || []).forEach(function(addition) {
+            addition.add = apply;
+        });
+    };
+
+    // Write the confirmed changes onto the loaded results, and add the confirmed
+    // new ones to the table. Nothing is persisted until the admin saves the
+    // race, same as every other edit in this modal.
+    $scope.applyProposedChanges = function() {
+        var resultLink = ($scope.extraction.url || '').trim();
+        var applied = 0;
+
+        ($scope.extraction.proposals || []).forEach(function(proposal) {
+            proposal.changes.forEach(function(change) {
+                if (!change.apply) return;
+                if (change.key === 'time') {
+                    proposal.result.time = change.scraped;
+                    proposal.result.timeExp = timeExpFor(change.scraped);
+                } else {
+                    if (!proposal.result.ranking) proposal.result.ranking = {};
+                    proposal.result.ranking[change.key] = change.scraped;
+                }
+                applied++;
+            });
+
+            // The link the data came from, so the next admin can check the
+            // source. Empty when the HTML was pasted without a URL.
+            if (!proposal.result.resultlink && resultLink) {
+                proposal.result.resultlink = resultLink;
+            }
+        });
+
+        var added = 0;
+        ($scope.extraction.additions || []).forEach(function(addition) {
+            if (!addition.add) return;
+            // Goes into the same table as the stored results so it can be
+            // checked and edited before saving; created on save, not now.
+            $scope.raceResults.push({
+                isNew: true,
+                members: [addition.member],
+                time: addition.parsed.time,
+                timeExp: timeExpFor(addition.parsed.time),
+                ranking: angular.copy(addition.parsed.ranking),
+                resultlink: resultLink,
+                isRecordEligible: true,
+                comments: '',
+                legs: []
+            });
+            added++;
+        });
+
+        if (added > 0) {
+            $scope.raceResults.sort(function(result1, result2) {
+                return (result1.time || 0) - (result2.time || 0);
+            });
+        }
+
+        if (applied > 0 || added > 0) {
+            $scope.markResultsModified();
+        }
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+
+        var parts = [];
+        if (applied > 0) parts.push(applied + (applied === 1 ? ' change' : ' changes'));
+        if (added > 0) parts.push(added + (added === 1 ? ' new result' : ' new results'));
+        NotificationService.showNotifiction(true,
+            (parts.length ? parts.join(' and ') : 'Nothing') + ' applied — save the race to keep them');
+    };
+
+    $scope.discardProposedChanges = function() {
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+        // Drop the scraped table too, so the panel goes back to a clean start
+        // rather than leaving a mapping UI with nothing behind it.
+        $scope.extraction.tableHeaders = [];
+        $scope.extraction.tableData = [];
+        $scope.extraction.tables = [];
+        $scope.extraction.showMapping = false;
+    };
+
+    // Drop a result that was added from an extraction but not saved yet
+    $scope.removeNewResult = function(index) {
+        $scope.raceResults.splice(index, 1);
+    };
+
+
     // Helper functions
     $scope.getRaceTypeClass = function(surface) {
         if (surface !== undefined) {
@@ -2404,11 +2767,20 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
        
         // Save the race first
         ResultsService.updateRace($scope.race).then(function(updatedRace) {
-            
-            // If results were loaded and modified, save them after race is saved
-            if ($scope.resultsModified && $scope.raceResults && $scope.raceResults.length > 0) {
-                // Prepare results for bulk update
-                var resultsToUpdate = $scope.raceResults.map(function(result) {
+
+            // Results added from an extraction have no _id yet: they are created
+            // against this race, while the rest are updated in place.
+            var newResults = ($scope.raceResults || []).filter(function(result) {
+                return result.isNew;
+            });
+            var storedResults = ($scope.raceResults || []).filter(function(result) {
+                return !result.isNew;
+            });
+
+            var work = [];
+
+            if ($scope.resultsModified && storedResults.length > 0) {
+                var resultsToUpdate = storedResults.map(function(result) {
                     return {
                         _id: result._id,
                         time: result.time,
@@ -2422,20 +2794,40 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
                         achievements: result.achievements
                     };
                 });
-                
-                // Update results in bulk, then close modal
-                ResultsService.updateResultsBulk(resultsToUpdate).then(function(response) {
+                work.push(ResultsService.updateResultsBulk(resultsToUpdate).then(function(response) {
                     updatedRace.results = response.results;
-                    $uibModalInstance.close(updatedRace);
-                }).catch(function(error) {
-                    console.error('Error updating results:', error);
-                    // Still close the modal even if results update fails
-                    $uibModalInstance.close(updatedRace);
-                });
-            } else {
-                // No results to update, just close the modal
-                $uibModalInstance.close(updatedRace);
+                }));
             }
+
+            if (newResults.length > 0) {
+                var resultsToCreate = newResults.map(function(result) {
+                    return {
+                        time: result.time,
+                        ranking: result.ranking,
+                        members: result.members,
+                        legs: result.legs || [],
+                        comments: result.comments || '',
+                        resultlink: result.resultlink || '',
+                        isRecordEligible: result.isRecordEligible !== false
+                    };
+                });
+                // The bulk endpoint attaches these to the existing race by _id,
+                // and works out age grades and personal bests as it goes.
+                work.push(ResultsService.saveResultsBulk(resultsToCreate, $scope.race));
+            }
+
+            if (work.length === 0) {
+                $uibModalInstance.close(updatedRace);
+                return;
+            }
+
+            $q.all(work).then(function() {
+                $uibModalInstance.close(updatedRace);
+            }).catch(function(error) {
+                console.error('Error saving results:', error);
+                // Still close the modal even if the results step fails
+                $uibModalInstance.close(updatedRace);
+            });
         }).catch(function(error) {
             console.error('Error saving race:', error);
             // Don't close modal if race save fails

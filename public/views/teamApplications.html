@@ -140,6 +140,18 @@
                             <div class="ta-label">Gender</div>
                             <div style="text-transform: capitalize;">{{ application.sex }}</div>
                         </div>
+                        <!-- Club membership is a prerequisite, so "No" is flagged
+                             the same way a failed requirement is. Applications
+                             submitted before this question existed have no value
+                             and show nothing rather than a misleading "No". -->
+                        <div ng-if="application.isClubMember !== null && application.isClubMember !== undefined">
+                            <div class="ta-label">MCRRC club member</div>
+                            <div ng-class="application.isClubMember ? 'ta-ag-good' : 'ta-ag-low'">
+                                <i class="fa"
+                                    ng-class="application.isClubMember ? 'fa-check' : 'fa-times'"></i>
+                                {{ application.isClubMember ? 'Yes' : 'Not yet — must join the club' }}
+                            </div>
+                        </div>
                         <div>
                             <div class="ta-label">Commits to {{ raceCommitment }} races/year</div>
                             <div ng-class="application.committedToRaces ? 'ta-ag-good' : 'ta-ag-low'">

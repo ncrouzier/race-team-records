@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
-    '$scope', '$http', '$analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService',
-    function ($scope, $http, $analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService) {
+    '$scope', '$http', '$analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService', 'ResultExtractionService',
+    function ($scope, $http, $analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService, ResultExtractionService) {
 
         $scope.authService = AuthService;
         $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -128,12 +128,27 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 
        
 
-        // Fetch current team members
+        // Every member, past and present. Which of them count is decided by the
+        // race date, not by who is on the team today: a 2014 race must match the
+        // 2014 roster, including people who have since left.
+        $scope.allTeamMembers = [];
         MembersService.getMembers({
-            "filters[memberStatus]": "current",
+            "filters[memberStatus]": "all",
             "sort": "firstname lastname"
         }).then(function(members) {
-            $scope.currentTeamMembers = members;
+            $scope.allTeamMembers = members;
+            $scope.currentTeamMembers = membersOnRaceDay();
+        });
+
+        function membersOnRaceDay() {
+            if (!$scope.formData.raceDate) return [];
+            return ResultExtractionService.membersActiveOn(
+                $scope.allTeamMembers, $scope.formData.raceDate);
+        }
+
+        // Shown next to the date field, so it is obvious which roster is in play
+        $scope.$watch('formData.raceDate', function() {
+            $scope.currentTeamMembers = membersOnRaceDay();
         });
 
         $scope.$watch('formData.location.country', function(country) {
@@ -143,18 +158,22 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         });
 
         $scope.loadTable = function() {
-            $scope.isLoading = true;
-            
-            // Determine which endpoint to use based on input
-            let endpoint = '/api/extract-table';
-            let data = { url: $scope.url };
-            
-            if ($scope.htmlSource) {
-                endpoint = '/api/extract-parkrun';
-                data = { htmlSource: $scope.htmlSource };
+            if (!$scope.formData.raceDate) {
+                NotificationService.showNotifiction(false,
+                    'Set the race date first — it decides which members the results are matched against.');
+                return;
             }
 
-            $http.post(endpoint, data)
+            $scope.isLoading = true;
+
+            // Pasted source and a URL go to the same endpoint: it finds the
+            // results table generically and tells us whether the page was a
+            // parkrun one, rather than us assuming every paste is.
+            let data = $scope.htmlSource
+                ? { htmlSource: $scope.htmlSource }
+                : { url: $scope.url };
+
+            $http.post('/api/extract-table', data)
                 .then(function(response) {
                     if (response.data.success) {
                         $scope.formData.raceType = null;
@@ -162,14 +181,30 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         $scope.tableHeaders = response.data.headers;
                         $scope.tableData = response.data.data;
                         $scope.pageTitle = response.data.pageTitle;
-                        
-                        // Set race date if available
+
+                        // Pasted source: the server says what it recognised.
+                        // A URL: the host name still tells us.
+                        $scope.isParkrunSource = $scope.htmlSource
+                            ? response.data.source === 'parkrun'
+                            : $scope.url.includes('parkrun.');
+
+                        // The page may carry its own date (parkrun does). Take it
+                        // only if the admin left the field empty; if it disagrees
+                        // with what they set, say so rather than overruling them.
                         if (response.data.raceDate) {
-                            $scope.formData.raceDate = new Date(response.data.raceDate);
+                            var pageDate = new Date(response.data.raceDate);
+                            if (!$scope.formData.raceDate) {
+                                $scope.formData.raceDate = pageDate;
+                            } else if (pageDate.toDateString() !== new Date($scope.formData.raceDate).toDateString()) {
+                                NotificationService.showNotifiction(false,
+                                    'The results page says ' + pageDate.toDateString() +
+                                    ', but the race date is set to ' +
+                                    new Date($scope.formData.raceDate).toDateString() + '.');
+                            }
                         }
 
                         // Set race type to road 5K for Parkrun
-                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
+                        if ($scope.isParkrunSource) {
                             $scope.racetypesList.forEach(function(racetype) {
                                 if (racetype.name === '5k' && racetype.surface === 'road') {
                                     $scope.raceType = racetype;
@@ -195,86 +230,17 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                             return true;
                         });
 
-                        $scope.columnMapping = {}; // Reset column mapping
+                        // Site-specific column mapping, shared with the race edit
+                        // modal's "retrieve from a link" flow.
+                        $scope.columnMapping = ResultExtractionService.guessColumnMapping(
+                            $scope.isParkrunSource ? 'parkrun.' : $scope.url,
+                            $scope.tableHeaders,
+                            // Pasted source from a site we cannot identify has no
+                            // URL to match on, so fall back to header names. The
+                            // mapping dropdowns are still there to correct it.
+                            { fallbackToGenericHeaders: !!$scope.htmlSource && !$scope.isParkrunSource }
+                        );
 
-                        // Site-specific column mapping
-                        if ($scope.url.includes('runsignup.com')) {
-                            // RunSignUp specific column mapping
-                            $scope.tableHeaders.forEach(function(header) {
-                                var headerLower = header.toLowerCase();
-                                if (headerLower.includes('name')) {
-                                    $scope.columnMapping[header] = 'name';
-                                } else if (headerLower.includes('chip time') || headerLower.includes('finish')) {
-                                    $scope.columnMapping[header] = 'time';
-                                } else if (headerLower === 'place'|| headerLower.includes('overall')) {
-                                    $scope.columnMapping[header] = 'place';
-                                } else if (headerLower.includes('gender place') || headerLower.includes('gender rank')) {
-                                    $scope.columnMapping[header] = 'genderRank';
-                                } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
-                                    $scope.columnMapping[header] = 'gender';
-                                } else if (headerLower.includes('age place') || headerLower.includes('age rank')) {
-                                    $scope.columnMapping[header] = 'ageRank';
-                                }
-                            });
-                        } else if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
-                            // Parkrun specific column mapping
-                            $scope.tableHeaders.forEach(function(header) {
-                                var headerLower = header.toLowerCase();
-                                if (headerLower.includes('name') || headerLower.includes('runner') || headerLower.includes('parkrunner')) {
-                                    $scope.columnMapping[header] = 'name';
-                                } else if (headerLower.includes('time') || headerLower.includes('finish')) {
-                                    $scope.columnMapping[header] = 'time';
-                                } else if (headerLower.includes('position') || headerLower.includes('place')) {
-                                    $scope.columnMapping[header] = 'place';
-                                } else if (headerLower === 'gender') {
-                                    $scope.columnMapping[header] = 'gender';
-                                } else if (headerLower === 'gender rank') {
-                                    $scope.columnMapping[header] = 'genderRank';
-                                } else if (headerLower.includes('age position') || headerLower.includes('age place')) {
-                                    $scope.columnMapping[header] = 'ageRank';
-                                }
-                            });
-                        } else if ($scope.url.includes('mcrrc.org')) {
-                            // Default MCRRC mapping
-                            $scope.tableHeaders.forEach(function(header) {
-                                var headerLower = header.toLowerCase();
-                                // Rank columns are tested before the plain
-                                // gender/sex check: MCRRC writes the gender rank
-                                // as "Sex/Tot", which contains "sex" and would
-                                // otherwise be claimed as the gender column.
-                                if (headerLower === 'name') {
-                                    $scope.columnMapping[header] = 'name';
-                                } else if (headerLower === 'net time') {
-                                    $scope.columnMapping[header] = 'time';
-                                } else if (headerLower.includes('place') || headerLower.includes('overall')) {
-                                    $scope.columnMapping[header] = 'place';
-                                } else if (headerLower.includes('gen/tot') || headerLower.includes('sex/tot') || headerLower.includes('gender place') || headerLower.includes('gender rank')) {
-                                    $scope.columnMapping[header] = 'genderRank';
-                                } else if (headerLower.includes('div/tot') || headerLower.includes('age place') || headerLower.includes('age rank')) {
-                                    $scope.columnMapping[header] = 'ageRank';
-                                } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
-                                    $scope.columnMapping[header] = 'gender';
-                                }
-                            });
-                        } else if ($scope.url.includes('athlinks.com')) {
-                            // Athlinks specific column mapping
-                            $scope.tableHeaders.forEach(function(header) {
-                                var headerLower = header.toLowerCase();
-                                if (headerLower === 'name') {
-                                    $scope.columnMapping[header] = 'name';
-                                } else if (headerLower === 'time') {
-                                    $scope.columnMapping[header] = 'time';
-                                } else if (headerLower === 'place') {
-                                    $scope.columnMapping[header] = 'place';
-                                } else if (headerLower === 'gender') {
-                                    $scope.columnMapping[header] = 'gender';
-                                } else if (headerLower === 'gender place') {
-                                    $scope.columnMapping[header] = 'genderRank';                                
-                                } else if (headerLower === 'division place' ) {
-                                    $scope.columnMapping[header] = 'ageRank';
-                                }
-                            });
-                        }
                         
                         // Try to extract race name from the page title or content
                         if (response.data.pageTitle) {
@@ -472,7 +438,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     if (timeColumn && row[timeColumn]) {
                         var timeStr = row[timeColumn].toString().trim();
                         // For Parkrun results, extract only the finish time (before any PB info)
-                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
+                        if ($scope.isParkrunSource) {
                             timeStr = timeStr.split('PB')[0].trim();
                         }
                         result.time = $scope.cleanTime(timeStr);
@@ -523,7 +489,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     } else if (genderColumn && row[genderColumn]) {
                         // If we only have gender info, calculate rank based on position within gender group
                         var currentGender2,genderTotal;
-                        if ($scope.htmlSource || $scope.url.includes('parkrun.')) {
+                        if ($scope.isParkrunSource) {
                             
                              currentGender2 = row[genderColumn].toString().replace(/[0-9]/g, '').trim();
                             //  console.log(currentGender2);
@@ -636,8 +602,13 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 .filter(function(result) {
                     if (!result) return false;
 
+                    // Recomputed here rather than read from the cached list: the
+                    // date watcher and this run can land in the same digest, and
+                    // the roster must never lag the date the admin just set.
+                    var raceDayMembers = membersOnRaceDay();
+
                     // More flexible name matching using full names
-                    var isMatch = $scope.currentTeamMembers.some(function(member) {
+                    var isMatch = raceDayMembers.some(function(member) {
                         // Normalize names for comparison
                         var normalizeName = function(name) {
                             return name.toLowerCase()

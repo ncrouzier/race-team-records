@@ -6,22 +6,57 @@
             <form ng-submit="loadTable()">
                 <div class="form-group">
                     <div class="row">
+                        <div class="col-md-4">
+                            <label>Race Date <span class="text-danger">*</span></label>
+                            <p class="input-group">
+                                <input type="text" name="racedate" class="form-control input-md"
+                                    uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.raceDate"
+                                    ng-model-options="{timezone: 'utc'}" is-open="formData.opened"
+                                    min-date="'2013-01-01'" max-date="'3015-06-22'" required
+                                    close-text="Close" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="open($event)"><i
+                                            class="glyphicon glyphicon-calendar"></i></button>
+                                </span>
+                            </p>
+                            <small class="text-muted" ng-if="!formData.raceDate">
+                                Set this first — results are matched against the team as it was on
+                                race day.
+                            </small>
+                            <small class="text-success" ng-if="formData.raceDate">
+                                <i class="fa fa-users"></i> {{currentTeamMembers.length}} members on
+                                the team on {{formData.raceDate | date:'M/d/y':'UTC'}}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="row">
                         <div class="col-md-6">
                             <label for="urlInput">URL of Results Page</label>
                             <input type="url" class="form-control" id="urlInput" ng-model="url"
                                 placeholder="Enter URL of the results page" ng-disabled="htmlSource">
                         </div>
                         <div class="col-md-6">
-                            <label for="htmlSourceInput">Parkrun HTML Source Code</label>
+                            <label for="htmlSourceInput">Page Source Code</label>
                             <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource"
-                                placeholder="Paste Parkrun HTML source code here" rows="5" ng-disabled="url"></textarea>
+                                placeholder="Paste the page source here — parkrun, or any results page that cannot be fetched by URL"
+                                rows="5" ng-disabled="url"></textarea>
+                            <small class="text-muted">
+                                For parkrun, or any site that blocks us: open the page, view source
+                                and paste it all here.
+                            </small>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary" ng-disabled="!url && !htmlSource">
+                <button type="submit" class="btn btn-primary"
+                    ng-disabled="(!url && !htmlSource) || !formData.raceDate">
                     Load Table
                 </button>
+                <span class="text-muted" ng-if="!formData.raceDate" style="margin-left: 10px;">
+                    Pick a race date first.
+                </span>
             </form>
         </div>
     </div>
@@ -79,17 +114,10 @@
                     </div>
                     <div class="col-md-6">
                         <label>Race Date:</label>
-                        <p class="input-group">
-                            <input type="text"
-                                ng-class="{'redbg': isOlderDateCheck(formData.racedate),  '' : !isOlderDateCheck(formData.racedate)}"
-                                name="racedate" class="form-control input-md" uib-datepicker-popup="yyyy-MM-dd"
-                                ng-model="formData.raceDate" ng-model-options="{timezone: 'utc'}"
-                                is-open="formData.opened" min-date="'2013-01-01'" max-date="'3015-06-22'" required
-                                close-text="Close" />
-                            <span class="input-group-btn">
-                                <button type="button" class="btn btn-default" ng-click="open($event)"><i
-                                        class="glyphicon glyphicon-calendar"></i></button>
-                            </span>
+                        <p class="form-control-static">
+                            {{formData.raceDate | date:'MMMM d, y':'UTC'}}
+                            <small class="text-muted">— {{currentTeamMembers.length}} members on the
+                                team that day. Change it at the top of the page.</small>
                         </p>
                     </div>
                 </div>

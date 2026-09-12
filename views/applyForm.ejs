@@ -42,6 +42,38 @@
       <!-- FORM -->
       <form class="crf-card taf-card" x-show="!submitted" @submit.prevent="submit()" novalidate>
 
+        <!-- Club membership: a prerequisite, so it is asked before anything else -->
+        <div class="taf-section">
+          <h2 class="crf-section-title">
+            <i class="fa fa-id-card-o"></i> MCRRC club membership <span class="text-danger">*</span>
+          </h2>
+          <p class="text-muted taf-section-hint">
+            The racing team is open to members of the Montgomery County Road Runners Club.
+            <strong>Club membership is required</strong> to join the team.
+          </p>
+          <div class="taf-choice-group" :class="errors.isClubMember ? 'is-invalid' : ''">
+            <label class="taf-choice" :class="isClubMember === true ? 'taf-choice-on' : ''">
+              <input type="radio" name="clubmember" :value="true" @change="isClubMember = true"
+                :checked="isClubMember === true">
+              <i class="fa fa-check-circle"></i> Yes, I'm a current MCRRC member
+            </label>
+            <label class="taf-choice" :class="isClubMember === false ? 'taf-choice-on' : ''">
+              <input type="radio" name="clubmember" :value="false" @change="isClubMember = false"
+                :checked="isClubMember === false">
+              <i class="fa fa-times-circle"></i> No, not yet
+            </label>
+          </div>
+          <div class="taf-field-error" x-show="errors.isClubMember" x-cloak x-text="errors.isClubMember"></div>
+          <div class="taf-note taf-note-warn" x-show="isClubMember === false" x-cloak>
+            <i class="fa fa-exclamation-triangle"></i>
+            <div class="taf-note-text">
+              Club membership is required to race for the team. You can still send this application,
+              but you'll need to join the club before you can be added to the team — sign up at
+              <a href="https://www.mcrrc.org" target="_blank" rel="noopener">mcrrc.org</a>.
+            </div>
+          </div>
+        </div>
+
         <!-- About you -->
         <div class="taf-section">
           <h2 class="crf-section-title"><i class="fa fa-user"></i> About you</h2>
@@ -172,8 +204,7 @@
           <div class="taf-note taf-note-warn" x-show="hasLowAgeGrade" x-cloak>
             <i class="fa fa-exclamation-triangle"></i>
             <div class="taf-note-text">
-              One of your races is under <span x-text="MIN_AG"></span>%. You can still apply. The captains review
-              every application individually, but a stronger result helps.
+              One of your races is under <span x-text="MIN_AG"></span>%. Team membership requires two races at <span x-text="MIN_AG"></span>% or higher age grade.
             </div>
           </div>
         </div>
@@ -247,6 +278,7 @@
         sex: '',
         dateofbirth: '',
         motivation: '',
+        isClubMember: null,
         committedToRaces: null,
         races: [emptyRace(), emptyRace()],
         namePlaceholders: ["e.g. Kensington 8K", "e.g. Riley's Rumble Half Marathon"],
@@ -370,6 +402,10 @@
             ok = false;
           }
 
+          if (this.isClubMember === null) {
+            this.errors.isClubMember = 'Please tell us whether you are a current MCRRC club member.';
+            ok = false;
+          }
           if (this.committedToRaces === null) {
             this.errors.committedToRaces = 'Please answer whether you can commit to ' + this.RACE_COMMITMENT + ' races a year.';
             ok = false;
@@ -400,6 +436,7 @@
               sex: this.sex,
               dateofbirth: this.dateofbirth,
               motivation: this.motivation,
+              isClubMember: this.isClubMember,
               committedToRaces: this.committedToRaces,
               races: this.races.map(function (r) {
                 return {
@@ -443,7 +480,7 @@
           { racename: '', racedate: '', racetype_id: '', timeStr: '' },
           { racename: '', racedate: '', racetype_id: '', timeStr: '' }
         ],
-        committedToRaces: '', motivation: ''
+        isClubMember: '', committedToRaces: '', motivation: ''
       };
     }
 

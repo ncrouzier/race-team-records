@@ -11,35 +11,174 @@ const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const Banner = require('./models/banner');
 
-// Table headers scraped from the wild are routinely blank or repeated. The
-// MCRRC result pages have both: an unlabelled column holding the surname, and
-// "Pace" twice for net and gun pace.
-//
-// Rows are keyed by header name, so the old approach of dropping blanks while
-// still indexing <td>s positionally shifted every later column onto the wrong
-// header — surnames landed under "Sex", ages under "City" — and a repeated name
-// silently overwrote its twin. Keep every column, in place, under a unique name.
-function normaliseTableHeaders(rawHeaders) {
-    const taken = new Set();
-    return rawHeaders.map(function (raw, index) {
-        const base = (raw || '').trim() || 'Column ' + (index + 1);
-        let name = base;
-        let n = 2;
-        // Guard against a source that already contains "Pace (2)" literally.
-        while (taken.has(name)) {
-            name = base + ' (' + n + ')';
-            n++;
-        }
-        taken.add(name);
-        return name;
-    });
+// Locating the results on a scraped page is its own problem — layout tables,
+// several result tables per page, fixed-width <pre> blocks — so it lives in its
+// own module. normaliseTableHeaders and looksLikeHeaderRow are re-exported from
+// there because the parkrun branch below builds its tables by hand.
+const {
+    parseResultsTableFromHtml,
+    normaliseTableHeaders,
+    looksLikeHeaderRow
+} = require('./resultTableParser');
+
+// parkrun puts the event name, number and date in its own header markup rather
+// than anywhere the generic parser would look, so pull them out when they are
+// there. Returns null for any other site.
+function parkrunMetadata(html) {
+    const $ = cheerio.load(html);
+    const resultsHeader = $('.Results-header h1').text().trim();
+    if (!resultsHeader) return null;
+
+    const dateText = $('.Results-header h3 .format-date').text().trim();
+    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+
+    let raceDate;
+    if (dateText) {
+        // parkrun writes DD/MM/YYYY
+        const [day, month, year] = dateText.split('/');
+        raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+
+    return {
+        pageTitle: eventNumber ? `${resultsHeader} #${eventNumber}` : resultsHeader,
+        raceDate: raceDate
+    };
 }
 
-// A header row of nothing but numbers is really a data row.
-function looksLikeHeaderRow(rawHeaders) {
-    return rawHeaders.some(function (h) {
-        return h && !/^\d+$/.test(h);
+const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+// Statuses that mean "the site refused us", as opposed to "the page is missing".
+// These are the ones worth retrying from a different IP.
+const BLOCKED_STATUSES = [401, 403, 405, 429, 503];
+
+// Secret headers that prove a request is ours, so a WAF can let it through.
+//
+// SCRAPE_BYPASS_HOSTS is the allowlist of hosts these may be sent to, as a
+// comma-separated list ("mcrrc.org,www.mcrrc.org" — a bare domain also covers
+// its subdomains). It is deliberately not optional: a shared secret must never
+// be sprayed at every site the extractor is pointed at, and the extractor takes
+// whatever URL an admin types.
+//
+// Either or both of these can be configured:
+//   SCRAPE_BYPASS_HEADER + SCRAPE_BYPASS_TOKEN — a custom header pair, matched
+//       by a Cloudflare WAF custom rule with a "Skip" action.
+//   CF_ACCESS_CLIENT_ID + CF_ACCESS_CLIENT_SECRET — a Cloudflare Access service
+//       token, for a host behind Zero Trust.
+function scrapeBypassHeaders(url) {
+    const allowlist = (process.env.SCRAPE_BYPASS_HOSTS || '')
+        .split(',')
+        .map(function (host) { return host.trim().toLowerCase(); })
+        .filter(Boolean);
+    if (allowlist.length === 0) return {};
+
+    let hostname;
+    try {
+        hostname = new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        return {};
+    }
+
+    const allowed = allowlist.some(function (host) {
+        return hostname === host || hostname.endsWith('.' + host);
     });
+    if (!allowed) return {};
+
+    const headers = {};
+    if (process.env.SCRAPE_BYPASS_HEADER && process.env.SCRAPE_BYPASS_TOKEN) {
+        headers[process.env.SCRAPE_BYPASS_HEADER] = process.env.SCRAPE_BYPASS_TOKEN;
+    }
+    if (process.env.CF_ACCESS_CLIENT_ID && process.env.CF_ACCESS_CLIENT_SECRET) {
+        headers['CF-Access-Client-Id'] = process.env.CF_ACCESS_CLIENT_ID;
+        headers['CF-Access-Client-Secret'] = process.env.CF_ACCESS_CLIENT_SECRET;
+    }
+    return headers;
+}
+
+// Fetch a results page as HTML.
+//
+// Some hosts sit behind Cloudflare and answer a plain server-side request with
+// 403 no matter what headers are sent — mcrrc.org does exactly this. Two ways
+// past it, tried in order:
+//   1. A secret header the site's WAF is configured to wave through, for hosts
+//      we control. See scrapeBypassHeaders above.
+//   2. The proxy that the parkrun branch already uses, which requests from a
+//      different address.
+//
+// Note the proxy keeps its own allowlist of domains; if it has not been told
+// about the host being fetched it answers 403 too, and the caller gets an error
+// explaining that rather than a bare 500.
+async function fetchPageHtml(url) {
+    const bypassHeaders = scrapeBypassHeaders(url);
+    const directHeaders = Object.assign({
+        'User-Agent': SCRAPE_USER_AGENT,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }, bypassHeaders);
+
+    let directStatus = null;
+    try {
+        const response = await axios.get(url, {
+            headers: directHeaders,
+            timeout: 20000,
+            maxRedirects: 5,
+            // A redirect off the allowlisted host must not carry the secret with
+            // it — otherwise an open redirect on the source site would hand the
+            // token to whoever it points at.
+            beforeRedirect: function (options) {
+                const stillAllowed = scrapeBypassHeaders(options.href || url);
+                Object.keys(bypassHeaders).forEach(function (name) {
+                    if (stillAllowed[name] === undefined) {
+                        delete options.headers[name];
+                    }
+                });
+            }
+        });
+        return { html: response.data, via: 'direct' };
+    } catch (directError) {
+        directStatus = directError.response ? directError.response.status : null;
+        if (directStatus && BLOCKED_STATUSES.indexOf(directStatus) === -1) {
+            throw directError;
+        }
+    }
+
+    const usedBypass = Object.keys(bypassHeaders).length > 0;
+    const bypassNote = usedBypass
+        ? ' A bypass token was sent but the site still refused it — check the WAF rule matches this header.'
+        : ' No bypass token is configured for this host.';
+
+    if (!process.env.PARKRUN_PROXY_URL) {
+        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
+            bypassNote + ' No proxy is configured to retry through.');
+        error.scrapeBlocked = true;
+        throw error;
+    }
+
+    const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+    const proxyResponse = await axios.get(proxyUrl, {
+        headers: {
+            'User-Agent': SCRAPE_USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9'
+        },
+        timeout: 30000,
+        maxRedirects: 5,
+        validateStatus: function (status) {
+            return status >= 200 && status < 500;
+        }
+    });
+
+    const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
+    if (proxyResponse.status >= 400) {
+        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
+            bypassNote + ' The proxy could not fetch it either (HTTP ' + proxyResponse.status + '): ' +
+            body.slice(0, 200));
+        error.scrapeBlocked = true;
+        throw error;
+    }
+
+    return { html: body, via: 'proxy' };
 }
 
 const bioSanitizeOptions = {
@@ -3637,7 +3776,37 @@ module.exports = async function (app, qs, passport, async, _) {
     // Add this with other route definitions
     app.post('/api/extract-table', service.isAdminLoggedIn, async function (req, res) {
         try {
-            const { url } = req.body;
+            const { url, htmlSource, tableIndex } = req.body;
+
+            // Pasted page source. Two jobs: it is the way in for a host that
+            // refuses server-side requests outright (the browser can load the
+            // page even when we cannot), and it is how parkrun results get in,
+            // since parkrun blocks scraping. Either way the table itself is
+            // found generically; only the page metadata is site-specific.
+            if (htmlSource) {
+                const parsed = parseResultsTableFromHtml(htmlSource, tableIndex);
+                if (!parsed) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'No results table found in the pasted HTML. Make sure you copied the whole page source, including the results.'
+                    });
+                }
+
+                const parkrun = parkrunMetadata(htmlSource);
+                return res.json({
+                    success: true,
+                    headers: parsed.headers,
+                    data: parsed.data,
+                    pageTitle: (parkrun && parkrun.pageTitle) || parsed.pageTitle,
+                    raceDate: parkrun && parkrun.raceDate,
+                    // Lets the client pick parkrun's column names and its
+                    // "3:21 PB" time quirk, instead of assuming every paste is
+                    // a parkrun page the way it used to.
+                    source: parkrun ? 'parkrun' : 'generic',
+                    tables: parsed.tables
+                });
+            }
+
             if (!url) {
                 return res.status(400).json({ success: false, error: 'URL is required' });
             }
@@ -4021,110 +4190,37 @@ module.exports = async function (app, qs, passport, async, _) {
                     }
                 });
             } else {
-                // Original MCRRC parsing logic or any other compatible (unlikely)
-                const response = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive',
-                        'Upgrade-Insecure-Requests': '1'
-                    }
-                });
-                const $ = cheerio.load(response.data);
+                // Original MCRRC parsing logic or any other compatible (unlikely).
+                // Goes through fetchPageHtml so a Cloudflare 403 is retried via
+                // the proxy instead of failing outright.
+                const page = await fetchPageHtml(url);
+                const parsed = parseResultsTableFromHtml(page.html, tableIndex);
 
-                // Extract page title
-                const pageTitle = $('title').text().trim();
-
-                // Common table selectors
-                const tableSelectors = [
-                    'table.results-table',  // Common for results tables
-                    'table.table',          // Bootstrap tables
-                    'table.dataTable',      // DataTables
-                    'table.sortable',       // Sortable tables
-                    'table.grid',           // Grid tables
-                    'table',                // Any table as last resort
-                    'div.table',            // Some sites use div with table class
-                    'div.results'           // Some sites use div for results
-                ];
-
-                let table = null;
-                let headers = [];
-                let data = [];
-
-                // Try each selector until we find a working one
-                for (const selector of tableSelectors) {
-                    const element = $(selector).first();
-                    if (element.length) {
-                        // Try to extract headers - be more strict about what constitutes a header
-                        let potentialHeaders = [];
-                        const headerRow = element.find('thead tr, tr:first-child').first();
-
-                        // Only process if we found a header row
-                        if (headerRow.length) {
-                            // Every cell, blank ones included: the array index is
-                            // what aligns headers to cells, so a gap must not
-                            // close up. See normaliseTableHeaders.
-                            const rawHeaders = [];
-                            headerRow.find('th, td').each(function () {
-                                rawHeaders.push($(this).text().trim());
-                            });
-                            if (looksLikeHeaderRow(rawHeaders)) {
-                                potentialHeaders = normaliseTableHeaders(rawHeaders);
-                            }
-                        }
-
-                        // If we found valid headers, try to extract data
-                        if (potentialHeaders.length > 0) {
-                            const potentialData = [];
-                            // Check if header row uses td elements
-                            const headerUsesTd = headerRow.find('td').length > 0;
-
-                            // Skip the header row when getting data
-                            element.find('tbody tr, tr:not(:first-child)').each(function () {
-                                // If header uses td, skip the first row of data as it's the header
-                                if (headerUsesTd && $(this).is(':first-child')) {
-                                    return;
-                                }
-
-                                const row = {};
-                                $(this).find('td').each(function (index) {
-                                    if (potentialHeaders[index]) {
-                                        row[potentialHeaders[index]] = $(this).text().trim();
-                                    }
-                                });
-                                if (Object.keys(row).length > 0) {
-                                    potentialData.push(row);
-                                }
-                            });
-
-                            // If we found both headers and data, use this table
-                            if (potentialData.length > 0) {
-                                table = element;
-                                headers = potentialHeaders;
-                                data = potentialData;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (!table || headers.length === 0 || data.length === 0) {
+                if (!parsed) {
                     return res.status(400).json({
                         success: false,
-                        error: 'No valid results table found on the page'
+                        error: 'No results table found on the page'
                     });
                 }
 
                 res.json({
                     success: true,
-                    headers: headers,
-                    data: data,
-                    pageTitle: pageTitle
+                    headers: parsed.headers,
+                    data: parsed.data,
+                    pageTitle: parsed.pageTitle,
+                    tables: parsed.tables
                 });
             }
         } catch (error) {
             console.error('Error extracting table:', error);
+            // A site blocking us is not a server fault, and the admin can act on
+            // it (paste the HTML instead), so say so rather than "500".
+            if (error.scrapeBlocked) {
+                return res.status(502).json({
+                    success: false,
+                    error: error.message
+                });
+            }
             res.status(500).json({
                 success: false,
                 error: 'Failed to extract table data: ' + error.message
@@ -5130,7 +5226,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Public: submit a team application
     app.post('/api/team-applications', async function (req, res) {
         try {
-            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces } = req.body;
+            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces, isClubMember } = req.body;
 
             if (!firstname || !firstname.trim()) return res.status(400).json({ error: 'First name is required' });
             if (!lastname || !lastname.trim()) return res.status(400).json({ error: 'Last name is required' });
@@ -5138,6 +5234,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!['male', 'female', 'other'].includes(sex)) return res.status(400).json({ error: 'Please select a gender' });
             if (!dateofbirth || isNaN(new Date(dateofbirth).getTime())) return res.status(400).json({ error: 'A valid date of birth is required' });
             if (!Array.isArray(races) || races.length < 2) return res.status(400).json({ error: 'Please provide two recent races' });
+            if (typeof isClubMember !== 'boolean') return res.status(400).json({ error: 'Please tell us whether you are a current MCRRC club member' });
             if (typeof committedToRaces !== 'boolean') return res.status(400).json({ error: 'Please answer whether you can commit to ' + APPLICATION_RACE_COMMITMENT + ' races a year' });
             if (!motivation || !String(motivation).trim()) return res.status(400).json({ error: 'Please tell us why you want to join the team' });
 
@@ -5194,6 +5291,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 races: racesToSave,
                 motivation: motivation ? String(motivation).trim() : '',
                 committedToRaces: committedToRaces,
+                isClubMember: isClubMember,
                 ipAddress: req.ip
             });
             await application.save();
@@ -5235,6 +5333,7 @@ module.exports = async function (app, qs, passport, async, _) {
             'Recent races:',
             raceLines,
             '',
+            'Current MCRRC club member: ' + (application.isClubMember ? 'Yes' : 'No — not a club member yet'),
             'Committed to ' + APPLICATION_RACE_COMMITMENT + ' races a year: ' + (application.committedToRaces ? 'Yes' : 'No'),
             '',
             'Why they want to join:',

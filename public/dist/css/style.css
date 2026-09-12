@@ -11614,6 +11614,105 @@ footer {
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
+.race-edit-modal-class .result-extraction {
+  padding: 12px 15px 0;
+  margin-bottom: 15px;
+  background: rgba(248, 249, 250, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+}
+.race-edit-modal-class .column-mapping {
+  margin-bottom: 12px;
+}
+.race-edit-modal-class .column-mapping p {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.race-edit-modal-class .column-mapping .column-mapping-table {
+  background: white;
+  margin-bottom: 0;
+}
+.race-edit-modal-class .column-mapping .column-mapping-table td,
+.race-edit-modal-class .column-mapping .column-mapping-table th {
+  vertical-align: middle;
+  font-size: 12px;
+}
+.race-edit-modal-class .column-mapping .column-mapping-table select {
+  min-width: 160px;
+}
+.race-edit-modal-class .table-choice {
+  margin-bottom: 12px;
+}
+.race-edit-modal-class .table-choice label {
+  font-weight: normal;
+  font-size: 12px;
+}
+.race-edit-modal-class .paste-source {
+  margin-bottom: 12px;
+}
+.race-edit-modal-class .paste-source textarea {
+  font-family: monospace;
+  font-size: 11px;
+}
+.race-edit-modal-class .paste-source p {
+  font-size: 12px;
+}
+.race-edit-modal-class .result-link-cell {
+  white-space: nowrap;
+}
+.race-edit-modal-class .result-link-cell input {
+  width: 130px;
+  display: inline-block;
+}
+.race-edit-modal-class .result-link-cell a {
+  margin-left: 5px;
+}
+.race-edit-modal-class .proposed-changes {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #008cba;
+  border-radius: 6px;
+  background: #F7FBFC;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-header h5 {
+  margin: 0;
+  font-weight: 600;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-table {
+  background: white;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-table .change-overwrites {
+  background-color: #fcf8e3;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-table .change-adds {
+  background-color: #dff0d8;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-table td,
+.race-edit-modal-class .proposed-changes .proposed-changes-table th {
+  vertical-align: middle;
+}
+.race-edit-modal-class .proposed-changes .proposed-changes-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.race-edit-modal-class .proposed-changes .proposed-additions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.race-edit-modal-class .proposed-changes .proposed-additions h5 {
+  font-weight: 600;
+}
+.race-edit-modal-class .result-row-new > td {
+  background-color: #dff0d8 !important;
+}
 .race-edit-modal-class .achievements-content {
   transition: all 0.3s ease;
 }

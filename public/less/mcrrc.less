@@ -5316,6 +5316,140 @@ footer {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+// Pulling ranking data off a results page, and confirming what it would change
+.race-edit-modal-class {
+    .result-extraction {
+        padding: 12px 15px 0;
+        margin-bottom: 15px;
+        background: rgba(248, 249, 250, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+    }
+
+    .column-mapping {
+        margin-bottom: 12px;
+
+        p {
+            font-size: 12px;
+            margin: 6px 0;
+        }
+
+        .column-mapping-table {
+            background: white;
+            margin-bottom: 0;
+
+            td,
+            th {
+                vertical-align: middle;
+                font-size: 12px;
+            }
+
+            select {
+                min-width: 160px;
+            }
+        }
+    }
+
+    .table-choice {
+        margin-bottom: 12px;
+
+        label {
+            font-weight: normal;
+            font-size: 12px;
+        }
+    }
+
+    .paste-source {
+        margin-bottom: 12px;
+
+        textarea {
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        p {
+            font-size: 12px;
+        }
+    }
+
+    // The link sits in a narrow table cell, so the input stays small and the
+    // full URL is available through its tooltip.
+    .result-link-cell {
+        white-space: nowrap;
+
+        input {
+            width: 130px;
+            display: inline-block;
+        }
+
+        a {
+            margin-left: 5px;
+        }
+    }
+
+    .proposed-changes {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid @brand-primary;
+        border-radius: 6px;
+        background: @brand-primary-very-light;
+
+        .proposed-changes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+
+            h5 {
+                margin: 0;
+                font-weight: 600;
+            }
+        }
+
+        .proposed-changes-table {
+            background: white;
+
+            // A change that overwrites a value someone already entered is worth
+            // a second look, so it is tinted rather than just listed.
+            .change-overwrites {
+                background-color: #fcf8e3;
+            }
+
+            // A result that does not exist yet, as opposed to an edit to one
+            // that does.
+            .change-adds {
+                background-color: #dff0d8;
+            }
+
+            td,
+            th {
+                vertical-align: middle;
+            }
+        }
+
+        .proposed-changes-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .proposed-additions {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+            h5 {
+                font-weight: 600;
+            }
+        }
+    }
+
+    // Pending results, not yet written to the database
+    .result-row-new > td {
+        background-color: #dff0d8 !important;
+    }
+}
+
 .race-edit-modal-class .achievements-content {
     transition: all 0.3s ease;
 }

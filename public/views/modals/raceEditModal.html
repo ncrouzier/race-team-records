@@ -195,6 +195,216 @@
                 <div class="loading-indicator" ng-if="loadingResults">
                     <i class="fa fa-spinner fa-spin"></i> Loading results...
                 </div>
+
+                <!-- Pull ranking data from a results page, same as the extractor -->
+                <div class="result-extraction" ng-if="raceResults && raceResults.length > 0">
+                    <div class="row">
+                        <div class="col-md-9">
+                            <div class="form-group">
+                                <label class="control-label text-left">Retrieve results from a link</label>
+                                <input type="text" class="form-control" ng-model="extraction.url"
+                                    ng-keydown="$event.keyCode === 13 && fetchResultsFromLink()"
+                                    placeholder="https://mcrrc.org/race-results/... (MCRRC, RunSignUp, Athlinks, parkrun)">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="control-label text-left">&nbsp;</label><br>
+                                <button type="button" class="btn btn-primary" ng-click="fetchResultsFromLink()"
+                                    ng-disabled="!extraction.url || extraction.loading">
+                                    <i class="fa" ng-class="extraction.loading ? 'fa-spinner fa-spin' : 'fa-download'"></i>
+                                    Retrieve
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted" style="margin-top: -10px;">
+                        <span ng-if="raceDayMembers.length > 0">
+                            <i class="fa fa-info-circle"></i> Matching against the
+                            {{raceDayMembers.length}} members on the team on
+                            {{race.racedate | date:'M/d/y':'UTC'}}.
+                        </span>
+                        <a class="hoverhand" ng-click="extraction.showPasteBox = !extraction.showPasteBox">
+                            <i class="fa" ng-class="extraction.showPasteBox ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                            Paste the page source instead
+                        </a>
+                    </p>
+
+                    <!-- Some sites (mcrrc.org behind Cloudflare) refuse a
+                         server-side fetch, but the browser can still load them -->
+                    <div class="paste-source" ng-show="extraction.showPasteBox">
+                        <p class="text-muted">
+                            If the link above is refused, open it in your browser, view the page
+                            source (<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>U</kbd>), copy all of it
+                            and paste it here. Keep the link in the box above so the columns are
+                            read correctly and the result link gets saved.
+                        </p>
+                        <textarea class="form-control" rows="4" ng-model="extraction.htmlSource"
+                            placeholder="Paste the full page source here (starts with &lt;!DOCTYPE html&gt; or &lt;html&gt;)"></textarea>
+                        <button type="button" class="btn btn-primary" style="margin-top: 8px;"
+                            ng-click="parsePastedResults()"
+                            ng-disabled="!extraction.htmlSource || extraction.loading">
+                            <i class="fa" ng-class="extraction.loading ? 'fa-spinner fa-spin' : 'fa-code'"></i>
+                            Read pasted source
+                        </button>
+                    </div>
+
+                    <!-- More than one results table on the page: let the admin
+                         pick a different one if the best guess was wrong -->
+                    <div class="table-choice" ng-if="extraction.tables.length > 1">
+                        <label class="control-label text-left">
+                            {{extraction.tables.length}} tables found on that page — using
+                            <strong>{{extraction.tables[extraction.tableIndex || 0].label}}</strong>
+                        </label>
+                        <select class="form-control input-sm" ng-model="extraction.tableIndex"
+                            ng-change="useTable(extraction.tableIndex)"
+                            ng-options="table.index as (table.label + ' — ' + table.rows + ' rows, ' + table.columns + ' columns') for table in extraction.tables">
+                        </select>
+                    </div>
+
+                    <!-- Column mapping: the guess is only a guess, and a column
+                         read wrongly is the usual reason nothing matches -->
+                    <div class="column-mapping" ng-if="extraction.tableHeaders.length > 0">
+                        <a class="hoverhand" ng-click="extraction.showMapping = !extraction.showMapping">
+                            <i class="fa"
+                                ng-class="extraction.showMapping ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                            Column mapping
+                            <small class="text-muted">({{extraction.tableHeaders.length}} columns
+                                read from the page)</small>
+                        </a>
+                        <div ng-show="extraction.showMapping">
+                            <p class="text-muted">
+                                Set what each column holds. Changes update the proposals below
+                                straight away.
+                            </p>
+                            <table class="table table-condensed column-mapping-table">
+                                <thead>
+                                    <tr>
+                                        <th>Column</th>
+                                        <th>Example value</th>
+                                        <th>Holds</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="header in extraction.tableHeaders">
+                                        <td><strong>{{header}}</strong></td>
+                                        <td class="text-muted">{{columnSample(header)}}</td>
+                                        <td>
+                                            <select class="form-control input-sm"
+                                                ng-model="extraction.columnMapping[header]"
+                                                ng-change="onColumnMappingChange(header)"
+                                                ng-options="field.value as field.label for field in availableFieldsFor(header)">
+                                                <option value="">— ignore —</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" ng-if="extraction.error">{{extraction.error}}</div>
+                </div>
+
+                <!-- Proposed edits, confirmed one by one before anything changes -->
+                <div class="proposed-changes"
+                    ng-if="(extraction.proposals && extraction.proposals.length > 0) || extraction.additions.length > 0">
+                    <div class="proposed-changes-header">
+                        <h5>
+                            <i class="fa fa-exchange"></i>
+                            Proposed changes
+                            <span class="item-count">({{proposedChangeCount()}} edit<span
+                                    ng-if="proposedChangeCount() !== 1">s</span>,
+                                {{proposedAdditionCount()}} new result<span
+                                    ng-if="proposedAdditionCount() !== 1">s</span> selected)</span>
+                        </h5>
+                        <div>
+                            <button type="button" class="btn btn-xs btn-default"
+                                ng-click="setAllProposedChanges(true)">Select all</button>
+                            <button type="button" class="btn btn-xs btn-default"
+                                ng-click="setAllProposedChanges(false)">Select none</button>
+                        </div>
+                    </div>
+                    <table class="table table-condensed proposed-changes-table"
+                        ng-if="extraction.proposals.length > 0">
+                        <thead>
+                            <tr>
+                                <th>Runner</th>
+                                <th>Field</th>
+                                <th>Current</th>
+                                <th></th>
+                                <th>From link</th>
+                                <th>Apply</th>
+                            </tr>
+                        </thead>
+                        <tbody ng-repeat="proposal in extraction.proposals">
+                            <tr ng-repeat="change in proposal.changes"
+                                ng-class="{'change-overwrites': !change.wasEmpty}">
+                                <td>{{$first ? proposal.name : ''}}</td>
+                                <td>{{change.label}}</td>
+                                <td class="text-muted">
+                                    <span ng-if="change.wasEmpty"><em>empty</em></span>
+                                    <span ng-if="!change.wasEmpty && change.isTime">{{change.current |
+                                        secondsToTimeString}}</span>
+                                    <span ng-if="!change.wasEmpty && !change.isTime">{{change.current}}</span>
+                                </td>
+                                <td><i class="fa fa-arrow-right"></i></td>
+                                <td>
+                                    <strong ng-if="change.isTime">{{change.scraped | secondsToTimeString}}</strong>
+                                    <strong ng-if="!change.isTime">{{change.scraped}}</strong>
+                                </td>
+                                <td><input type="checkbox" ng-model="change.apply"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- Team members in the results with nothing stored yet -->
+                    <div class="proposed-additions" ng-if="extraction.additions.length > 0">
+                        <h5>
+                            <i class="fa fa-user-plus"></i> New results to add
+                            <small class="text-muted">on the team on race day and in these results,
+                                but not stored yet</small>
+                        </h5>
+                        <table class="table table-condensed proposed-changes-table">
+                            <thead>
+                                <tr>
+                                    <th>Runner</th>
+                                    <th>Time</th>
+                                    <th>Rankings from link</th>
+                                    <th>Add</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="addition in extraction.additions" class="change-adds">
+                                    <td>{{addition.name}}</td>
+                                    <td><strong>{{addition.parsed.time | secondsToTimeString}}</strong></td>
+                                    <td class="text-muted">
+                                        <span ng-repeat="value in addition.values"
+                                            ng-if="!value.isTime">{{value.label}}
+                                            {{value.value}}<span ng-if="!$last">, </span></span>
+                                    </td>
+                                    <td><input type="checkbox" ng-model="addition.add"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="proposed-changes-actions">
+                        <button type="button" class="btn btn-success" ng-click="applyProposedChanges()"
+                            ng-disabled="proposedChangeCount() === 0 && proposedAdditionCount() === 0">
+                            <i class="fa fa-check"></i> Apply
+                            <span ng-if="proposedChangeCount() > 0">{{proposedChangeCount()}} edit<span
+                                    ng-if="proposedChangeCount() !== 1">s</span></span>
+                            <span
+                                ng-if="proposedChangeCount() > 0 && proposedAdditionCount() > 0">and</span>
+                            <span ng-if="proposedAdditionCount() > 0">{{proposedAdditionCount()}} new
+                                result<span ng-if="proposedAdditionCount() !== 1">s</span></span>
+                        </button>
+                        <button type="button" class="btn btn-default" ng-click="discardProposedChanges()">
+                            <i class="fa fa-times"></i> Discard
+                        </button>
+                        <span class="text-muted">Nothing is written until you save the race.</span>
+                    </div>
+                </div>
                 <div class="results-table" ng-if="raceResults && raceResults.length > 0">
                     <div class="table-responsive">
                         <table class="table table-striped">
@@ -203,14 +413,24 @@
                                     <th>Name</th>
                                     <th>Time</th>
                                     <th>Time Details</th>
-                                    <th>Overall</th>
-                                    <th>Gender</th>
                                     <th>Age</th>
+                                    <th>Gender</th>
+                                    <th>Overall</th>
+                                    <th>Link</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="result in raceResults">
-                                    <td>{{result.members[0].firstname}} {{result.members[0].lastname}}</td>
+                                <tr ng-repeat="result in raceResults" ng-class="{'result-row-new': result.isNew}">
+                                    <td>
+                                        {{result.members[0].firstname}} {{result.members[0].lastname}}
+                                        <span ng-if="result.isNew" class="label label-success"
+                                            uib-tooltip="Will be created when you save the race"
+                                            tooltip-append-to-body="true">new</span>
+                                        <i ng-if="result.isNew" class="fa fa-times hoverhand text-danger"
+                                            ng-click="removeNewResult($index)"
+                                            uib-tooltip="Remove before saving"
+                                            tooltip-append-to-body="true"></i>
+                                    </td>
                                     <td><span class="resultTime">{{result.time | secondsToTimeString}}</span></td>
                                     <td class="agegradeCell customtime nowrap">
                                         <div class="input-group input-group-sm" style="width: 100px;">
@@ -229,11 +449,11 @@
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm" style="width: 120px;">
-                                            <input type="text" ng-model="result.ranking.overallrank" only-digits
+                                            <input type="text" ng-model="result.ranking.agerank" only-digits
                                                 class="form-inline input-md text-left" style="width: 50px;"
                                                 ng-change="markResultsModified()">
                                             <span>/</span>
-                                            <input type="text" ng-model="result.ranking.overalltotal" only-digits
+                                            <input type="text" ng-model="result.ranking.agetotal" only-digits
                                                 class="form-inline input-md text-left" style="width: 50px;"
                                                 ng-change="markResultsModified()">
                                         </div>
@@ -251,14 +471,24 @@
                                     </td>
                                     <td>
                                         <div class="input-group input-group-sm" style="width: 120px;">
-                                            <input type="text" ng-model="result.ranking.agerank" only-digits
+                                            <input type="text" ng-model="result.ranking.overallrank" only-digits
                                                 class="form-inline input-md text-left" style="width: 50px;"
                                                 ng-change="markResultsModified()">
                                             <span>/</span>
-                                            <input type="text" ng-model="result.ranking.agetotal" only-digits
+                                            <input type="text" ng-model="result.ranking.overalltotal" only-digits
                                                 class="form-inline input-md text-left" style="width: 50px;"
                                                 ng-change="markResultsModified()">
                                         </div>
+                                    </td>
+                                    <td class="result-link-cell">
+                                        <input type="text" class="form-control input-sm" ng-model="result.resultlink"
+                                            ng-change="markResultsModified()" placeholder="Result link"
+                                            uib-tooltip="{{result.resultlink}}" tooltip-enable="!!result.resultlink"
+                                            tooltip-append-to-body="true">
+                                        <a ng-if="result.resultlink" ng-href="{{result.resultlink}}" target="_blank"
+                                            uib-tooltip="Open result link" tooltip-append-to-body="true">
+                                            <i class="fa fa-external-link"></i>
+                                        </a>
                                     </td>
                                 </tr>
                             </tbody>

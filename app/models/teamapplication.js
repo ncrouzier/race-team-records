@@ -40,6 +40,13 @@ const teamApplicationSchema = new mongoose.Schema({
     motivation: { type: String, required: true },
     committedToRaces: { type: Boolean, required: true },
 
+    // Club membership is a prerequisite for the team. Not `required`, unlike the
+    // fields above: applications submitted before this question existed have no
+    // value for it, and requiring it would fail validation the next time one of
+    // those is saved (approving it, ticking a checklist box). New submissions are
+    // required to answer by the route.
+    isClubMember: { type: Boolean, default: null },
+
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     // Set once approved — the Member document created from this application.
     member: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', default: null },

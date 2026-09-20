@@ -127,9 +127,18 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                     if (md.start) {
                         var startDate = new Date(md.start);
                         if (startDate >= sixtyDaysAgo) {
+                            // Someone with an earlier membership period is coming
+                            // back, not arriving. membershipDates is not reliably
+                            // in order, so look for any earlier start rather than
+                            // trusting this entry's position in the array.
+                            var isRejoin = member.membershipDates.some(function (other) {
+                                return other !== md && other.start &&
+                                    new Date(other.start) < startDate;
+                            });
                             statusChanges.push({
                                 member: member,
                                 type: 'entry',
+                                isRejoin: isRejoin,
                                 date: startDate
                             });
                         }

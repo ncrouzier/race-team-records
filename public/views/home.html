@@ -263,14 +263,17 @@
                         <div class="feed-row">
                             <span class="feed-icon"
                                 ng-class="change.type === 'entry' ? 'feed-icon-entry' : 'feed-icon-exit'">
-                                <i class="fa" ng-class="change.type === 'entry' ? 'fa-sign-in' : 'fa-sign-out'"></i>
+                                <i class="fa"
+                                    ng-class="change.type === 'exit' ? 'fa-sign-out' : (change.isRejoin ? 'fa-repeat' : 'fa-sign-in')"></i>
                             </span>
                             <div class="feed-body">
                                 <div class="feed-text">
                                     <b><a
                                             ui-sref="/members/member({ member: change.member.username })">{{change.member.firstname}}&nbsp;{{change.member.lastname}}</a></b>
-                                    <span ng-if="change.type === 'entry'" class="feed-tag feed-tag-entry">joined the
-                                        team</span>
+                                    <span ng-if="change.type === 'entry' && !change.isRejoin"
+                                        class="feed-tag feed-tag-entry">joined the team</span>
+                                    <span ng-if="change.type === 'entry' && change.isRejoin"
+                                        class="feed-tag feed-tag-entry">rejoined the team</span>
                                     <span ng-if="change.type === 'exit'" class="feed-tag feed-tag-exit">left the
                                         team</span>
                                 </div>

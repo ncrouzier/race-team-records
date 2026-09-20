@@ -60,6 +60,25 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         });
     };
 
+    // The two team-requirement tiles are only anyone's business if you are an
+    // admin or looking at your own page. They also decide the whole tile
+    // layout: without them page one is two short, so two tiles move up from
+    // page two rather than leaving gaps.
+    $scope.showsRequirementTiles = function() {
+        if (!$scope.currentMember || !$scope.currentMember.teamRequirementStats) return false;
+        if (!$scope.user) return false;
+        if ($scope.user.role === 'admin') return true;
+        return !!($scope.user.member && $scope.user.member._id &&
+            $scope.user.member._id === $scope.currentMember._id);
+    };
+
+    // Stored as 'Female'/'Male', but normalised here rather than compared
+    // literally in the template.
+    $scope.isFemaleMember = function() {
+        var sex = $scope.currentMember && $scope.currentMember.sex;
+        return !!sex && sex.toLowerCase().charAt(0) === 'f';
+    };
+
     // The standard age-grading bands, as used on the age grade page.
     var AGE_GRADE_LEVELS = [
         { min: 90, label: 'World class', starClass: 'ageworld' },
@@ -210,6 +229,10 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             totalMiles: 0,
             totalRacingTime: 0,
             runnersBeaten: 0,
+            sameGenderBeaten: 0,
+            beatenBy: 0,
+            sameGenderAhead: 0,
+            otherGenderAhead: 0,
             busiestYear: null,
             busiestYearCount: 0,
             longestWeekStreak: 0,
@@ -371,6 +394,28 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                 // How many runners finished behind this member
                 if (result.ranking.overallrank && result.ranking.overalltotal && result.ranking.overalltotal >= result.ranking.overallrank) {
                     $scope.memberStats.runnersBeaten += result.ranking.overalltotal - result.ranking.overallrank;
+                }
+                // The same sum within the member's own gender field — how many
+                // of their own gender they finished ahead of.
+                if (result.ranking.genderrank && result.ranking.gendertotal && result.ranking.gendertotal >= result.ranking.genderrank) {
+                    $scope.memberStats.sameGenderBeaten += result.ranking.gendertotal - result.ranking.genderrank;
+                }
+
+                // ...and the mirror image: who finished ahead of them.
+                if (result.ranking.overallrank) {
+                    $scope.memberStats.beatenBy += result.ranking.overallrank - 1;
+                }
+                if (result.ranking.genderrank) {
+                    $scope.memberStats.sameGenderAhead += result.ranking.genderrank - 1;
+                }
+                // Everyone ahead is either their own gender or not, so the
+                // difference is the other gender — for a man, the women who beat
+                // him. Clamped: a handful of stored results have a gender rank
+                // higher than their overall rank, which cannot happen in a real
+                // race, and would otherwise subtract from the total.
+                if (result.ranking.overallrank && result.ranking.genderrank) {
+                    $scope.memberStats.otherGenderAhead +=
+                        Math.max(0, result.ranking.overallrank - result.ranking.genderrank);
                 }
             }
 

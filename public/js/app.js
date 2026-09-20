@@ -49,6 +49,11 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
     $rootScope.markActivityLogsSeen = function() {
         ActivityLogService.markAllSeen().then(function() {
             $rootScope.unseenActivityCount = 0;
+            // The server has moved the last-seen cursor, so any page fetched
+            // from now on comes back already marked seen — but rows already on
+            // screen still carry unseen: true and would keep their highlight
+            // until a reload. Tell the log page to clear them.
+            $rootScope.$broadcast('activityLogsMarkedSeen');
         });
     };
 

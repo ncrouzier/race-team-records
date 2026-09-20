@@ -14684,6 +14684,64 @@ footer {
 .ta-email-preview p:last-child {
   margin-bottom: 0;
 }
+.et-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.et-custom-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #008cba;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.et-origin {
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: #6f6f6f;
+}
+.et-source {
+  white-space: pre;
+  overflow-x: auto;
+}
+.et-preview-meta {
+  font-size: 12px;
+  color: #6f6f6f;
+  margin-bottom: 6px;
+}
+.et-preview-subject {
+  border: 1px solid #dee2e6;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.et-preview-subject + .ta-email-preview {
+  border-radius: 0 0 6px 6px;
+}
+.et-placeholders {
+  margin: 12px 0;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+.et-placeholders .et-placeholders-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 8px;
+}
+.et-placeholders .crf-chip {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  margin: 0 4px 4px 0;
+}
 .ta-email-preview-inline {
   margin-top: 6px;
   font-size: 12.5px;

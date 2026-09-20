@@ -1,0 +1,119 @@
+<div class="modal-header">
+    <h4 class="modal-title">
+        <i class="fa fa-file-code-o"></i> Application email templates
+    </h4>
+</div>
+
+<div class="modal-body">
+
+    <div ng-if="loading" style="text-align:center; padding: 24px;">
+        <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
+    </div>
+
+    <div ng-if="!loading && templates.length">
+
+        <!-- Which template -->
+        <div class="et-tabs">
+            <button type="button" class="crf-chip" ng-repeat="tpl in templates"
+                ng-click="selectTemplate(tpl)"
+                ng-class="current.key === tpl.key ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                <i class="fa" ng-class="tpl.type === 'rejection' ? 'fa-times-circle' : 'fa-check-circle'"></i>
+                {{ tpl.label }}
+                <span class="et-custom-dot" ng-if="tpl.isCustom" title="Edited by a captain"></span>
+            </button>
+        </div>
+
+        <div class="et-origin">
+            <span ng-if="current.isCustom">
+                <i class="fa fa-pencil"></i>
+                Edited<span ng-if="current.updatedByUsername"> by {{ current.updatedByUsername }}</span><span
+                    ng-if="current.updatedAt"> on {{ current.updatedAt | date:'medium' }}</span>.
+            </span>
+            <span ng-if="!current.isCustom" class="text-muted">
+                <i class="fa fa-file-o"></i> Using the built-in default — saving will replace it.
+            </span>
+        </div>
+
+        <div class="form-group">
+            <label for="et-subject">Subject</label>
+            <input type="text" class="form-control" id="et-subject" ng-model="draft.subject"
+                ng-change="onDraftChange()">
+        </div>
+
+        <div class="form-group">
+            <label>
+                Message
+                <span class="ta-email-tabs">
+                    <button type="button" class="crf-chip" ng-click="view.tab = 'edit'"
+                        ng-class="view.tab === 'edit' ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                        <i class="fa fa-code"></i> Source
+                    </button>
+                    <button type="button" class="crf-chip" ng-click="showPreview()"
+                        ng-class="view.tab === 'preview' ? 'crf-chip-primary' : 'crf-chip-ghost'">
+                        <i class="fa fa-eye"></i> Preview
+                    </button>
+                </span>
+            </label>
+
+            <textarea ng-show="view.tab === 'edit'" class="form-control ta-email-body et-source" id="et-body"
+                rows="18" ng-model="draft.body" ng-change="onDraftChange()"></textarea>
+
+            <div ng-show="view.tab === 'preview'">
+                <div class="et-preview-meta">
+                    <i class="fa fa-user"></i>
+                    Filled in with a sample applicant<span ng-if="preview.sampleApplicant">,
+                        <strong>{{ preview.sampleApplicant }}</strong></span>.
+                    <span ng-if="previewLoading"><i class="fa fa-spinner fa-spin"></i></span>
+                </div>
+                <div class="et-preview-subject"><strong>Subject:</strong> {{ preview.subject }}</div>
+                <div class="ta-email-preview" ng-bind-html="preview.body | unsafe"></div>
+            </div>
+        </div>
+
+        <div class="alert alert-warning" ng-if="preview.unknownTokens.length > 0">
+            <i class="fa fa-exclamation-triangle"></i>
+            Unknown placeholder<span ng-if="preview.unknownTokens.length > 1">s</span>:
+            <strong ng-repeat="token in preview.unknownTokens">{{ '{{' + token + '}}' }}<span
+                    ng-if="!$last">, </span></strong>.
+            These will be sent to the applicant exactly as written — check the spelling.
+        </div>
+
+        <!-- Placeholders -->
+        <div class="et-placeholders">
+            <div class="et-placeholders-title">
+                <i class="fa fa-magic"></i> Placeholders — click to insert into the message
+            </div>
+            <div>
+                <button type="button" class="crf-chip crf-chip-ghost" ng-repeat="ph in placeholders"
+                    ng-click="insertPlaceholder(ph.token)" uib-tooltip="{{ ph.description }}"
+                    tooltip-append-to-body="true">{{ '{{' + ph.token + '}}' }}</button>
+            </div>
+        </div>
+
+        <p class="help-block">
+            HTML — links are supported, e.g.
+            <code>&lt;a href="https://raceteam.mcrrc.org"&gt;the team site&lt;/a&gt;</code>.
+            Anything the email client can't be trusted with is stripped when you save.
+        </p>
+
+    </div>
+
+    <div class="alert alert-danger" ng-if="error">{{ error }}</div>
+    <div class="alert alert-success" ng-if="saved"><i class="fa fa-check"></i> {{ saved }}</div>
+
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-danger pull-left" ng-click="resetTemplate()"
+        ng-disabled="saving || !current.isCustom"
+        uib-tooltip="Delete this edited version and go back to the built-in wording"
+        tooltip-append-to-body="true">
+        <i class="fa fa-undo"></i> Reset to default
+    </button>
+    <button class="btn btn-default" ng-click="cancel()">Close</button>
+    <button class="btn btn-primary" ng-click="save()" ng-disabled="saving || loading || !isDirty()">
+        <i class="fa fa-spinner fa-spin" ng-if="saving"></i>
+        <i class="fa fa-save" ng-if="!saving"></i>
+        Save template
+    </button>
+</div>

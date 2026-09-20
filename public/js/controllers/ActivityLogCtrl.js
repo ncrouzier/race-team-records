@@ -7,6 +7,20 @@ angular.module('mcrrcApp.admin').controller('ActivityLogController', [
             $scope.user = user;
         });
 
+        // Which page, if any, a log entry's target links to. Kept here rather
+        // than as compound conditions in the template: there are three target
+        // types now and the fallback "no link" case has to be the exact inverse
+        // of all of them.
+        $scope.targetLinkType = function (log) {
+            if (!log || !log.targetName) return null;
+            var metadata = log.metadata || {};
+            if (log.targetType === 'member' && metadata.targetUsername) return 'member';
+            if ((log.targetType === 'compraceform' || log.targetType === 'compraceform_response') &&
+                (log.targetId || metadata.formId)) return 'compraceform';
+            if (log.targetType === 'teamapplication') return 'application';
+            return null;
+        };
+
         // Filters
         $scope.searchQuery = '';
         $scope.actionFilter = 'All';
@@ -115,6 +129,15 @@ angular.module('mcrrcApp.admin').controller('ActivityLogController', [
                 });
             }
         };
+
+        // "Mark all as seen" lives on $rootScope, shared with the nav badge, so
+        // it cannot reach this list directly. Clear the rows on screen when it
+        // fires, otherwise they keep their unseen highlight until a reload.
+        $scope.$on('activityLogsMarkedSeen', function () {
+            ($scope.logsList || []).forEach(function (log) {
+                log.unseen = false;
+            });
+        });
 
     }]);
 

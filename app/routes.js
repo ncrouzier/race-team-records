@@ -745,6 +745,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const VolunteerJob = require('./models/volunteerjob');
     const ActivityLog = require('./models/activitylog');
     const TeamApplication = require('./models/teamapplication');
+    const EmailTemplate = require('./models/emailtemplate');
 
 
     // =====================================
@@ -5298,6 +5299,32 @@ module.exports = async function (app, qs, passport, async, _) {
 
             sendApplicationNotification(application);
 
+            // Submitted from the public form, so there is no logged-in user —
+            // logActivity falls back to 'system' for the username.
+            const applicantName = application.firstname + ' ' + application.lastname;
+            service.logActivity({
+                action: 'application_submitted',
+                description: applicantName + ' submitted a team application',
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: applicantName,
+                metadata: {
+                    email: application.email,
+                    isClubMember: application.isClubMember,
+                    committedToRaces: application.committedToRaces,
+                    // The age grades the captains will be judging, so the entry
+                    // says something without opening the application.
+                    ageGrades: application.races.map(function (race) {
+                        return {
+                            racename: race.racename,
+                            distance: race.racetype && race.racetype.name,
+                            agegrade: race.agegrade
+                        };
+                    })
+                },
+                ipAddress: req.ip
+            });
+
             res.status(201).json({ success: true, id: application._id });
         } catch (err) {
             console.error('Error submitting team application:', err);
@@ -5402,22 +5429,72 @@ module.exports = async function (app, qs, passport, async, _) {
             .trim();
     }
 
-    // Generic placeholder templates — meant to be replaced with the real team wording
-    // later. Captains can edit either one in the dialog before it goes out.
-    function buildDecisionTemplate(application, type) {
-        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
-        const captainsEmail = process.env.CAPTAINS_EMAIL || '';
-        const signalUrl = process.env.SIGNAL_URL || '';
+    // The decision emails, as editable templates.
+    //
+    // The wording lives here as the built-in default; captains can override
+    // either one from the applications page, in which case the override is read
+    // from the EmailTemplate collection instead. Values that vary per applicant
+    // or per deployment are written as {{placeholders}} rather than being
+    // interpolated at definition time, so an edited template keeps working.
+    const EMAIL_TEMPLATE_KEYS = {
+        approval: 'application_approval',
+        rejection: 'application_rejection'
+    };
 
+    // Shown in the editor so a captain knows what they can use
+    const EMAIL_TEMPLATE_PLACEHOLDERS = [
+        { token: 'firstname', description: "The applicant's first name" },
+        { token: 'lastname', description: "The applicant's last name" },
+        { token: 'email', description: "The applicant's email address" },
+        { token: 'siteUrl', description: 'Address of this site' },
+        { token: 'captainsEmail', description: "The captains' email address" },
+        { token: 'signalUrl', description: 'Invite link for the Signal group chat' },
+        { token: 'raceCommitment', description: 'Races a member must run per year' }
+    ];
+
+    function emailTemplateValues(application) {
+        return {
+            firstname: application.firstname || '',
+            lastname: application.lastname || '',
+            email: application.email || '',
+            siteUrl: (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org',
+            captainsEmail: process.env.CAPTAINS_EMAIL || '',
+            signalUrl: process.env.SIGNAL_URL || '',
+            raceCommitment: String(APPLICATION_RACE_COMMITMENT)
+        };
+    }
+
+    // {{token}} -> value. An unknown token is left alone rather than blanked, so
+    // a typo is visible in the preview instead of silently deleting text.
+    function renderEmailTemplate(text, values) {
+        return String(text || '').replace(/\{\{\s*(\w+)\s*\}\}/g, function (whole, token) {
+            return Object.prototype.hasOwnProperty.call(values, token) ? values[token] : whole;
+        });
+    }
+
+    // Tokens written in the template that nothing will fill in — almost always a
+    // typo, and worth saying so before the email goes to an applicant.
+    function unknownEmailTokens(text, values) {
+        const found = [];
+        String(text || '').replace(/\{\{\s*(\w+)\s*\}\}/g, function (whole, token) {
+            if (!Object.prototype.hasOwnProperty.call(values, token) && found.indexOf(token) === -1) {
+                found.push(token);
+            }
+            return whole;
+        });
+        return found;
+    }
+
+    function defaultDecisionTemplate(type) {
         if (type === 'rejection') {
             return {
                 subject: 'Your MCRRC Racing Team application',
                 body: [
-                    '<p>Hi ' + application.firstname + ',</p>',
+                    '<p>Hi {{firstname}},</p>',
                     '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
                     '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
                     '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
-                    'reapply any time at <a href="' + siteUrl + '/apply">' + siteUrl + '/apply</a>.</p>',
+                    'reapply any time at <a href="{{siteUrl}}/apply">{{siteUrl}}/apply</a>.</p>',
                     '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
                     '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
                     '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
@@ -5426,22 +5503,22 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         return {
-            subject: 'Welcome to the MCRRC Racing Team, ' + application.firstname + '!',
+            subject: 'Welcome to the MCRRC Racing Team, {{firstname}}!',
             body: [
-                '<p>Hi ' + application.firstname + ',</p>',
+                '<p>Hi {{firstname}},</p>',
                 '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
                 '<p>A few things to get you started:</p>',
                 '<ul>',
-                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="' + siteUrl + '" target="_blank">' + siteUrl + '</a>. Please <a href="' + siteUrl + '/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
-                '  <li>We require team members to race at least ' + APPLICATION_RACE_COMMITMENT + ' times a year and to help out at club events.</li>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
+                '  <li>We require team members to race at least {{raceCommitment}} times a year and to help out at club events.</li>',
                 '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
-                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="'+signalUrl+'" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
-                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please provide your preferred size.</strong></li>',
+                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="{{signalUrl}}" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up</strong></li>',
                 '</ul>',
                 '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
                 'members. Please take a little time and send yours back with the info below. Everything is optional,',
-                'of course. Have a look at <a href="' + siteUrl + '/members/charliestern/bio" target="_blank">one of our runners</a>',
-                'for inspiration:</p>',                
+                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'for inspiration:</p>',
                 '<ul>',
                 '  <li><strong>A photo</strong></li>',
                 '  <li>Name:</li>',
@@ -5456,10 +5533,35 @@ module.exports = async function (app, qs, passport, async, _) {
                 '  <li>Fun fact about yourself:</li>',
                 '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
                 '</ul>',
-
-                '<p>If you have any questions, just reply to this email' + (captainsEmail ? ' or write to <a href="mailto:' + captainsEmail + '">' + captainsEmail + '</a>' : '') + ' and one of the captains will get back to you.</p>',
+                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
                 '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
             ].join('\n')
+        };
+    }
+
+    // The template as it stands: the captains' version if there is one, else the
+    // built-in default. Returns the raw text, placeholders unresolved.
+    async function storedDecisionTemplate(type) {
+        const custom = await EmailTemplate.findOne({ key: EMAIL_TEMPLATE_KEYS[type] }).lean();
+        if (custom) {
+            return {
+                subject: custom.subject,
+                body: custom.body,
+                isCustom: true,
+                updatedAt: custom.updatedAt,
+                updatedByUsername: custom.updatedByUsername
+            };
+        }
+        return Object.assign(defaultDecisionTemplate(type), { isCustom: false });
+    }
+
+    // Ready to send: the current template with this applicant's values filled in.
+    async function buildDecisionTemplate(application, type) {
+        const template = await storedDecisionTemplate(type);
+        const values = emailTemplateValues(application);
+        return {
+            subject: renderEmailTemplate(template.subject, values),
+            body: renderEmailTemplate(template.body, values)
         };
     }
 
@@ -5508,6 +5610,133 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     }
 
+    // ---- Editable decision-email templates ----------------------------------
+
+    function templateSummary(type, template) {
+        return Object.assign({
+            key: EMAIL_TEMPLATE_KEYS[type],
+            type: type,
+            label: type === 'rejection' ? 'Rejection email' : 'Approval email'
+        }, template);
+    }
+
+    // Captain/admin: both templates, as editable source
+    app.get('/api/email-templates', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const templates = [];
+            for (const type of ['approval', 'rejection']) {
+                templates.push(templateSummary(type, await storedDecisionTemplate(type)));
+            }
+            res.json({ templates: templates, placeholders: EMAIL_TEMPLATE_PLACEHOLDERS });
+        } catch (err) {
+            console.error('Error loading email templates:', err);
+            res.status(500).json({ error: 'Error loading email templates' });
+        }
+    });
+
+    // Captain/admin: what a template looks like with a sample applicant filled
+    // in. Rendered server-side by the same function that runs at send time, so
+    // the preview cannot drift from what is actually sent.
+    app.post('/api/email-templates/:type/preview', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const sample = {
+                firstname: 'Alex',
+                lastname: 'Runner',
+                email: 'alex.runner@example.com'
+            };
+            const values = emailTemplateValues(sample);
+            res.json({
+                subject: renderEmailTemplate(req.body.subject, values),
+                body: sanitizeEmailBody(renderEmailTemplate(req.body.body, values)),
+                sampleApplicant: sample.firstname + ' ' + sample.lastname,
+                // Named so the editor can warn about a typo'd token rather than
+                // leaving the captain to spot {{frstname}} in the preview.
+                unknownTokens: unknownEmailTokens([req.body.subject, req.body.body].join('\n'), values)
+            });
+        } catch (err) {
+            console.error('Error previewing email template:', err);
+            res.status(500).json({ error: 'Error previewing the template' });
+        }
+    });
+
+    // Captain/admin: save an edited template
+    app.put('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const key = EMAIL_TEMPLATE_KEYS[type];
+
+            const subject = (req.body.subject || '').trim();
+            const body = sanitizeEmailBody(req.body.body).trim();
+            if (!subject) return res.status(400).json({ error: 'The template needs a subject' });
+            if (!body || !htmlToPlainText(body)) return res.status(400).json({ error: 'The template needs a message' });
+
+            const previous = await storedDecisionTemplate(type);
+
+            await EmailTemplate.findOneAndUpdate(
+                { key: key },
+                { key: key, subject: subject, body: body, updatedAt: new Date(), updatedByUsername: req.user.username },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'email_template_edit',
+                description: 'Edited the team application ' + type + ' email template',
+                targetType: 'emailtemplate',
+                targetId: key,
+                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                metadata: {
+                    type: type,
+                    wasCustom: previous.isCustom,
+                    oldValue: { subject: previous.subject, body: previous.body },
+                    newValue: { subject: subject, body: body }
+                },
+                ipAddress: req.ip
+            });
+
+            res.json(templateSummary(type, await storedDecisionTemplate(type)));
+        } catch (err) {
+            console.error('Error saving email template:', err);
+            res.status(500).json({ error: 'Error saving the template' });
+        }
+    });
+
+    // Captain/admin: drop the override and go back to the built-in wording
+    app.delete('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const key = EMAIL_TEMPLATE_KEYS[type];
+            const previous = await storedDecisionTemplate(type);
+            if (!previous.isCustom) {
+                return res.json(templateSummary(type, previous));
+            }
+
+            await EmailTemplate.deleteOne({ key: key });
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'email_template_reset',
+                description: 'Reset the team application ' + type + ' email template to the default',
+                targetType: 'emailtemplate',
+                targetId: key,
+                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                metadata: {
+                    type: type,
+                    oldValue: { subject: previous.subject, body: previous.body }
+                },
+                ipAddress: req.ip
+            });
+
+            res.json(templateSummary(type, await storedDecisionTemplate(type)));
+        } catch (err) {
+            console.error('Error resetting email template:', err);
+            res.status(500).json({ error: 'Error resetting the template' });
+        }
+    });
+
     // Captain/admin: template to prefill the send-email dialog with
     app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
@@ -5524,7 +5753,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     previouslySentAt: already.sentAt, copy: captainsCopyInfo()
                 });
             }
-            res.json(Object.assign(buildDecisionTemplate(application, type), { copy: captainsCopyInfo() }));
+            const template = await buildDecisionTemplate(application, type);
+            res.json(Object.assign(template, { copy: captainsCopyInfo() }));
         } catch (err) {
             console.error('Error building email template:', err);
             res.status(500).json({ error: 'Error building email template' });

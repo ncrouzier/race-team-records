@@ -63,11 +63,13 @@
                             </td>
                             <td>{{log.description}}</td>
                             <td>
-                                <a ng-if="log.targetName && log.targetType === 'member' && log.metadata.targetUsername"
+                                <a ng-if="targetLinkType(log) === 'member'"
                                     ui-sref="/members/member/bio({member: log.metadata.targetUsername})">{{log.targetName}}</a>
-                                <a ng-if="log.targetName && (log.targetType === 'compraceform' || log.targetType === 'compraceform_response') && (log.targetId || log.metadata.formId)"
+                                <a ng-if="targetLinkType(log) === 'compraceform'"
                                     ui-sref="/comp-race-forms/detail({formId: log.targetType === 'compraceform' ? log.targetId : log.metadata.formId})">{{log.targetName}}</a>
-                                <span ng-if="log.targetName && !(log.targetType === 'member' && log.metadata.targetUsername) && !((log.targetType === 'compraceform' || log.targetType === 'compraceform_response') && (log.targetId || log.metadata.formId))">{{log.targetName}}</span>
+                                <a ng-if="targetLinkType(log) === 'application'"
+                                    ui-sref="/applications">{{log.targetName}}</a>
+                                <span ng-if="log.targetName && !targetLinkType(log)">{{log.targetName}}</span>
                                 <span ng-if="!log.targetName" class="text-muted">-</span>
                             </td>
                             <td class="text-center" style="white-space: nowrap;">

@@ -8367,6 +8367,50 @@ footer {
 .hoverlistbg {
   background-color: #F7FBFC;
 }
+.records-pager {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 10px;
+}
+.records-pager .records-pager-count {
+  font-size: 13px;
+  color: #6f6f6f;
+}
+.records-pager .pagination {
+  margin: 0;
+}
+.records-list > li.resultlistrow:hover {
+  background-color: #F7FBFC;
+}
+.records-list > li.resultlistrow:hover.gold {
+  background: #F3DA1D;
+  background: -moz-linear-gradient(left, #F3DA1D 0%, #F7FBFC 95%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #F3DA1D), color-stop(95%, #F7FBFC));
+  background: -webkit-linear-gradient(left, #F3DA1D 0%, #F7FBFC 95);
+  background: -o-linear-gradient(left, #F3DA1D 0%, #F7FBFC 95);
+  background: -ms-linear-gradient(left, #F3DA1D 0%, #F7FBFC 95);
+  background: linear-gradient(to right, #F3DA1D 0%, #F7FBFC 95);
+}
+.records-list > li.resultlistrow:hover.silver {
+  background: #A4A4A4;
+  background: -moz-linear-gradient(left, #A4A4A4 0%, #F7FBFC 75%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #A4A4A4), color-stop(75%, #F7FBFC));
+  background: -webkit-linear-gradient(left, #A4A4A4 0%, #F7FBFC 75);
+  background: -o-linear-gradient(left, #A4A4A4 0%, #F7FBFC 75);
+  background: -ms-linear-gradient(left, #A4A4A4 0%, #F7FBFC 75);
+  background: linear-gradient(to right, #A4A4A4 0%, #F7FBFC 75);
+}
+.records-list > li.resultlistrow:hover.bronze {
+  background: #E1BB71;
+  background: -moz-linear-gradient(left, #E1BB71 0%, #F7FBFC 55%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(0%, #E1BB71), color-stop(55%, #F7FBFC));
+  background: -webkit-linear-gradient(left, #E1BB71 0%, #F7FBFC 55);
+  background: -o-linear-gradient(left, #E1BB71 0%, #F7FBFC 55);
+  background: -ms-linear-gradient(left, #E1BB71 0%, #F7FBFC 55);
+  background: linear-gradient(to right, #E1BB71 0%, #F7FBFC 55);
+}
 .lightergraybg {
   background-color: #eeeeee;
 }
@@ -16638,6 +16682,7 @@ footer {
 .race-detail-page .rd-standings li {
   display: flex;
   align-items: baseline;
+  column-gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid #eeeeee;
 }
@@ -16647,10 +16692,16 @@ footer {
 }
 .result-detail-page .rd-standing-rank,
 .race-detail-page .rd-standing-rank {
-  flex: 0 0 62px;
+  flex: 0 0 auto;
+  min-width: 66px;
+  white-space: nowrap;
   font-size: 20px;
   font-weight: 700;
   color: #008cba;
+}
+.result-detail-page .rd-standing-rank-long,
+.race-detail-page .rd-standing-rank-long {
+  font-size: 16px;
 }
 .result-detail-page .rd-standing-text,
 .race-detail-page .rd-standing-text {

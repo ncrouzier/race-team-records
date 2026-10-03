@@ -1216,6 +1216,45 @@ footer {
     background-color: @brand-primary-very-light;
 }
 
+// Records page pager, under the list for admins' "All"
+// Three columns, the outer two equal, so the page links sit at the true
+// centre of the list whatever the counter's width.
+.records-pager {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px 16px;
+    margin-top: 10px;
+
+    .records-pager-count {
+        font-size: 13px;
+        color: @gray;
+    }
+
+    .pagination {
+        margin: 0;
+    }
+}
+
+// Records page rows highlight with CSS rather than ng-mouseenter: with a
+// couple of thousand rows, every mouse move used to re-check the whole page.
+// Same look as .hoverlistbg and the .goldhover family.
+.records-list > li.resultlistrow:hover {
+    background-color: @brand-primary-very-light;
+
+    &.gold {
+        .goldhover;
+    }
+
+    &.silver {
+        .silverhover;
+    }
+
+    &.bronze {
+        .bronzehover;
+    }
+}
+
 .lightergraybg {
     background-color: @gray-lighter;
 }
@@ -11531,6 +11570,8 @@ footer {
         li {
             display: flex;
             align-items: baseline;
+            // Keeps the text off a long rank ("T2560th") however wide it gets
+            column-gap: 12px;
             padding: 8px 0;
             border-bottom: 1px solid @gray-lighter;
 
@@ -11540,11 +11581,20 @@ footer {
         }
     }
 
+    // A column for the usual "195th"; longer ranks widen it rather than
+    // running into the text
     .rd-standing-rank {
-        flex: 0 0 62px;
+        flex: 0 0 auto;
+        min-width: 66px;
+        white-space: nowrap;
         font-size: 20px;
         font-weight: 700;
         color: @brand-primary;
+    }
+
+    // Four-digit and tied ranks ("1746th", "T2560th") step down a size
+    .rd-standing-rank-long {
+        font-size: 16px;
     }
 
     .rd-standing-text {

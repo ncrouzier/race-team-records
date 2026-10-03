@@ -1815,16 +1815,17 @@ module.exports = async function (app, qs, passport, async, _) {
                 let filteredResult = results;
                 if (req.query.filters) {
                     const filters = JSON.parse(req.query.filters);
-                    if (filters.mode && limit) {
-                        if (filters.mode === 'Best') {
-                            filteredResult = [];
-                            const resultLength = results.length;
-                            let resCount = 0;
-                            for (let i = 0; i < resultLength && resCount < limit; i++) {
-                                if (!service.containsMember(filteredResult, results[i].members[0])) {
-                                    filteredResult.push(results[i]);
-                                    resCount++;
-                                }
+                    // One result per member. With no limit (an admin's "All")
+                    // that is everyone's best, not every result.
+                    if (filters.mode === 'Best') {
+                        const maxCount = limit || Infinity;
+                        filteredResult = [];
+                        const resultLength = results.length;
+                        let resCount = 0;
+                        for (let i = 0; i < resultLength && resCount < maxCount; i++) {
+                            if (!service.containsMember(filteredResult, results[i].members[0])) {
+                                filteredResult.push(results[i]);
+                                resCount++;
                             }
                         }
                     }
@@ -2010,13 +2011,16 @@ module.exports = async function (app, qs, passport, async, _) {
                 };
 
                 // Ties take the better rank: tied for the fastest time is 1st,
-                // not 2nd.
+                // not 2nd. `tied` counts the other results on exactly this
+                // time, so the page can say "T5th".
                 const rankAgainst = async function (extra) {
                     const scope = Object.assign({}, sameDistance, extra);
-                    const faster = await Result.countDocuments(
-                        Object.assign({}, scope, { time: { $gt: 0, $lt: result.time } }));
-                    const total = await Result.countDocuments(scope);
-                    return { rank: faster + 1, total: total };
+                    const [faster, same, total] = await Promise.all([
+                        Result.countDocuments(Object.assign({}, scope, { time: { $gt: 0, $lt: result.time } })),
+                        Result.countDocuments(Object.assign({}, scope, { time: result.time })),
+                        Result.countDocuments(scope)
+                    ]);
+                    return { rank: faster + 1, total: total, tied: Math.max(0, same - 1) };
                 };
 
                 const personal = await rankAgainst({ 'members._id': member._id });
@@ -2046,7 +2050,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     teamAgeGroup = {
                         age: age,
                         rank: peers.filter(function (r) { return r.time < result.time; }).length + 1,
-                        total: peers.length
+                        total: peers.length,
+                        tied: Math.max(0, peers.filter(function (r) { return r.time === result.time; }).length - 1)
                     };
                 }
 

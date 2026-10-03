@@ -57,7 +57,7 @@
     <div class="row">
         <br>
         <div class="col-md-12">
-            <ul class="results-list list-group">
+            <ul class="results-list records-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
                     <div class="row">
                         <div class="col-sm-1" >
@@ -80,33 +80,54 @@
                         </div>
                     </div>
                 </li>
-                <li class="list-group-item text-left resultlistrow" ng-repeat="result in resultsList"   ng-class="{ 'gold': $index === 0,  'silver': $index === 1 , 'bronze': $index === 2,'goldhover': $index == 0 && hover,  'silverhover': $index == 1 && hover, 'bronzehover': $index === 2 && hover, hoverlistbg: hover, 'my-result-row': user.member._id && result.members[0]._id === user.member._id}"   ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                <!-- Rows are rebuilt from scratch on every query, and a result
+                     never changes while shown, so everything about the result is
+                     bound once (::). Only what depends on who is logged in stays
+                     live. Hover is plain CSS (.records-list), not a digest.
+                     No {{ }} in this element's own attributes: dir-paginate also
+                     evaluates them outside the loop, where `result` is undefined. -->
+                <li class="list-group-item text-left resultlistrow"
+                    dir-paginate="result in resultsList | itemsPerPage: pageSize()" current-page="pagination.current"
+                    pagination-id="records"
+                    ng-class="{gold: result.rank === 1, silver: result.rank === 2, bronze: result.rank === 3,
+                        'my-result-row': user.member._id && result.members[0]._id === user.member._id}"
+                    ng-click="goToResult(result)" title="Open this result" style="cursor: pointer;">
+                    <!-- The row opens the result; the runner and race names, the
+                         official-result link and the admin icons do their own thing -->
                     <div class="row" style="display: flex; align-items: center;">
-                        <div class="col-sm-1">
-                            {{$index + 1}}
+                        <div class="col-sm-1" title="{{::result.tied ? 'Tied' : 'Open this result'}}">
+                            {{::rankLabel(result)}}
                         </div>
                         <div class="col-sm-3" style="font-size: 16px;">
-                            <result-members-names result="result"></result-members-names>
+                            <result-members-names result="::result"></result-members-names>
                         </div>
                         <div class="col-sm-4" style="line-height: 1.1;">
-                            <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="showRaceModal(result.race)">{{ result.race.racename}}</span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"  ng-show="result.comments !== undefined && result.comments !== ''" uib-tooltip-html="result.comments"></i>
-                            <result-icon result="result" race="result.race"></result-icon>
+                            <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="$event.stopPropagation(); showRaceModal(result.race)">{{::result.race.racename}}</span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="::!!result.comments" uib-tooltip-html="result.comments"></i>
+                            <result-icon result="::result" race="::result.race"></result-icon>
                             <br>
-                            <small>{{ result.race.racedate | date:'longDate':'UTC' }} <span ng-if="result.race.location.state !== null" ng-bind-html="'-- ' + result.race.location.state"></span><span ng-if="result.race.location.state === null" ng-bind-html="'-- ' + result.race.location.country"></span></small>
+                            <small>{{::result.race.racedate | date:'longDate':'UTC'}} <span ng-if="::result.race.location.state !== null" ng-bind-html="::'-- ' + result.race.location.state"></span><span ng-if="::result.race.location.state === null" ng-bind-html="::'-- ' + result.race.location.country"></span></small>
                         </div>
                         <div class="col-sm-1" style=" text-align: center;">
-                            <result-pace race="result.race" result="result"></result-pace>
+                            <result-pace race="::result.race" result="::result"></result-pace>
                         </div>
                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style=" text-align: left;">
-                            <span class= "resultTime">{{result.time | secondsToTimeString}}</span> <span class="timediff" ng-if="$index >0 && paramModel.sortMode === 'time'">+{{(result.time -resultsList[$index - 1].time ) | secondsToTimeDiff}}</span> <a ng-show="result.resultlink !== undefined" ng-href="{{result.resultlink}}" target="_blank"><i class="fa fa-link" ng-show="result.resultlink !== ''" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></i>
+                            <span class= "resultTime">{{::result.time | secondsToTimeString}}</span> <span class="timediff" ng-show="::!!result.gap">+{{::result.gap | secondsToTimeDiff}}</span> <a ng-show="::!!result.resultlink" ng-href="{{::result.resultlink}}" target="_blank" ng-click="$event.stopPropagation()"><i class="fa fa-link" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="mouseenter" ng-show="::(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{::result.ranking | rankTooltip}}</span>'"></i>
                         </div>
                         <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <i class="hoverhand fa fa-pencil-square-o" ng-click="retrieveResultForEdit(result)" title="edit result"></i><i class="hoverhand fa fa-times" ng-show="user.role == 'admin'" ng-click="removeResult(result)" title="remove result"></i>
+                            <i class="hoverhand fa fa-pencil-square-o" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)" title="edit result"></i><i class="hoverhand fa fa-times" ng-click="$event.stopPropagation(); removeResult(result)" title="remove result"></i>
                         </div>
                     </div>
 
                 </li>
             </ul>
+            <!-- Only "All" (admins) runs past one page; the controls hide themselves otherwise -->
+            <div class="records-pager" ng-if="resultsList.length > pageSize()">
+                <span class="records-pager-count">
+                    {{(pagination.current - 1) * pageSize() + 1 | number}}–{{pagination.current * pageSize() > resultsList.length ? resultsList.length : pagination.current * pageSize() | number}}
+                    of {{resultsList.length | number}}
+                </span>
+                <dir-pagination-controls pagination-id="records" on-page-change="pageChanged()"></dir-pagination-controls>
+            </div>
 
         </div>
     </div>

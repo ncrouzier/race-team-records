@@ -185,6 +185,17 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
         return $scope.stats && $scope.stats.sex === 'Female' ? 'women' : 'men';
     };
 
+    // "5th", or "T5th" when other results share the time
+    $scope.rankText = function (standing) {
+        if (!standing) return '';
+        return (standing.tied ? 'T' : '') + $filter('addOrdinalSuffix')(standing.rank);
+    };
+
+    $scope.tieText = function (standing) {
+        if (!standing || !standing.tied) return '';
+        return 'tied with ' + standing.tied + ' other' + (standing.tied === 1 ? '' : 's');
+    };
+
     $scope.genderNoun = function () {
         return $scope.stats && $scope.stats.sex === 'Female' ? 'woman' : 'man';
     };

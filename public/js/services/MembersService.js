@@ -240,6 +240,14 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
 
     };
 
+    // Volunteering stats for one year (YYYY) or all time ('all'); logged-in
+    // users only, so a 401 here means the session has ended.
+    factory.getVolunteeringStats = function (year) {
+        return Restangular.one('stats/volunteering').get({ year: year || 'all' }).then(function (stats) {
+            return stats.plain ? stats.plain() : stats;
+        });
+    };
+
     // =====================================
     // MEMBER MODALS ======================
     // =====================================

@@ -1,8 +1,11 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+        // Volunteer jobs are for logged-in eyes only, so they load (or clear)
+        // as the login state settles or changes
+        loadVolunteerJobs();
     });
 
     $scope.loading = true;
@@ -16,6 +19,8 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
     $scope.highlights = null;
     // Every achievement earned here, flattened for <achievement-feed>
     $scope.achievementEntries = [];
+    // Volunteer jobs linked to this race; empty for logged-out visitors
+    $scope.volunteerJobs = [];
 
     $scope.genderFilter = null;
     $scope.sortCriteria = 'time';
@@ -427,6 +432,17 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         ResultsService.showResultDetailsModal(result, $scope.raceinfo).then(function () { });
     };
 
+    // Saving can move a result's rankings, achievements and the race's own
+    // figures, so the page reloads rather than patching the one row.
+    $scope.editResult = function (result) {
+        if (!$scope.user || $scope.user.role !== 'admin') return;
+        ResultsService.retrieveResultForEdit(result).then(function (saved) {
+            if (saved) {
+                load({ fresh: true });
+            }
+        }, angular.noop);
+    };
+
     $scope.editRace = function () {
         if (!$scope.user || $scope.user.role !== 'admin') return;
         ResultsService.showEditRaceModal($scope.raceinfo).then(function (updatedRace) {
@@ -436,11 +452,33 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         });
     };
 
+    function loadVolunteerJobs() {
+        if (!$scope.user || !$scope.raceinfo) {
+            $scope.volunteerJobs = [];
+            return;
+        }
+        var raceId = $scope.raceinfo._id;
+        VolunteerJobsService.getRaceVolunteerJobs(raceId).then(function (jobs) {
+            // Ignore a late answer for a race we have since left
+            if ($scope.raceinfo && $scope.raceinfo._id === raceId) {
+                $scope.volunteerJobs = jobs || [];
+            }
+        });
+    }
+
+    $scope.volunteerCount = function () {
+        var ids = {};
+        $scope.volunteerJobs.forEach(function (job) {
+            if (job.member) ids[job.member._id] = true;
+        });
+        return Object.keys(ids).length;
+    };
+
     $scope.goToResults = function () {
         $state.go('/results');
     };
 
-    function load() {
+    function load(options) {
         var raceId = $stateParams.raceId;
         if (!raceId) {
             $scope.loading = false;
@@ -448,7 +486,7 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
             return;
         }
 
-        ResultsService.getRaceInfoById(raceId).then(function (raceinfo) {
+        ResultsService.getRaceInfoById(raceId, options).then(function (raceinfo) {
             $scope.loading = false;
             if (!raceinfo) {
                 $scope.notFound = true;
@@ -457,6 +495,7 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
             raceinfo.results = raceinfo.results || [];
             $scope.raceinfo = raceinfo;
             summarise(raceinfo.results);
+            loadVolunteerJobs();
             // The year tells apart the same race run in different years
             PageTitleService.set($scope, raceinfo.racename + ' (' + new Date(raceinfo.racedate).getUTCFullYear() + ')');
 

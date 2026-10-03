@@ -24,6 +24,11 @@
                     <span class="rd-title-at">at</span>
                     <a class="rd-title-link hoverhand" ng-click="goToRace()">{{race.racename}}</a>
                     <race-icon race="race"></race-icon>
+                    <button ng-if="user.role === 'admin'" type="button" class="btn btn-xs btn-default rd-edit-btn"
+                        ng-click="editResult()" uib-tooltip="Edit result" tooltip-placement="top"
+                        tooltip-append-to-body="true">
+                        <i class="fa fa-pencil"></i>
+                    </button>
                 </h2>
 
                 <div class="rd-racemeta">

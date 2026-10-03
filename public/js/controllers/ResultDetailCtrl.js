@@ -306,6 +306,17 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
         });
     }
 
+    // Saving can change every figure on the page — standings, placement,
+    // achievements, even the race — so it reloads the whole detail.
+    $scope.editResult = function () {
+        if (!$scope.user || $scope.user.role !== 'admin' || !$scope.result) return;
+        ResultsService.retrieveResultForEdit($scope.result).then(function (saved) {
+            if (saved) {
+                load();
+            }
+        }, angular.noop);
+    };
+
     $scope.goToRace = function () {
         if (!$scope.race) return;
         $state.go('/races', { raceId: $scope.race._id });

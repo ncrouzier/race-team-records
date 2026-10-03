@@ -179,6 +179,7 @@
                                     <span class="hoverhand" ng-click="sortBy('time')" title="Sort by net time">NET
                                         TIME</span>
                                 </th>
+                                <th ng-if="user.role === 'admin'"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,6 +219,12 @@
                                         <i class="fa fa-link hoverhand" title="View official result"></i>
                                     </a>
                                 </td>
+                                <td ng-if="user.role === 'admin'" class="text-right rd-admin-cell">
+                                    <button type="button" class="btn btn-xs btn-default"
+                                        ng-click="$event.stopPropagation(); editResult(result)" title="Edit result">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -235,6 +242,34 @@
                 <div class="rd-strip-container">
                     <canvas id="raceTimesChart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <!-- Team members who volunteered at this race (logged-in users only) -->
+        <div class="panel panel-default rd-panel" ng-if="volunteerJobs.length > 0">
+            <div class="panel-heading">
+                Volunteers
+                <small>— {{volunteerCount()}} team member<span ng-if="volunteerCount() !== 1">s</span>
+                    helped at this race</small>
+            </div>
+            <div class="panel-body rd-table-body">
+                <table class="table rd-results-table">
+                    <thead>
+                        <tr>
+                            <th>VOLUNTEER</th>
+                            <th>JOB</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="job in volunteerJobs">
+                            <td>
+                                <a ui-sref="/members/member({ member: job.member.username })">{{job.member.firstname}}
+                                    {{job.member.lastname}}</a>
+                            </td>
+                            <td>{{job.description}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 

@@ -1412,6 +1412,39 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Volunteer jobs linked to one race, for the race page. Logged-in users
+    // only, like the volunteering stats.
+    app.get('/api/races/:race_id/volunteerjobs', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(req.params.race_id)) {
+                return res.status(400).json({ error: 'Invalid race id' });
+            }
+            const jobs = await VolunteerJob.find({ 'race._id': req.params.race_id })
+                .select('member._id member.firstname member.lastname member.username jobDate description')
+                .sort('jobDate member.lastname')
+                .lean();
+            res.json(jobs);
+        } catch (err) {
+            console.log('error fetching race volunteer jobs', err);
+            res.status(500).json({ error: 'Error while fetching volunteer jobs' });
+        }
+    });
+
+    // Resolves the raceId a volunteer job form sends into the race link stored
+    // on the job, plus the event name that goes with it. Returns null when no
+    // race was chosen, and throws when the race does not exist.
+    const volunteerRaceLink = async function (raceId) {
+        if (!raceId) return null;
+        if (!mongoose.Types.ObjectId.isValid(raceId)) throw new Error('Invalid race id');
+        const race = await Race.findById(raceId).select('racename racedate').lean();
+        if (!race) throw new Error('Race not found');
+        return {
+            race: { _id: race._id, racename: race.racename, racedate: race.racedate },
+            eventName: race.racename,
+            racedate: race.racedate
+        };
+    };
+
     // create a volunteer job
     app.post('/api/volunteerjobs', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
@@ -1420,6 +1453,13 @@ module.exports = async function (app, qs, passport, async, _) {
             const member = await Member.findById(req.body.member._id);
             if (!member) {
                 return res.status(400).json({ error: 'Member not found' });
+            }
+
+            let link;
+            try {
+                link = await volunteerRaceLink(req.body.raceId);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
             }
 
             // Create volunteer job with embedded member info
@@ -1432,8 +1472,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     sex: member.sex,
                     dateofbirth: member.dateofbirth
                 },
-                jobDate: req.body.jobDate,
-                eventName: req.body.eventName,
+                race: link ? link.race : undefined,
+                jobDate: req.body.jobDate || (link && link.racedate),
+                eventName: link ? link.eventName : req.body.eventName,
                 description: req.body.description
             });
 
@@ -1448,10 +1489,21 @@ module.exports = async function (app, qs, passport, async, _) {
     app.post('/api/volunteerjobs/batch', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
-            const { eventName, jobDate, jobs } = req.body;
+            const { jobs } = req.body;
+
+            // Either a race (which supplies the name, and the date unless one
+            // is given) or a typed event name and date
+            let link;
+            try {
+                link = await volunteerRaceLink(req.body.raceId);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
+            }
+            const eventName = link ? link.eventName : req.body.eventName;
+            const jobDate = req.body.jobDate || (link && link.racedate);
 
             if (!eventName || !jobDate) {
-                return res.status(400).json({ error: 'Event name and job date are required' });
+                return res.status(400).json({ error: 'A race, or an event name and job date, are required' });
             }
             if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
                 return res.status(400).json({ error: 'Jobs array is required and must not be empty' });
@@ -1476,6 +1528,7 @@ module.exports = async function (app, qs, passport, async, _) {
                             sex: member.sex,
                             dateofbirth: member.dateofbirth
                         },
+                        race: link ? link.race : undefined,
                         jobDate: jobDate,
                         eventName: eventName,
                         description: jobData.description
@@ -1513,6 +1566,23 @@ module.exports = async function (app, qs, passport, async, _) {
             if (req.body.jobDate) job.jobDate = req.body.jobDate;
             if (req.body.eventName) job.eventName = req.body.eventName;
             if (req.body.description) job.description = req.body.description;
+
+            // raceId: an id links the job to that race (and takes its name),
+            // null turns it back into a typed event, absent leaves it alone
+            if (Object.prototype.hasOwnProperty.call(req.body, 'raceId')) {
+                let link;
+                try {
+                    link = await volunteerRaceLink(req.body.raceId);
+                } catch (e) {
+                    return res.status(400).json({ error: e.message });
+                }
+                if (link) {
+                    job.race = link.race;
+                    job.eventName = link.eventName;
+                } else {
+                    job.race = undefined;
+                }
+            }
 
             // If member is being updated, validate and update
             if (req.body.member && req.body.member._id) {
@@ -2860,6 +2930,26 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             await service.updateAllTeamRecordAchievements();
 
+            // Volunteer jobs linked to this race follow it: the new name (and
+            // the merged-into race, when the edit merged two races), and the
+            // new date for jobs that were on race day. A job dated the day
+            // before or after keeps its own date.
+            const linkedJobs = await VolunteerJob.find({ 'race._id': race._id });
+            if (linkedJobs.length > 0) {
+                const oldDay = oldRace.racedate ? new Date(oldRace.racedate).toISOString().slice(0, 10) : null;
+                await VolunteerJob.bulkWrite(linkedJobs.map(function (job) {
+                    const set = {
+                        race: { _id: updatedRace._id, racename: updatedRace.racename, racedate: updatedRace.racedate },
+                        eventName: updatedRace.racename
+                    };
+                    if (oldDay && job.jobDate && new Date(job.jobDate).toISOString().slice(0, 10) === oldDay) {
+                        set.jobDate = updatedRace.racedate;
+                    }
+                    return { updateOne: { filter: { _id: job._id }, update: { $set: set } } };
+                }));
+                VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
+            }
+
 
             // Get the updated race with populated results
             const populatedRace = await Race.aggregate([
@@ -3375,6 +3465,138 @@ module.exports = async function (app, qs, passport, async, _) {
 
 
     // get participation stats
+    // Volunteering stats for the Stats page. Logged-in users only: it names
+    // members and what they did, which the public site does not show.
+    // ?year=YYYY narrows to one calendar year; anything else is all time.
+    app.get('/api/stats/volunteering', service.isLoggedIn, async function (req, res) {
+        try {
+            const year = /^\d{4}$/.test(req.query.year || '') ? parseInt(req.query.year, 10) : null;
+            const match = year ? {
+                jobDate: { $gte: new Date(Date.UTC(year, 0, 1)), $lt: new Date(Date.UTC(year + 1, 0, 1)) }
+            } : {};
+
+            const [jobs, yearRows, currentMembers] = await Promise.all([
+                VolunteerJob.find(match).sort('jobDate').lean(),
+                VolunteerJob.aggregate([{ $group: { _id: { $year: '$jobDate' } } }, { $sort: { _id: -1 } }]),
+                Member.find({ memberStatus: 'current' }).select('_id').lean()
+            ]);
+
+            // Event names are typed in by hand for jobs not linked to a race,
+            // so grouping is case- and spacing-insensitive; the label shown is
+            // the most-used spelling. (Job descriptions are free text too and
+            // too inconsistent to group at all, so the page lists no roles.)
+            const normalise = function (text) {
+                return (text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+            };
+            // A job linked to a race groups by that race, so two spellings of
+            // one race cannot split it; other events group by name.
+            const eventKey = function (job) {
+                return job.race && job.race._id ? 'race:' + job.race._id : normalise(job.eventName);
+            };
+            const groupBy = function (keyOf, labelOf) {
+                const groups = new Map();
+                for (const job of jobs) {
+                    const key = keyOf(job);
+                    if (!key) continue;
+                    let group = groups.get(key);
+                    if (!group) {
+                        group = { jobs: 0, volunteers: new Set(), spellings: new Map(), lastDate: null, raceId: null };
+                        groups.set(key, group);
+                    }
+                    if (job.race && job.race._id) group.raceId = job.race._id;
+                    const label = labelOf(job);
+                    group.jobs++;
+                    group.volunteers.add(String(job.member && job.member._id));
+                    group.spellings.set(label, (group.spellings.get(label) || 0) + 1);
+                    group.lastDate = job.jobDate;
+                }
+                return Array.from(groups.values()).map(function (group) {
+                    const label = Array.from(group.spellings.entries()).sort(function (a, b) { return b[1] - a[1]; })[0][0];
+                    return { name: label, raceId: group.raceId, jobs: group.jobs, volunteers: group.volunteers.size, lastDate: group.lastDate };
+                }).sort(function (a, b) { return b.jobs - a.jobs || a.name.localeCompare(b.name); });
+            };
+
+            // One row per member, most jobs first, each carrying their jobs
+            // so the table can expand to show what they did.
+            const byMember = new Map();
+            for (const job of jobs) {
+                if (!job.member || !job.member._id) continue;
+                const id = String(job.member._id);
+                let row = byMember.get(id);
+                if (!row) {
+                    row = {
+                        member: {
+                            _id: job.member._id,
+                            firstname: job.member.firstname,
+                            lastname: job.member.lastname,
+                            username: job.member.username
+                        },
+                        jobs: [],
+                        events: new Set()
+                    };
+                    byMember.set(id, row);
+                }
+                row.jobs.push({
+                    jobDate: job.jobDate,
+                    eventName: job.eventName,
+                    raceId: job.race && job.race._id ? job.race._id : null,
+                    description: job.description
+                });
+                row.events.add(eventKey(job));
+            }
+            const volunteers = Array.from(byMember.values()).map(function (row) {
+                return {
+                    member: row.member,
+                    jobCount: row.jobs.length,
+                    eventCount: row.events.size,
+                    lastDate: row.jobs[row.jobs.length - 1].jobDate,
+                    jobs: row.jobs.slice().reverse()
+                };
+            }).sort(function (a, b) {
+                return b.jobCount - a.jobCount ||
+                    (a.member.lastname || '').localeCompare(b.member.lastname || '');
+            });
+
+            // Jobs per month for one year, or per year across all time
+            let timeline;
+            if (year) {
+                timeline = Array.from({ length: 12 }, function (_, month) { return { label: month, jobs: 0 }; });
+                for (const job of jobs) timeline[new Date(job.jobDate).getUTCMonth()].jobs++;
+            } else {
+                const perYear = new Map();
+                for (const job of jobs) {
+                    const y = new Date(job.jobDate).getUTCFullYear();
+                    perYear.set(y, (perYear.get(y) || 0) + 1);
+                }
+                timeline = Array.from(perYear.entries()).sort(function (a, b) { return a[0] - b[0]; })
+                    .map(function (entry) { return { label: entry[0], jobs: entry[1] }; });
+            }
+
+            const events = groupBy(eventKey, function (job) { return (job.eventName || '').trim(); });
+
+            const currentIds = new Set(currentMembers.map(function (m) { return String(m._id); }));
+            const currentVolunteers = volunteers.filter(function (v) { return currentIds.has(String(v.member._id)); }).length;
+
+            res.json({
+                year: year,
+                years: yearRows.map(function (row) { return row._id; }).filter(Boolean),
+                totals: {
+                    jobs: jobs.length,
+                    volunteers: volunteers.length,
+                    events: events.length,
+                    currentMembers: currentIds.size,
+                    currentVolunteers: currentVolunteers
+                },
+                volunteers: volunteers,
+                events: events,
+                timeline: timeline
+            });
+        } catch (err) {
+            console.log('error building volunteering stats', err);
+            res.status(500).json({ error: 'Error while building volunteering stats' });
+        }
+    });
+
     app.get('/api/stats/participation', service.isUserLoggedIn, function (req, res) {
         const startdateReq = parseInt(req.query.startdate);
         const enddateReq = parseInt(req.query.enddate);

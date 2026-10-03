@@ -591,13 +591,16 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * and a cold permalink costs one small request rather than the whole
      * several-hundred-KB race list.
      * @param {string} raceId
+     * @param {Object} [options] - { fresh: true } skips the cache, for a
+     *     reload right after an edit when the cached copy is the old one
      * @return {Promise} - resolves with the raceinfo, or null if not found
      */
-    factory.getRaceInfoById = function (raceId) {
+    factory.getRaceInfoById = function (raceId, options) {
         if (!raceId) {
             return $q.when(null);
         }
-        return factory.peekCachedRaceInfo(raceId).then(function (cached) {
+        var fromCache = options && options.fresh ? $q.when(null) : factory.peekCachedRaceInfo(raceId);
+        return fromCache.then(function (cached) {
             if (cached) {
                 return cached;
             }

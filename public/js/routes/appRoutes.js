@@ -262,6 +262,14 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 gtag('set', 'page_path', '/stats/team.html');
                 gtag('event', 'page_view');
             }
+        }).state('/stats/volunteering', {
+            url: "/stats/volunteering",
+            templateUrl: "views/stats/volunteering.html",
+            controller: 'VolunteerStatsController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/stats/volunteering.html');
+                gtag('event', 'page_view');
+            }
         }).state('/stats/us-map', {
             url: "/stats/us-map",
             templateUrl: "views/stats/us-map.html",

@@ -98,6 +98,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
     // Duplicate a volunteer job (opens add modal pre-filled with event name and date)
     $scope.duplicateVolunteerJob = function (job) {
         var prefillData = {
+            race: job.race && job.race._id ? job.race : null,
             eventName: job.eventName,
             jobDate: job.jobDate
         };
@@ -141,8 +142,12 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
 
     $scope.membersList = membersList;
 
-    // Shared fields
+    // Shared fields. Most jobs are at a race, so that is the default; a
+    // duplicated job keeps whichever kind the original was.
+    var prefillRace = prefillData && prefillData.race ? prefillData.race : null;
     $scope.formData = {
+        eventType: prefillRace || !(prefillData && prefillData.eventName) ? 'race' : 'other',
+        race: prefillRace,
         eventName: prefillData && prefillData.eventName ? prefillData.eventName : '',
         jobDate: prefillData && prefillData.jobDate ? new Date(prefillData.jobDate) : new Date()
     };
@@ -151,14 +156,6 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
     $scope.rows = [
         { member: null, description: '' }
     ];
-
-    // Date picker controls
-    $scope.opened = false;
-    $scope.open = function ($event) {
-        $event.preventDefault();
-        $event.stopPropagation();
-        $scope.opened = true;
-    };
 
     $scope.addRow = function () {
         $scope.rows.push({ member: null, description: '' });
@@ -171,7 +168,7 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
     };
 
     $scope.isFormValid = function () {
-        if (!$scope.formData.eventName || !$scope.formData.jobDate) {
+        if (!volunteerJobHasEvent($scope.formData) || !$scope.formData.jobDate) {
             return false;
         }
         for (var i = 0; i < $scope.rows.length; i++) {
@@ -183,8 +180,10 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
     };
 
     $scope.saveBatch = function () {
+        var atRace = $scope.formData.eventType === 'race';
         var batchData = {
-            eventName: $scope.formData.eventName,
+            raceId: atRace ? $scope.formData.race._id : null,
+            eventName: atRace ? null : $scope.formData.eventName,
             jobDate: $scope.formData.jobDate,
             jobs: $scope.rows.map(function (row) {
                 return {
@@ -224,18 +223,22 @@ angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceCont
         $scope.formData.jobDate = new Date($scope.formData.jobDate);
     }
 
-    // Date picker controls
-    $scope.opened = false;
-    $scope.open = function ($event) {
-        $event.preventDefault();
-        $event.stopPropagation();
-        $scope.opened = true;
+    $scope.formData.eventType = job.race && job.race._id ? 'race' : 'other';
+    $scope.formData.race = job.race && job.race._id ? job.race : null;
+
+    $scope.hasEvent = function () {
+        return volunteerJobHasEvent($scope.formData);
     };
 
     $scope.editVolunteerJob = function () {
-        // Update the original job object with new data
+        var race = $scope.formData.eventType === 'race' ? $scope.formData.race : null;
+        // Update the original job object with new data. raceId is what the
+        // API reads (null unlinks); race and eventName keep the row showing
+        // the right thing without a reload.
         job.member = $scope.formData.member;
-        job.eventName = $scope.formData.eventName;
+        job.raceId = race ? race._id : null;
+        job.race = race ? { _id: race._id, racename: race.racename, racedate: race.racedate } : undefined;
+        job.eventName = race ? race.racename : $scope.formData.eventName;
         job.jobDate = $scope.formData.jobDate;
         job.description = $scope.formData.description;
         $uibModalInstance.close(job);
@@ -246,3 +249,8 @@ angular.module('mcrrcApp.results').controller('VolunteerJobEditModalInstanceCont
     };
 
 }]);
+
+// A volunteer job needs either a race or a typed event name
+function volunteerJobHasEvent(formData) {
+    return formData.eventType === 'race' ? !!(formData.race && formData.race._id) : !!formData.eventName;
+}

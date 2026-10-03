@@ -65,7 +65,7 @@
                                 <i ng-show="job.member.sex == 'Female'" class="fa fa-venus" title="Women"
                                     style="margin-left: 5px;"></i>
                             </td>
-                            <td>{{job.eventName}}</td>
+                            <td><volunteer-event-name job="job"></volunteer-event-name></td>
                             <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
                             <td>{{job.description}}</td>
                             <td ng-if="user.role == 'admin'" class="text-center" style="white-space: nowrap;">

@@ -16444,6 +16444,11 @@ footer {
   font-weight: 400;
   color: #999999;
 }
+.result-detail-page .rd-edit-btn,
+.race-detail-page .rd-edit-btn {
+  margin-left: 8px;
+  vertical-align: middle;
+}
 .result-detail-page .rd-racemeta,
 .race-detail-page .rd-racemeta {
   color: #6f6f6f;
@@ -16763,9 +16768,9 @@ footer {
     margin-bottom: 4px;
   }
 }
-.race-detail-page .rd-edit-btn {
-  margin-left: 8px;
-  vertical-align: middle;
+.race-detail-page .rd-admin-cell {
+  width: 1%;
+  white-space: nowrap;
 }
 .race-detail-page .rd-hero-race .rd-hero-figures {
   flex-wrap: wrap;
@@ -16880,4 +16885,151 @@ footer {
 .feed-card .feed-icon.feed-icon-racecount.feed-icon-racecount-long {
   font-size: 10px !important;
   letter-spacing: -0.03em;
+}
+.jumbotron.volunteer-stats-page {
+  color: #333333;
+}
+.jumbotron.volunteer-stats-page .vs-nowrap {
+  white-space: nowrap;
+}
+.jumbotron.volunteer-stats-page .vs-more {
+  display: block;
+  padding: 8px 12px;
+  border-top: 1px solid #eeeeee;
+  font-size: 13px;
+  text-align: center;
+}
+.jumbotron.volunteer-stats-page .vs-toolbar {
+  margin: 15px 0 10px;
+}
+.jumbotron.volunteer-stats-page .vs-title {
+  margin: 0;
+  font-weight: 600;
+  color: #006687;
+}
+.jumbotron.volunteer-stats-page .vs-title small {
+  color: #6f6f6f;
+}
+.jumbotron.volunteer-stats-page .vs-message {
+  margin: 30px 0;
+  padding: 20px;
+  border-radius: 8px;
+  background: #fff;
+  text-align: center;
+  color: #6f6f6f;
+  font-size: 15px;
+}
+.jumbotron.volunteer-stats-page .vs-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.jumbotron.volunteer-stats-page .vs-figure {
+  flex: 1 1 160px;
+  padding: 14px 18px;
+  border-top: 3px solid #008cba;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.jumbotron.volunteer-stats-page .vs-figure-value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #006687;
+}
+.jumbotron.volunteer-stats-page .vs-figure-label {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #6f6f6f;
+}
+.jumbotron.volunteer-stats-page .vs-figure-label small {
+  color: #999999;
+}
+.jumbotron.volunteer-stats-page .vs-flush {
+  padding: 0;
+}
+.jumbotron.volunteer-stats-page .vs-table {
+  margin-bottom: 0;
+  font-size: 14px;
+}
+.jumbotron.volunteer-stats-page .vs-table > thead > tr > th {
+  padding: 9px 12px;
+  border-bottom: 3px solid #006687;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #006687;
+}
+.jumbotron.volunteer-stats-page .vs-table > tbody > tr > td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+.jumbotron.volunteer-stats-page .vs-rank {
+  width: 36px;
+  color: #999999;
+}
+.jumbotron.volunteer-stats-page .vs-row {
+  cursor: pointer;
+}
+.jumbotron.volunteer-stats-page .vs-row:hover > td {
+  background-color: #F7FBFC;
+}
+.jumbotron.volunteer-stats-page .vs-chevron {
+  width: 14px;
+  margin-right: 4px;
+  font-size: 11px;
+  color: #999999;
+}
+.jumbotron.volunteer-stats-page .vs-muted {
+  color: #6f6f6f;
+  font-size: 13px;
+}
+.jumbotron.volunteer-stats-page .vs-jobs-row > td {
+  border-top: none !important;
+  padding-top: 0 !important;
+  background: #F7FBFC;
+}
+.jumbotron.volunteer-stats-page .vs-jobs {
+  margin: 0;
+  padding: 0 0 6px 18px;
+  list-style: none;
+  font-size: 13px;
+}
+.jumbotron.volunteer-stats-page .vs-jobs li {
+  padding: 2px 0;
+}
+.jumbotron.volunteer-stats-page .vs-bar-col {
+  width: 30%;
+}
+.jumbotron.volunteer-stats-page .vs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.jumbotron.volunteer-stats-page .vs-bar-fill {
+  height: 8px;
+  border-radius: 4px;
+  background: #008cba;
+}
+.jumbotron.volunteer-stats-page .vs-bar-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.jumbotron.volunteer-stats-page .vs-chart {
+  position: relative;
+  height: 220px;
+}
+.vj-event-fields .vj-event-type {
+  margin-bottom: 12px;
+}
+.vj-event-fields .vj-event-type .btn.active {
+  border-color: #006687;
+  background: #006687;
+  color: #fff;
+}
+.vj-event-fields .vj-help {
+  margin: 4px 0 0;
+  font-size: 12px;
 }

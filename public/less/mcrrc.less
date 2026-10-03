@@ -11331,6 +11331,12 @@ footer {
         color: @gray-light;
     }
 
+    // Admin edit button beside the title (race on the race page, result here)
+    .rd-edit-btn {
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
     .rd-racemeta {
         color: @gray;
         font-size: 13px;
@@ -11680,9 +11686,10 @@ footer {
     // reusing the rules keeps the two pages looking like one feature.
     &:extend(.result-detail-page all);
 
-    .rd-edit-btn {
-        margin-left: 8px;
-        vertical-align: middle;
+    // Admin-only column holding each row's edit button
+    .rd-admin-cell {
+        width: 1%;
+        white-space: nowrap;
     }
 
     // No runner name to lead with here, so the figures carry the band on
@@ -11854,4 +11861,197 @@ footer {
 .feed-card .feed-icon.feed-icon-racecount.feed-icon-racecount-long {
     font-size: 10px !important;
     letter-spacing: -0.03em;
+}
+
+
+// =====================================
+// VOLUNTEERING STATS ==================
+// =====================================
+// views/stats/volunteering.html — the Stats page's volunteering tab, for
+// logged-in users. Figures across the top, then who / when / where / what.
+
+// .jumbotron in the selector: the site's `.container .jumbotron` sets the
+// text to brand blue, and this has to out-rank it.
+.jumbotron.volunteer-stats-page {
+    color: @gray-dark;
+
+    .vs-nowrap {
+        white-space: nowrap;
+    }
+
+    .vs-more {
+        display: block;
+        padding: 8px 12px;
+        border-top: 1px solid @gray-lighter;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .vs-toolbar {
+        margin: 15px 0 10px;
+    }
+
+    .vs-title {
+        margin: 0;
+        font-weight: 600;
+        color: @brand-primary-dark;
+
+        small {
+            color: @gray;
+        }
+    }
+
+    .vs-message {
+        margin: 30px 0;
+        padding: 20px;
+        border-radius: 8px;
+        background: #fff;
+        text-align: center;
+        color: @gray;
+        font-size: 15px;
+    }
+
+    .vs-figures {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .vs-figure {
+        flex: 1 1 160px;
+        padding: 14px 18px;
+        border-top: 3px solid @brand-primary;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .vs-figure-value {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: @brand-primary-dark;
+    }
+
+    .vs-figure-label {
+        margin-top: 2px;
+        font-size: 13px;
+        color: @gray;
+
+        small {
+            color: @gray-light;
+        }
+    }
+
+    // Tables sit edge to edge in their panels
+    .vs-flush {
+        padding: 0;
+    }
+
+    .vs-table {
+        margin-bottom: 0;
+        font-size: 14px;
+
+        > thead > tr > th {
+            padding: 9px 12px;
+            border-bottom: 3px solid @blue-dark;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: @blue-dark;
+        }
+
+        > tbody > tr > td {
+            padding: 8px 12px;
+            vertical-align: middle;
+        }
+    }
+
+    .vs-rank {
+        width: 36px;
+        color: @gray-light;
+    }
+
+    .vs-row {
+        cursor: pointer;
+
+        &:hover > td {
+            background-color: @brand-primary-very-light;
+        }
+    }
+
+    .vs-chevron {
+        width: 14px;
+        margin-right: 4px;
+        font-size: 11px;
+        color: @gray-light;
+    }
+
+    .vs-muted {
+        color: @gray;
+        font-size: 13px;
+    }
+
+    .vs-jobs-row > td {
+        border-top: none !important;
+        padding-top: 0 !important;
+        background: @brand-primary-very-light;
+    }
+
+    .vs-jobs {
+        margin: 0;
+        padding: 0 0 6px 18px;
+        list-style: none;
+        font-size: 13px;
+
+        li {
+            padding: 2px 0;
+        }
+    }
+
+    // A count drawn as a bar, with the number at the end
+    .vs-bar-col {
+        width: 30%;
+    }
+
+    .vs-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .vs-bar-fill {
+        height: 8px;
+        border-radius: 4px;
+        background: @brand-primary;
+    }
+
+    .vs-bar-value {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .vs-chart {
+        position: relative;
+        height: 220px;
+    }
+}
+
+// Volunteer job modals: race-or-event picker (volunteerEventFields directive)
+.vj-event-fields {
+    .vj-event-type {
+        margin-bottom: 12px;
+
+        .btn.active {
+            border-color: @brand-primary-dark;
+            background: @brand-primary-dark;
+            color: #fff;
+        }
+    }
+
+    .vj-help {
+        margin: 4px 0 0;
+        font-size: 12px;
+    }
 }

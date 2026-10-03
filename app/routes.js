@@ -1776,6 +1776,274 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Same convention as the age records grid (RecordsGridService)
+    function ageAtDate(birthday, date) {
+        const bd = new Date(birthday);
+        const d = new Date(date);
+        let age = d.getUTCFullYear() - bd.getUTCFullYear();
+        if (d.getUTCMonth() < bd.getUTCMonth() ||
+            (d.getUTCMonth() === bd.getUTCMonth() && d.getUTCDate() < bd.getUTCDate())) {
+            age--;
+        }
+        return Math.max(0, age);
+    }
+
+    // Buckets every team time at one distance into a histogram, so the page
+    // can show where this particular time falls among them.
+    // Times are centiseconds throughout.
+    function buildTimeDistribution(times, markTime) {
+        // Bucket-count budget for the bulk of the field, and the floor on how
+        // much of it may be swept into the single overflow bar
+        // The floor matters most for small populations: a dozen marathons
+        // spread over twenty minutes have room for far more than a dozen bars,
+        // and 2*sqrt(n) alone would round them into three-minute blocks.
+        const MIN_BUCKETS = 24;
+        const MAX_BUCKETS = 60;
+        const MIN_KEPT_PERCENTILE = 0.95;
+        // Bucket widths that read as round numbers on a time axis
+        const NICE_WIDTHS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1800]
+            .map(function (seconds) { return seconds * 100; });
+
+        if (times.length < 8) {
+            return null;
+        }
+
+        // times arrives sorted
+        const quantile = function (fraction) {
+            const position = fraction * (times.length - 1);
+            const lower = Math.floor(position);
+            const upper = Math.min(times.length - 1, lower + 1);
+            return times[lower] + (times[upper] - times[lower]) * (position - lower);
+        };
+
+        // The fast end stays exact — a team record belongs at its own time —
+        // but the slow tail is cut off and collected into a single bar at the
+        // end. Twenty near-empty buckets stretching out to a walked race cost
+        // the bulk of the field both pixels and resolution.
+        //
+        // The result being viewed is never swept into that bar: if it is
+        // itself a slow outlier the cutoff moves out to include it.
+        //
+        // Tukey's fence rather than a fixed percentile, because it follows how
+        // tightly the times actually cluster. A runner whose 5ks sit inside a
+        // 35-second band, with one 35-minute jog, has 61 of 63 results under
+        // Q3 + 1.5*IQR — a 99th-percentile cut would keep the jog and flatten
+        // the band it exists to show. Floored at the 95th percentile so the
+        // overflow bar never swallows a meaningful share of the population.
+        const q1 = quantile(0.25);
+        const q3 = quantile(0.75);
+        const cutoff = Math.max(q3 + 1.5 * (q3 - q1), quantile(MIN_KEPT_PERCENTILE));
+
+        const lo = times[0];
+        const hi = Math.max(cutoff, markTime);
+
+        // Roughly 2*sqrt(n) buckets: enough shape for a large population
+        // without turning a small one into a comb of single-result spikes.
+        const targetBuckets = Math.min(MAX_BUCKETS,
+            Math.max(MIN_BUCKETS, Math.round(Math.sqrt(times.length) * 2)));
+        const span = hi - lo;
+        const target = span > 0 ? span / targetBuckets : NICE_WIDTHS[0];
+
+        const bucketsAt = function (w) {
+            return Math.floor((hi - Math.floor(lo / w) * w) / w) + 1;
+        };
+
+        let widthIndex = NICE_WIDTHS.findIndex(function (w) { return w >= target; });
+        if (widthIndex === -1) {
+            widthIndex = NICE_WIDTHS.length - 1;
+        }
+        // Widen rather than overrun the bar budget; at the coarsest width we
+        // simply accept what we get.
+        while (widthIndex < NICE_WIDTHS.length - 1 && bucketsAt(NICE_WIDTHS[widthIndex]) > MAX_BUCKETS) {
+            widthIndex++;
+        }
+        const width = NICE_WIDTHS[widthIndex];
+
+        const start = Math.floor(lo / width) * width;
+        const count = Math.floor((hi - start) / width) + 1;
+        // Strictly past the last bucket, so markTime can never land here
+        const overflowFrom = start + count * width;
+
+        const buckets = [];
+        for (let i = 0; i < count; i++) {
+            buckets.push({ start: start + i * width, end: start + (i + 1) * width, count: 0 });
+        }
+
+        let overflow = 0;
+        times.forEach(function (time) {
+            const index = Math.floor((time - start) / width);
+            if (index >= count) {
+                overflow++;
+            } else {
+                buckets[Math.max(0, index)].count++;
+            }
+        });
+        if (overflow > 0) {
+            buckets.push({ start: overflowFrom, end: null, count: overflow, overflow: true });
+        }
+
+        return {
+            bucketWidth: width,
+            buckets: buckets,
+            markIndex: Math.min(count - 1, Math.max(0, Math.floor((markTime - start) / width))),
+            markTime: markTime,
+            overflowFrom: overflow > 0 ? overflowFrom : null,
+            overflowCount: overflow,
+            total: times.length
+        };
+    }
+
+    // everything the single-result page shows: the result itself, where the
+    // time stands on the team and in the runner's own history, and how the
+    // team's times at this distance are spread out around it
+    app.get('/api/results/:result_id/detail', async function (req, res) {
+        try {
+            const result = await Result.findById(new mongoose.Types.ObjectId(req.params.result_id));
+            if (!result) {
+                return res.status(404).json({ error: 'Result not found' });
+            }
+
+            const response = {
+                result: result,
+                stats: null,
+                distributions: null,
+                defaultDistribution: 'all'
+            };
+
+            // Standings only mean something for one runner's time over a fixed
+            // distance — relay/multisport entries and results flagged as not
+            // record eligible have nothing comparable to rank against.
+            //
+            // Neither do the variable race types: "Odd road distance", the
+            // other Odd types, and Swim/Cycling name no distance of their own,
+            // so two results sharing that type are not the same race length
+            // and ranking one against the other would be meaningless.
+            const isSolo = result.members.length === 1 && !result.race.isMultisport;
+            const comparable = isSolo &&
+                result.isRecordEligible === true &&
+                result.time > 0 &&
+                result.race.racetype.isVariable !== true;
+            const member = isSolo ? result.members[0] : null;
+
+            if (comparable) {
+                const sameDistance = {
+                    isRecordEligible: true,
+                    time: { $gt: 0 },
+                    'race.racetype._id': result.race.racetype._id,
+                    $expr: { $eq: [{ $size: '$members' }, 1] }
+                };
+
+                const year = new Date(result.race.racedate).getUTCFullYear();
+                const yearWindow = {
+                    $gte: new Date(Date.UTC(year, 0, 1)),
+                    $lt: new Date(Date.UTC(year + 1, 0, 1))
+                };
+
+                // Ties take the better rank: tied for the fastest time is 1st,
+                // not 2nd.
+                const rankAgainst = async function (extra) {
+                    const scope = Object.assign({}, sameDistance, extra);
+                    const faster = await Result.countDocuments(
+                        Object.assign({}, scope, { time: { $gt: 0, $lt: result.time } }));
+                    const total = await Result.countDocuments(scope);
+                    return { rank: faster + 1, total: total };
+                };
+
+                const personal = await rankAgainst({ 'members._id': member._id });
+                const sameSex = { 'members.sex': member.sex };
+
+                const teamAllTime = await rankAgainst({});
+                const teamGender = await rankAgainst(sameSex);
+
+                // How the time stands among runners of the same sex who were
+                // exactly this age when they ran — the same single-year
+                // treatment the age records grid uses. Age depends on both the
+                // runner's birthday and the date of their race, so this cannot
+                // be a plain query; the same-sex results get filtered in
+                // memory, which is cheap at a few hundred per distance.
+                let teamAgeGroup = null;
+                if (member.dateofbirth) {
+                    const age = ageAtDate(member.dateofbirth, result.race.racedate);
+
+                    const peers = (await Result.find(Object.assign({}, sameDistance, sameSex))
+                        .select('time members.dateofbirth race.racedate'))
+                        .filter(function (r) {
+                            const dob = r.members[0] && r.members[0].dateofbirth;
+                            if (!dob) return false;
+                            return ageAtDate(dob, r.race.racedate) === age;
+                        });
+
+                    teamAgeGroup = {
+                        age: age,
+                        rank: peers.filter(function (r) { return r.time < result.time; }).length + 1,
+                        total: peers.length
+                    };
+                }
+
+                // The time to beat as of race day — what the runner improved
+                // on (or missed), rather than their best ever.
+                const previousBest = await Result.findOne(Object.assign({}, sameDistance, {
+                    'members._id': member._id,
+                    _id: { $ne: result._id },
+                    'race.racedate': { $lt: result.race.racedate }
+                })).sort('time').select('time race.racename race.racedate');
+
+                response.stats = {
+                    // Always the race type's own name — variable types never
+                    // reach here, so there is no distanceName to fall back on
+                    distanceLabel: result.race.racetype.name,
+                    surface: result.race.racetype.surface,
+                    year: year,
+                    sex: member.sex,
+                    category: result.category,
+                    teamAllTime: teamAllTime,
+                    teamYear: await rankAgainst({ 'race.racedate': yearWindow }),
+                    teamGender: teamGender,
+                    teamGenderYear: await rankAgainst(
+                        Object.assign({}, sameSex, { 'race.racedate': yearWindow })),
+                    teamAgeGroup: teamAgeGroup,
+                    personal: personal,
+                    isPersonalBest: personal.rank === 1,
+                    previousBest: previousBest ? {
+                        // Lets the sentence link to that result's own page
+                        _id: previousBest._id,
+                        time: previousBest.time,
+                        racename: previousBest.race.racename,
+                        racedate: previousBest.race.racedate,
+                        improvement: previousBest.time - result.time
+                    } : null
+                };
+
+                // Each histogram is built from exactly the population its rank
+                // is counted against, so the chart and the "Nth best" line can
+                // never disagree.
+                const distributionFor = async function (extra, standing) {
+                    const times = (await Result.find(Object.assign({}, sameDistance, extra))
+                        .select('time').sort('time')).map(function (r) { return r.time; });
+                    const dist = buildTimeDistribution(times, result.time);
+                    return dist ? Object.assign(dist, { rank: standing.rank }) : null;
+                };
+
+                response.distributions = {
+                    all: await distributionFor({}, teamAllTime),
+                    gender: await distributionFor(sameSex, teamGender),
+                    // Null unless the runner has enough of this distance to
+                    // make a shape — buildTimeDistribution wants at least 8.
+                    member: await distributionFor({ 'members._id': member._id }, personal)
+                };
+                // Women are the smaller population and the one a woman's time
+                // is most usefully read against, so that is what her page opens
+                // on; the toggle still gets her to the whole team.
+                response.defaultDistribution = member.sex === 'Female' ? 'gender' : 'all';
+            }
+
+            res.json(response);
+        } catch (err) {
+            console.log('error building result detail', err);
+            res.status(500).json({ error: 'Error while building result detail' });
+        }
+    });
+
 
     // create a result
     app.post('/api/results', service.isAdminLoggedIn, async function (req, res) {

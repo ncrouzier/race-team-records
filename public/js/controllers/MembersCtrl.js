@@ -551,6 +551,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     };
 
+    // Clicking anywhere on a result row opens that result's own page; the
+    // race name inside it still goes to the race, so it stops the click from
+    // reaching here.
+    $scope.goToResult = function (result) {
+        if (result && result._id) {
+            $state.go('/results/result', { resultId: result._id });
+        }
+    };
+
     $scope.showResultDetailsModal = function (result) {
         ResultsService.showResultDetailsModal(result).then(function (result) { });
     };

@@ -37,17 +37,22 @@
                 ng-class="{hoverlistbg: hover,'expanded': isRaceExpanded(raceInfo._id), 'collapsed': !isRaceExpanded(raceInfo._id)}"
                 ng-mouseenter="hover = true" ng-mouseleave="hover = false"
                 style="padding-right: 0px; padding-left:0px; padding-bottom: 0px;">
-                <div style="cursor: pointer;" ng-click="expand(raceInfo)">
+                <!-- The row opens the race page; only the chevron expands the
+                     results in place -->
+                <div style="cursor: pointer;" ng-click="showRaceModal(raceInfo)" title="Open race details">
                     <div class="row">
                         <div ng-class="user.role == 'admin' ?'col-sm-4' :'col-sm-5'" style="padding-left:30px">
-                            <i class="fa"
-                                ng-class="{'fa-chevron-right': !isRaceExpanded(raceInfo._id), 'fa-chevron-down': isRaceExpanded(raceInfo._id)}"
-                                style="margin-right: 5px;"></i>
+                            <span class="race-expand-toggle"
+                                ng-click="$event.stopPropagation(); expand(raceInfo)"
+                                title="{{isRaceExpanded(raceInfo._id) ? 'Hide results' : 'Show results'}}">
+                                <i class="fa"
+                                    ng-class="{'fa-chevron-right': !isRaceExpanded(raceInfo._id), 'fa-chevron-down': isRaceExpanded(raceInfo._id)}"></i>
+                            </span>
                             <span class="hoverhandandunderline resultEvent">{{::raceInfo.racename}}</span>
                             <race-icon race="raceInfo"></race-icon>
-                            <i ng-click="$event.stopPropagation();  showRaceModal(raceInfo)"
+                            <!-- <i ng-click="$event.stopPropagation();  showRaceModal(raceInfo)"
                                 class="fa fa-external-link hoverhand" style="margin-left: 5px;"
-                                title="Open race details"></i>
+                                title="Open race details"></i> -->
                             <race-photos ng-click="$event.stopPropagation();" race="raceInfo" class="race-photos-inherit"></race-photos>
 
                             <br>
@@ -140,7 +145,8 @@
                                 <li ng-repeat="result in raceInfo.results  track by result._id"
                                     class="list-group-item text-left resultlistrow" ng-class="{hoverlistbg: hover2, 'my-result-row': isMyResult(result)}"
                                     ng-mouseenter="hover2 = true" ng-mouseleave="hover2 = false"
-                                    style="border: none; border-bottom: 1px solid #e9ecef; background-color: white; transition: background-color 0.2s ease;"
+                                    ng-click="goToResult(result)" title="Open this result"
+                                    style="border: none; border-bottom: 1px solid #e9ecef; background-color: white; transition: background-color 0.2s ease; cursor: pointer;"
                                     ng-style="{'background-color': hover2 ? '#f0f7fa' : (isMyResult(result) ? '#fff8e1' : 'white')}">
                                     <div class="row" style="display: flex; align-items: center; font-size: 0.95em;">
                                         <div class="col-sm-3">
@@ -179,13 +185,13 @@
                                         </div>
                                         <div class="col-sm-2" ng-if="raceInfo.isMultisport" style="text-align: center;">
                                             <span class="hoverhandandunderline resultPace" title="View details"
-                                                ng-click="showResultDetailsModal(result, raceInfo)">View details</span>
+                                                ng-click="$event.stopPropagation(); showResultDetailsModal(result, raceInfo)">View details</span>
                                         </div>
                                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-4'"
                                             style="text-align: center;">
                                             <span class="resultTime">{{::result.time | secondsToTimeString}}</span>
                                             <a ng-if="result.resultlink !== undefined" ng-href="{{result.resultlink}}"
-                                                target="_blank">
+                                                target="_blank" ng-click="$event.stopPropagation()">
                                                 <i class="fa fa-link hoverhand" ng-if="result.resultlink !== ''"
                                                     title="view result"></i>
                                             </a>
@@ -194,11 +200,11 @@
                                             <span>
                                                 <i class="hoverhand fa fa-pencil-square-o"
                                                     ng-show="user.role == 'admin'"
-                                                    ng-click="retrieveResultForEdit(raceInfo,result)"
+                                                    ng-click="$event.stopPropagation(); retrieveResultForEdit(raceInfo,result)"
                                                     title="edit result"></i>
                                                 <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
-                                                    ng-click="removeResult(raceInfo, result)" title="remove result"></i>
-                                                <input type="checkbox" ng-model="result.selected"
+                                                    ng-click="$event.stopPropagation(); removeResult(raceInfo, result)" title="remove result"></i>
+                                                <input type="checkbox" ng-model="result.selected" ng-click="$event.stopPropagation()"
                                                     class="result-checkbox" style="margin-right: 10px;">
                                             </span>
                                         </div>

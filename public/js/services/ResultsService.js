@@ -50,6 +50,28 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
 
     };
 
+    /**
+     * Retrieve a result together with the team/personal standings and the
+     * runner's placement trend, for the single-result page
+     * @param {string} resultId - The ID of the result to retrieve
+     * @return {Promise} - Promise that resolves with {result, stats, trend}
+     */
+    factory.getResultDetail = function (resultId) {
+        if (!resultId) {
+            return $q.when(null);
+        }
+        return Restangular.one("results", resultId).one("detail").get().then(
+            function (detail) {
+                return detail;
+            },
+            function (res) {
+                NotificationService.showNotifiction(false, "Error while retrieving result details.");
+                console.log('Error: ' + res.status);
+                return null;
+            }
+        );
+    };
+
     async function getKey(db, key) {
         var results = await db.get(key);
         return results;
@@ -469,78 +491,129 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     }
 
 
-    factory.showRaceFromResultModal = function (raceId, fromStateParams) {
-        return Restangular.one('raceinfos').get({
-            limit: 1,
-            raceId: raceId
-        }).then(
-            function (races) {
-                if (races.length === 1) {
-                    var modalInstance = $uibModal.open({
-                        templateUrl: 'views/modals/raceModal.html',
-                        controller: 'RaceModalInstanceController',
-                        size: 'lg',
-                        resolve: {
-                            raceinfo: races[0],
-                            fromStateParams: fromStateParams
-                        }
-                    });
-                    modalInstance.result.then(function () {
-                    }, function () {
-                        //  if ($state.current.url === '/races/:raceId'){
-                        //     $state.go('^');
-                        //  }
+    // Race details used to open in a modal; they are a page of their own now,
+    // at /races/:raceId. These three keep their old names because a dozen
+    // controllers call them — they just navigate instead of opening a modal.
 
-                    });
-                }
-            },
-            function (res) {
-                console.log('Error: ' + res.status);
-            }
-        );
+    /**
+     * Open the race page for a race id
+     * @param {string} raceId
+     * @return {Promise} - resolves once the navigation has been started
+     */
+    factory.showRaceFromResultModal = function (raceId) {
+        return factory.goToRacePage(raceId);
     };
 
-    factory.showRaceFromRaceIdModal = function (raceId, fromStateParams) {
-        return Restangular.one('raceinfos').get({
-            limit: 1,
-            raceId: raceId
-        }).then(
-            function (races) {
-                if (races.length === 1) {
-                    var modalInstance = $uibModal.open({
-                        templateUrl: 'views/modals/raceModal.html',
-                        controller: 'RaceModalInstanceController',
-                        size: 'lg',
-                        resolve: {
-                            raceinfo: races[0],
-                            fromStateParams: fromStateParams
-                        }
-                    });
-                    modalInstance.result.then(function () {
-                    }, function () { });
+    factory.showRaceFromRaceIdModal = function (raceId) {
+        return factory.goToRacePage(raceId);
+    };
+
+    /**
+     * Open the race page for an already-loaded raceinfo
+     * @param {Object} raceinfo
+     * @return {Promise} - resolves once the navigation has been started
+     */
+    factory.showRaceModal = function (raceinfo) {
+        return factory.goToRacePage(raceinfo && raceinfo._id);
+    };
+
+    factory.goToRacePage = function (raceId) {
+        if (raceId) {
+            $state.go('/races', { raceId: raceId });
+        }
+        return $q.when(null);
+    };
+
+    /**
+     * Look for a race in the already-downloaded raceinfos list, without ever
+     * going to the network. Navigating in from the results list means the
+     * whole list is usually right there; fetching the race again would be a
+     * round trip for data we are holding.
+     * @param {string} raceId
+     * @return {Promise} - resolves with the raceinfo, or null if not cached
+     */
+    factory.peekCachedRaceInfo = function (raceId) {
+        var findRace = function (races) {
+            if (!angular.isArray(races)) return null;
+            for (var i = 0; i < races.length; i++) {
+                if (races[i] && String(races[i]._id) === String(raceId)) {
+                    return races[i];
                 }
-            },
-            function (res) {
-                console.log('Error: ' + res.status);
+            }
+            return null;
+        };
+
+        return $q.when(SystemService.getSystemInfo('mcrrc')).then(function (sysinfo) {
+            if (!sysinfo || !sysinfo.overallUpdate) {
+                // With nothing to check freshness against, treat the cache as
+                // unusable rather than risk serving a stale race.
+                return null;
+            }
+            var date = new Date(sysinfo.overallUpdate);
+
+            // In-memory first. Entries are keyed by request params, and some
+            // of them are the limit-100 preload rather than the full list, so
+            // a miss here is normal and just falls through.
+            var memKeys = MemoryCacheService.keys(CACHE_NAMES.RACE_RESULTS);
+            for (var i = 0; i < memKeys.length; i++) {
+                var entry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKeys[i]);
+                if (entry && entry.date && date.getTime() === new Date(entry.date).getTime()) {
+                    var hit = findRace(entry.data);
+                    if (hit) return hit;
+                }
+            }
+
+            // Then the IndexedDB copy, which is always the full list
+            return $q.when(DexieService.open()).then(function () {
+                return DexieService.races.get('current');
+            }).then(function (cache) {
+                if (!cache || !cache.date) return null;
+                var cacheDate = new Date(JSON.parse(cache.date));
+                if (isNaN(cacheDate.getTime()) || date.getTime() > cacheDate.getTime()) {
+                    return null;
+                }
+                // Restangularize only the race we came for — doing the whole
+                // collection costs more than the fetch this is replacing.
+                var hit = findRace(JSON.parse(cache.data));
+                return hit ? Restangular.restangularizeElement(null, hit, 'races') : null;
+            }).catch(function () {
+                return null;
             });
+        }).catch(function () {
+            return null;
+        });
     };
 
-
-    factory.showRaceModal = function (raceinfo, fromStateParams) {
-        modalInstance = $uibModal.open({
-            templateUrl: 'views/modals/raceModal.html',
-            controller: 'RaceModalInstanceController',
-            size: 'lg',
-            resolve: {
-                raceinfo: raceinfo,
-                fromStateParams: fromStateParams
+    /**
+     * The race page loads itself from a race id — the callers above only ever
+     * had one, and the page needs the full result list either way. Cache
+     * first, then a targeted fetch: in-app navigation usually costs nothing,
+     * and a cold permalink costs one small request rather than the whole
+     * several-hundred-KB race list.
+     * @param {string} raceId
+     * @return {Promise} - resolves with the raceinfo, or null if not found
+     */
+    factory.getRaceInfoById = function (raceId) {
+        if (!raceId) {
+            return $q.when(null);
+        }
+        return factory.peekCachedRaceInfo(raceId).then(function (cached) {
+            if (cached) {
+                return cached;
             }
-        });
-
-        return modalInstance.result.then(function () {
-            return null;
-        }, function () {
-            return null;
+            return Restangular.one('raceinfos').get({
+                limit: 1,
+                raceId: raceId
+            }).then(
+                function (races) {
+                    return races.length === 1 ? races[0] : null;
+                },
+                function (res) {
+                    NotificationService.showNotifiction(false, "Error while retrieving race.");
+                    console.log('Error: ' + res.status);
+                    return null;
+                }
+            );
         });
     };
 

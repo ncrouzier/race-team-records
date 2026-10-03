@@ -10,7 +10,16 @@ angular.module('mcrrcApp').directive('raceList', function() {
             onReloadRaces: '&'
         },
         templateUrl: 'views/directives/raceList.html',
-        controller: function($scope,dialogs,ResultsService,$timeout) {
+        controller: function($scope,dialogs,ResultsService,$timeout,$state) {
+
+            // Clicking anywhere on a result row opens that result's own page;
+            // the runner's name inside it still goes to the member, so it
+            // stops the click from reaching here.
+            $scope.goToResult = function(result) {
+                if (result && result._id) {
+                    $state.go('/results/result', { resultId: result._id });
+                }
+            };
             
             // Function to reload the races list
             $scope.reloadRacesList = function() {

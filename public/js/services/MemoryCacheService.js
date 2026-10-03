@@ -20,6 +20,13 @@ angular.module('mcrrcApp').service('MemoryCacheService', ['SystemService', funct
         caches[cacheName][key] = value;
     };
 
+    // Keys currently held in a named cache. Callers that key by request
+    // params cannot reconstruct a key to look something up by — they need to
+    // search what is already there.
+    this.keys = function(cacheName) {
+        return caches[cacheName] ? Object.keys(caches[cacheName]) : [];
+    };
+
     // Clear a named cache (or all caches if no name given)
     this.clear = function(cacheName) {
         if (cacheName) {

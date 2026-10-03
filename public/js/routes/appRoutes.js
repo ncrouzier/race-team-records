@@ -137,8 +137,15 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
         })
         .state('/races', {
             url: '/races/:raceId',
-            templateUrl: 'views/results.html',
-            controller: 'ResultsController'
+            params: {
+                raceId: null,
+            },
+            templateUrl: 'views/raceDetail.html',
+            controller: 'RaceDetailController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/raceDetail.html');
+                gtag('event', 'page_view');
+            }
         })
         .state('/login', {
             url: "/login",
@@ -399,6 +406,18 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             controller: 'CompRaceFormDetailController',
             onEnter: function () {
                 gtag('set', 'page_path', '/comp-race-forms/detail');
+                gtag('event', 'page_view');
+            }
+        })
+        .state('/results/result', {
+            url: "/results/:resultId",
+            params: {
+                resultId: null,
+            },
+            templateUrl: "views/resultDetail.html",
+            controller: 'ResultDetailController',
+            onEnter: function () {
+                gtag('set', 'page_path', '/resultDetail.html');
                 gtag('event', 'page_view');
             }
         })

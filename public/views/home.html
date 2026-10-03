@@ -151,6 +151,7 @@
                             </div>
                             <div ng-switch-when="racecount" class="feed-row">
                                 <span class="feed-icon feed-icon-racecount raceCountBox hoverhand"
+                                    ng-class="{'feed-icon-racecount-long': ach.achievements[0].value.raceCount > 99}"
                                     uib-tooltip="Race Count">{{::ach.achievements[0].value.raceCount}}</span>
                                 <div class="feed-body">
                                     <div class="feed-text">

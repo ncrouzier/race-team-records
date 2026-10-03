@@ -676,3 +676,98 @@ app.directive('buildStamp', function () {
     }
   };
 });
+
+// Renders achievements in the same feed language the home page uses for "The
+// team's latest achievements" — a coloured badge per type beside the sentence
+// the achievement already carries.
+//
+// `entries` is a flat list of achievements, each optionally carrying the
+// member who earned it. Both the race page and the single result page build
+// that list and hand it over, so the two stay identical to each other and to
+// the home feed.
+app.directive('achievementFeed', function () {
+  // Same badges as the home feed, keyed by the lowercased achievement name
+  var BADGES = {
+    pb: { icon: '🧨', cls: 'feed-icon-pb', label: 'Personal Best' },
+    agegrade: { icon: '🎖️', cls: 'feed-icon-agegrade', label: 'Age Grade' },
+    teamrecord: { icon: '🔥', cls: 'feed-icon-teamrecord', label: 'Team Record' },
+    birthday: { icon: '🎂', cls: 'feed-icon-birthday', label: 'Raced on their birthday' },
+    newlocation: { icon: '📍', cls: 'feed-icon-newlocation', label: 'New location for the team' },
+    racecount: { icon: '', cls: 'feed-icon-racecount raceCountBox', label: 'Race Count' }
+  };
+  var FALLBACK = { icon: '🌟', cls: 'feed-icon-multi', label: 'Achievement' };
+
+  return {
+    restrict: 'E',
+    scope: {
+      entries: '=',
+      // Optional: renders a header, the way the home feed has one. Worth it
+      // where the list is long enough to need naming, not on a result page
+      // showing two badges.
+      heading: '@'
+    },
+    template:
+      '<div class="feed-card feed-card-compact achievement-feed" ng-if="rows.length">' +
+      '  <div class="feed-card-header" ng-if="heading">' +
+      '    <h4><i class="fa fa-trophy"></i> {{heading}} <small>({{rows.length}})</small></h4>' +
+      '  </div>' +
+      '  <ul class="feed-list">' +
+      '    <li class="feed-item" ng-repeat="row in rows">' +
+      '      <div class="feed-row">' +
+      '        <span class="feed-icon hoverhand {{row.cls}}" uib-tooltip="{{row.label}}" ' +
+      '              tooltip-append-to-body="true">{{row.icon}}</span>' +
+      '        <div class="feed-body">' +
+      '          <div class="feed-text">' +
+      '            <b ng-if="row.member"><a ui-sref="/members/member({ member: row.member.username })">' +
+      '              {{row.member.firstname}} {{row.member.lastname}}</a></b>' +
+      '            {{row.text}}' +
+      '          </div>' +
+      '        </div>' +
+      '      </div>' +
+      '    </li>' +
+      '  </ul>' +
+      '</div>',
+    controller: ['$scope', function ($scope) {
+      $scope.rows = [];
+
+      function build(entries) {
+        // Some races carry the same race-level achievement many times over —
+        // one has 465 copies of "First team race in MD!" — so the same
+        // achievement for the same person is only ever shown once.
+        var seen = {};
+        var unique = (entries || []).filter(function (entry) {
+          var key = [
+            entry.name,
+            entry.text,
+            entry.member ? entry.member._id : ''
+          ].join('|');
+          if (seen[key]) return false;
+          seen[key] = true;
+          return true;
+        });
+
+        $scope.rows = unique.map(function (entry) {
+          var key = (entry.name || '').toLowerCase();
+          var badge = BADGES[key] || FALLBACK;
+          // The race-count badge shows the number itself, the way the home
+          // feed does, rather than a generic emoji.
+          var icon = key === 'racecount' && entry.value ? entry.value.raceCount : badge.icon;
+          // A 175th race fills the fixed-width badge edge to edge; the
+          // narrower type buys back a margin either side.
+          var crowded = key === 'racecount' && String(icon).length > 2;
+          return {
+            cls: badge.cls + (crowded ? ' feed-icon-racecount-long' : ''),
+            label: badge.label,
+            icon: icon,
+            text: entry.text,
+            // Only shown when the sentence does not already name someone —
+            // team-record text says what was set, not who set it.
+            member: key === 'teamrecord' ? entry.member : null
+          };
+        });
+      }
+
+      $scope.$watch('entries', build);
+    }]
+  };
+});

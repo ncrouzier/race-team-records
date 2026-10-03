@@ -324,7 +324,10 @@ app.filter('resultSportIcons', function () {
 app.filter('raceinfoSportIcons', function () {
     return function (raceinfo) {
         var res = " ";
-        if (raceinfo.isMultisport === true && raceinfo.results[0] && raceinfo.results[0].legs) {
+        // A race embedded in a result carries no results array of its own, so
+        // this cannot assume one is there — use resultSportIcons when the legs
+        // are on the result rather than on the race.
+        if (raceinfo.isMultisport === true && raceinfo.results && raceinfo.results[0] && raceinfo.results[0].legs) {
             raceinfo.results[0].legs.forEach(function (leg) {
                 if (leg.legType === 'swim') {
                     res += '<span class="hoverhand" title="swim (' + leg.distanceName + ')">🏊</span>';

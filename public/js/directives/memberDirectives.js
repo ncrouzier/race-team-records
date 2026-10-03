@@ -1,14 +1,17 @@
 var app = angular.module('mcrrcApp');
 
 
+// The name always goes to the runner. Rows that are themselves clickable
+// (results lists, which open the individual result) rely on the
+// stopPropagation here to keep the name pointing at the member.
 app.directive('resultMembersNames', function () {
     return {
         scope: {
             result:'=result',
             race:'=race'
           },
-        template: ' <a class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span  tooltip-append-to-body="true" uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter | cut:false:25:"..."}}</span></a>'
-    };    
+        template: ' <a class="hoverhand" ng-click="$event.stopPropagation()" ui-sref="/members/member({ member: result.members[0].username })"><span  tooltip-append-to-body="true" uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter | cut:false:25:"..."}}</span></a>'
+    };
 });
 
 app.directive('resultMembersNamesFull', function () {
@@ -17,7 +20,7 @@ app.directive('resultMembersNamesFull', function () {
             result:'=result',
             race:'=race'
           },
-        template: ' <a class="hoverhand" ui-sref="/members/member({ member: result.members[0].username })"><span  tooltip-append-to-body="true" uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter}}</span></a>'
+        template: ' <a class="hoverhand" ng-click="$event.stopPropagation()" ui-sref="/members/member({ member: result.members[0].username })"><span  tooltip-append-to-body="true" uib-tooltip="{{result | membersNamesWithAgeFilter:race}}" >{{result.members | membersNamesFilter}}</span></a>'
     };
 });
 

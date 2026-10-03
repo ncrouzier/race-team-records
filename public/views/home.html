@@ -186,7 +186,7 @@
                                     <div class="feed-text">
                                         <b><a
                                                 ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
-                                        set a new {{::ach.achievements[0].value.category}}
+                                        set a new {{::recordCategoryText(ach.achievements[0].value)}}
                                         {{::ach.achievements[0].value.sex}} team record of
                                         <span class="time">{{::ach.achievements[0].value.time |
                                             secondsToTimeString}}</span>
@@ -227,7 +227,7 @@
                                         </span>
                                         <span ng-switch-when="teamrecord">
                                             <!-- <i class="fa fa-fire feed-sub-icon feed-sub-icon-teamrecord"></i> -->
-                                            🔥 New {{::a.value.category}} {{::a.value.sex}} team record of
+                                            🔥 New {{::recordCategoryText(a.value)}} {{::a.value.sex}} team record of
                                             <span class="time bold">{{::a.value.time |
                                                 secondsToTimeString}}</span>
                                             for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}).

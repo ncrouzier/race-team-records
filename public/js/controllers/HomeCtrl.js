@@ -182,6 +182,17 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
         }
     };
 
+    // "Open", "Master", or "Open and Master" when one run set both records —
+    // the combined achievement keeps category "Open" and lists both in
+    // categories.
+    $scope.recordCategoryText = function (value) {
+        if (!value) return '';
+        if (angular.isArray(value.categories) && value.categories.length) {
+            return value.categories.join(' and ');
+        }
+        return value.category;
+    };
+
     // Achievements pagination
     $scope.updateAchievementsPage = function () {
         var start = ($scope.achievementsPage - 1) * $scope.achievementsPageSize;

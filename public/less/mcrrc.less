@@ -12311,6 +12311,28 @@ footer {
         grid-template-columns: var(--ir-num-w, 38px) 92px minmax(120px, 1.2fr) 40px minmax(160px, 1.8fr) 100px 74px 48px 56px 92px 62px 28px;
     }
 
+    // Below 1200px the page is 970px wide (the list ~920px) and the columns
+    // above need ~1010px: tighter columns, gaps and type. Runner and race
+    // give up the most; their full text shows on hover when cut.
+    @media (max-width: (@screen-lg-min - 1)) {
+        .ir-row {
+            grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px;
+            column-gap: 6px;
+            padding-left: 8px;
+            padding-right: 8px;
+            font-size: 12px;
+        }
+
+        // The header keeps its 11px: the # column is sized for it
+        .ir-head {
+            font-size: 11px;
+        }
+
+        .ir-list-admin .ir-row {
+            grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px 26px;
+        }
+    }
+
     // Kept to the text's height, so admins see rows no taller than anyone
     .ir-row > span.ir-admin {
         overflow: visible;

@@ -10,7 +10,7 @@
 // Filtering uses the same Advanced Filters panel as "By race"
 // (<advanced-filter-panel>, AdvancedFiltersService), plus filters that only
 // arrive by link (race, age, cutoffs, highlight...), shown as chips.
-angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs) {
+angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', '$rootScope', '$document', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs, $rootScope, $document) {
 
     var PAGE_SIZE = 100;
     var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
@@ -683,46 +683,97 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 return (digits * 7 + commas * 3 + 22) + 'px';
             };
 
-            // ---- Full text of a cut-off cell, on hover ----------------------
-            // Cells end in "…" when too narrow. Rather than a tooltip on each of
-            // the hundreds of cells, one shared tooltip is moved over the cell
-            // under the mouse, and only shown when that cell is cut off.
+            // ---- Tooltips in the list ------------------------------------
+            // Two kinds: the full text of a cell cut off with "…", and the
+            // meaning of anything carrying a data-tip (the icons, the place).
+            // Rather than a tooltip on each of hundreds of cells, one shared
+            // tooltip is moved over the one in question. With a mouse it
+            // follows hovering; on a touch screen a tap on a data-tip opens it
+            // (and does not open the result), a tap anywhere else in the row
+            // opens the result as usual.
             scope.cellTip = { text: '', open: false };
-            var tipCell = null;
+            var tipEl = null;
 
-            function hideCellTip() {
-                tipCell = null;
-                if (scope.cellTip.open) scope.$apply(function () { scope.cellTip.open = false; });
+            // What, under this element, has a tooltip to show, and its text
+            function tipFor(target, tipsOnly) {
+                if (!target.closest) return null;
+                var tagged = target.closest('.resultlistrow.ir-row [data-tip]');
+                if (tagged && tagged.getAttribute('data-tip')) {
+                    return { el: tagged, text: tagged.getAttribute('data-tip') };
+                }
+                if (tipsOnly) return null;
+                var cell = target.closest('.resultlistrow.ir-row > span');
+                if (!cell || cell.scrollWidth <= cell.clientWidth) return null;
+                // The flags are icons: say what they mean instead
+                var meanings = Array.prototype.map.call(cell.querySelectorAll('[data-tip]'), function (el) {
+                    return el.getAttribute('data-tip');
+                });
+                return {
+                    el: cell,
+                    text: cell.classList.contains('ir-flags') && meanings.length ? meanings.join(' · ') :
+                        cell.innerText.replace(/\s+/g, ' ').trim()
+                };
             }
 
-            element.on('mouseover', function (event) {
-                var cell = event.target.closest ? event.target.closest('.resultlistrow.ir-row > span') : null;
-                if (cell === tipCell) return;
-                hideCellTip();
-                if (!cell || cell.scrollWidth <= cell.clientWidth) return;
-                tipCell = cell;
+            function hideTip() {
+                tipEl = null;
+                if (!scope.cellTip.open) return;
+                if (scope.$root.$$phase) {
+                    scope.cellTip.open = false;
+                } else {
+                    scope.$apply(function () { scope.cellTip.open = false; });
+                }
+            }
+
+            function showTip(tip) {
+                hideTip();
+                tipEl = tip.el;
                 var anchor = element[0].querySelector('.ir-tip-anchor');
-                var box = cell.getBoundingClientRect();
+                var box = tip.el.getBoundingClientRect();
                 var host = element[0].querySelector('.individual-results').getBoundingClientRect();
                 anchor.style.left = (box.left - host.left) + 'px';
                 anchor.style.top = (box.top - host.top) + 'px';
                 anchor.style.width = box.width + 'px';
                 anchor.style.height = box.height + 'px';
-                // Opened a digest after the close above, so the tooltip is
-                // placed afresh over this cell rather than left on the last
+                // Opened a digest after the close, so the tooltip is placed
+                // afresh over this one rather than left on the last
                 $timeout(function () {
-                    if (tipCell !== cell) return;
-                    // The flags are icons: say what they mean instead
-                    var titles = Array.prototype.map.call(cell.querySelectorAll('[title]'), function (el) {
-                        return el.getAttribute('title');
-                    });
-                    scope.cellTip.text = cell.classList.contains('ir-flags') && titles.length ? titles.join(' · ') :
-                        cell.innerText.replace(/\s+/g, ' ').trim();
+                    if (tipEl !== tip.el) return;
+                    scope.cellTip.text = tip.text;
                     scope.cellTip.open = true;
                 });
+            }
+
+            function onMouseOver(event) {
+                var tip = tipFor(event.target);
+                if (tip && tip.el === tipEl) return;
+                if (tip) showTip(tip); else hideTip();
+            }
+
+            // Capture phase: ahead of the row's own click, which opens the result
+            function onTap(event) {
+                var tip = tipFor(event.target, true);
+                if (!tip) {
+                    hideTip();
+                    return;
+                }
+                event.stopPropagation();
+                if (tip.el === tipEl) hideTip(); else showTip(tip);
+            }
+
+            if ($rootScope.noHover) {
+                element[0].addEventListener('click', onTap, true);
+                // A tap outside the list closes it too
+                $document.on('click', hideTip);
+            } else {
+                element.on('mouseover', onMouseOver);
+                element.on('mouseleave', hideTip);
+            }
+            scope.$on('$destroy', function () {
+                element.off('mouseover mouseleave');
+                element[0].removeEventListener('click', onTap, true);
+                $document.off('click', hideTip);
             });
-            element.on('mouseleave', hideCellTip);
-            scope.$on('$destroy', function () { element.off('mouseover mouseleave'); });
 
             scope.pageEnd = function () {
                 return Math.min(scope.pagination.current * PAGE_SIZE, scope.rows.length);

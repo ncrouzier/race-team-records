@@ -17225,6 +17225,21 @@ footer {
 .individual-results .ir-list-admin .ir-row {
   grid-template-columns: var(--ir-num-w, 38px) 92px minmax(120px, 1.2fr) 40px minmax(160px, 1.8fr) 100px 74px 48px 56px 92px 62px 28px;
 }
+@media (max-width: 1199px) {
+  .individual-results .ir-row {
+    grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px;
+    column-gap: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 12px;
+  }
+  .individual-results .ir-head {
+    font-size: 11px;
+  }
+  .individual-results .ir-list-admin .ir-row {
+    grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px 26px;
+  }
+}
 .individual-results .ir-row > span.ir-admin {
   overflow: visible;
   text-align: right;

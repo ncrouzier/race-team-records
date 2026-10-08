@@ -23,7 +23,7 @@
         <div class="results-view-toggle results-filter-bar-end" role="tablist">
             <a role="tab" aria-selected="false" ui-sref="/results"><i class="fa fa-flag-checkered"></i> Race Results</a>
             <a class="active" role="tab" aria-selected="true" ui-sref="/individualresults"
-                ui-sref-opts="{inherit: false}"><i class="fa fa-user"></i> Individual Result</a>
+                ui-sref-opts="{inherit: false}"><i class="fa fa-user"></i> Individual Results</a>
         </div>
     </div>
 
@@ -116,12 +116,12 @@
             <span class="ir-num ir-time">{{::row.timeText}}</span>
             <span class="ir-num">{{::row.paceText}}</span>
             <span class="ir-num">{{::row.agegrade ? (row.agegrade | number:1) + '%' : ''}}</span>
-            <span class="ir-num ir-place" title="{{::row.genderrank ? 'Gender ' + row.genderrank : ''}}{{::row.agerank ? ' · age group ' + row.agerank : ''}}">
+            <span class="ir-num ir-place" data-tip="{{::row.genderrank ? 'Gender ' + row.genderrank : ''}}{{::row.agerank ? ' · age group ' + row.agerank : ''}}">
                 <span ng-if="::!!row.overallrank">{{::row.overallrank}}<small>/{{::row.overalltotal}}</small></span>
             </span>
             <span class="ir-flags">
-                <span ng-if="::row.pb" title="Personal best">🧨</span><span ng-if="::row.record"
-                    title="Team record">🔥</span><span ng-if="::row.agBest" title="Age grade best">🎖️</span>
+                <span ng-if="::row.pb" data-tip="Personal best">🧨</span><span ng-if="::row.record"
+                    data-tip="Team record">🔥</span><span ng-if="::row.agBest" data-tip="Age grade best">🎖️</span>
             </span>
             <!-- Admin: edit / delete, folded under one button -->
             <span class="ir-admin" ng-if="user.role === 'admin'" ng-click="$event.stopPropagation()"
@@ -148,9 +148,10 @@
         <dir-pagination-controls pagination-id="individual" on-page-change="pageChanged()"></dir-pagination-controls>
     </div>
 
-    <!-- One tooltip for the whole list: moved over a cell whose text is cut
-         off (with "…") and showing all of it. One instead of one per cell
-         keeps a page of 100 rows light. -->
+    <!-- One tooltip for the whole list, moved over what it describes: a cell
+         whose text is cut off (with "…"), showing all of it, or anything with
+         a data-tip (the icons, the place). One instead of one per cell keeps
+         a page of 100 rows light. -->
     <span class="ir-tip-anchor" uib-tooltip="{{cellTip.text}}" tooltip-is-open="cellTip.open"
         tooltip-trigger="'none'" tooltip-append-to-body="true" tooltip-placement="top"></span>
 </div>

@@ -46,6 +46,7 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
     // when it lands elsewhere. Use as tooltip-trigger="$root.tapTooltipTrigger".
     var noHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
     $rootScope.tapTooltipTrigger = noHover ? 'outsideClick' : 'mouseenter';
+    $rootScope.noHover = noHover;
 
     // Lives on $rootScope (rather than a per-controller $scope) so the nav
     // badge and the Activity Log page itself share one live value — marking

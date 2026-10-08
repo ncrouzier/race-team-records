@@ -1,0 +1,225 @@
+<!-- Advanced Filters, shared by Team Results "By race" and "By result"
+     (<advanced-filter-panel>, which shares its host's scope; the handlers
+     come from AdvancedFiltersService.attach and the host's applyFilters).
+     Each host shows its active filters itself, below the panel
+     (.active-filters-bar), so they stay visible when the panel is folded. -->
+<div class="filter-panel" ng-show="showAdvancedFilters">
+    <div class="filter-header">
+                      <div class="filter-title">
+              <i class="fa fa-filter"></i>
+              <span>Advanced Filters <span ng-if="getActiveFilterCount() > 0" class="filter-count">{{getActiveFilterCount()}}</span></span>
+          </div>
+        <div class="filter-controls">
+            <button class="btn btn-sm " ng-click="clearAllFilters()" >
+                <i class="fa fa-times"></i> Clear All
+            </button>
+            <button class="btn btn-sm " ng-click="toggleFilterPanel()">
+                <i class="fa" ng-class="filterPanelExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="filter-content" ng-show="filterPanelExpanded">
+                                <div class="row">
+                        <!-- Date Range Filter -->
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label class="filter-label">
+                                    <i class="fa fa-calendar"></i> Date Range
+                                </label>
+                                <div class="date-range-wrapper">
+                                    <div class="date-input-group">
+                                        <input type="date" 
+                                               class="form-control" 
+                                               ng-model="filters.dateFrom" 
+                                               ng-change="applyFilters()"
+                                               placeholder="From">
+                                    </div>
+                                    <div class="date-separator">to</div>
+                                    <div class="date-input-group">
+                                        <input type="date" 
+                                               class="form-control" 
+                                               ng-model="filters.dateTo" 
+                                               ng-change="applyFilters()"
+                                               placeholder="To">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Distance Range Slider -->
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label class="filter-label">
+                                    <i class="fa fa-road"></i> Distance Range (miles)
+                                </label>
+                                <div class="distance-slider-container">
+                                    <div class="distance-range-display">
+                                        <div class="distance-input-group">
+                                            <label class="distance-label">
+                                                <i class="fa fa-circle" style="color: #4fc3f7;"></i> Min:
+                                            </label>
+                                            <input type="number" 
+                                                   class="distance-input" 
+                                                   ng-model="filters.distanceMinUI" 
+                                                   ng-change="onDistanceMinInputChange()"
+                                                   min="0" 
+                                                   step="0.1"
+                                                   placeholder="0">
+                                            <span class="distance-unit">mi</span>
+                                        </div>
+                                        <div class="distance-input-group">
+                                            <label class="distance-label">
+                                                <i class="fa fa-circle" style="color: #006687;"></i> Max:
+                                            </label>
+                                            <input type="number" 
+                                                   class="distance-input" 
+                                                   ng-model="filters.distanceMaxUI" 
+                                                   ng-change="onDistanceMaxInputChange()"
+                                                   min="0" 
+                                                   step="0.1"
+                                                   placeholder="{{distanceRange.max}}">
+                                            <span class="distance-unit">mi</span>
+                                        </div>
+                                    </div>
+                                    <div class="nouislider-container">
+                                        <div id="distance-slider" class="range-slider"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+            <!-- Age grade range: results outside it are left out (and on
+                 "By race", races left with none) -->
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label class="filter-label">
+                        <i class="fa fa-percent"></i> Age Grade Range
+                    </label>
+                    <div class="distance-slider-container">
+                        <div class="distance-range-display">
+                            <div class="distance-input-group">
+                                <label class="distance-label">
+                                    <i class="fa fa-circle" style="color: #4fc3f7;"></i> Min:
+                                </label>
+                                <input type="number" class="distance-input" ng-model="filters.agMinUI"
+                                    ng-change="onAgeGradeMinInputChange()" min="0" step="0.1" placeholder="0">
+                                <span class="distance-unit">%</span>
+                            </div>
+                            <div class="distance-input-group">
+                                <label class="distance-label">
+                                    <i class="fa fa-circle" style="color: #006687;"></i> Max:
+                                </label>
+                                <input type="number" class="distance-input" ng-model="filters.agMaxUI"
+                                    ng-change="onAgeGradeMaxInputChange()" min="0" step="0.1"
+                                    placeholder="{{ageGradeRange.max}}">
+                                <span class="distance-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="nouislider-container">
+                            <div id="agegrade-slider" class="range-slider"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    </div>
+        
+        <div class="row">
+                        <!-- Race Type Filter -->
+                        <div class="col-sm-3">
+                            <div class="form-group">
+                                <label class="filter-label">
+                                    <i class="fa fa-flag-checkered"></i> Race Type <span class="feedback-message" ng-show="showRaceTypeFeedback">Added to filter </span>
+                                </label>
+                                <ui-select name="raceType" ng-model="selectedRaceType" theme="select2" style="width: 100%;" ng-change="addRaceTypeToFilter(selectedRaceType); selectedRaceType = null;">
+                                    <ui-select-match placeholder="Add a race type">
+                                      <div ng-bind-html="($select.selected.name +' <span class=\''+getRaceTypeClass($select.selected.surface)+'\'>(' + $select.selected.surface +')</span> - ' + $select.selected.count + ' races')"></div>
+                                    </ui-select-match>
+                                    <ui-select-choices repeat="racetype in availableRaceTypes | propsFilter: {name: $select.search, surface: $select.search}">
+                                      <div ng-class="{ 'tracksurface': racetype.surface == 'track', 'trailsurface': racetype.surface == 'trail', 'roadsurface': racetype.surface == 'road', 'ultrasurface': racetype.surface == 'ultra', 'othersurface': racetype.surface == 'other'}">
+                                        <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span> - ' + racetype.count + ' races') | highlightignorespan: $select.search"></div>                                
+                                      </div>
+                                    </ui-select-choices>
+                                </ui-select>             
+                            </div>
+                        </div>
+            <!-- Location Filter -->
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="filter-label">
+                        <i class="fa fa-map-marker"></i> Countries {{selectedCountry}} <span class="feedback-message" ng-show="showCountryFeedback">Added to filter </span>
+                    </label>
+                                              <ui-select name="country" ng-model="selectedCountry" theme="select2" style="width: 100%;" ng-change="addCountryToFilter(selectedCountry); selectedCountry = null;">
+                        <ui-select-match placeholder="Add a country">
+                          <div ng-bind-html="$select.selected.name + ' (' + $select.selected.count + ' races)'"></div>
+                        </ui-select-match>
+                        <ui-select-choices repeat="country in availableCountries | propsFilter: {name: $select.search, code: $select.search}">
+                          <div ng-class="">
+                            <div ng-bind-html="(country.name + ' (' + country.code + ') - ' + country.count + ' races')| highlightignorespan: $select.search"></div>
+                            </span>
+                          </div>
+                        </ui-select-choices>
+                      </ui-select>
+                      
+                </div>
+            </div>  
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label class="filter-label">
+                        <i class="fa fa-map-marker"></i> States <span class="feedback-message" ng-show="showStateFeedback">Added to filter </span>
+                    </label>                        
+                                              <ui-select name="state" ng-model="selectedState" theme="select2" style="width: 100%;" ng-change="addStateToFilter(selectedState); selectedState = null;">
+                        <ui-select-match placeholder="Add a state">
+                          <div ng-bind-html="$select.selected.name + ' (' + $select.selected.count + ' races)'"></div>
+                        </ui-select-match>
+                        <ui-select-choices repeat="state in availableStates | propsFilter: {name: $select.search, code: $select.search}">
+                          <div ng-class="">
+                            <div ng-bind-html="(state.name + ' (' + state.code + ') - ' + state.count + ' races')| highlightignorespan: $select.search"></div>
+                            </span>
+                          </div>
+                        </ui-select-choices>
+                      </ui-select>                         
+                </div>                    
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group">
+                    <label uib-tooltip="Only show races where ALL selected members participated" uib-tooltip-append-to-body="true"
+                        tooltip-placement="top" class="hoverhand filter-label">
+                        <i class="fa fa-users"></i>Members <span class="feedback-message" ng-show="showMemberFeedback">Added to
+                            filter </span>
+                    </label>
+                    <ui-select name="member" ng-model="selectedMember" theme="select2" style="width: 100%;"
+                        ng-change="addMemberToFilter(selectedMember); selectedMember = null;">
+                        <ui-select-match placeholder="Add a member">{{$select.selected.firstname}} {{$select.selected.lastname}} <i
+                                ng-show="$select.selected.sex == 'Male'" class="fa fa-mars" title="Men"></i><i
+                                ng-show="$select.selected.sex == 'Female'" class="fa fa-venus" title="Women"></i></ui-select-match>
+                        <ui-select-choices repeat="member in allMembers | filter: $select.search">
+                            <span ng-class="{'past-member' : member.memberStatus === 'past'}">
+                                <div ng-bind-html="(member.firstname +' ' + member.lastname + (member.memberStatus === 'past' ? ' (past)' : '')) | highlight: $select.search"></div>
+                            </span>
+                        </ui-select-choices>
+                    </ui-select>
+                </div>
+                </div>
+        </div>
+
+        <!-- Admin only: find races that still need ranking data filled in -->
+        <div class="row" ng-if="user.role == 'admin'">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    <label class="hoverhand filter-label"
+                        uib-tooltip="Only show races that still have at least one result missing this ranking field"
+                        uib-tooltip-append-to-body="true" tooltip-placement="top">
+                        <i class="fa fa-exclamation-triangle"></i> Missing Ranking Data
+                    </label>
+                    <select class="form-control" ng-model="filters.missingRanking"
+                        ng-change="applyFilters()"
+                        ng-options="option.label for option in missingRankingOptions track by option.key">
+                        <option value="">Not filtered</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

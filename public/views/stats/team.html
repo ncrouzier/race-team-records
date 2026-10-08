@@ -142,13 +142,18 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="panel panel-default">
-                    <div class="panel-heading">
+                    <div class="panel-heading most-races-heading">
                         <h4><i class="fa fa-flag-checkered"></i> Most Races Completed</h4>
+                        <select class="form-control input-sm" ng-model="mostRacesFilter.type"
+                            ng-change="refreshMostRaces()" title="Count only one kind of race (all surfaces)">
+                            <option value="">All races</option>
+                            <option ng-repeat="g in raceTypeGroups" value="{{g.key}}">{{g.label}}</option>
+                        </select>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
                             <li class="list-group-item text-left"
-                                ng-repeat="member in miscStats.mostRaces track by $index" style="border: none;"
+                                ng-repeat="member in mostRacesList() track by $index" style="border: none;"
                                 ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && member.username === user.member.username}"
                                 ng-mouseenter="hover = true" ng-mouseleave="hover = false">
                                 <div class="row">
@@ -159,9 +164,9 @@
                                             racing</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})"
+                                        <a ng-click="goToMemberRaces(member)"
                                             class="hoverhandandunderline"
-                                            uib-tooltip="View all results for {{member.name}}"
+                                            uib-tooltip="View these results for {{member.name}}"
                                             tooltip-placement="left">{{member.races}} races</a><span class="hoverhand"
                                             uib-tooltip="({{member.parkrunRaces}} parkrun races)"
                                             tooltip-placement="right" ng-show="member.parkrunRaces">*</span>
@@ -251,7 +256,7 @@
                                         <br><small>{{member.races}} total races</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToResultsWithQuery({members:[{username: member.username, ranking: '1'}], year: miscStats.year !== 'All Time' ? miscStats.year : undefined})"
+                                        <a ng-click="goToMemberWins(member)"
                                             class="hoverhandandunderline"
                                             title="View all wins for {{member.name}}">{{member.wins}} wins</a>
                                     </div>
@@ -279,7 +284,10 @@
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <a
                                                 ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
-                                        <br><small><span class="hoverhandandunderline resultEvent"
+                                        <br><small><a class="resultEvent" ng-if="member.bestAgeGradeResultId"
+                                                ui-sref="/results/result({ resultId: member.bestAgeGradeResultId })"
+                                                title="Open this result">{{member.bestAgeGradeRace.racename}}</a><span
+                                                class="hoverhandandunderline resultEvent" ng-if="!member.bestAgeGradeResultId"
                                                 ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span>
                                             (avg: {{member.avgAgeGrade}}%)</small>
                                     </div>

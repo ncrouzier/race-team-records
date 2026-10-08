@@ -92,7 +92,7 @@ app.directive('usaMap', ['$timeout', '$window', 'UtilsService', '$state', functi
                 if (dataset[d.id] && dataset[d.id].count > 0) {
                   d3.select(this).style('cursor', 'pointer');
                   d3.select(this).on('click', function (ele) {
-                    $state.go("/results", { search: "{\"states\":[\"" + ele.id + "\"]}" });
+                    $state.go("/results", { state: ele.id }, { inherit: false });
                   });
                 }
               });
@@ -184,7 +184,7 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService', '$state', func
                 if (dataset[d.id] && dataset[d.id].count > 0) {
                   d3.select(this).style('cursor', 'pointer');
                   d3.select(this).on('click', function (ele) {
-                    $state.go("/results", { search: "{\"countries\":[\"" + ele.id + "\"]}" });
+                    $state.go("/results", { country: ele.id }, { inherit: false });
                   });
                 }
               });

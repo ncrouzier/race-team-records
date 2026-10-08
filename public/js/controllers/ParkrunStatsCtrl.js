@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'ResultsService', 'MembersService', 'UtilsService', '$filter', '$state', function($scope, ResultsService, MembersService, UtilsService, $filter, $state) {
+angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'ResultsService', 'MembersService', 'UtilsService', '$filter', '$state', 'AdvancedFiltersService', function($scope, ResultsService, MembersService, UtilsService, $filter, $state, AdvancedFiltersService) {
 
     $scope.loading = true;
     $scope.teamStats = {};
@@ -267,7 +267,7 @@ angular.module('mcrrcApp').controller('ParkrunStatsController', ['$scope', 'Resu
                 cleanedParams[key] = value;
             }
         });
-        $state.go('/results', { search: JSON.stringify(cleanedParams) });
+        AdvancedFiltersService.goToRaceList($state, cleanedParams);
     };
 
     // Initialize

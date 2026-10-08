@@ -41,8 +41,14 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                                 var raceDate = new Date(race.racedate);
                                 if (!latestDate || raceDate > latestDate) {
                                     latestDate = raceDate;
-                                    latestResult = result;
-                                    latestResult.race = race;
+                                    // A copy carrying its race. Setting .race on
+                                    // the cached result itself would loop it back
+                                    // to the race holding it (race -> results ->
+                                    // result -> race), and any later deep compare
+                                    // or copy of the race list — the member stats
+                                    // page's watchers, say — would recurse until
+                                    // the stack ran out ("too much recursion").
+                                    latestResult = angular.extend({}, result, { race: race });
                                 }
                                 break;
                             }

@@ -15,7 +15,9 @@
                 <div class="col-sm-4 dashboard-col">
                     <div class="dashboard-section-title"><i class="fa fa-flag-checkered"></i> Latest Race</div>
                     <div ng-if="latestResult" class="dashboard-section-body">
-                        <a class="hoverhand dashboard-link" ng-click="showRaceByIdModal(latestResult.race._id)">
+                        <!-- Their own result in that race, not the race -->
+                        <a class="dashboard-link" ui-sref="/results/result({ resultId: latestResult._id })"
+                            title="Open your result">
                             <b>{{latestResult.race.racename}}</b>
                         </a>
                         <div class="feed-meta">{{latestResult.race.racedate | date:'mediumDate':'UTC'}}</div>
@@ -143,8 +145,8 @@
                                         <span class="time">{{::ach.achievements[0].value.time |
                                             secondsToTimeString}}</span>
                                         with the team at
-                                        <b><a class="hoverhand"
-                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                                title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
                                 </div>
@@ -159,8 +161,8 @@
                                                 ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                         ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race with
                                         the team at
-                                        <b><a class="hoverhand"
-                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                                title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
                                 </div>
@@ -173,8 +175,8 @@
                                                 ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                         achieved a new age grade performance best of
                                         {{::ach.achievements[0].value.agegrade}}% at
-                                        <b><a class="hoverhand"
-                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>.
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                                title="Open this result">{{::ach.race.racename}}</a></b>.
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
                                 </div>
@@ -191,8 +193,8 @@
                                         <span class="time">{{::ach.achievements[0].value.time |
                                             secondsToTimeString}}</span>
                                         for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) at
-                                        <b><a class="hoverhand"
-                                                ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>!
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                                title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
                                 </div>
@@ -206,8 +208,8 @@
                                     <b><a
                                             ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                     had multiple achievements at
-                                    <b><a class="hoverhand"
-                                            ng-click="showRaceModal(ach.race)">{{::ach.race.racename}}</a></b>:
+                                    <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                            title="Open this result">{{::ach.race.racename}}</a></b>:
                                 </div>
                                 <ul class="feed-sublist">
                                     <li ng-repeat="a in ach.achievements" ng-if="a.name.toLowerCase() !== 'birthday'"

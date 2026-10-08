@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -440,6 +440,50 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
             if (saved) {
                 load({ fresh: true });
             }
+        }, angular.noop);
+    };
+
+    // A new result for this race: the form opens with the race's shared
+    // details (race, date, location, type, result link, field size) filled
+    // in from one of its results, leaving the runner, time and places.
+    // "Save and add another" keeps the modal open, so the page reloads once
+    // it closes, however it closes, if anything was added.
+    $scope.addResult = function () {
+        if (!$scope.user || $scope.user.role !== 'admin') return;
+        var results = $scope.raceinfo && $scope.raceinfo.results;
+        if (!results || !results.length) return;
+        var added = false;
+        var onCreated = function (saved) {
+            if (saved) added = true;
+        };
+        var reloadIfAdded = function () {
+            if (added) load({ fresh: true });
+        };
+        ResultsService.showAddResultModal(results[0], onCreated).then(function (saved) {
+            onCreated(saved);
+            reloadIfAdded();
+        }, reloadIfAdded);
+    };
+
+    // Like editing, deleting can move other results' rankings and the race's
+    // figures, so the page reloads. The server drops a race left with no
+    // results, so deleting the last one leaves for the results list.
+    $scope.deleteResult = function (result) {
+        if (!$scope.user || $scope.user.role !== 'admin') return;
+        var names = (result.members || []).map(function (m) {
+            return m.firstname + ' ' + m.lastname;
+        }).join(', ');
+        var dlg = dialogs.confirm('Delete result?',
+            'Delete ' + (names || 'this result') + "'s result at " + $scope.raceinfo.racename + '? This cannot be undone.');
+        dlg.result.then(function () {
+            var wasLast = $scope.raceinfo.results.length === 1;
+            ResultsService.deleteResult(result).then(function () {
+                if (wasLast) {
+                    $state.go('/results');
+                } else {
+                    load({ fresh: true });
+                }
+            });
         }, angular.noop);
     };
 

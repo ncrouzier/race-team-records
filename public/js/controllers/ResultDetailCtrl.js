@@ -185,6 +185,34 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
         return $scope.stats && $scope.stats.sex === 'Female' ? 'women' : 'men';
     };
 
+    // Each "How this time stands" line opens the "By result" list it was
+    // ranked against: same distance, only results that count for standings,
+    // fastest first, this result highlighted — so its position in that list
+    // is the rank shown here. Built once per kind, so ui-sref sees a stable
+    // object.
+    var standingLinks = {};
+    $scope.standingParams = function (kind) {
+        if (!$scope.stats || !$scope.race || !$scope.result) return {};
+        if (standingLinks[kind]) return standingLinks[kind];
+        var type = $scope.race.racetype || {};
+        var params = {
+            distance: (type.name || '').toLowerCase(),
+            surface: (type.surface || '').toLowerCase() || null,
+            eligible: '1',
+            sort: 'time',
+            highlight: $scope.result._id
+        };
+        var sex = $scope.stats.sex === 'Female' ? 'f' : 'm';
+        var year = String($scope.stats.year);
+        if (kind === 'personal') params.runner = $scope.result.members[0].username;
+        if (kind === 'teamYear') params.year = year;
+        if (kind === 'teamGender') params.sex = sex;
+        if (kind === 'teamGenderYear') { params.sex = sex; params.year = year; }
+        if (kind === 'teamAgeGroup') { params.sex = sex; params.age = String($scope.stats.teamAgeGroup.age); }
+        standingLinks[kind] = params;
+        return params;
+    };
+
     // "5th", or "T5th" when other results share the time
     $scope.rankText = function (standing) {
         if (!standing) return '';
@@ -352,6 +380,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
                 return;
             }
             $scope.result = detail.result;
+            standingLinks = {};
             $scope.race = detail.result.race;
             PageTitleService.set($scope, $filter('membersNamesFilter')(detail.result.members) + ' – ' +
                 $scope.race.racename + ' (' + new Date($scope.race.racedate).getUTCFullYear() + ')');

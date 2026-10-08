@@ -24,6 +24,10 @@
                     ng-click="editRace()" uib-tooltip="Edit race details" tooltip-placement="top">
                     <i class="fa fa-pencil"></i>
                 </button>
+                <button ng-if="user.role === 'admin' && raceinfo.results.length" class="btn btn-xs btn-default rd-edit-btn"
+                    ng-click="addResult()" uib-tooltip="Add a result to this race" tooltip-placement="top">
+                    <i class="fa fa-plus"></i>
+                </button>
             </h2>
 
             <div class="rd-racemeta">
@@ -194,18 +198,29 @@
                                         ng-if="result.comments" uib-tooltip-html="result.comments"></i>
                                 </td>
                                 <td class="text-center">
-                                    <span title="Age group ranking"
-                                        ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                                    <span class="hoverhand" ng-if="result.ranking.agerank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
                                 </td>
                                 <td class="text-center">
-                                    <span title="Gender ranking"
-                                        ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                                    <span class="hoverhand" ng-if="result.ranking.genderrank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
                                 </td>
                                 <td class="text-center">
-                                    <span title="Overall ranking"
-                                        ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"></span>
+                                    <span class="hoverhand" ng-if="result.ranking.overallrank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
                                 </td>
                                 <td class="text-center" ng-if="!raceinfo.isMultisport">
+                                    <!-- A tap on the pace (or a rank) shows its tooltip rather than
+                                         opening the result, which matters on a phone -->
                                     <result-pace race="raceinfo" result="result"></result-pace>
                                 </td>
                                 <td class="text-center" ng-if="raceinfo.isMultisport">
@@ -223,6 +238,10 @@
                                     <button type="button" class="btn btn-xs btn-default"
                                         ng-click="$event.stopPropagation(); editResult(result)" title="Edit result">
                                         <i class="fa fa-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-default rd-delete-btn"
+                                        ng-click="$event.stopPropagation(); deleteResult(result)" title="Delete result">
+                                        <i class="fa fa-trash"></i>
                                     </button>
                                 </td>
                             </tr>

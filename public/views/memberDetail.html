@@ -193,21 +193,21 @@
                                             ng-show="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')"
                                             class="hoverhand" title="Age Group ranking"
                                             ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'">
+                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" ng-click="$event.stopPropagation()">
                                     </div>
                                     <div class="col-sm-1" style=" text-align: center;">
                                         <span
                                             ng-show="(result.ranking.genderrank !== undefined && result.ranking.genderrank !== '')"
                                             class="hoverhand" title="Gender ranking"
                                             ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></span>
+                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" ng-click="$event.stopPropagation()"></span>
                                     </div>
                                     <div class="col-sm-1" style=" text-align: center;">
                                         <span
                                             ng-show="(result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')"
                                             class="hoverhand" title="Overall ranking"
                                             ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"></span>
+                                            uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" ng-click="$event.stopPropagation()"></span>
                                     </div>
                                     <div class="col-sm-2" ng-show="!result.race.isMultisport"
                                         style="text-align: center;">

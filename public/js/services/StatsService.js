@@ -91,6 +91,75 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
         return promise;
     };
     
+    // "Most Races Completed" for one kind of race. All surfaces count, and
+    // the track 5000m and 10000m go with the 5k and 10k.
+    var RACE_TYPE_GROUPS = {
+        '1 mile': function (t) { return t.name === '1 mile'; },
+        '5k': function (t) { return t.name === '5k' || t.name === '5000m'; },
+        '10k': function (t) { return t.name === '10k' || t.name === '10000m'; },
+        '10 miles': function (t) { return t.name === '10 miles'; },
+        'half': function (t) { return t.name === 'Half Marathon'; },
+        'marathon': function (t) { return t.name === 'Marathon'; },
+        'ultra': function (t) { return t.surface === 'ultra'; }
+    };
+    this.RACE_TYPE_GROUPS = [
+        { key: '1 mile', label: '1 mile' },
+        { key: '5k', label: '5k' },
+        { key: '10k', label: '10k' },
+        { key: '10 miles', label: '10 miles' },
+        { key: 'half', label: 'Half marathon' },
+        { key: 'marathon', label: 'Marathon' },
+        { key: 'ultra', label: 'Ultra' }
+    ];
+
+    // Top 10 by races of that kind in the year ("All Time" for every year),
+    // shaped like teamMemberStats.mostRaces. Also returns the race types that
+    // matched, as "name|surface" for the results list's ?types= param.
+    this.getMostRacesByType = function(year, groupKey) {
+        var inGroup = RACE_TYPE_GROUPS[groupKey];
+        return $q.when(ResultsService.getRaceResultsWithCacheSupport({
+            "sort": '-racedate -order racename',
+            "preload": false
+        })).then(function(races) {
+            var counts = {};
+            var types = {};
+            (races || []).forEach(function(race) {
+                if (!race.racetype || !inGroup(race.racetype)) return;
+                var raceYear = new Date(race.racedate).getUTCFullYear();
+                if (year !== "All Time" && raceYear !== parseInt(year)) return;
+                types[(race.racetype.name + '|' + race.racetype.surface).toLowerCase()] = true;
+                var isParkrun = race.racename && race.racename.toLowerCase().includes('parkrun');
+                (race.results || []).forEach(function(result) {
+                    (result.members || []).forEach(function(member) {
+                        var c = counts[member._id] || (counts[member._id] = {
+                            name: member.firstname + ' ' + member.lastname,
+                            username: member.username,
+                            races: 0,
+                            parkrunRaces: 0,
+                            years: new Set()
+                        });
+                        c.races++;
+                        if (isParkrun) c.parkrunRaces++;
+                        c.years.add(raceYear);
+                    });
+                });
+            });
+            var mostRaces = Object.keys(counts).map(function(id) {
+                var c = counts[id];
+                return {
+                    id: id,
+                    name: c.name,
+                    username: c.username,
+                    races: c.races,
+                    parkrunRaces: c.parkrunRaces,
+                    yearsRacing: c.years.size,
+                    avgRacesPerYear: Math.round((c.races / c.years.size) * 100) / 100
+                };
+            }).sort(function(a, b) { return b.races - a.races; }).slice(0, 10);
+            return { mostRaces: mostRaces, types: Object.keys(types).sort().join(',') };
+        });
+    };
+
     this.calculateStats = function(year) {
         var fromDate = new Date(Date.UTC(2013, 0, 1)).getTime();
         var now = new Date();
@@ -198,6 +267,7 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                                 ageGradeCount: 0,
                                 bestAgeGrade: 0,
                                 bestAgeGradeRace: '',
+                                bestAgeGradeResultId: null,
                                 years: new Set(),
                                 states: new Set(),
                                 otherCountries: new Set(),
@@ -245,6 +315,8 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                             if (result.agegrade > memberStats[memberId].bestAgeGrade) {
                                 memberStats[memberId].bestAgeGrade = result.agegrade;
                                 memberStats[memberId].bestAgeGradeRace = race;
+                                // The result itself, so the stats page can open it
+                                memberStats[memberId].bestAgeGradeResultId = result._id;
                             }
                         }
 
@@ -284,6 +356,7 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
                 avgAgeGrade: stats.ageGradeCount > 0 ? Math.round((stats.totalAgeGrade / stats.ageGradeCount) * 100) / 100 : 0,
                 bestAgeGrade: Math.round(stats.bestAgeGrade * 100) / 100,
                 bestAgeGradeRace: stats.bestAgeGradeRace,
+                bestAgeGradeResultId: stats.bestAgeGradeResultId,
                 yearsRacing: stats.years.size,
                 uniqueLocations: stats.states.size + stats.otherCountries.size,
                 uniqueStates: stats.states.size,

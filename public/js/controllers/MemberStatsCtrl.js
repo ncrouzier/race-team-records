@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'StatsService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, StatsService) {
+angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope', '$location','$timeout','$state','$stateParams','$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs','$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'StatsService', 'AdvancedFiltersService', function($scope, $location,$timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, StatsService, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -223,6 +223,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
             ageGroupWins: 0,
             bestAgeGrade: 0,
             bestAgeGradeRace: null,
+            bestAgeGradeResultId: null,
             avgAgeGrade: 0,
             lastRaceDate: null,
             lastRaceName: '',
@@ -254,6 +255,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         let ageGradeCount = 0;
         let bestAgeGrade = 0;
         let bestAgeGradeRace = null;
+        let bestAgeGradeResultId = null;
 
         results.forEach(result => {
             // Count races this year
@@ -426,6 +428,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
                 if (result.agegrade > bestAgeGrade) {
                     bestAgeGrade = result.agegrade;
                     bestAgeGradeRace = result.race;
+                    bestAgeGradeResultId = result._id;
                 }
             }
 
@@ -443,6 +446,7 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         $scope.memberStats.avgRacesPerYear = results.length / years.size;
         $scope.memberStats.bestAgeGrade = bestAgeGrade;
         $scope.memberStats.bestAgeGradeRace = bestAgeGradeRace;
+        $scope.memberStats.bestAgeGradeResultId = bestAgeGradeResultId;
         $scope.memberStats.avgAgeGrade = ageGradeCount > 0 ? totalAgeGrade / ageGradeCount : 0;
 
         // Fun comparisons for the total miles: a football field is 120 yards
@@ -599,21 +603,66 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         }), 'All Time');
     };
     
-    // Navigation functions for stats links
-    $scope.goToResultsWithQuery = function(query) {
-        if (query && (query.members || query.distance || query.year || query.calendarDay || query.dateFrom)) {
-            $state.go('/results', { search: JSON.stringify(query) });
+    // A best age grade opens the result it came from; with no result id on
+    // file it falls back to the race, as it used to
+    $scope.openBestAgeGrade = function(resultId, race) {
+        if (resultId) {
+            $state.go('/results/result', { resultId: resultId });
+        } else if (race && $scope.showRaceModal) {
+            $scope.showRaceModal(race);
         }
     };
 
+    // Navigation functions for stats links
+    $scope.goToResultsWithQuery = function(query) {
+        if (query && (query.members || query.distance || query.year || query.calendarDay || query.dateFrom)) {
+            AdvancedFiltersService.goToRaceList($state, query);
+        }
+    };
+
+    // A slice of the Race Distance Distribution opens this member's results at
+    // that distance in the "By result" list — the same results the slice
+    // counts: track 5000m/10000m go with 5k/10k, and "Other" is every
+    // variable distance (odd distances, multisport, swim).
+    $scope.goToDistanceSlice = function(slice) {
+        if (!slice || !$scope.currentMember) return;
+        var params = { runner: $scope.currentMember.username };
+        if (slice.category === 'other') {
+            params.variable = '1';
+        } else {
+            var names = [slice.name.toLowerCase()];
+            if (slice.name === '5k') names.push('5000m');
+            if (slice.name === '10k') names.push('10000m');
+            params.distance = names.join(',');
+        }
+        $state.go('/individualresults', params, { inherit: false });
+    };
+
+    // A Racing Locations row opens this member's results there in the "By
+    // result" list: by state for US races, by country elsewhere (non-US
+    // races carry no state). Cached per row so ui-sref sees a stable object.
+    $scope.locationParams = function(location) {
+        if (!location || !$scope.currentMember) return {};
+        if (!location.$params) {
+            location.$params = {
+                runner: $scope.currentMember.username,
+                state: location.state || null,
+                country: location.state ? null : (location.country || null)
+            };
+        }
+        return location.$params;
+    };
+
     // A calendar cell opens this member's results for that day of the year,
-    // across every year. Days they have never raced are not clickable.
+    // across every year, in the "By result" list. Days they have never raced
+    // are not clickable.
     $scope.goToMemberCalendarDay = function(day) {
         if (!day || !day.count || !$scope.currentMember) return;
-        $scope.goToResultsWithQuery({
-            members: [{ username: $scope.currentMember.username }],
-            calendarDay: { month: day.month, day: day.day, label: day.label }
-        });
+        $state.go('/individualresults', {
+            runner: $scope.currentMember.username,
+            month: String(day.month + 1),
+            day: String(day.day)
+        }, { inherit: false });
     };
 
     $scope.goToResultsWithLocationQuery = function(members, countries, states) {

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'AdvancedFiltersService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -576,8 +576,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         // Only navigate if we have valid parameters
         if (Object.keys(cleanedParams).length > 0) {
-            var searchQuery = JSON.stringify(cleanedParams);
-            $state.go('/results', { search: searchQuery });
+            AdvancedFiltersService.goToRaceList($state, cleanedParams);
         }
     };
 

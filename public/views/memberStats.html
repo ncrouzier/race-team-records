@@ -299,13 +299,22 @@
                                                     <div class="pb-stats">
                                                         <div class="pb-item"
                                                             ng-repeat="pb in currentMember.personalBests | orderBy:'distance' | pbFilter: surface">
+                                                            <!-- Both open the result itself; a PB with no
+                                                                 result on file falls back to its race -->
                                                             <div class="pb-name">
-                                                                <a class="hoverhandandunderline"
+                                                                <a class="hoverhandandunderline" ng-if="pb.result._id"
+                                                                    ui-sref="/results/result({ resultId: pb.result._id })"
+                                                                    uib-tooltip="{{pb.result.race.racename}} ({{pb.result.race.racedate | date:'M/d/y':'UTC'}})"
+                                                                    tooltip-append-to-body="true">{{pb.name}}</a>
+                                                                <a class="hoverhandandunderline" ng-if="!pb.result._id"
                                                                     ng-click="showRaceModal(pb.result.race)"
                                                                     uib-tooltip="{{pb.result.race.racename}} ({{pb.result.race.racedate | date:'M/d/y':'UTC'}})"
                                                                     tooltip-append-to-body="true">{{pb.name}}</a>
                                                             </div>
-                                                            <div class="pb-time hoverhand"
+                                                            <a class="pb-time hoverhand" ng-if="pb.result._id"
+                                                                ui-sref="/results/result({ resultId: pb.result._id })"
+                                                                title="Open this result">{{pb.time | secondsToTimeString}}</a>
+                                                            <div class="pb-time hoverhand" ng-if="!pb.result._id"
                                                                 ng-click="showRaceModal(pb.result.race)">
                                                                 {{pb.time | secondsToTimeString}}</div>
                                                         </div>
@@ -346,7 +355,8 @@
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="showRaceModal(memberStats.bestAgeGradeRace)">
+                                                        ng-click="openBestAgeGrade(memberStats.bestAgeGradeResultId, memberStats.bestAgeGradeRace)"
+                                                        title="Open this result">
                                                         <div class="stat-number">{{memberStats.bestAgeGrade |
                                                             number:2}}%</div>
                                                         <div class="stat-label">Best Age Grade</div>
@@ -372,7 +382,7 @@
                                         <div class="panel-body">
                                             <d3-pie-chart data="memberStats.raceTypeBreakdown.categories" width="350"
                                                 height="250"
-                                                on-slice-click="goToResultsWithQuery({members:[{username: currentMember.username}], distance: data.name})">
+                                                on-slice-click="goToDistanceSlice(data)">
                                             </d3-pie-chart>
                                         </div>
                                     </div>
@@ -389,7 +399,8 @@
                                                     dir-paginate="location in memberStats.locationBreakdown | itemsPerPage: 10 track by $index"
                                                     pagination-id="location-pagination">
                                                     <div class="location-name">
-                                                        <a ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], states:[location.state]})"
+                                                        <a ui-sref="/individualresults(locationParams(location))"
+                                                            ui-sref-opts="{inherit: false}"
                                                             class="hoverhandandunderline"
                                                             title="View all results for {{currentMember.firstname}} {{currentMember.lastname}} in {{location.displayName}}">
                                                             <span ng-if="location.stateName">

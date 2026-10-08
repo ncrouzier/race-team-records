@@ -41,6 +41,12 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         id: "_id"
     });
 
+    // Tooltips that matter on a phone (ranks, pace) open on hover where there
+    // is a mouse, and on tap where there is not — a tap closes them again
+    // when it lands elsewhere. Use as tooltip-trigger="$root.tapTooltipTrigger".
+    var noHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
+    $rootScope.tapTooltipTrigger = noHover ? 'outsideClick' : 'mouseenter';
+
     // Lives on $rootScope (rather than a per-controller $scope) so the nav
     // badge and the Activity Log page itself share one live value — marking
     // logs as seen from either place clears the dot everywhere immediately.
@@ -77,8 +83,13 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
     }
 
     // Track user activity on page navigation — also doubles as the ambient
-    // carrier for the unseen-activity header above.
-    $transitions.onSuccess({}, pingHeartbeat);
+    // carrier for the unseen-activity header above. A change that only moves
+    // a page's own dynamic URL params (each filter change on "By result")
+    // is not navigating anywhere, and would otherwise send one per keystroke.
+    $transitions.onSuccess({}, function(transition) {
+        if (transition.dynamic()) return;
+        pingHeartbeat();
+    });
 
     // An admin who stays on one page for a while won't trigger a
     // navigation-driven heartbeat, so ping periodically too — same purpose

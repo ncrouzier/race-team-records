@@ -121,14 +121,100 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             }
         })
         .state('/results', {
-            url: "/results",
+            // Filters live in the URL (see ResultsCtrl processStateParams)
+            url: "/results?q&types&from&to&minmi&maxmi&agmin&agmax&missing&distance&country&state&runner&month&day",
             templateUrl: "views/results.html",
             controller: 'ResultsController',
             params: {
-                search: null
+                // Older links: the filters as JSON, not in the URL
+                search: { value: null, dynamic: true },
+                q: { dynamic: true, squash: true, value: null },
+                types: { dynamic: true, squash: true, value: null },
+                from: { dynamic: true, squash: true, value: null },
+                to: { dynamic: true, squash: true, value: null },
+                minmi: { dynamic: true, squash: true, value: null },
+                maxmi: { dynamic: true, squash: true, value: null },
+                agmin: { dynamic: true, squash: true, value: null },
+                agmax: { dynamic: true, squash: true, value: null },
+                missing: { dynamic: true, squash: true, value: null },
+                distance: { dynamic: true, squash: true, value: null },
+                country: { dynamic: true, squash: true, value: null },
+                state: { dynamic: true, squash: true, value: null },
+                runner: { dynamic: true, squash: true, value: null },
+                month: { dynamic: true, squash: true, value: null },
+                day: { dynamic: true, squash: true, value: null }
             },
             onEnter: function () {
                 gtag('set', 'page_path', '/results.html');
+                gtag('event', 'page_view');
+            }
+        }).state('/individualresults', {
+            // Team Results "By result". Every filter, the sort and the page
+            // live in the URL, so a view can be linked to and lands as-is:
+            //   q         search words            race      race id
+            //   distance  e.g. 5k, marathon       surface   road, track, trail...
+            //   year      e.g. 2024               runner    member username
+            //   month     1-12                    day       1-31
+            //             (combine freely: month=1&day=1 is every January 1,
+            //             year=2024&month=3 is March 2024)
+            //   sex       m/f (or men/women)      division  open/master
+            //   age       exact age at the race   agemin / agemax  age range
+            //   sort      date|time|pace|agegrade|place|age|name|race
+            //   dir       asc|desc                page      1, 2, ...
+            //   under     time cutoff, strictly under: 16:00, 1:30:00
+            //   agmin     age grade at least, e.g. 80     agmax  at most
+            //   (distance and surface can list several: distance=5k,5000m,
+            //   surface=road,track)
+            //   state     US state code, e.g. MD   country   country code, e.g. CAN
+            //   variable  1: only variable distances (odd distances,
+            //             multisport, swim)
+            //   Advanced Filters panel:
+            //   types     race types, name|surface: types=5k|road,1 mile|track
+            //   from, to  date range, YYYY-MM-DD   minmi, maxmi  distance range
+            //   missing   (admin) a missing-ranking option, e.g. overallrank
+            //   runner, state and country take several, comma separated
+            //   eligible  1: only results that count for team standings
+            //             (record eligible, one runner, a time)
+            //   win       1: only wins (1st overall or of their gender)
+            //   highlight result id: opens on its page and marks the row
+            // All dynamic: changing them updates the URL without a reload.
+            url: "/individualresults?q&types&from&to&minmi&maxmi&missing&distance&surface&year&month&day&state&country&sex&division&race&runner&age&agemin&agemax&under&agmin&agmax&variable&eligible&win&sort&dir&page&highlight",
+            templateUrl: "views/individualResultsPage.html",
+            params: {
+                q: { value: null, squash: true, dynamic: true },
+                types: { value: null, squash: true, dynamic: true },
+                from: { value: null, squash: true, dynamic: true },
+                to: { value: null, squash: true, dynamic: true },
+                minmi: { value: null, squash: true, dynamic: true },
+                maxmi: { value: null, squash: true, dynamic: true },
+                missing: { value: null, squash: true, dynamic: true },
+                distance: { value: null, squash: true, dynamic: true },
+                surface: { value: null, squash: true, dynamic: true },
+                year: { value: null, squash: true, dynamic: true },
+                month: { value: null, squash: true, dynamic: true },
+                state: { value: null, squash: true, dynamic: true },
+                country: { value: null, squash: true, dynamic: true },
+                day: { value: null, squash: true, dynamic: true },
+                sex: { value: null, squash: true, dynamic: true },
+                division: { value: null, squash: true, dynamic: true },
+                race: { value: null, squash: true, dynamic: true },
+                runner: { value: null, squash: true, dynamic: true },
+                age: { value: null, squash: true, dynamic: true },
+                agemin: { value: null, squash: true, dynamic: true },
+                agemax: { value: null, squash: true, dynamic: true },
+                under: { value: null, squash: true, dynamic: true },
+                agmin: { value: null, squash: true, dynamic: true },
+                agmax: { value: null, squash: true, dynamic: true },
+                win: { value: null, squash: true, dynamic: true },
+                variable: { value: null, squash: true, dynamic: true },
+                eligible: { value: null, squash: true, dynamic: true },
+                highlight: { value: null, squash: true, dynamic: true },
+                sort: { value: null, squash: true, dynamic: true },
+                dir: { value: null, squash: true, dynamic: true },
+                page: { value: null, squash: true, dynamic: true }
+            },
+            onEnter: function () {
+                gtag('set', 'page_path', '/individualresults.html');
                 gtag('event', 'page_view');
             }
         }).state('/about', {

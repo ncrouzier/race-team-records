@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.results').controller('RequirementsController',
-    ['$scope', 'AuthService', 'MembersService', 'ResultsService', 'VolunteerJobsService', '$state', '$uibModal', '$q', 'TeamRequirementsConfig',
-        function ($scope, AuthService, MembersService, ResultsService, VolunteerJobsService, $state, $uibModal, $q, TeamRequirementsConfig) {
+    ['$scope', 'AuthService', 'MembersService', 'ResultsService', 'VolunteerJobsService', '$state', '$uibModal', '$q', 'TeamRequirementsConfig', 'AdvancedFiltersService',
+        function ($scope, AuthService, MembersService, ResultsService, VolunteerJobsService, $state, $uibModal, $q, TeamRequirementsConfig, AdvancedFiltersService) {
 
             // =====================================
             // AUTHENTICATION SETUP ================
@@ -181,7 +181,7 @@ angular.module('mcrrcApp.results').controller('RequirementsController',
             // Navigation functions for stats links
             $scope.goToResultsWithQuery = function (query) {
                 if (query && (query.members || query.distance || query.year)) {
-                    $state.go('/results', { search: JSON.stringify(query) });
+                    AdvancedFiltersService.goToRaceList($state, query);
                 }
             };
 

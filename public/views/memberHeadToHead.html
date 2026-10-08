@@ -571,13 +571,13 @@
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.bestAgeGrade > comparisonStats.member2.bestAgeGrade}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="showRaceModal(comparisonStats.member1.bestAgeGradeRace)">{{comparisonStats.member1.bestAgeGrade
+                                                                        ng-click="openBestAgeGrade(comparisonStats.member1.bestAgeGradeResultId, comparisonStats.member1.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member1.bestAgeGrade
                                                                         | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.bestAgeGrade > comparisonStats.member1.bestAgeGrade}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="showRaceModal(comparisonStats.member2.bestAgeGradeRace)">{{comparisonStats.member2.bestAgeGrade
+                                                                        ng-click="openBestAgeGrade(comparisonStats.member2.bestAgeGradeResultId, comparisonStats.member2.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member2.bestAgeGrade
                                                                         | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center">

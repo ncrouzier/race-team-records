@@ -2,7 +2,7 @@ var app = angular.module('mcrrcApp');
 
 
 app.directive('resultPace', function() {
-	var reg ='<span class="resultPace" ng-if="race.racetype.name !== \'Swim\' && race.racetype.name !== \'Cycling\'" ><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=90" tooltip-append-to-body="true" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>World Class</span>" | unsafe \'>{{result | resultToPace:race}} <i  class="ageworld fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=80 && result.agegrade<90" tooltip-append-to-body="true" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>National Class</span>" | unsafe\'>{{result | resultToPace:race}} <i class="agenational fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=70 && result.agegrade<80" tooltip-append-to-body="true" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>Regional Class</span>" | unsafe\'>{{result | resultToPace:race}} <i class="ageregional fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade<70" tooltip-append-to-body="true" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span>" | unsafe\'>{{result | resultToPace:race}}<br><small class="resultPaceTxt">min/mi</small></span><span ng-show="result.agegrade === undefined || result.agegrade === null">{{result | resultToPace:race}}<br><small class="resultPaceTxt">min/mi</small></span></span>';
+	var reg ='<span class="resultPace" ng-if="race.racetype.name !== \'Swim\' && race.racetype.name !== \'Cycling\'" ><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=90" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>World Class</span>" | unsafe \'>{{result | resultToPace:race}} <i  class="ageworld fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=80 && result.agegrade<90" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>National Class</span>" | unsafe\'>{{result | resultToPace:race}} <i class="agenational fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade>=70 && result.agegrade<80" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span><br><span>Regional Class</span>" | unsafe\'>{{result | resultToPace:race}} <i class="ageregional fa fa-star"></i><br><small class="resultPaceTxt">min/mi</small></span><span class="hoverhand" ng-show="result.agegrade !== undefined && result.agegrade !== null && result.agegrade<70" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" uib-tooltip-html=\'"<span>Age Grade: {{result.agegrade}}%</span>" | unsafe\'>{{result | resultToPace:race}}<br><small class="resultPaceTxt">min/mi</small></span><span ng-show="result.agegrade === undefined || result.agegrade === null">{{result | resultToPace:race}}<br><small class="resultPaceTxt">min/mi</small></span></span>';
 	var swim = '<span class="resultPace" ng-if="race.racetype.name === \'Swim\'"><span>{{result | resultToSwimPace:race}}</span><br><small class="resultPaceTxt">/100m</small></span>';
 	var bike = '<span class="resultPace" ng-if="race.racetype.name === \'Cycling\'"><span>{{result | resultToBikePace:race}}</span><br><small class="resultPaceTxt">mph</small></span>';
     return {
@@ -10,6 +10,14 @@ app.directive('resultPace', function() {
             race:'=race',
             result:'=result'
           },
+        // The pace sits inside clickable result rows (race page, race list,
+        // records, member page). A click or tap on it is for its age-grade
+        // tooltip, so it stops here rather than also opening the result.
+        link: function(scope, element) {
+            element.on('click', function(event) {
+                event.stopPropagation();
+            });
+        },
         template: reg+swim+bike
     };
 });

@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', 'AdvancedFiltersService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -31,6 +31,16 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     $scope.member2Results = [];
     $scope.sharedRaces = [];
     $scope.comparisonStats = {};
+
+    // A best age grade opens the result it came from; with no result id on
+    // file it falls back to the race, as it used to
+    $scope.openBestAgeGrade = function(resultId, race) {
+        if (resultId) {
+            $state.go('/results/result', { resultId: resultId });
+        } else if (race && $scope.showRaceModal) {
+            $scope.showRaceModal(race);
+        }
+    };
     $scope.headToHeadRecord = { member1Wins: 0, member2Wins: 0, ties: 0 };
 
     // Mode variables
@@ -431,6 +441,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             top3Finishes: 0,
             bestAgeGrade: 0,
             bestAgeGradeRace: null,
+            bestAgeGradeResultId: null,
             avgAgeGrade: 0,
             totalMiles: 0,
             uniqueStates: new Set(),
@@ -498,6 +509,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 if (result.agegrade > stats.bestAgeGrade) {
                     stats.bestAgeGrade = result.agegrade;
                     stats.bestAgeGradeRace = result.race;
+                    stats.bestAgeGradeResultId = result._id;
                 }
             }
         });
@@ -882,7 +894,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     $scope.goToResultsWithQuery = function (query) {
         if (query && (query.members || query.distance || query.year)) {
-            $state.go('/results', { search: JSON.stringify(query) });
+            AdvancedFiltersService.goToRaceList($state, query);
         }
     };
 

@@ -148,6 +148,8 @@
                         <div ng-if="stats">                            
                             <ul class="rd-standings">
                                 <li>
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('personal'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.personal).length > 5}">{{rankText(stats.personal)}}</span>
                                     <span class="rd-standing-text">
                                         <span ng-if="stats.personal.total > 1">
@@ -159,43 +161,59 @@
                                         </span>
                                         <small ng-if="stats.personal.tied">({{tieText(stats.personal)}})</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <!-- Women are ranked against the team's women;
                                      the whole-team line follows as context -->
                                 <li ng-if="stats.sex === 'Female'">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamGender'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamGender).length > 5}">{{rankText(stats.teamGender)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} by a woman in team history
                                         <small>({{stats.teamGender.total}} results<span ng-if="stats.teamGender.tied">, {{tieText(stats.teamGender)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <li ng-if="stats.sex === 'Female'">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamGenderYear'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamGenderYear).length > 5}">{{rankText(stats.teamGenderYear)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} by a woman on the team in {{stats.year}}
                                         <small>({{stats.teamGenderYear.total}} results<span ng-if="stats.teamGenderYear.tied">, {{tieText(stats.teamGenderYear)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <li ng-if="stats.sex !== 'Female'">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamAllTime'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamAllTime).length > 5}">{{rankText(stats.teamAllTime)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} in team history
                                         <small>({{stats.teamAllTime.total}} results<span ng-if="stats.teamAllTime.tied">, {{tieText(stats.teamAllTime)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <li ng-if="stats.sex !== 'Female'">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamYear'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamYear).length > 5}">{{rankText(stats.teamYear)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} on the team in {{stats.year}}
                                         <small>({{stats.teamYear.total}} results<span ng-if="stats.teamYear.tied">, {{tieText(stats.teamYear)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <li ng-if="stats.sex !== 'Female'">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamGender'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamGender).length > 5}">{{rankText(stats.teamGender)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} among men on the team
                                         <small>({{stats.teamGender.total}} results<span ng-if="stats.teamGender.tied">, {{tieText(stats.teamGender)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
 
                                 <!-- Same sex, exactly this age when they ran
@@ -203,27 +221,36 @@
                                      women, which is why it follows both
                                      blocks. -->
                                 <li ng-if="stats.teamAgeGroup.total > 1">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamAgeGroup'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamAgeGroup).length > 5}">{{rankText(stats.teamAgeGroup)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} by a {{genderNoun()}} aged
                                         {{stats.teamAgeGroup.age}} on the team
                                         <small>({{stats.teamAgeGroup.total}} results<span ng-if="stats.teamAgeGroup.tied">, {{tieText(stats.teamAgeGroup)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                                 <li ng-if="stats.teamAgeGroup.total === 1" class="rd-standing-secondary">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamAgeGroup'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank">only</span>
                                     <span class="rd-standing-text">
                                         {{stats.distanceLabel}} by a {{genderNoun()}} aged
                                         {{stats.teamAgeGroup.age}} on the team
                                     </span>
+                                    </a>
                                 </li>
 
                                 <li ng-if="stats.sex === 'Female'" class="rd-standing-secondary">
+                                    <a class="rd-standing-link" ui-sref="/individualresults(standingParams('teamAllTime'))"
+                                        title="See this ranking in the full list">
                                     <span class="rd-standing-rank" ng-class="{'rd-standing-rank-long': rankText(stats.teamAllTime).length > 5}">{{rankText(stats.teamAllTime)}}</span>
                                     <span class="rd-standing-text">
                                         best {{stats.distanceLabel}} in team history, all members
                                         <small>({{stats.teamAllTime.total}} results<span ng-if="stats.teamAllTime.tied">, {{tieText(stats.teamAllTime)}}</span>)</small>
                                     </span>
+                                    </a>
                                 </li>
                             </ul>
 

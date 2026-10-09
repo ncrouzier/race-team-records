@@ -1,0 +1,43 @@
+<%#
+  Google Analytics (GA4), shared by every page that has it (index.ejs and the
+  standalone forms). Loaded only when gaEnabled (app.locals, app/routes.js):
+  production, unless GA_ENABLED says otherwise.
+
+    gaConfig    extra gtag('config') fields; the app's own page passes
+                { send_page_view: false } as it sends its page views itself
+    gaDebug     mark every hit debug_mode (app.locals: on outside production)
+    gaUserRole  the visitor's role, as the user_role user property
+
+  window.gaEvent(name, params, done) is always defined, so a page can call it
+  whether GA is on or not. With done: called once GA has the hit (at most a
+  second later), or at once without GA; for an event followed by a reload.
+%>
+<script>
+	window.gaEvent = function (name, params, done) {
+		if (typeof window.gtag !== 'function') {
+			if (done) done();
+			return;
+		}
+		if (!done) {
+			window.gtag('event', name, params || {});
+			return;
+		}
+		var called = false;
+		var finish = function () { if (!called) { called = true; done(); } };
+		var withCallback = Object.assign({}, params, { event_callback: finish, event_timeout: 1000 });
+		window.gtag('event', name, withCallback);
+		setTimeout(finish, 1200);
+	};
+</script>
+<% if (typeof gaEnabled !== 'undefined' && gaEnabled) { %>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HBYX9M5YQ"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag() { dataLayer.push(arguments); }
+	gtag('js', new Date());
+	<% if (typeof gaUserRole !== 'undefined' && gaUserRole) { %>
+	gtag('set', 'user_properties', { user_role: <%- JSON.stringify(gaUserRole) %> });
+	<% } %>
+	gtag('config', 'G-2HBYX9M5YQ', <%- JSON.stringify(Object.assign({}, typeof gaConfig !== 'undefined' && gaConfig ? gaConfig : {}, typeof gaDebug !== 'undefined' && gaDebug ? { debug_mode: true } : {})) %>);
+</script>
+<% } %>

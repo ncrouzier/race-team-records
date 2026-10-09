@@ -71,7 +71,7 @@
                                                  move up from page two to fill it rather than leaving gaps. -->
                                             <script type="text/ng-template" id="tile-busiest.html">
                                                                 <div class="stat-box text-center hoverhand"
-                                                                    ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], year: memberStats.busiestYear})">
+                                                                    ng-click="goToMemberYear(memberStats.busiestYear)">
                                                                     <div class="stat-number">{{memberStats.busiestYear}}</div>
                                                                     <div class="stat-label">Busiest Year</div>
                                                                     <div class="stat-sublabel"
@@ -80,8 +80,9 @@
                                                                 </div>
                                             </script>
                                             <script type="text/ng-template" id="tile-req-races.html">
-                                                                <div class="stat-box text-center"
-                                                                    ng-class="{'requirement-met': reqMeetsAll}">
+                                                                <div class="stat-box text-center hoverhand"
+                                                                    ng-class="{'requirement-met': reqMeetsAll}"
+                                                                    ng-click="goToMemberYear(reqStats.year)">
                                                                     <div class="stat-number">
                                                                         {{reqStats.raceCount || 0}} / {{reqConfig.minRaceCount}}
                                                                         <i ng-if="reqMeetsRaces" class="fa fa-check text-success"
@@ -99,8 +100,12 @@
                                                                 </div>
                                             </script>
                                             <script type="text/ng-template" id="tile-req-agegrade.html">
+                                                                <!-- Opens the result the best age grade came from -->
                                                                 <div class="stat-box text-center"
-                                                                    ng-class="{'requirement-met': reqMeetsAll}">
+                                                                    ng-class="{'requirement-met': reqMeetsAll, hoverhand: !!reqBestAgeGradeResult()}"
+                                                                    ng-click="goToReqBestAgeGrade()"
+                                                                    uib-tooltip="{{reqBestAgeGradeResult() ? reqBestAgeGradeResult().race.racename : ''}}"
+                                                                    tooltip-enable="!!reqBestAgeGradeResult()" tooltip-append-to-body="true">
                                                                     <div class="stat-number">
                                                                         <span
                                                                             ng-if="currentMember.teamRequirementStats.maxAgeGrade !== 'N/A'">{{currentMember.teamRequirementStats.maxAgeGrade
@@ -202,14 +207,14 @@
                                             <div class="row">
                                                 <div class="col-sm-4">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username}]})">
+                                                        ng-click="goToMemberYear()">
                                                         <div class="stat-number">{{memberStats.totalRaces}}</div>
                                                         <div class="stat-label">Total Races</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], year: getCurrentYear()})">
+                                                        ng-click="goToMemberYear(getCurrentYear())">
                                                         <div class="stat-number">{{memberStats.racesThisYear}}</div>
                                                         <div class="stat-label">Races This Year</div>
                                                     </div>

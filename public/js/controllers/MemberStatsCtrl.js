@@ -50,14 +50,51 @@ angular.module('mcrrcApp.members').controller('MemberStatsController', ['$scope'
         $scope.setStatPage(($scope.statPage - 1 + $scope.statPages.length) % $scope.statPages.length);
     };
 
-    // The races making up the longest weekly streak, on the results page
+    // ---- Racing Activity tiles: each opens the results it counts ----------
+    // In the "By result" list, one row per result, so the list's count is
+    // the tile's number.
+    function goToMemberResults(params) {
+        $state.go('/individualresults', angular.extend({ runner: $scope.currentMember.username }, params),
+            { inherit: false });
+    }
+
+    // Every result, or one year's (Total Races, Races This Year, Busiest
+    // Year, the races requirement)
+    $scope.goToMemberYear = function(year) {
+        goToMemberResults({ year: year ? String(year) : null });
+    };
+
+    // The races making up the longest weekly streak
     $scope.goToStreakResults = function() {
         if (!$scope.memberStats || !$scope.memberStats.longestWeekStreakStart) return;
-        $scope.goToResultsWithQuery({
-            members: [{ username: $scope.currentMember.username }],
-            dateFrom: $filter('date')($scope.memberStats.longestWeekStreakStart, 'yyyy-MM-dd', 'UTC'),
-            dateTo: $filter('date')($scope.memberStats.longestWeekStreakEnd, 'yyyy-MM-dd', 'UTC')
+        goToMemberResults({
+            from: $filter('date')($scope.memberStats.longestWeekStreakStart, 'yyyy-MM-dd', 'UTC'),
+            to: $filter('date')($scope.memberStats.longestWeekStreakEnd, 'yyyy-MM-dd', 'UTC')
         });
+    };
+
+    // The age grade requirement tile's figure is the member's best age grade
+    // of that year; this is the result it came from (the highest age grade
+    // among their results that year), or null when there is none.
+    // Worked out once per member and year: the tile asks on every digest.
+    var reqBest = { results: null, year: null, result: null };
+    $scope.reqBestAgeGradeResult = function() {
+        var stats = $scope.currentMember && $scope.currentMember.teamRequirementStats;
+        var results = $scope.currentMemberResultList;
+        if (!stats || !stats.year || !results) return null;
+        if (reqBest.results === results && reqBest.year === stats.year) return reqBest.result;
+        var best = null;
+        results.forEach(function(result) {
+            if (new Date(result.race.racedate).getUTCFullYear() !== Number(stats.year)) return;
+            if (result.agegrade > 0 && (!best || result.agegrade > best.agegrade)) best = result;
+        });
+        reqBest = { results: results, year: stats.year, result: best };
+        return best;
+    };
+
+    $scope.goToReqBestAgeGrade = function() {
+        var best = $scope.reqBestAgeGradeResult();
+        if (best) $state.go('/results/result', { resultId: best._id });
     };
 
     // The two team-requirement tiles are only anyone's business if you are an

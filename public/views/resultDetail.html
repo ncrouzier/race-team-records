@@ -63,6 +63,12 @@
                         <!-- The legs live on the result here, not on the race -->
                         <span ng-bind-html="result | resultSportIcons:race | unsafe"></span>
                     </span>
+                    <!-- The official results this one was taken from, styled like
+                         the race page's photo link -->
+                    <a class="rd-meta-item rd-photo-link" ng-if="result.resultlink" ng-href="{{result.resultlink}}"
+                        target="_blank" rel="noopener">
+                        <i class="fa fa-list-ol"></i> <span class="rd-photo-text">Official results</span>
+                    </a>
                 </div>
             </div>
 

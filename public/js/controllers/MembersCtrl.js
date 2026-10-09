@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'AdvancedFiltersService', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, AdvancedFiltersService) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', 'Analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'AdvancedFiltersService', function ($scope, $location, $timeout, $state, $stateParams, $http, Analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -251,10 +251,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             // Navigate to member detail page (bio tab by default)
             $state.go('/members/member/bio', { member: $scope.currentMember.username });
 
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
-            });
         });
         if (!$scope.$$phase) {
             $scope.$apply();
@@ -334,10 +330,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
-            });
         });
     };
 

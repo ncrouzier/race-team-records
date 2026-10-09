@@ -212,16 +212,18 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService', '$state', func
 // tooltip-trigger="$root.tapTooltipTrigger") and goes no further, so it does
 // not also open the row's race or result; a tap anywhere else in the row
 // still does. With a mouse, clicks pass through as before.
-angular.module('mcrrcApp').directive('tapTooltip', ['$rootScope', '$document', function ($rootScope, $document) {
+// tap-tooltip="rank" names what was tapped, for analytics (tooltip_open).
+angular.module('mcrrcApp').directive('tapTooltip', ['$rootScope', '$document', 'Analytics', function ($rootScope, $document, Analytics) {
   return {
     restrict: 'A',
-    link: function (scope, element) {
+    link: function (scope, element, attrs) {
       if (!$rootScope.noHover) return;
       element.on('click', function (event) {
         event.stopPropagation();
         // Other open tooltips close on a tap outside them, which they hear
         // from the document; this tap no longer gets there, so tell it
         $document.triggerHandler({ type: 'click', target: event.target });
+        Analytics.event('tooltip_open', { element: attrs.tapTooltip || 'icon' });
       });
     }
   };
@@ -234,9 +236,9 @@ angular.module('mcrrcApp').directive('raceAchievements', ['UtilsService', functi
       race: '='
     },
     template: '<span>' +
-      '<span ng-repeat="ach in achievements" ng-if="ach.emoji" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip tooltip-popup-delay="100" tooltip-append-to-body="true">{{ach.emoji}}</span>' +
-      '<img ng-repeat="ach in achievements" ng-if="ach.flag" ng-src="{{ach.flag}}" alt="Location flag" class="achievement-flag" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip tooltip-popup-delay="100" tooltip-append-to-body="true" onerror="this.style.display=\'none\'">' +
-      '<i ng-repeat="ach in achievements" ng-if="ach.icon" ng-class="ach.icon" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip tooltip-popup-delay="100" tooltip-append-to-body="true"></i>' +
+      '<span ng-repeat="ach in achievements" ng-if="ach.emoji" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="race_achievement" tooltip-popup-delay="100" tooltip-append-to-body="true">{{ach.emoji}}</span>' +
+      '<img ng-repeat="ach in achievements" ng-if="ach.flag" ng-src="{{ach.flag}}" alt="Location flag" class="achievement-flag" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="race_achievement" tooltip-popup-delay="100" tooltip-append-to-body="true" onerror="this.style.display=\'none\'">' +
+      '<i ng-repeat="ach in achievements" ng-if="ach.icon" ng-class="ach.icon" uib-tooltip="{{ach.tooltip}}" tooltip-placement="top" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="race_achievement" tooltip-popup-delay="100" tooltip-append-to-body="true"></i>' +
       '</span>',
     controller: function ($scope) {
       $scope.achievements = [];

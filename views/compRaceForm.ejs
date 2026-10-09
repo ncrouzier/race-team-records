@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" href="/dist/css/comprace-form.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <%- include('partials/ga', { gaConfig: { page_template: 'comp_race_form' } }) %>
 </head>
 
 <body<% if (form.bannerImageUrl) { %> class="crf-has-banner" style="background-image: url('<%- form.bannerImageUrl
@@ -479,6 +480,9 @@
                   });
                   const data = await r.json();
                   if (r.status === 200 || r.status === 201) {
+                    // Key event: a member signs up for a competitive race
+                    // (or updates their signup)
+                    window.gaEvent('comp_race_signup', { action: this.isEditing ? 'update' : 'new' });
                     this.response = data;
                     this.isEditing = false;
                     this.view = 'submitted';
@@ -644,7 +648,9 @@
                       });
                       const data = await r.json();
                       if (r.ok) {
-                        window.location.reload();
+                        window.gaEvent('login', { method: 'password', page: 'comp_race_form' }, function () {
+                          window.location.reload();
+                        });
                       } else {
                         this.error = Array.isArray(data) ? data[0] : (data.message || data.error || 'Login failed.');
                       }
@@ -667,6 +673,7 @@
                       });
                       const data = await r.json();
                       if (r.ok) {
+                        window.gaEvent('sign_up', { method: 'password', page: 'comp_race_form' });
                         this.success = data.message || 'Account created! You\'ll receive an email once an admin activates it.';
                         this.regUsername = ''; this.regEmail = ''; this.regPassword = '';
                       } else {

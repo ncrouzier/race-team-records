@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'UtilsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', 'MembersService', '$timeout', 'AdvancedFiltersService', '$state', function($scope, $analytics, AuthService, ResultsService, UtilsService, dialogs, localStorageService,$stateParams,$location, $q, MembersService, $timeout, AdvancedFiltersService, $state) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'Analytics', 'AuthService', 'ResultsService', 'UtilsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', 'MembersService', '$timeout', 'AdvancedFiltersService', '$state', function($scope, Analytics, AuthService, ResultsService, UtilsService, dialogs, localStorageService,$stateParams,$location, $q, MembersService, $timeout, AdvancedFiltersService, $state) {
     
 
     $scope.authService = AuthService;
@@ -282,6 +282,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.updateSliderFromInputs();
         $scope.updateAgeGradeSliderFromInputs();
         $scope.applyFilters();
+        $scope.trackFilterClear('all');
     };
 
 
@@ -597,9 +598,24 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     }
 
     // Watch for changes in search query and apply filters
-    $scope.$watch('searchQuery', function() {
+    $scope.$watch('searchQuery', function(term, old) {
         $scope.applyFilters();
+        if (term !== old) trackSearch();
     });
+
+    // Analytics: this list's name on its filter, sort and search events
+    $scope.analyticsList = 'race_results';
+
+    // One search event once the typing stops, with how many races it found.
+    // The term is sent as typed (it may be a runner's name; member page URLs
+    // carry usernames anyway).
+    function trackSearch() {
+        Analytics.eventSoon('search:race_results', 'search', function() {
+            var term = ($scope.searchQuery || '').trim();
+            if (term.length < 2) return null;
+            return { list: 'race_results', search_term: term, result_count: $scope.filteredRacesList.length };
+        });
+    }
 
     // Populate available filter options
     $scope.populateFilterOptions = async function() {

@@ -18,7 +18,7 @@ angular.module('mcrrcApp').directive('advancedFilterPanel', ['$timeout', functio
 
             // One range slider: its element, the host's range object, and the
             // filters fields it drives (min, max, and the inputs' *UI copies)
-            function rangeSlider(id, rangeName, minKey, maxKey) {
+            function rangeSlider(id, rangeName, minKey, maxKey, filterType) {
                 var el = null;
                 // Set while the slider is being re-ranged: the update events it
                 // fires then carry stale handle values, not a user's choice
@@ -69,6 +69,11 @@ angular.module('mcrrcApp').directive('advancedFilterPanel', ['$timeout', functio
                             scope.$apply(update);
                         }
                     });
+                    // A drag let go (not a set() from code): one analytics
+                    // event for the range chosen
+                    el.noUiSlider.on('change', function (values) {
+                        scope.trackFilter(filterType, parseFloat(values[0]) + '-' + parseFloat(values[1]));
+                    });
                     showValues();
                 }
 
@@ -100,8 +105,8 @@ angular.module('mcrrcApp').directive('advancedFilterPanel', ['$timeout', functio
                 });
             }
 
-            rangeSlider('distance-slider', 'distanceRange', 'distanceMin', 'distanceMax');
-            rangeSlider('agegrade-slider', 'ageGradeRange', 'agMin', 'agMax');
+            rangeSlider('distance-slider', 'distanceRange', 'distanceMin', 'distanceMax', 'distance');
+            rangeSlider('agegrade-slider', 'ageGradeRange', 'agMin', 'agMax', 'age_grade');
         }
     };
 }]);

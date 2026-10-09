@@ -154,7 +154,7 @@
                                                 race="raceInfo"></result-members-names>
                                             <result-icon result="result" race="raceInfo"
                                                 race-display="true"></result-icon>
-                                            <i class="fa fa-comment-o hoverhand" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip
+                                            <i class="fa fa-comment-o hoverhand" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="comment"
                                                 ng-show="result.comments !== undefined && result.comments !== ''"
                                                 uib-tooltip-html="result.comments"></i>
                                         </div>
@@ -163,21 +163,21 @@
                                                 ng-if="(result.ranking.agerank !== undefined && result.ranking.agerank !== '')"
                                                 class="hoverhand" title="Age Group ranking"
                                                 ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip ng-click="$event.stopPropagation()">
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="rank" ng-click="$event.stopPropagation()">
                                         </div>
                                         <div class="col-sm-1" style="text-align: center;">
                                             <span
                                                 ng-if="(result.ranking.genderrank !== undefined && result.ranking.genderrank !== '')"
                                                 class="hoverhand" title="Gender ranking"
                                                 ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip ng-click="$event.stopPropagation()">
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="rank" ng-click="$event.stopPropagation()">
                                         </div>
                                         <div class="col-sm-1" style="text-align: center;">
                                             <span
                                                 ng-if="(result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')"
                                                 class="hoverhand" title="Overall ranking"
                                                 ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"
-                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip ng-click="$event.stopPropagation()">
+                                                uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="rank" ng-click="$event.stopPropagation()">
                                         </div>
                                         <div class="col-sm-2" ng-if="!raceInfo.isMultisport"
                                             style="text-align: center;">

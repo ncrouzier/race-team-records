@@ -7,16 +7,20 @@ angular.module('mcrrcApp').directive('raceList', function() {
             resultsTableProperties: '=',
             user: '=',
             loading: '=',
-            onReloadRaces: '&'
+            onReloadRaces: '&',
+            // Where the list is, for analytics (race_results, home_recent)
+            analyticsList: '@'
         },
         templateUrl: 'views/directives/raceList.html',
-        controller: function($scope,dialogs,ResultsService,$timeout,$state) {
+        controller: function($scope,dialogs,ResultsService,$timeout,$state,Analytics) {
 
             // Clicking anywhere on a result row opens that result's own page;
             // the runner's name inside it still goes to the member, so it
             // stops the click from reaching here.
             $scope.goToResult = function(result) {
                 if (result && result._id) {
+                    Analytics.event('select_content', { content_type: 'result', item_id: result._id,
+                        source: ($scope.analyticsList || 'race_list') + '_result_row' });
                     $state.go('/results/result', { resultId: result._id });
                 }
             };
@@ -72,6 +76,8 @@ angular.module('mcrrcApp').directive('raceList', function() {
             };
 
             $scope.sortRaceBy = function(criteria) {
+                var direction = $scope.sortCriteria === criteria && $scope.sortDirection === true ? 'desc' : 'asc';
+                Analytics.event('sort_list', { list: $scope.analyticsList || 'race_list', column: criteria, direction: direction });
                 if ($scope.sortCriteria === criteria) {
                     $scope.sortDirection = $scope.sortDirection === true ? false : true;
                 } else {
@@ -291,6 +297,8 @@ angular.module('mcrrcApp').directive('raceList', function() {
 
             $scope.showRaceModal = function(race,fromStateParams) {
                 if(race){
+                    Analytics.event('select_content', { content_type: 'race', item_id: race._id,
+                        source: ($scope.analyticsList || 'race_list') + '_row' });
                     ResultsService.showRaceFromResultModal(race._id,fromStateParams).then(function(result) {                
                     });
                 }

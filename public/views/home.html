@@ -16,7 +16,7 @@
                     <div class="dashboard-section-title"><i class="fa fa-flag-checkered"></i> Latest Race</div>
                     <div ng-if="latestResult" class="dashboard-section-body">
                         <!-- Their own result in that race, not the race -->
-                        <a class="dashboard-link" ui-sref="/results/result({ resultId: latestResult._id })"
+                        <a class="dashboard-link" ui-sref="/results/result({ resultId: latestResult._id })" ng-click="trackDrill('home_latest_race');"
                             title="Open your result">
                             <b>{{latestResult.race.racename}}</b>
                         </a>
@@ -119,7 +119,7 @@
                     </h4>
                 </div>
                 <div class="feed-card-body feed-card-body-flush">
-                    <race-list races-list="recentRaces" search-query="searchQuery"
+                    <race-list races-list="recentRaces" search-query="searchQuery" analytics-list="home_recent"
                         results-table-properties="resultsTableProperties" user="user">
                     </race-list>
                 </div>
@@ -145,7 +145,7 @@
                                         <span class="time">{{::ach.achievements[0].value.time |
                                             secondsToTimeString}}</span>
                                         with the team at
-                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })" ng-click="trackDrill('home_achievements');"
                                                 title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
@@ -161,7 +161,7 @@
                                                 ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                         ran their {{ach.achievements[0].value.raceCount | addOrdinalSuffix}} race with
                                         the team at
-                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })" ng-click="trackDrill('home_achievements');"
                                                 title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
@@ -175,7 +175,7 @@
                                                 ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                         achieved a new age grade performance best of
                                         {{::ach.achievements[0].value.agegrade}}% at
-                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })" ng-click="trackDrill('home_achievements');"
                                                 title="Open this result">{{::ach.race.racename}}</a></b>.
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
@@ -193,7 +193,7 @@
                                         <span class="time">{{::ach.achievements[0].value.time |
                                             secondsToTimeString}}</span>
                                         for {{ach.race.racetype.name}} ({{ach.race.racetype.surface}}) at
-                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                        <b><a ui-sref="/results/result({ resultId: ach.result._id })" ng-click="trackDrill('home_achievements');"
                                                 title="Open this result">{{::ach.race.racename}}</a></b>!
                                     </div>
                                     <div class="feed-meta">{{ach.race.racedate | date:'mediumDate':'UTC'}}</div>
@@ -208,7 +208,7 @@
                                     <b><a
                                             ui-sref="/members/member({ member: ach.result.members[0].username })">{{::ach.result.members[0].firstname}}&nbsp;{{::ach.result.members[0].lastname}}</a></b>
                                     had multiple achievements at
-                                    <b><a ui-sref="/results/result({ resultId: ach.result._id })"
+                                    <b><a ui-sref="/results/result({ resultId: ach.result._id })" ng-click="trackDrill('home_achievements');"
                                             title="Open this result">{{::ach.race.racename}}</a></b>:
                                 </div>
                                 <ul class="feed-sublist">

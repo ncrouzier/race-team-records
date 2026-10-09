@@ -101,7 +101,7 @@
                             <li class="list-group-item text-left" style="border: none;">
                                 <div class="panel-body">
                                     <d3-pie-chart data="teamRaceTypeBreakdown" width="350" height="250"
-                                        on-slice-click="goToResultsWithQuery({distance: data.name, year: miscStats.year !== 'All Time' ? miscStats.year : undefined})">
+                                        on-slice-click="trackDrill('team_distance_pie', data.name); goToResultsWithQuery({distance: data.name, year: miscStats.year !== 'All Time' ? miscStats.year : undefined})">
                                     </d3-pie-chart>
                             </li>
                         </ul>
@@ -122,7 +122,7 @@
                                 <div class="row">
                                     <div class="col-sm-8">
                                         <strong>{{$index + 1}}. <span class="hoverhandandunderline resultEvent"
-                                                ng-click="showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>
+                                                ng-click="trackDrill('best_turnout'); showRaceFromRaceIdModal(race._id)">{{race.racename}}</span></strong>
                                         <br><small>{{race.racedate | date:'yyyy-MM-dd':'UTC'}} - {{race.racetype.name}}
                                             <span ng-if="race.location.state !== null"
                                                 ng-bind-html="'(' + race.location.state + ')'"></span><span
@@ -164,7 +164,7 @@
                                             racing</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToMemberRaces(member)"
+                                        <a ng-click="trackDrill('most_races', mostRacesFilter.type || 'all'); goToMemberRaces(member)"
                                             class="hoverhandandunderline"
                                             uib-tooltip="View these results for {{member.name}}"
                                             tooltip-placement="left">{{member.races}} races</a><span class="hoverhand"
@@ -256,7 +256,7 @@
                                         <br><small>{{member.races}} total races</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
-                                        <a ng-click="goToMemberWins(member)"
+                                        <a ng-click="trackDrill('most_wins'); goToMemberWins(member)"
                                             class="hoverhandandunderline"
                                             title="View all wins for {{member.name}}">{{member.wins}} wins</a>
                                     </div>
@@ -285,10 +285,10 @@
                                         <strong>{{$index + 1}}. <a
                                                 ui-sref="/members/member({ member: member.username })">{{member.name}}</a></strong>
                                         <br><small><a class="resultEvent" ng-if="member.bestAgeGradeResultId"
-                                                ui-sref="/results/result({ resultId: member.bestAgeGradeResultId })"
+                                                ui-sref="/results/result({ resultId: member.bestAgeGradeResultId })" ng-click="trackDrill('best_age_grades');"
                                                 title="Open this result">{{member.bestAgeGradeRace.racename}}</a><span
                                                 class="hoverhandandunderline resultEvent" ng-if="!member.bestAgeGradeResultId"
-                                                ng-click="showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span>
+                                                ng-click="trackDrill('best_age_grades_race'); showRaceModal(member.bestAgeGradeRace)">{{member.bestAgeGradeRace.racename}}</span>
                                             (avg: {{member.avgAgeGrade}}%)</small>
                                     </div>
                                     <div class="col-sm-4 text-right">
@@ -364,7 +364,7 @@
                                 <div class="ms-tier" ng-repeat="tier in row.tiers track by tier.label"
                                     ng-class="{'is-empty': !tier.count, 'is-clickable': tier.count,
                                                'is-mine': $index === myBestTier(row)}"
-                                    ng-click="goToMilestone(row, tier)"
+                                    ng-click="trackDrill('milestones'); goToMilestone(row, tier)"
                                     uib-tooltip="{{tier.percent}}% of all {{row.kind === 'agegrade' ? 'members' : (milestoneView === 'Female' ? 'women' : 'men')}} who have ever been on the team ({{tier.achievers}} of {{tier.memberTotal}}) have {{row.kind === 'agegrade' ? 'age graded ' + tier.label : 'gone ' + tier.label}} at {{row.distance}}"
                                     tooltip-class="ms-tooltip" tooltip-placement="top"
                                     tooltip-append-to-body="true" tooltip-popup-delay="120">
@@ -429,7 +429,7 @@
                                                        day.isBusiest ? 'cal-busiest' : '',
                                                        day.count ? 'cal-clickable' : '']"
                                             uib-tooltip="{{day.title}}" tooltip-class="cal-tooltip"
-                                                tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120" ng-click="goToCalendarDay(day)"></td>
+                                                tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120" ng-click="trackDrill('team_calendar'); goToCalendarDay(day)"></td>
                                     </tr>
                                 </tbody>
                             </table>

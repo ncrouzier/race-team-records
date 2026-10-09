@@ -32,7 +32,7 @@
                                         <input type="date" 
                                                class="form-control" 
                                                ng-model="filters.dateFrom" 
-                                               ng-change="applyFilters()"
+                                               ng-change="applyFilters(); trackFilterSoon('date_from')"
                                                placeholder="From">
                                     </div>
                                     <div class="date-separator">to</div>
@@ -40,7 +40,7 @@
                                         <input type="date" 
                                                class="form-control" 
                                                ng-model="filters.dateTo" 
-                                               ng-change="applyFilters()"
+                                               ng-change="applyFilters(); trackFilterSoon('date_to')"
                                                placeholder="To">
                                     </div>
                                 </div>
@@ -213,7 +213,7 @@
                         <i class="fa fa-exclamation-triangle"></i> Missing Ranking Data
                     </label>
                     <select class="form-control" ng-model="filters.missingRanking"
-                        ng-change="applyFilters()"
+                        ng-change="applyFilters(); filters.missingRanking ? trackFilter('missing_ranking', filters.missingRanking.key) : trackFilterClear('missing_ranking')"
                         ng-options="option.label for option in missingRankingOptions track by option.key">
                         <option value="">Not filtered</option>
                     </select>

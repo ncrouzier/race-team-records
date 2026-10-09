@@ -507,12 +507,12 @@
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.wins > comparisonStats.member2.wins}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1'}]})">{{comparisonStats.member1.wins}}</span>
+                                                                        ng-click="trackDrill('h2h_wins'); goToResultsWithQuery({members:[{username: member1.username, ranking: '1'}]})">{{comparisonStats.member1.wins}}</span>
                                                                 </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.wins > comparisonStats.member1.wins}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1'}]})">{{comparisonStats.member2.wins}}</span>
+                                                                        ng-click="trackDrill('h2h_wins'); goToResultsWithQuery({members:[{username: member2.username, ranking: '1'}]})">{{comparisonStats.member2.wins}}</span>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
@@ -539,12 +539,12 @@
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.top3Finishes > comparisonStats.member2.top3Finishes}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="goToResultsWithQuery({members:[{username: member1.username, ranking: '1-3'}]})">{{comparisonStats.member1.top3Finishes}}</span>
+                                                                        ng-click="trackDrill('h2h_top3'); goToResultsWithQuery({members:[{username: member1.username, ranking: '1-3'}]})">{{comparisonStats.member1.top3Finishes}}</span>
                                                                 </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.top3Finishes > comparisonStats.member1.top3Finishes}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="goToResultsWithQuery({members:[{username: member2.username, ranking: '1-3'}]})">{{comparisonStats.member2.top3Finishes}}</span>
+                                                                        ng-click="trackDrill('h2h_top3'); goToResultsWithQuery({members:[{username: member2.username, ranking: '1-3'}]})">{{comparisonStats.member2.top3Finishes}}</span>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
@@ -571,13 +571,13 @@
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member1.bestAgeGrade > comparisonStats.member2.bestAgeGrade}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="openBestAgeGrade(comparisonStats.member1.bestAgeGradeResultId, comparisonStats.member1.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member1.bestAgeGrade
+                                                                        ng-click="trackDrill('h2h_best_age_grade'); openBestAgeGrade(comparisonStats.member1.bestAgeGradeResultId, comparisonStats.member1.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member1.bestAgeGrade
                                                                         | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center"
                                                                     ng-class="{'winning-cell': comparisonStats.member2.bestAgeGrade > comparisonStats.member1.bestAgeGrade}">
                                                                     <span class="hoverhand"
-                                                                        ng-click="openBestAgeGrade(comparisonStats.member2.bestAgeGradeResultId, comparisonStats.member2.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member2.bestAgeGrade
+                                                                        ng-click="trackDrill('h2h_best_age_grade'); openBestAgeGrade(comparisonStats.member2.bestAgeGradeResultId, comparisonStats.member2.bestAgeGradeRace)" title="Open this result">{{comparisonStats.member2.bestAgeGrade
                                                                         | number:1}}%</span>
                                                                 </td>
                                                                 <td class="text-center">
@@ -757,7 +757,7 @@
                                                                 <td>{{sharedRaces.length - $index}}</td>
                                                                 <td>{{formatDate(race.race.racedate)}}</td>
                                                                 <td>
-                                                                    <a ng-click="showRaceModal(race.race)"
+                                                                    <a ng-click="trackDrill('h2h_race'); showRaceModal(race.race)"
                                                                         class="hoverhand">
                                                                         {{race.race.racename}}
                                                                     </a>

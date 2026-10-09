@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
-    '$scope', '$http', '$analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService', 'ResultExtractionService',
-    function ($scope, $http, $analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService, ResultExtractionService) {
+    '$scope', '$http', 'Analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService', 'ResultExtractionService',
+    function ($scope, $http, Analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService, ResultExtractionService) {
 
         $scope.authService = AuthService;
         $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -718,11 +718,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             
             ResultsService.saveResults(resultsToSave)
                 .then(function(savedResults) {
-                    $analytics.eventTrack('Result Extractor', { 
-                        category: 'Tools',
-                        label: 'Results Saved',
-                        value: savedResults.length
-                    });
+                    Analytics.event('results_import', { count: savedResults.length });
                     $scope.processedResults = []; // Clear processed results after successful save
                     $scope.isLoading = false;
                     $scope.savingMessage = '';

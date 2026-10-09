@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q', 'localStorageService', '$state', 'NotificationService', 'DexieService', 'MemoryCacheService', function (Restangular, SystemService, $uibModal, $q, localStorageService, $state, NotificationService, DexieService, MemoryCacheService) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q', 'localStorageService', '$state', 'NotificationService', 'DexieService', 'MemoryCacheService', 'Analytics', function (Restangular, SystemService, $uibModal, $q, localStorageService, $state, NotificationService, DexieService, MemoryCacheService, Analytics) {
 
     var factory = {};
     var results = Restangular.all('results');
@@ -136,6 +136,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             function (r) {
                 //simple success notification
                 NotificationService.showNotifiction(true, "Result created successfully!");
+                Analytics.event('admin_action', { action: 'result_create' });
 
                 //return the created result
                 return r;
@@ -226,6 +227,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return result.save().then(
             function (r) {
                 NotificationService.showNotifiction(true, "Result edited successfully!");
+                Analytics.event('admin_action', { action: 'result_edit' });
                 return r;
             },
             function (res) {
@@ -243,6 +245,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return result.remove().then(
             function () {
                 NotificationService.showNotifiction(true, "Result deleted successfully!");
+                Analytics.event('admin_action', { action: 'result_delete' });
             },
             function (res) {
                 NotificationService.showNotifiction(false, "Error while deleting result!");
@@ -360,6 +363,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return Restangular.one('raceinfos', raceinfo._id).remove().then(
             function () {
                 NotificationService.showNotifiction(true, "Race deleted successfully!");
+                Analytics.event('admin_action', { action: 'race_delete' });
             },
             function (res) {
                 NotificationService.showNotifiction(false, "Error while deleting race!");
@@ -761,6 +765,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             return Restangular.one("races", race._id).customPUT(race).then(
                 function (updatedRace) {
                     NotificationService.showNotifiction(true, "Race updated successfully.");
+                    Analytics.event('admin_action', { action: 'race_edit' });
                     // System info will be updated by backend, triggering automatic cache invalidation
                     return updatedRace;
                 },

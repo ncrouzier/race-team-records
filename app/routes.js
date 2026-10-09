@@ -215,6 +215,17 @@ module.exports = async function (app, qs, passport, async, _) {
 
     const User = require('./models/user');
 
+    // Google Analytics, for every page that renders views/partials/ga.ejs:
+    // on in production only, so local and test traffic stays out of the real
+    // property. GA_ENABLED=true or false overrides either way.
+    app.locals.gaEnabled = process.env.GA_ENABLED ?
+        process.env.GA_ENABLED === 'true' : process.env.NODE_ENV === 'production';
+    // Hits marked debug_mode show in GA4's DebugView, and its "Developer
+    // traffic" data filter keeps them out of reports. On whenever GA runs
+    // outside production (GA_ENABLED=true locally); GA_DEBUG overrides.
+    app.locals.gaDebug = process.env.GA_DEBUG ?
+        process.env.GA_DEBUG === 'true' : process.env.NODE_ENV !== 'production';
+
     // Add response modification middleware BEFORE routes
     app.use('/api', function (req, res, next) {
         // Store original method
@@ -5096,7 +5107,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 const rt = await RaceType.findOne({ name: form.race.racetype.name, surface: form.race.racetype.surface }).lean();
                 if (rt) form.race.racetype._id = rt._id;
             }
-            res.render('compRaceForm.ejs', { form, user: req.user || null });
+            res.render('compRaceForm.ejs', { form, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
         } catch (err) {
             res.status(500).send('Server error');
         }

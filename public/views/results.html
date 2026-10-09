@@ -4,9 +4,7 @@
         <div class="results-search">
             <i class="fa fa-search"></i>
             <input type="text" class="form-control input-sm" ng-model="searchQuery" ng-model-options="{debounce: 100}"
-                placeholder="Race, racer, date, time..." autofocus
-                analytics-on="change" analytics-event="Result" analytics-category="viewResult"
-                analytics-label="view result : {{searchQuery}}">
+                placeholder="Race, racer, date, time..." autofocus>
             <span class="searchclear fa fa-times-circle" ng-show="searchQuery" ng-click="searchQuery = ''"></span>
         </div>
         <button type="button" class="btn btn-sm btn-primary results-advanced-toggle" ng-click="toggleAdvancedFilters()">
@@ -23,7 +21,8 @@
              here, or one row per result at /individualresults -->
         <div class="results-view-toggle results-filter-bar-end" role="tablist">
             <a class="active" role="tab" aria-selected="true" ui-sref="/results"><i class="fa fa-flag-checkered"></i> Race Results</a>
-            <a role="tab" aria-selected="false" ui-sref="/individualresults"><i class="fa fa-user"></i> Individual Results</a>
+            <a role="tab" aria-selected="false" ui-sref="/individualresults"
+                track-event="view_switch" track-params="{from: 'race_results', to: 'individual_results', via: 'switch'}"><i class="fa fa-user"></i> Individual Results</a>
         </div>
     </div>
 
@@ -42,27 +41,27 @@
                 <div class="selected-items">
                     <span class="selected-item" ng-show="searchQuery">
                         Search: "{{searchQuery}}"
-                        <i class="fa fa-times" ng-click="searchQuery=''; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="searchQuery=''; applyFilters(); trackFilterClear('search')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.dateFrom">
                         From: {{filters.dateFrom | date:'MMM dd, yyyy':'UTC'}}
-                        <i class="fa fa-times" ng-click="filters.dateFrom=''; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="filters.dateFrom=''; applyFilters(); trackFilterClear('date_from')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.dateTo">
                         To: {{filters.dateTo | date:'MMM dd, yyyy':'UTC'}}
-                        <i class="fa fa-times" ng-click="filters.dateTo=''; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="filters.dateTo=''; applyFilters(); trackFilterClear('date_to')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.milestone">
                         {{filters.milestone.label}}
-                        <i class="fa fa-times" ng-click="filters.milestone=null; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="filters.milestone=null; applyFilters(); trackFilterClear('milestone')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.calendarDay">
                         Every {{filters.calendarDay.label}}
-                        <i class="fa fa-times" ng-click="filters.calendarDay=null; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="filters.calendarDay=null; applyFilters(); trackFilterClear('calendar_day')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.missingRanking">
                         Missing: {{filters.missingRanking.label}}
-                        <i class="fa fa-times" ng-click="filters.missingRanking=null; applyFilters()"></i>
+                        <i class="fa fa-times" ng-click="filters.missingRanking=null; applyFilters(); trackFilterClear('missing_ranking')"></i>
                     </span>
                     <span class="selected-item" ng-show="filters.distanceMin > 0 || filters.distanceMax < distanceRange.max">
                         Distance: {{filters.distanceMin}}-{{filters.distanceMax}} mi
@@ -131,6 +130,7 @@
                 results-table-properties="resultsTableProperties"
                 user="user"
                 on-reload-races="loadRaces()"
+                analytics-list="race_results"
                 loading="loadingStates.races">
             </race-list>
         </div>

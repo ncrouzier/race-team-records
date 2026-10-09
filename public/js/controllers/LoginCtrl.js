@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.authentication').controller('LoginController',['$scope','$http','$state','AuthService','localStorageService', function($scope, $http, $state, AuthService,localStorageService) {
+angular.module('mcrrcApp.authentication').controller('LoginController',['$scope','$http','$state','AuthService','localStorageService','Analytics', function($scope, $http, $state, AuthService,localStorageService,Analytics) {
 
     $http({
         url: '/api/login',
@@ -10,7 +10,9 @@ angular.module('mcrrcApp.authentication').controller('LoginController',['$scope'
     $scope.login = function(user) {
         $http.post("/api/login", user).success(function(data, status) {
             AuthService.setUser(data.user);
-            window.location.href = '/';
+            Analytics.eventThen('login', { method: 'password' }, function() {
+                window.location.href = '/';
+            });
         }).error(function(data) {
             $scope.message = data[0];
             $state.go('/login');

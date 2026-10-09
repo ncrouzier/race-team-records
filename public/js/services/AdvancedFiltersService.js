@@ -16,7 +16,7 @@
 // and scope.distanceRange, scope.ageGradeRange, scope.applyFilters,
 // scope.clearAllFilters,
 // scope.getActiveFilterCount and scope.hasActiveFilters.
-angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$timeout', function (UtilsService, $timeout) {
+angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$timeout', 'Analytics', function (UtilsService, $timeout, Analytics) {
 
     // Admin data-cleanup filter: ranking fields an admin can hunt for gaps
     // in. 'any' covers all four, which is the usual starting point when
@@ -282,6 +282,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 slider().set([0, scope.distanceRange.max]);
             }
             scope.applyFilters();
+            scope.trackFilterClear('distance');
         };
 
         // Update slider when input fields change
@@ -306,6 +307,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
             scope.filters.distanceMin = scope.filters.distanceMinUI;
             scope.updateSliderFromInputs();
             scope.applyFilters();
+            scope.trackFilterSoon('distance', function () { return range(scope.filters.distanceMin, scope.filters.distanceMax); });
         };
 
         // Handle max distance input change
@@ -322,6 +324,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
             scope.filters.distanceMax = scope.filters.distanceMaxUI;
             scope.updateSliderFromInputs();
             scope.applyFilters();
+            scope.trackFilterSoon('distance', function () { return range(scope.filters.distanceMin, scope.filters.distanceMax); });
         };
 
         // Age grade range: the same as distance, on its own slider
@@ -348,6 +351,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 agSlider().set([0, scope.ageGradeRange.max]);
             }
             scope.applyFilters();
+            scope.trackFilterClear('age_grade');
         };
 
         scope.updateAgeGradeSliderFromInputs = function () {
@@ -363,6 +367,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
             f.agMin = f.agMinUI;
             scope.updateAgeGradeSliderFromInputs();
             scope.applyFilters();
+            scope.trackFilterSoon('age_grade', function () { return range(f.agMin, f.agMax); });
         };
 
         scope.onAgeGradeMaxInputChange = function () {
@@ -372,11 +377,37 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
             f.agMax = f.agMaxUI;
             scope.updateAgeGradeSliderFromInputs();
             scope.applyFilters();
+            scope.trackFilterSoon('age_grade', function () { return range(f.agMin, f.agMax); });
         };
+
+        // ---- Analytics: filter_apply and filter_clear ------------------
+        // `list` is the host's scope.analyticsList ('race_results' or
+        // 'individual_results'). Values are codes and race types, never a
+        // member's name.
+        function filterEvent(type, value) {
+            var params = { list: scope.analyticsList || 'unknown', filter_type: type };
+            if (value !== undefined && value !== null && value !== '') params.filter_value = String(value);
+            return params;
+        }
+        scope.trackFilter = function (type, value) {
+            Analytics.event('filter_apply', filterEvent(type, value));
+        };
+        scope.trackFilterClear = function (type) {
+            Analytics.event('filter_clear', filterEvent(type));
+        };
+        // Typed values (dates, the range boxes) once they settle
+        scope.trackFilterSoon = function (type, valueFn) {
+            Analytics.eventSoon('filter:' + type, 'filter_apply', function () {
+                return filterEvent(type, valueFn ? valueFn() : undefined);
+            });
+        };
+        function range(min, max) {
+            return min + '-' + max;
+        }
 
         // Add/remove for the four list filters. Adding something already in
         // the list just confirms it.
-        function adder(listName, sameAs, flag) {
+        function adder(listName, sameAs, flag, type, value) {
             return function (item) {
                 if (!item) return;
                 var exists = scope.filters[listName].some(function (other) {
@@ -385,6 +416,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 if (!exists) {
                     scope.filters[listName].push(item);
                     scope.applyFilters();
+                    scope.trackFilter(type, value);
                 }
                 flash(flag);
             };
@@ -392,7 +424,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
 
         scope.addCountryToFilter = function (country) {
             if (country && country.code) {
-                adder('countries', function (a, b) { return a.code === b.code; }, 'showCountryFeedback')(country);
+                adder('countries', function (a, b) { return a.code === b.code; }, 'showCountryFeedback', 'country', country.code)(country);
             }
         };
 
@@ -401,11 +433,12 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 return country.code !== countryCode;
             });
             scope.applyFilters();
+            scope.trackFilterClear('country');
         };
 
         scope.addStateToFilter = function (state) {
             if (state && state.code) {
-                adder('states', function (a, b) { return a.code === b.code; }, 'showStateFeedback')(state);
+                adder('states', function (a, b) { return a.code === b.code; }, 'showStateFeedback', 'state', state.code)(state);
                 // Clear the selection to revert to placeholder
                 scope.selectedState = null;
             }
@@ -416,11 +449,13 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 return state.code !== stateCode;
             });
             scope.applyFilters();
+            scope.trackFilterClear('state');
         };
 
         scope.addRaceTypeToFilter = function (raceType) {
             if (raceType && raceType.name) {
-                adder('raceTypes', function (a, b) { return a.name === b.name && a.surface === b.surface; }, 'showRaceTypeFeedback')(raceType);
+                adder('raceTypes', function (a, b) { return a.name === b.name && a.surface === b.surface; }, 'showRaceTypeFeedback',
+                    'race_type', raceType.name + ' (' + raceType.surface + ')')(raceType);
             }
         };
 
@@ -429,11 +464,13 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 return !(raceType.name === raceTypeToRemove.name && raceType.surface == raceTypeToRemove.surface);
             });
             scope.applyFilters();
+            scope.trackFilterClear('race_type');
         };
 
         scope.addMemberToFilter = function (member) {
             if (member && member._id) {
-                adder('selectedMembers', function (a, b) { return a._id === b._id; }, 'showMemberFeedback')(member);
+                // No value: it would be a runner's name
+                adder('selectedMembers', function (a, b) { return a._id === b._id; }, 'showMemberFeedback', 'member')(member);
             }
         };
 
@@ -442,6 +479,7 @@ angular.module('mcrrcApp').service('AdvancedFiltersService', ['UtilsService', '$
                 return member._id !== memberId;
             });
             scope.applyFilters();
+            scope.trackFilterClear('member');
         };
     };
 }]);

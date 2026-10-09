@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$rootScope', '$analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', 'localStorageService', '$state', function($scope, $rootScope, $analytics, AuthService, ResultsService, $http, dialogs, localStorageService, $state) {
+angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$rootScope', 'Analytics', 'AuthService', 'ResultsService', '$http', 'dialogs', 'localStorageService', '$state', function($scope, $rootScope, Analytics, AuthService, ResultsService, $http, dialogs, localStorageService, $state) {
 
     // Admins can also pick "All": every result of the race type, not just
     // the top few — for checking the data rather than reading the records.
@@ -68,9 +68,13 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
         //save selection in storage
         localStorageService.set('records.options', $scope.paramModel);
 
-        $analytics.eventTrack('viewRecords', {
-            category: 'Records',
-            label: 'viewing record for ' + $scope.paramModel.racetype.name + ' (' + $scope.paramModel.racetype.surface + ') sex= ' + $scope.paramModel.sex + ' category= ' + $scope.paramModel.category + ' mode= ' + $scope.paramModel.mode
+        Analytics.event('view_records', {
+            race_type: $scope.paramModel.racetype.name,
+            surface: $scope.paramModel.racetype.surface,
+            // '.*' is the query's wildcard: "All"
+            sex: $scope.paramModel.sex === '.*' ? 'All' : $scope.paramModel.sex,
+            category: $scope.paramModel.category === '.*' ? 'All' : $scope.paramModel.category,
+            mode: $scope.paramModel.mode
         });
 
     };
@@ -114,6 +118,7 @@ angular.module('mcrrcApp.results').controller('RecordsController', ['$scope', '$
     // A click anywhere on a record row opens that result's own page
     $scope.goToResult = function(result) {
         if (result && result._id) {
+            Analytics.event('select_content', { content_type: 'result', item_id: result._id, source: 'records_row' });
             $state.go('/results/result', { resultId: result._id });
         }
     };

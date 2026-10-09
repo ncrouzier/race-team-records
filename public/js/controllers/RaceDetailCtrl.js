@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -424,6 +424,7 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
     // from reaching here.
     $scope.goToResult = function (result) {
         if (result && result._id) {
+            Analytics.event('select_content', { content_type: 'result', item_id: result._id, source: 'race_page_row' });
             $state.go('/results/result', { resultId: result._id });
         }
     };

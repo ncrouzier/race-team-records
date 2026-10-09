@@ -1,10 +1,46 @@
-var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'angulartics', 'angulartics.google.analytics', 'LocalStorageModule','cgNotify']);
+var app = angular.module('mcrrcApp', ['mcrrcApp.members', 'mcrrcApp.results', 'mcrrcApp.admin', 'mcrrcApp.authentication', 'mcrrcApp.tools', 'restangular', 'dialogs.main', 'ui.bootstrap', 'ui.select', 'ngSanitize', 'ui.router', 'appRoutes', 'angular-loading-bar', 'angularUtils.directives.dirPagination', 'LocalStorageModule','cgNotify']);
 
 var membersModule = angular.module('mcrrcApp.members', []);
 var resultsModule = angular.module('mcrrcApp.results', []);
 var toolsModule = angular.module('mcrrcApp.tools', []);
 var adminModule = angular.module('mcrrcApp.admin', []);
 var authenticationModule = angular.module('mcrrcApp.authentication', []);
+
+// JavaScript errors to Google Analytics as `exception` events, so problems
+// seen by visitors (like the old "too much recursion") show up in GA. At most
+// MAX_ERROR_EVENTS per page load, so one error in a loop cannot flood it.
+// Angular's own errors come through $exceptionHandler; everything else
+// (libraries, async functions that throw) through the window listeners.
+var reportErrorToAnalytics = (function() {
+    var MAX_ERROR_EVENTS = 5;
+    var sent = 0;
+    return function(error, source) {
+        if (sent >= MAX_ERROR_EVENTS || typeof window.gtag !== 'function') return;
+        sent++;
+        var message = error && error.message ? error.message : String(error);
+        window.gtag('event', 'exception', {
+            description: message.slice(0, 150),
+            source: source,
+            fatal: false
+        });
+    };
+})();
+
+window.addEventListener('error', function(event) {
+    reportErrorToAnalytics(event.error || event.message, 'window');
+});
+window.addEventListener('unhandledrejection', function(event) {
+    reportErrorToAnalytics(event.reason, 'promise');
+});
+
+// Still logged to the console as before. Not through the Analytics service:
+// it needs $timeout, which itself needs $exceptionHandler.
+app.factory('$exceptionHandler', ['$log', function($log) {
+    return function(exception, cause) {
+        $log.error(exception, cause);
+        reportErrorToAnalytics(exception, 'angular');
+    };
+}]);
 
 app.config(function(paginationTemplateProvider) {
     paginationTemplateProvider.setPath('views/templates/dirPagination.tpl.html');
@@ -35,7 +71,7 @@ app.config(['$httpProvider', function($httpProvider) {
     }]);
 }]);
 
-app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$transitions', 'ActivityLogService', function($http, $rootScope, $interval, AuthService, Restangular, $transitions, ActivityLogService) {
+app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$transitions', 'ActivityLogService', 'Analytics', '$timeout', 'PageTitleService', function($http, $rootScope, $interval, AuthService, Restangular, $transitions, ActivityLogService, Analytics, $timeout, PageTitleService) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
@@ -90,6 +126,40 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
     $transitions.onSuccess({}, function(transition) {
         if (transition.dynamic()) return;
         pingHeartbeat();
+    });
+
+    // Page titles and Google Analytics page views, one per page. Not for
+    // dynamic param changes (a filter or page change rewrites the URL without
+    // leaving the page). The URL is read a tick later, once the browser has
+    // the new one; the page view waits for the page's title (a race's name
+    // arrives with its data, PageTitleService). GA4's own history-based page
+    // views must stay off (Admin > Data streams > Enhanced measurement), or
+    // every page and filter change counts twice.
+    $transitions.onStart({}, function(transition) {
+        if (!transition.dynamic()) PageTitleService.begin();
+    });
+    $transitions.onSuccess({}, function(transition) {
+        if (transition.dynamic()) return;
+        var stateName = transition.to().name;
+        var title = PageTitleService.forTransition(transition);
+        $timeout(function() {
+            var location = window.location.href;
+            title.then(function(text) { Analytics.pageView(stateName, location, text); });
+        }, 0, false);
+    });
+
+    // A stats link followed (a tile, a chart slice, a table row): which
+    // panel, and optionally what in it. On the root scope so any template can
+    // call it before its own click handler.
+    $rootScope.trackDrill = function(panel, value) {
+        var params = { panel: panel };
+        if (value !== undefined && value !== null && value !== '') params.value = String(value);
+        Analytics.event('stats_drilldown', params);
+    };
+
+    // Who is browsing, by role only (anonymous, user, captain, admin)
+    $rootScope.$watch(function() { return AuthService.isLoggedIn(); }, function(user) {
+        Analytics.setUser(user);
     });
 
     // An admin who stays on one page for a while won't trigger a

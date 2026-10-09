@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', 'AdvancedFiltersService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService, AdvancedFiltersService) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', 'Analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', 'AdvancedFiltersService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, Analytics, dialogs, $filter, localStorageService, AuthService, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -291,10 +291,8 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewMemberHeadToHead', {
-                category: 'Member',
-                label: 'viewing member head-to-head tab ' + currentMember.firstname + ' ' + currentMember.lastname
-            });
+            // No names: the page's URL and title already say who
+            Analytics.event('head_to_head', { kind: 'member_tab' });
 
         } catch (error) {
             console.error('Error loading member head-to-head data:', error);
@@ -376,10 +374,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewHeadToHead', {
-                category: 'Member',
-                label: 'viewing head-to-head tab ' + member1.firstname + ' ' + member1.lastname + ' vs ' + member2.firstname + ' ' + member2.lastname
-            });
+            Analytics.event('head_to_head', { kind: 'pair' });
 
         } catch (error) {
             console.error('Error loading head-to-head data:', error);

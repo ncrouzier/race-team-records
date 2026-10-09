@@ -21,7 +21,8 @@
         <!-- Two ways to browse the same results: grouped under their races
              at /results, or one row per result here -->
         <div class="results-view-toggle results-filter-bar-end" role="tablist">
-            <a role="tab" aria-selected="false" ui-sref="/results"><i class="fa fa-flag-checkered"></i> Race Results</a>
+            <a role="tab" aria-selected="false" ui-sref="/results"
+                track-event="view_switch" track-params="{from: 'individual_results', to: 'race_results', via: 'switch'}"><i class="fa fa-flag-checkered"></i> Race Results</a>
             <a class="active" role="tab" aria-selected="true" ui-sref="/individualresults"
                 ui-sref-opts="{inherit: false}"><i class="fa fa-user"></i> Individual Results</a>
         </div>

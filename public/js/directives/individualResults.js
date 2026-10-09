@@ -10,7 +10,7 @@
 // Filtering uses the same Advanced Filters panel as "By race"
 // (<advanced-filter-panel>, AdvancedFiltersService), plus filters that only
 // arrive by link (race, age, cutoffs, highlight...), shown as chips.
-angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', '$rootScope', '$document', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs, $rootScope, $document) {
+angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', '$rootScope', '$document', 'Analytics', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs, $rootScope, $document, Analytics) {
 
     var PAGE_SIZE = 100;
     var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
@@ -321,6 +321,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             // Its handlers and options come from AdvancedFiltersService, as for
             // "By race"; the slider follows distanceRange once it is known.
             AdvancedFiltersService.attach(scope);
+            // Analytics: this list's name on its filter, sort and search events
+            scope.analyticsList = 'individual_results';
             scope.distanceRange = { min: 0, max: 0 };
             scope.ageGradeRange = { min: 0, max: 0 };
             scope.availableRaceTypes = [];
@@ -563,7 +565,21 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     scope.filters.sort = column;
                     scope.filters.desc = SORTS[column].desc;
                 }
+                Analytics.event('sort_list', { list: 'individual_results', column: column,
+                    direction: scope.filters.desc ? 'desc' : 'asc' });
             };
+
+            // One search event once the typing stops, with how many results
+            // it found. The term is sent as typed (it may be a runner's name;
+            // member page URLs carry usernames anyway).
+            scope.$watch('filters.search', function (term, old) {
+                if (term === old) return;
+                Analytics.eventSoon('search:individual_results', 'search', function () {
+                    var text = (scope.filters.search || '').trim();
+                    if (text.length < 2) return null;
+                    return { list: 'individual_results', search_term: text, result_count: scope.rows.length };
+                });
+            });
 
             scope.sortIcon = function (column) {
                 if (scope.filters.sort !== column) return 'fa-sort ir-sort-idle';
@@ -628,9 +644,13 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 return chips;
             }
 
+            // Tags the shared handlers (race type, country, state, member, the
+            // two ranges) do not already report
+            var SHARED_CHIPS = { type: true, country: true, state: true, member: true, distanceRange: true, agRange: true };
             scope.removeChip = function (chip) {
                 var f = scope.filters;
                 var kind = chip.key.split(':')[0];
+                if (!SHARED_CHIPS[kind]) scope.trackFilterClear(kind);
                 if (kind === 'dateFrom') f.dateFrom = '';
                 if (kind === 'dateTo') f.dateTo = '';
                 if (kind === 'distanceRange') scope.clearDistanceFilter();
@@ -670,6 +690,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 scope.filters.agMax = scope.ageGradeRange.max;
                 scope.updateSliderFromInputs();
                 scope.updateAgeGradeSliderFromInputs();
+                scope.trackFilterClear('all');
             };
             scope.clearAllFilters = scope.clearFilters;
 
@@ -758,7 +779,13 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     return;
                 }
                 event.stopPropagation();
-                if (tip.el === tipEl) hideTip(); else showTip(tip);
+                if (tip.el === tipEl) {
+                    hideTip();
+                } else {
+                    showTip(tip);
+                    Analytics.event('tooltip_open', { element: tip.el.classList.contains('ir-place') ? 'place' : 'flag',
+                        list: 'individual_results' });
+                }
             }
 
             if ($rootScope.noHover) {
@@ -787,6 +814,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             };
 
             scope.openResult = function (row) {
+                Analytics.event('select_content', { content_type: 'result', item_id: row._id,
+                    source: 'individual_results_row' });
                 $state.go('/results/result', { resultId: row._id });
             };
 

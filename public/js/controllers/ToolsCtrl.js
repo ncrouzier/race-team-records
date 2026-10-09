@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'UtilsService', 'localStorageService', 'StopwatchTime', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, UtilsService, localStorageService, StopwatchTime) {
+angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', 'Analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'UtilsService', 'localStorageService', 'StopwatchTime', function ($scope, $location, $timeout, $state, $stateParams, $http, Analytics, AuthService, MembersService, ResultsService, dialogs, $filter, UtilsService, localStorageService, StopwatchTime) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -268,7 +268,16 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
         recalculate();
     });
 
-    $scope.$watchGroup(['calc.timeInput', 'calc.selectedDistance'], recalculate);
+    // Analytics: one tool_use once a typed time settles into a result; not
+    // for the first calculation from saved inputs (watchGroup's first call
+    // passes the same array as new and old values)
+    $scope.$watchGroup(['calc.timeInput', 'calc.selectedDistance'], function (now, before) {
+        recalculate();
+        if (now === before) return;
+        Analytics.eventSoon('tool:age_grade', 'tool_use', function () {
+            return $scope.result ? { tool: 'age_grade', distance: $scope.result.distance.name } : null;
+        });
+    });
 
     $scope.clearTime = function () {
         $scope.calc.timeInput = '';
@@ -277,8 +286,8 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
 }]);
 
 angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
-    '$scope', '$analytics', 'AuthService', 'localStorageService', '$http',
-    function ($scope, $analytics, AuthService, localStorageService, $http) {
+    '$scope', 'Analytics', 'AuthService', 'localStorageService', '$http',
+    function ($scope, Analytics, AuthService, localStorageService, $http) {
 
     // Cache DOM elements and constants
     const BASE_VALUES = Array.from({ length: 11 }, (_, i) => 50 + i * 5);
@@ -480,7 +489,14 @@ angular.module('mcrrcApp.tools').controller('TempAdjustmentController', [
     });
 
     // Optimized main watch group
-    $scope.$watchGroup(['inputTemp', 'inputDew', 'pace'], function () {
+    $scope.$watchGroup(['inputTemp', 'inputDew', 'pace'], function (now, before) {
+        // Analytics: one tool_use once the inputs settle into an adjusted
+        // pace; not for the first run from saved inputs
+        if (now !== before) {
+            Analytics.eventSoon('tool:pace_adjustment', 'tool_use', function () {
+                return $scope.adjustedPace ? { tool: 'pace_adjustment' } : null;
+            });
+        }
         let temp = parseInt($scope.inputTemp);
         let dew = parseInt($scope.inputDew);
         let paceStr = $scope.pace;

@@ -3483,10 +3483,11 @@ module.exports = async function (app, qs, passport, async, _) {
 
 
     // get participation stats
-    // Volunteering stats for the Stats page. Logged-in users only: it names
-    // members and what they did, which the public site does not show.
+    // Volunteering stats for the Stats page, open to everyone like the other
+    // stats: member names (already public on member pages), dates, events
+    // and the role each volunteer filled.
     // ?year=YYYY narrows to one calendar year; anything else is all time.
-    app.get('/api/stats/volunteering', service.isLoggedIn, async function (req, res) {
+    app.get('/api/stats/volunteering', async function (req, res) {
         try {
             const year = /^\d{4}$/.test(req.query.year || '') ? parseInt(req.query.year, 10) : null;
             const match = year ? {
@@ -6574,6 +6575,222 @@ module.exports = async function (app, qs, passport, async, _) {
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: 'Error deleting application' });
+        }
+    });
+
+    // ---- Hosted pages: admin-uploaded HTML, served at /pages/<slug> --------
+    // Managed from the admin "Hosted Pages" screen. Each page has an access
+    // level (public, members, captains, admin), a draft/published state and,
+    // unless marked trusted, is served sandboxed: the browser gives it its own
+    // anonymous origin, so its scripts cannot use the visitor's session or
+    // the site's API. Registered before the catch-all below.
+    const HOSTED_PAGE_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
+    const HOSTED_PAGE_MAX_BYTES = 10 * 1024 * 1024;
+    const HOSTED_PAGE_SANDBOX = 'sandbox allow-scripts allow-forms allow-popups ' +
+        'allow-popups-to-escape-sandbox allow-modals allow-downloads allow-top-navigation-by-user-activation';
+
+    function escapeHtmlText(text) {
+        return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function sendHostedPageMessage(res, status, heading, text) {
+        res.status(status).type('html').send('<!doctype html><html><head><meta charset="utf-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+            '<title>' + escapeHtmlText(heading) + ' | MCRRC Racing Team</title></head>' +
+            '<body style="font-family: sans-serif; max-width: 40em; margin: 4em auto; padding: 0 1em;">' +
+            '<h1>' + escapeHtmlText(heading) + '</h1><p>' + escapeHtmlText(text) + '</p>' +
+            '<p><a href="/">MCRRC Racing Team</a></p></body></html>');
+    }
+
+    function canSeeHostedPage(access, user) {
+        var role = user ? user.role : null;
+        if (access === 'public') return true;
+        if (access === 'members') return !!user;
+        if (access === 'captains') return role === 'captain' || role === 'admin';
+        return role === 'admin';
+    }
+
+    // The bar at the very top of a hosted page, back to the site. Styled
+    // inline with all:initial first, so the page's own CSS cannot restyle it;
+    // in the flow of the page (not fixed), so it never covers the content.
+    const HOSTED_PAGE_BAR = (function () {
+        // Every declaration !important: an inline !important rule beats the
+        // page's own !important rules too
+        function css(rules) {
+            return rules.map(function (rule) { return rule + ' !important'; }).join(';');
+        }
+        var font = "600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+        var bar = css(['all:initial', 'display:block', 'box-sizing:border-box', 'width:100%', 'margin:0',
+            'padding:6px 16px', 'background:#008cba', 'position:relative', 'z-index:2147483647', 'font:' + font]);
+        var link = css(['all:initial', 'display:inline-flex', 'align-items:center', 'gap:8px',
+            'color:#fff', 'cursor:pointer', 'font:' + font]);
+        // The club logo, committed at this size (the application form uses it too)
+        // all:initial also resets the cursor, so the logo and the text each
+        // need the link's hand cursor again
+        var logo = css(['all:initial', 'display:block', 'width:26px', 'height:26px', 'flex:none', 'cursor:pointer']);
+        return '<div id="mcrrc-site-bar" style="' + bar + '">' +
+            '<a href="/" style="' + link + '">' +
+            '<img src="/images/mcrrc_logo_256.png" alt="" width="26" height="26" style="' + logo + '">' +
+            '<span style="' + css(['all:initial', 'color:#fff', 'cursor:pointer', 'font:' + font]) + '">&larr; Back to MCRRC Racing Team</span>' +
+            '</a></div>';
+    })();
+
+    function withSiteBar(page, html) {
+        if (page.showBanner === false) return html;
+        // Right after <body ...>, or first thing if the file has no <body>
+        return /<body[^>]*>/i.test(html) ? html.replace(/<body[^>]*>/i, function (tag) { return tag + HOSTED_PAGE_BAR; }) :
+            HOSTED_PAGE_BAR + html;
+    }
+
+    // The page's own <head> gets social preview tags from its title and
+    // description, unless it already has its own
+    function withSocialTags(page, html) {
+        if (!/<\/head>/i.test(html) || /property=["']og:title["']/i.test(html)) return html;
+        var tags = '<meta property="og:title" content="' + escapeHtmlText(page.title) + '">' +
+            '<meta property="og:type" content="website">';
+        if (page.description) {
+            tags += '<meta property="og:description" content="' + escapeHtmlText(page.description) + '">' +
+                '<meta name="description" content="' + escapeHtmlText(page.description) + '">';
+        }
+        return html.replace(/<\/head>/i, tags + '</head>');
+    }
+
+    app.get('/pages/:slug', async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const slug = String(req.params.slug || '').toLowerCase();
+        const user = req.isAuthenticated() ? req.user : null;
+        const isAdmin = !!user && user.role === 'admin';
+        try {
+            const page = HOSTED_PAGE_SLUG.test(slug) ?
+                await HostedPage.findOne({ slug: slug }).select('+html').lean() : null;
+            // Drafts and unknown addresses look the same to everyone but admins
+            if (!page || (!page.published && !isAdmin)) {
+                return sendHostedPageMessage(res, 404, 'Page not found', 'There is no page at this address.');
+            }
+            if (!canSeeHostedPage(page.access, user)) {
+                if (!user) {
+                    // Log in, then come straight back here
+                    return res.redirect('/login?returnTo=' + encodeURIComponent(req.originalUrl));
+                }
+                return sendHostedPageMessage(res, 403, 'Not allowed',
+                    'This page is only available to ' + (page.access === 'admin' ? 'admins' : 'captains and admins') + '.');
+            }
+            res.set('Content-Type', 'text/html; charset=utf-8');
+            res.set('X-Content-Type-Options', 'nosniff');
+            // Anything behind a login must not be cached by a shared cache
+            res.set('Cache-Control', page.access === 'public' && page.published ? 'no-cache' : 'private, no-store');
+            if (!page.trusted) res.set('Content-Security-Policy', HOSTED_PAGE_SANDBOX);
+            res.send(withSiteBar(page, withSocialTags(page, page.html)));
+        } catch (err) {
+            console.error('Error serving hosted page:', err);
+            sendHostedPageMessage(res, 500, 'Something went wrong', 'This page could not be loaded.');
+        }
+    });
+
+    // Admin API: list, create, update, delete. The list never carries the HTML.
+    function hostedPageFields(body, isCreate) {
+        const HostedPage = require('./models/hostedpage');
+        const fields = {};
+        if (isCreate || body.title !== undefined) {
+            fields.title = String(body.title || '').trim();
+            if (!fields.title) return { error: 'A title is required.' };
+        }
+        if (isCreate || body.slug !== undefined) {
+            fields.slug = String(body.slug || '').trim().toLowerCase();
+            if (!HOSTED_PAGE_SLUG.test(fields.slug)) {
+                return { error: 'The address may use lowercase letters, numbers and dashes (not at the start or end), up to 80 characters.' };
+            }
+        }
+        if (body.description !== undefined) fields.description = String(body.description || '').trim().slice(0, 300);
+        if (body.access !== undefined || isCreate) {
+            fields.access = body.access || 'public';
+            if (HostedPage.ACCESS_LEVELS.indexOf(fields.access) === -1) return { error: 'Unknown access level.' };
+        }
+        if (body.published !== undefined) fields.published = !!body.published;
+        if (body.trusted !== undefined) fields.trusted = !!body.trusted;
+        if (body.showBanner !== undefined) fields.showBanner = !!body.showBanner;
+        if (isCreate || body.html !== undefined) {
+            if (typeof body.html !== 'string' || !body.html.trim()) return { error: 'Choose an HTML file to upload.' };
+            fields.size = Buffer.byteLength(body.html, 'utf8');
+            if (fields.size > HOSTED_PAGE_MAX_BYTES) return { error: 'The file is larger than 10 MB.' };
+            fields.html = body.html;
+            fields.filename = String(body.filename || '').slice(0, 200);
+        }
+        return { fields: fields };
+    }
+
+    function logHostedPage(req, action, page, description) {
+        service.logActivity({
+            userId: req.user._id,
+            username: req.user.username,
+            action: action,
+            description: description,
+            targetType: 'hostedpage',
+            targetId: String(page._id),
+            targetName: page.title,
+            metadata: { slug: page.slug, access: page.access, published: page.published, trusted: page.trusted, showBanner: page.showBanner !== false },
+            ipAddress: req.ip
+        });
+    }
+
+    app.get('/api/hosted-pages', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const HostedPage = require('./models/hostedpage');
+            res.json(await HostedPage.find({}).sort({ updatedAt: -1 }).lean());
+        } catch (err) {
+            res.status(500).json({ error: 'Error loading pages' });
+        }
+    });
+
+    app.post('/api/hosted-pages', service.isAdminLoggedIn, async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const input = hostedPageFields(req.body || {}, true);
+        if (input.error) return res.status(400).json({ error: input.error });
+        try {
+            const who = { _id: req.user._id, username: req.user.username };
+            const page = await HostedPage.create(Object.assign(input.fields, { createdBy: who, updatedBy: who }));
+            logHostedPage(req, 'hosted_page_created', page, 'Uploaded hosted page "' + page.title + '" (/pages/' + page.slug + ')');
+            const out = page.toObject();
+            delete out.html;
+            res.status(201).json(out);
+        } catch (err) {
+            if (err && err.code === 11000) return res.status(409).json({ error: 'Another page already uses this address.' });
+            console.error('Error creating hosted page:', err);
+            res.status(500).json({ error: 'Error saving the page' });
+        }
+    });
+
+    app.put('/api/hosted-pages/:id', service.isAdminLoggedIn, async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const input = hostedPageFields(req.body || {}, false);
+        if (input.error) return res.status(400).json({ error: input.error });
+        try {
+            input.fields.updatedBy = { _id: req.user._id, username: req.user.username };
+            const page = await HostedPage.findByIdAndUpdate(req.params.id, { $set: input.fields },
+                { returnDocument: 'after', runValidators: true }).lean();
+            if (!page) return res.status(404).json({ error: 'Page not found' });
+            logHostedPage(req, 'hosted_page_updated', page, 'Updated hosted page "' + page.title + '" (/pages/' + page.slug + ')' +
+                (input.fields.html !== undefined ? ', new file' : ''));
+            res.json(page);
+        } catch (err) {
+            if (err && err.code === 11000) return res.status(409).json({ error: 'Another page already uses this address.' });
+            if (err && err.name === 'CastError') return res.status(404).json({ error: 'Page not found' });
+            console.error('Error updating hosted page:', err);
+            res.status(500).json({ error: 'Error saving the page' });
+        }
+    });
+
+    app.delete('/api/hosted-pages/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const HostedPage = require('./models/hostedpage');
+            const page = await HostedPage.findByIdAndDelete(req.params.id).lean();
+            if (!page) return res.status(404).json({ error: 'Page not found' });
+            logHostedPage(req, 'hosted_page_deleted', page, 'Deleted hosted page "' + page.title + '" (/pages/' + page.slug + ')');
+            res.json({ success: true });
+        } catch (err) {
+            if (err && err.name === 'CastError') return res.status(404).json({ error: 'Page not found' });
+            res.status(500).json({ error: 'Error deleting the page' });
         }
     });
 

@@ -12541,3 +12541,117 @@ advanced-filter-panel {
         }
     }
 }
+
+// =====================================
+// ADMIN: HOSTED PAGES (views/hostedPages.html)
+// =====================================
+.hosted-pages {
+    text-align: left;
+
+    // The page sits in a .jumbotron, which enlarges every <p>
+    p,
+    .help-block {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .hp-editor {
+        border-bottom: 1px solid @gray-lighter;
+        background: @brand-primary-very-light;
+
+        h5 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        .radio-inline {
+            margin-right: 12px;
+        }
+    }
+
+    .hp-trusted-warning {
+        font-size: 13px;
+    }
+
+    .hp-table {
+        font-size: 13px;
+
+        > tbody > tr > td {
+            vertical-align: middle;
+        }
+    }
+
+    .hp-address {
+        font-size: 12px;
+    }
+
+    .hp-actions {
+        white-space: nowrap;
+
+        .btn {
+            margin-left: 2px;
+        }
+
+        .hp-delete:hover {
+            color: #fff;
+            background-color: @brand-danger;
+            border-color: @brand-danger;
+        }
+    }
+}
+
+// =====================================
+// NAVBAR: ADMIN TOOLS MENU (views/index.ejs)
+// =====================================
+// Four labelled groups in a 2x2 grid, so the menu stays short. Colours and
+// hover follow the theme's other dropdowns; rows are a little tighter.
+.navbar .open > .admin-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(190px, auto));
+}
+
+.navbar .admin-menu {
+    padding: 6px 0;
+
+    .admin-menu-group {
+        list-style: none;
+        padding-bottom: 6px;
+    }
+
+    .admin-menu-heading {
+        padding: 8px 15px 4px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        > li > a {
+            display: block;
+            padding: 7px 15px;
+            font-size: 13px;
+            line-height: 18px;
+            white-space: nowrap;
+            color: #fff;
+            text-decoration: none;
+
+            &:hover,
+            &:focus {
+                color: #fff;
+                background-color: @brand-primary-dark;
+            }
+        }
+
+        > li.active > a {
+            background-color: @brand-primary-dark;
+        }
+    }
+}
+

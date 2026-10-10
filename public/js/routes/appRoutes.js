@@ -375,6 +375,13 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/applications",
             templateUrl: "views/teamApplications.html",
             controller: 'TeamApplicationsController'
+        })
+        // Admin: upload HTML pages served at /pages/<address> (by the server,
+        // not this app: see app/routes.js)
+        .state('/hosted-pages', {
+            url: "/hosted-pages",
+            templateUrl: "views/hostedPages.html",
+            controller: 'HostedPagesController'
         });
 
 });

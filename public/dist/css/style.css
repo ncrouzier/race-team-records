@@ -17403,3 +17403,87 @@ advanced-filter-panel {
 .active-filters-bar .selected-item.selected-item-highlight .fa-times {
   color: #222222;
 }
+.hosted-pages {
+  text-align: left;
+}
+.hosted-pages p,
+.hosted-pages .help-block {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.hosted-pages .hp-editor {
+  border-bottom: 1px solid #eeeeee;
+  background: #F7FBFC;
+}
+.hosted-pages .hp-editor h5 {
+  margin-top: 0;
+  font-weight: 600;
+}
+.hosted-pages .hp-editor .radio-inline {
+  margin-right: 12px;
+}
+.hosted-pages .hp-trusted-warning {
+  font-size: 13px;
+}
+.hosted-pages .hp-table {
+  font-size: 13px;
+}
+.hosted-pages .hp-table > tbody > tr > td {
+  vertical-align: middle;
+}
+.hosted-pages .hp-address {
+  font-size: 12px;
+}
+.hosted-pages .hp-actions {
+  white-space: nowrap;
+}
+.hosted-pages .hp-actions .btn {
+  margin-left: 2px;
+}
+.hosted-pages .hp-actions .hp-delete:hover {
+  color: #fff;
+  background-color: #F04124;
+  border-color: #F04124;
+}
+.navbar .open > .admin-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(190px, auto));
+}
+.navbar .admin-menu {
+  padding: 6px 0;
+}
+.navbar .admin-menu .admin-menu-group {
+  list-style: none;
+  padding-bottom: 6px;
+}
+.navbar .admin-menu .admin-menu-heading {
+  padding: 8px 15px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.7);
+}
+.navbar .admin-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.navbar .admin-menu ul > li > a {
+  display: block;
+  padding: 7px 15px;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  color: #fff;
+  text-decoration: none;
+}
+.navbar .admin-menu ul > li > a:hover,
+.navbar .admin-menu ul > li > a:focus {
+  color: #fff;
+  background-color: #006687;
+}
+.navbar .admin-menu ul > li.active > a {
+  background-color: #006687;
+}

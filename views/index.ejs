@@ -138,37 +138,50 @@
 								</li>
 							</ul>
 						</li>
-						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs') || $state.includes('/agegrading-tables'))}"
+						<!-- Admin tools, in labelled groups (not fly-out submenus, which
+						     need hover and do not work on phones) -->
+						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span class="caret"></span>
 							</a>
-							<ul class="dropdown-menu" uib-dropdown-menu>
-								<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a
-										ui-sref="/tools/resultExtractor">Result Extractor</a></li>
-								<li ng-class="{active: $state.includes('/stats/requirements')}"><a
-										ui-sref="/stats/requirements">Team Requirements</a></li>
-								<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a
-										ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
-								<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
-								<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">
-										Activity Log
-										<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-unseen-badge">{{unseenActivityCount}}</span>
-									</a></li>
-								<li ng-class="{active: $state.includes('/comp-race-forms')}"><a
-										ui-sref="/comp-race-forms">Comp Race Forms</a></li>
-								<li ng-class="{active: $state.includes('/applications')}"><a
-										ui-sref="/applications">Team Applications</a></li>
-								<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
-								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
-										Types</a></li>
-								<li ng-class="{active: $state.includes('/agegrading-tables')}"><a
-										ui-sref="/agegrading-tables">Age Grading Tables</a></li>
-								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
-										Report</a></li>
-								<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a>
+							<!-- Four groups in a 2x2 grid (styles: .admin-menu in mcrrc.less) -->
+							<ul class="dropdown-menu admin-menu" uib-dropdown-menu>
+								<li class="admin-menu-group">
+									<div class="admin-menu-heading"><i class="fa fa-flag-checkered fa-fw"></i> Results &amp; Races</div>
+									<ul>
+										<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a ui-sref="/tools/resultExtractor">Result Extractor</a></li>
+										<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
+										<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
+										<li ng-class="{active: $state.includes('/agegrading-tables')}"><a ui-sref="/agegrading-tables">Age Grading Tables</a></li>
+									</ul>
 								</li>
-								<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
+								<li class="admin-menu-group">
+									<div class="admin-menu-heading"><i class="fa fa-users fa-fw"></i> Team</div>
+									<ul>
+										<li ng-class="{active: $state.includes('/applications')}"><a ui-sref="/applications">Team Applications</a></li>
+										<li ng-class="{active: $state.includes('/stats/requirements')}"><a ui-sref="/stats/requirements">Team Requirements</a></li>
+										<li ng-class="{active: $state.includes('/comp-race-forms')}"><a ui-sref="/comp-race-forms">Comp Race Forms</a></li>
+										<li ng-class="{active: $state.includes('/volunteer-jobs')}"><a ui-sref="/volunteer-jobs">Volunteer Jobs</a></li>
+									</ul>
+								</li>
+								<li class="admin-menu-group">
+									<div class="admin-menu-heading"><i class="fa fa-globe fa-fw"></i> Site</div>
+									<ul>
+										<li ng-class="{active: $state.includes('/hosted-pages')}"><a ui-sref="/hosted-pages">Hosted Pages</a></li>
+										<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
+										<li ng-class="{active: $state.includes('/users')}"><a ui-sref="/users">Users</a></li>
+									</ul>
+								</li>
+								<li class="admin-menu-group">
+									<div class="admin-menu-heading"><i class="fa fa-file-text-o fa-fw"></i> Reports &amp; Logs</div>
+									<ul>
+										<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
+										<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a></li>
+										<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">Activity Log
+											<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-unseen-badge">{{unseenActivityCount}}</span></a></li>
+									</ul>
+								</li>
 							</ul>
 						</li>
 						<li class="submitmenu"><a ui-sref="/instagram" target="_blank">Instagram <img

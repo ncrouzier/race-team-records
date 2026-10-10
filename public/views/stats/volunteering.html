@@ -4,7 +4,7 @@
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/team">Racing Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user">
+        <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/volunteering">Volunteering Stats</a>
         </li>
         <li role="presentation" ui-sref-active="active">
@@ -27,14 +27,7 @@
         </li>
     </ul>
 
-    <!-- Logged-out visitors reach this only by URL -->
-    <div ng-if="!user" class="vs-message">
-        <i class="fa fa-lock"></i>
-        Volunteering stats are only available to logged-in members.
-        <a ui-sref="/login">Log in</a>
-    </div>
-
-    <div ng-if="user">
+    <div>
         <div class="row vs-toolbar">
             <div class="col-sm-9 text-left">
                 <h3 class="vs-title">Team volunteering <small>{{yearLabel()}}</small></h3>

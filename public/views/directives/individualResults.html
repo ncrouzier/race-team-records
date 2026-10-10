@@ -80,7 +80,7 @@
             <span class="ir-num hoverhand" ng-click="sortBy('time')">TIME <i class="fa" ng-class="sortIcon('time')"></i></span>
             <span class="ir-num hoverhand" ng-click="sortBy('pace')">PACE <i class="fa" ng-class="sortIcon('pace')"></i></span>
             <span class="ir-num hoverhand" ng-click="sortBy('agegrade')" title="Age grade">AG <i class="fa" ng-class="sortIcon('agegrade')"></i></span>
-            <span class="ir-num hoverhand" ng-click="sortBy('place')" title="Overall place">PLACE <i class="fa" ng-class="sortIcon('place')"></i></span>
+            <span class="ir-num hoverhand" ng-click="sortBy('place')" title="Overall place; for women, the gender place where there is one">PLACE <i class="fa" ng-class="sortIcon('place')"></i></span>
             <span></span>
             <span ng-if="user.role === 'admin'"></span>
         </li>
@@ -116,9 +116,11 @@
                 <small ng-if="::row.race.surface && row.race.surface !== 'road'">{{::row.race.surface}}</small></span>
             <span class="ir-num ir-time">{{::row.timeText}}</span>
             <span class="ir-num">{{::row.paceText}}</span>
-            <span class="ir-num">{{::row.agegrade ? (row.agegrade | number:1) + '%' : ''}}</span>
-            <span class="ir-num ir-place" data-tip="{{::row.genderrank ? 'Gender ' + row.genderrank : ''}}{{::row.agerank ? ' · age group ' + row.agerank : ''}}">
-                <span ng-if="::!!row.overallrank">{{::row.overallrank}}<small>/{{::row.overalltotal}}</small></span>
+            <span class="ir-num">{{::row.agegrade ? (row.agegrade | number:2) + '%' : ''}}</span>
+            <!-- A woman's gender place where there is one, else overall; the
+                 tooltip lists every ranking, as in the race list -->
+            <span class="ir-num ir-place" data-tip-html="{{::row.rankTip}}">
+                <span ng-if="::!!row.placeRank">{{::row.placeRank}}<small ng-if="::!!row.placeTotal">/{{::row.placeTotal}}</small></span>
             </span>
             <span class="ir-flags">
                 <span ng-if="::row.pb" data-tip="Personal best">🧨</span><span ng-if="::row.record"
@@ -153,6 +155,6 @@
          whose text is cut off (with "…"), showing all of it, or anything with
          a data-tip (the icons, the place). One instead of one per cell keeps
          a page of 100 rows light. -->
-    <span class="ir-tip-anchor" uib-tooltip="{{cellTip.text}}" tooltip-is-open="cellTip.open"
+    <span class="ir-tip-anchor" uib-tooltip-html="cellTip.html" tooltip-is-open="cellTip.open"
         tooltip-trigger="'none'" tooltip-append-to-body="true" tooltip-placement="top"></span>
 </div>

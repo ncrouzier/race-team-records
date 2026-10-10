@@ -62,7 +62,8 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/notacult': 'Not a Cult',
         '/comp-race-forms': 'Competitive Race Forms',
         '/comp-race-forms/detail': 'Competitive Race Form',
-        '/applications': 'Team Applications'
+        '/applications': 'Team Applications',
+        '/hosted-pages': 'Hosted Pages'
     };
 
     // A member's pages: "<name>" plus what the page shows. member2 is the

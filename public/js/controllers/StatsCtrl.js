@@ -1,9 +1,10 @@
-angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'UtilsService', 'StatsService', 'dialogs', '$filter', '$state', 'MemoryCacheService', function ($scope, AuthService, ResultsService, MembersService, UtilsService, StatsService, dialogs, $filter, $state, MemoryCacheService) {
+angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'AuthService', 'ResultsService', 'MembersService', 'UtilsService', 'StatsService', 'dialogs', '$filter', '$state', 'MemoryCacheService', 'AdvancedFiltersService', function ($scope, AuthService, ResultsService, MembersService, UtilsService, StatsService, dialogs, $filter, $state, MemoryCacheService, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         var hadUser = !!$scope.user;
         $scope.user = user;
+        defaultMilestoneView(user);
         // When user logs in after initial load, only load participation stats (other stats are user-independent)
         if ($scope.statsInitialized && !hadUser && user && (user.role === 'user' || user.role === 'admin' || user.role === 'captain')) {
             $scope.getParticipationStats();
@@ -126,6 +127,51 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         });
     };
 
+    // "Most Races Completed" can be narrowed to one kind of race (all
+    // surfaces). '' is every race, straight from miscStats.
+    $scope.raceTypeGroups = StatsService.RACE_TYPE_GROUPS;
+    $scope.mostRacesFilter = { type: '' };
+    $scope.mostRacesByType = null;
+
+    $scope.refreshMostRaces = function () {
+        var type = $scope.mostRacesFilter.type;
+        var year = $scope.miscStats.year;
+        if (!type) {
+            $scope.mostRacesByType = null;
+            return;
+        }
+        StatsService.getMostRacesByType(year, type).then(function (byType) {
+            // Ignore a late answer for a choice since changed
+            if ($scope.mostRacesFilter.type === type && $scope.miscStats.year === year) {
+                $scope.mostRacesByType = byType;
+            }
+        });
+    };
+
+    $scope.mostRacesList = function () {
+        return $scope.mostRacesByType ? $scope.mostRacesByType.mostRaces : $scope.miscStats.mostRaces;
+    };
+
+    // The race count opens that member's results, one row per result, for
+    // the same year and kind of race
+    $scope.goToMemberRaces = function (member) {
+        $state.go('/individualresults', {
+            runner: member.username,
+            types: $scope.mostRacesByType ? $scope.mostRacesByType.types || null : null,
+            year: $scope.miscStats.year !== 'All Time' ? String($scope.miscStats.year) : null
+        }, { inherit: false });
+    };
+
+    // A win count opens that member's wins (1st overall or gender), one row
+    // per result, for the same year
+    $scope.goToMemberWins = function (member) {
+        $state.go('/individualresults', {
+            runner: member.username,
+            win: '1',
+            year: $scope.miscStats.year !== 'All Time' ? String($scope.miscStats.year) : null
+        }, { inherit: false });
+    };
+
     $scope.getMiscStats = function () {
         $scope.loadingStates.miscStats = true;
 
@@ -138,8 +184,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                 ...stats.teamMemberStats
             };
             $scope.teamRaceTypeBreakdown = stats.teamRaceTypeBreakdown;
+            $scope.raceCalendar = stats.raceCalendar;
+            $scope.milestones = stats.milestones;
             $scope.stateStats = stats.stateStats;
             $scope.countryStats = stats.countryStats;
+            $scope.refreshMostRaces();
 
             // Reset loading state
             $scope.loadingStates.miscStats = false;
@@ -437,8 +486,78 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             }
         });
 
-        var searchQuery = JSON.stringify(cleanedParams);
-        $state.go('/results', { search: searchQuery });
+        AdvancedFiltersService.goToRaceList($state, cleanedParams);
+    };
+
+    // 'Male' | 'Female' | 'AgeGrade'. Set through a function, not a bare
+    // assignment in ng-click: the panel sits inside an ng-if, whose child scope
+    // would shadow the value otherwise.
+    $scope.milestoneView = 'Male';
+    // Once the reader picks a view themselves, stop steering it for them — the
+    // auth watcher below fires again on any login state change.
+    var milestoneViewPicked = false;
+    $scope.setMilestoneView = function (view) {
+        milestoneViewPicked = true;
+        $scope.milestoneView = view;
+    };
+
+    // Open on the reader's own side of the table when we know it.
+    function defaultMilestoneView(user) {
+        if (milestoneViewPicked) return;
+        var sex = user && user.member && user.member.sex;
+        if (sex === 'Female' || sex === 'Male') {
+            $scope.milestoneView = sex;
+        }
+    }
+
+    // Index of the hardest tier the logged-in reader has cleared in this row,
+    // or -1. Time rows only count for the reader's own gender — a man's times
+    // say nothing against the women's thresholds — while the age-grade rows
+    // apply to everyone, since age grading is already gender-neutral.
+    $scope.myBestTier = function (row) {
+        var member = $scope.user && $scope.user.member;
+        if (!member || !row || !row.bestTierByMember) return -1;
+        if (row.kind !== 'agegrade' && row.sex !== member.sex) return -1;
+        var index = row.bestTierByMember[member._id];
+        return index === undefined ? -1 : index;
+    };
+
+    // A milestone tile opens the "By result" list showing exactly the
+    // performances it counted — same distance, surfaces, gender and cutoff,
+    // only results that count (solo, record eligible) — so the rows listed
+    // there add up to the number that was clicked. Fastest (or best graded)
+    // first.
+    $scope.goToMilestone = function (row, tier) {
+        if (!row || !tier || !tier.count) return;
+        var isAgeGrade = row.kind === 'agegrade';
+        var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+        var seconds = tier.maxTime ? Math.round(tier.maxTime / 100) : 0;
+        var under = tier.maxTime ? (seconds >= 3600
+            ? Math.floor(seconds / 3600) + ':' + pad(Math.floor(seconds % 3600 / 60)) + ':' + pad(seconds % 60)
+            : Math.floor(seconds / 60) + ':' + pad(seconds % 60)) : null;
+        $state.go('/individualresults', {
+            distance: row.racetype.toLowerCase(),
+            surface: (row.surfaces || []).join(',') || null,
+            // Age grade is already normalised for gender, so that view is
+            // not restricted to one.
+            sex: row.sex === 'Female' ? 'f' : (row.sex === 'Male' ? 'm' : null),
+            eligible: '1',
+            under: isAgeGrade ? null : under,
+            agmin: isAgeGrade ? String(tier.minAgeGrade) : null,
+            sort: isAgeGrade ? 'agegrade' : 'time',
+            year: $scope.miscStats.year !== 'All Time' ? String($scope.miscStats.year) : null
+        }, { inherit: false });
+    };
+
+    // A calendar cell opens the results page filtered to that day of the year,
+    // across every year — the same set the cell is counting. Days the team has
+    // never raced have nothing to show, so they are not clickable.
+    $scope.goToCalendarDay = function (day) {
+        if (!day || !day.count) return;
+        $scope.goToResultsWithQuery({
+            calendarDay: { month: day.month, day: day.day, label: day.label },
+            year: $scope.miscStats.year !== 'All Time' ? $scope.miscStats.year : undefined
+        });
     };
 
 

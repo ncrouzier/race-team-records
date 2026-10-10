@@ -113,7 +113,7 @@
                                     </tr>
                                     <tr
                                         ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
-                                        <td>{{job.eventName}}</td>
+                                        <td><volunteer-event-name job="job"></volunteer-event-name></td>
                                         <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
                                         <td>{{job.description}}</td>
                                     </tr>

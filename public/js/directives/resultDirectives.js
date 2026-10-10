@@ -66,6 +66,9 @@ app.directive('resultIcon', ['UtilsService', function (UtilsService) {
       }
 
       $scope.isFourthOfJuly = false;
+      // Everything above is worked out once here and never recomputed, so the
+      // template binds it once (::) too — this icon sits in every row of the
+      // records and results lists, where its watchers added up.
       if (raceDate.getUTCMonth() === 6 && raceDate.getUTCDate() === 4) {
         $scope.isFourthOfJuly = true;
       }
@@ -73,17 +76,17 @@ app.directive('resultIcon', ['UtilsService', function (UtilsService) {
 
 
     },
-    template: '<span ng-if="ags" ng-repeat="ag in ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true"><div class="pbBox">🎖️</div></span>' +
-      '<span ng-if="pbs" ng-repeat="pb in pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true"><div class="pbBox">🧨</div></span>' +
-      '<span ng-if="raceCounts" ng-repeat="raceCount in raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text" tooltip-append-to-body="true"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
-      '<span ng-if="birthdays" ng-repeat="birthday in birthdays track by $index" class="hoverhand" uib-tooltip-html="birthday.text" tooltip-append-to-body="true">🎂</span>' +
-      '<span ng-if="teamRecords" ng-repeat="teamRecord in teamRecords track by $index" class="hoverhand" uib-tooltip-html="teamRecord.text" tooltip-append-to-body="true">🔥</span>' +
-      '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isThanksgiving">🦃</span>' +
-      '<span class="hoverhand" uib-tooltip="Fourth of July Race!" tooltip-append-to-body="true" ng-if="!raceDisplay && isFourthOfJuly">🎆</span>' +
-      '<span ng-if="raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +
-      '<span ng-if="raceTexts.length >0 && !raceDisplay" ng-repeat="raceText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="raceText.text"><span>{{raceText.value}}</span></span>' +
-      '<span ng-if="resultIcons.length >0" ng-repeat="resultIcon in resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text" tooltip-append-to-body="true"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
-      '<span ng-if="resultTexts.length >0" ng-repeat="resultText in resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text" tooltip-append-to-body="true"><span>{{resultText.value}}</span></span>'
+    template: '<span ng-if="::!!ags" ng-repeat="ag in ::ags track by $index" class="hoverhand" uib-tooltip-html="ag.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement"><div class="pbBox">🎖️</div></span>' +
+      '<span ng-if="::!!pbs" ng-repeat="pb in ::pbs track by $index" class="hoverhand" uib-tooltip-html="pb.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement"><div class="pbBox">🧨</div></span>' +
+      '<span ng-if="::!!raceCounts" ng-repeat="raceCount in ::raceCounts track by $index" class="hoverhand" uib-tooltip-html="raceCount.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement"><div class="raceCountBox">{{raceCount.value.raceCount}}</div></span>' +
+      '<span ng-if="::!!birthdays" ng-repeat="birthday in ::birthdays track by $index" class="hoverhand" uib-tooltip-html="birthday.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement">🎂</span>' +
+      '<span ng-if="::!!teamRecords" ng-repeat="teamRecord in ::teamRecords track by $index" class="hoverhand" uib-tooltip-html="teamRecord.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement">🔥</span>' +
+      '<span class="hoverhand" uib-tooltip="Thanksgiving Race!" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" ng-if="::!raceDisplay && isThanksgiving">🦃</span>' +
+      '<span class="hoverhand" uib-tooltip="Fourth of July Race!" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" ng-if="::!raceDisplay && isFourthOfJuly">🎆</span>' +
+      '<span ng-if="::raceIcons.length >0 && !raceDisplay" ng-repeat="raceIcon in ::raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip-html="raceIcon.text"><img ng-src="{{raceIcon.value}}"  ng-style="{\'width\' : raceIcon.width ? raceIcon.width : \'16px\', \'height\' : raceIcon.height ? raceIcon.height : \'16px\' }" ></span>' +
+      '<span ng-if="::raceTexts.length >0 && !raceDisplay" ng-repeat="raceText in ::raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip-html="raceText.text"><span>{{raceText.value}}</span></span>' +
+      '<span ng-if="::resultIcons.length >0" ng-repeat="resultIcon in ::resultIcons track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultIcon.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement"><img ng-src="{{resultIcon.value}}" ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }"></span>' +
+      '<span ng-if="::resultTexts.length >0" ng-repeat="resultText in ::resultTexts track by $index" class="hoverhand resultIcons" uib-tooltip-html="resultText.text" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement"><span>{{resultText.value}}</span></span>'
   };
 }]);
 
@@ -129,10 +132,10 @@ app.directive('raceIcon', function () {
 
     },
     template:
-      '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
-      '<span class="hoverhand" tooltip-append-to-body="true" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
-      '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
-      '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
+      '<span class="hoverhand" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip="Thanksgiving Race!" ng-if="isThanksgiving">🦃</span>' +
+      '<span class="hoverhand" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip="Fourth of July Race!" ng-if="isFourthOfJuly">🎆</span>' +
+      '<span ng-if="raceIcons.length >0" ng-repeat="resultIcon in raceIcons track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip-html="resultIcon.text"><img ng-src="{{resultIcon.value}}"  ng-style="{\'width\' : resultIcon.width ? resultIcon.width : \'16px\', \'height\' : resultIcon.height ? resultIcon.height : \'16px\' }" ></span>' +
+      '<span ng-if="raceTexts.length >0" ng-repeat="resultText in raceTexts track by $index"  class="hoverhand resultIcons" tooltip-append-to-body="true" tooltip-trigger="$root.tapTooltipTrigger" tap-tooltip="achievement" uib-tooltip-html="resultText.text"><span>{{resultText.value}}</span></span>'
   };
 });
 

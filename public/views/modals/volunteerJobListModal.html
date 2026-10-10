@@ -22,7 +22,7 @@
         <tbody>
             <tr ng-repeat="job in volunteerJobs | orderBy:'-jobDate'">
                 <td>{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
-                <td>{{job.eventName}}</td>
+                <td><volunteer-event-name job="job"></volunteer-event-name></td>
                 <td>{{job.description}}</td>
             </tr>
         </tbody>

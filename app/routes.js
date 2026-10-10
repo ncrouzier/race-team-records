@@ -11,35 +11,174 @@ const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const Banner = require('./models/banner');
 
-// Table headers scraped from the wild are routinely blank or repeated. The
-// MCRRC result pages have both: an unlabelled column holding the surname, and
-// "Pace" twice for net and gun pace.
-//
-// Rows are keyed by header name, so the old approach of dropping blanks while
-// still indexing <td>s positionally shifted every later column onto the wrong
-// header — surnames landed under "Sex", ages under "City" — and a repeated name
-// silently overwrote its twin. Keep every column, in place, under a unique name.
-function normaliseTableHeaders(rawHeaders) {
-    const taken = new Set();
-    return rawHeaders.map(function (raw, index) {
-        const base = (raw || '').trim() || 'Column ' + (index + 1);
-        let name = base;
-        let n = 2;
-        // Guard against a source that already contains "Pace (2)" literally.
-        while (taken.has(name)) {
-            name = base + ' (' + n + ')';
-            n++;
-        }
-        taken.add(name);
-        return name;
-    });
+// Locating the results on a scraped page is its own problem — layout tables,
+// several result tables per page, fixed-width <pre> blocks — so it lives in its
+// own module. normaliseTableHeaders and looksLikeHeaderRow are re-exported from
+// there because the parkrun branch below builds its tables by hand.
+const {
+    parseResultsTableFromHtml,
+    normaliseTableHeaders,
+    looksLikeHeaderRow
+} = require('./resultTableParser');
+
+// parkrun puts the event name, number and date in its own header markup rather
+// than anywhere the generic parser would look, so pull them out when they are
+// there. Returns null for any other site.
+function parkrunMetadata(html) {
+    const $ = cheerio.load(html);
+    const resultsHeader = $('.Results-header h1').text().trim();
+    if (!resultsHeader) return null;
+
+    const dateText = $('.Results-header h3 .format-date').text().trim();
+    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+
+    let raceDate;
+    if (dateText) {
+        // parkrun writes DD/MM/YYYY
+        const [day, month, year] = dateText.split('/');
+        raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+
+    return {
+        pageTitle: eventNumber ? `${resultsHeader} #${eventNumber}` : resultsHeader,
+        raceDate: raceDate
+    };
 }
 
-// A header row of nothing but numbers is really a data row.
-function looksLikeHeaderRow(rawHeaders) {
-    return rawHeaders.some(function (h) {
-        return h && !/^\d+$/.test(h);
+const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+// Statuses that mean "the site refused us", as opposed to "the page is missing".
+// These are the ones worth retrying from a different IP.
+const BLOCKED_STATUSES = [401, 403, 405, 429, 503];
+
+// Secret headers that prove a request is ours, so a WAF can let it through.
+//
+// SCRAPE_BYPASS_HOSTS is the allowlist of hosts these may be sent to, as a
+// comma-separated list ("mcrrc.org,www.mcrrc.org" — a bare domain also covers
+// its subdomains). It is deliberately not optional: a shared secret must never
+// be sprayed at every site the extractor is pointed at, and the extractor takes
+// whatever URL an admin types.
+//
+// Either or both of these can be configured:
+//   SCRAPE_BYPASS_HEADER + SCRAPE_BYPASS_TOKEN — a custom header pair, matched
+//       by a Cloudflare WAF custom rule with a "Skip" action.
+//   CF_ACCESS_CLIENT_ID + CF_ACCESS_CLIENT_SECRET — a Cloudflare Access service
+//       token, for a host behind Zero Trust.
+function scrapeBypassHeaders(url) {
+    const allowlist = (process.env.SCRAPE_BYPASS_HOSTS || '')
+        .split(',')
+        .map(function (host) { return host.trim().toLowerCase(); })
+        .filter(Boolean);
+    if (allowlist.length === 0) return {};
+
+    let hostname;
+    try {
+        hostname = new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        return {};
+    }
+
+    const allowed = allowlist.some(function (host) {
+        return hostname === host || hostname.endsWith('.' + host);
     });
+    if (!allowed) return {};
+
+    const headers = {};
+    if (process.env.SCRAPE_BYPASS_HEADER && process.env.SCRAPE_BYPASS_TOKEN) {
+        headers[process.env.SCRAPE_BYPASS_HEADER] = process.env.SCRAPE_BYPASS_TOKEN;
+    }
+    if (process.env.CF_ACCESS_CLIENT_ID && process.env.CF_ACCESS_CLIENT_SECRET) {
+        headers['CF-Access-Client-Id'] = process.env.CF_ACCESS_CLIENT_ID;
+        headers['CF-Access-Client-Secret'] = process.env.CF_ACCESS_CLIENT_SECRET;
+    }
+    return headers;
+}
+
+// Fetch a results page as HTML.
+//
+// Some hosts sit behind Cloudflare and answer a plain server-side request with
+// 403 no matter what headers are sent — mcrrc.org does exactly this. Two ways
+// past it, tried in order:
+//   1. A secret header the site's WAF is configured to wave through, for hosts
+//      we control. See scrapeBypassHeaders above.
+//   2. The proxy that the parkrun branch already uses, which requests from a
+//      different address.
+//
+// Note the proxy keeps its own allowlist of domains; if it has not been told
+// about the host being fetched it answers 403 too, and the caller gets an error
+// explaining that rather than a bare 500.
+async function fetchPageHtml(url) {
+    const bypassHeaders = scrapeBypassHeaders(url);
+    const directHeaders = Object.assign({
+        'User-Agent': SCRAPE_USER_AGENT,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }, bypassHeaders);
+
+    let directStatus = null;
+    try {
+        const response = await axios.get(url, {
+            headers: directHeaders,
+            timeout: 20000,
+            maxRedirects: 5,
+            // A redirect off the allowlisted host must not carry the secret with
+            // it — otherwise an open redirect on the source site would hand the
+            // token to whoever it points at.
+            beforeRedirect: function (options) {
+                const stillAllowed = scrapeBypassHeaders(options.href || url);
+                Object.keys(bypassHeaders).forEach(function (name) {
+                    if (stillAllowed[name] === undefined) {
+                        delete options.headers[name];
+                    }
+                });
+            }
+        });
+        return { html: response.data, via: 'direct' };
+    } catch (directError) {
+        directStatus = directError.response ? directError.response.status : null;
+        if (directStatus && BLOCKED_STATUSES.indexOf(directStatus) === -1) {
+            throw directError;
+        }
+    }
+
+    const usedBypass = Object.keys(bypassHeaders).length > 0;
+    const bypassNote = usedBypass
+        ? ' A bypass token was sent but the site still refused it — check the WAF rule matches this header.'
+        : ' No bypass token is configured for this host.';
+
+    if (!process.env.PARKRUN_PROXY_URL) {
+        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
+            bypassNote + ' No proxy is configured to retry through.');
+        error.scrapeBlocked = true;
+        throw error;
+    }
+
+    const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+    const proxyResponse = await axios.get(proxyUrl, {
+        headers: {
+            'User-Agent': SCRAPE_USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9'
+        },
+        timeout: 30000,
+        maxRedirects: 5,
+        validateStatus: function (status) {
+            return status >= 200 && status < 500;
+        }
+    });
+
+    const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
+    if (proxyResponse.status >= 400) {
+        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
+            bypassNote + ' The proxy could not fetch it either (HTTP ' + proxyResponse.status + '): ' +
+            body.slice(0, 200));
+        error.scrapeBlocked = true;
+        throw error;
+    }
+
+    return { html: body, via: 'proxy' };
 }
 
 const bioSanitizeOptions = {
@@ -75,6 +214,17 @@ function sanitizeBio(html) {
 module.exports = async function (app, qs, passport, async, _) {
 
     const User = require('./models/user');
+
+    // Google Analytics, for every page that renders views/partials/ga.ejs:
+    // on in production only, so local and test traffic stays out of the real
+    // property. GA_ENABLED=true or false overrides either way.
+    app.locals.gaEnabled = process.env.GA_ENABLED ?
+        process.env.GA_ENABLED === 'true' : process.env.NODE_ENV === 'production';
+    // Hits marked debug_mode show in GA4's DebugView, and its "Developer
+    // traffic" data filter keeps them out of reports. On whenever GA runs
+    // outside production (GA_ENABLED=true locally); GA_DEBUG overrides.
+    app.locals.gaDebug = process.env.GA_DEBUG ?
+        process.env.GA_DEBUG === 'true' : process.env.NODE_ENV !== 'production';
 
     // Add response modification middleware BEFORE routes
     app.use('/api', function (req, res, next) {
@@ -606,6 +756,7 @@ module.exports = async function (app, qs, passport, async, _) {
     const VolunteerJob = require('./models/volunteerjob');
     const ActivityLog = require('./models/activitylog');
     const TeamApplication = require('./models/teamapplication');
+    const EmailTemplate = require('./models/emailtemplate');
 
 
     // =====================================
@@ -800,10 +951,25 @@ module.exports = async function (app, qs, passport, async, _) {
         }
         if (select) {
             query = query.select(select);
+        } else {
+            // This is a list endpoint, so it returns a summary of each member.
+            //
+            // personalBests embeds a whole result document per entry — which
+            // itself nests the full race, members array, legs and achievements
+            // — and accounts for ~86% of the collection's bytes. bio adds
+            // another ~10%. Neither is usable in a list view, and callers that
+            // need them fetch the member individually: both the bio tab and
+            // the stats tab already re-request via getMember() when the object
+            // they were handed has no bio.
+            //
+            // Callers that genuinely want these ask for them with an explicit
+            // `select`, which takes the branch above (StatsService does this to
+            // keep personalBests.result.agegrade for the age-grade histogram).
+            query = query.select('-bio -personalBests');
         }
         try {
             query.lean().exec().then(members => {
-                // if there is an error retrieving, send the error. nothing after res.send(err) will execute                    
+                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
                 res.json(members); // return all members in JSON format
             });
         } catch (err) {
@@ -1257,6 +1423,39 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // Volunteer jobs linked to one race, for the race page. Logged-in users
+    // only, like the volunteering stats.
+    app.get('/api/races/:race_id/volunteerjobs', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(req.params.race_id)) {
+                return res.status(400).json({ error: 'Invalid race id' });
+            }
+            const jobs = await VolunteerJob.find({ 'race._id': req.params.race_id })
+                .select('member._id member.firstname member.lastname member.username jobDate description')
+                .sort('jobDate member.lastname')
+                .lean();
+            res.json(jobs);
+        } catch (err) {
+            console.log('error fetching race volunteer jobs', err);
+            res.status(500).json({ error: 'Error while fetching volunteer jobs' });
+        }
+    });
+
+    // Resolves the raceId a volunteer job form sends into the race link stored
+    // on the job, plus the event name that goes with it. Returns null when no
+    // race was chosen, and throws when the race does not exist.
+    const volunteerRaceLink = async function (raceId) {
+        if (!raceId) return null;
+        if (!mongoose.Types.ObjectId.isValid(raceId)) throw new Error('Invalid race id');
+        const race = await Race.findById(raceId).select('racename racedate').lean();
+        if (!race) throw new Error('Race not found');
+        return {
+            race: { _id: race._id, racename: race.racename, racedate: race.racedate },
+            eventName: race.racename,
+            racedate: race.racedate
+        };
+    };
+
     // create a volunteer job
     app.post('/api/volunteerjobs', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
@@ -1265,6 +1464,13 @@ module.exports = async function (app, qs, passport, async, _) {
             const member = await Member.findById(req.body.member._id);
             if (!member) {
                 return res.status(400).json({ error: 'Member not found' });
+            }
+
+            let link;
+            try {
+                link = await volunteerRaceLink(req.body.raceId);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
             }
 
             // Create volunteer job with embedded member info
@@ -1277,8 +1483,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     sex: member.sex,
                     dateofbirth: member.dateofbirth
                 },
-                jobDate: req.body.jobDate,
-                eventName: req.body.eventName,
+                race: link ? link.race : undefined,
+                jobDate: req.body.jobDate || (link && link.racedate),
+                eventName: link ? link.eventName : req.body.eventName,
                 description: req.body.description
             });
 
@@ -1293,10 +1500,21 @@ module.exports = async function (app, qs, passport, async, _) {
     app.post('/api/volunteerjobs/batch', service.isAdminLoggedIn, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
-            const { eventName, jobDate, jobs } = req.body;
+            const { jobs } = req.body;
+
+            // Either a race (which supplies the name, and the date unless one
+            // is given) or a typed event name and date
+            let link;
+            try {
+                link = await volunteerRaceLink(req.body.raceId);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
+            }
+            const eventName = link ? link.eventName : req.body.eventName;
+            const jobDate = req.body.jobDate || (link && link.racedate);
 
             if (!eventName || !jobDate) {
-                return res.status(400).json({ error: 'Event name and job date are required' });
+                return res.status(400).json({ error: 'A race, or an event name and job date, are required' });
             }
             if (!jobs || !Array.isArray(jobs) || jobs.length === 0) {
                 return res.status(400).json({ error: 'Jobs array is required and must not be empty' });
@@ -1321,6 +1539,7 @@ module.exports = async function (app, qs, passport, async, _) {
                             sex: member.sex,
                             dateofbirth: member.dateofbirth
                         },
+                        race: link ? link.race : undefined,
                         jobDate: jobDate,
                         eventName: eventName,
                         description: jobData.description
@@ -1358,6 +1577,23 @@ module.exports = async function (app, qs, passport, async, _) {
             if (req.body.jobDate) job.jobDate = req.body.jobDate;
             if (req.body.eventName) job.eventName = req.body.eventName;
             if (req.body.description) job.description = req.body.description;
+
+            // raceId: an id links the job to that race (and takes its name),
+            // null turns it back into a typed event, absent leaves it alone
+            if (Object.prototype.hasOwnProperty.call(req.body, 'raceId')) {
+                let link;
+                try {
+                    link = await volunteerRaceLink(req.body.raceId);
+                } catch (e) {
+                    return res.status(400).json({ error: e.message });
+                }
+                if (link) {
+                    job.race = link.race;
+                    job.eventName = link.eventName;
+                } else {
+                    job.race = undefined;
+                }
+            }
 
             // If member is being updated, validate and update
             if (req.body.member && req.body.member._id) {
@@ -1590,16 +1826,17 @@ module.exports = async function (app, qs, passport, async, _) {
                 let filteredResult = results;
                 if (req.query.filters) {
                     const filters = JSON.parse(req.query.filters);
-                    if (filters.mode && limit) {
-                        if (filters.mode === 'Best') {
-                            filteredResult = [];
-                            const resultLength = results.length;
-                            let resCount = 0;
-                            for (let i = 0; i < resultLength && resCount < limit; i++) {
-                                if (!service.containsMember(filteredResult, results[i].members[0])) {
-                                    filteredResult.push(results[i]);
-                                    resCount++;
-                                }
+                    // One result per member. With no limit (an admin's "All")
+                    // that is everyone's best, not every result.
+                    if (filters.mode === 'Best') {
+                        const maxCount = limit || Infinity;
+                        filteredResult = [];
+                        const resultLength = results.length;
+                        let resCount = 0;
+                        for (let i = 0; i < resultLength && resCount < maxCount; i++) {
+                            if (!service.containsMember(filteredResult, results[i].members[0])) {
+                                filteredResult.push(results[i]);
+                                resCount++;
                             }
                         }
                     }
@@ -1618,6 +1855,278 @@ module.exports = async function (app, qs, passport, async, _) {
             res.json(await Result.findOne(new mongoose.Types.ObjectId(req.params.result_id)));
         } catch (err) {
             res.send(err);
+        }
+    });
+
+    // Same convention as the age records grid (RecordsGridService)
+    function ageAtDate(birthday, date) {
+        const bd = new Date(birthday);
+        const d = new Date(date);
+        let age = d.getUTCFullYear() - bd.getUTCFullYear();
+        if (d.getUTCMonth() < bd.getUTCMonth() ||
+            (d.getUTCMonth() === bd.getUTCMonth() && d.getUTCDate() < bd.getUTCDate())) {
+            age--;
+        }
+        return Math.max(0, age);
+    }
+
+    // Buckets every team time at one distance into a histogram, so the page
+    // can show where this particular time falls among them.
+    // Times are centiseconds throughout.
+    function buildTimeDistribution(times, markTime) {
+        // Bucket-count budget for the bulk of the field, and the floor on how
+        // much of it may be swept into the single overflow bar
+        // The floor matters most for small populations: a dozen marathons
+        // spread over twenty minutes have room for far more than a dozen bars,
+        // and 2*sqrt(n) alone would round them into three-minute blocks.
+        const MIN_BUCKETS = 24;
+        const MAX_BUCKETS = 60;
+        const MIN_KEPT_PERCENTILE = 0.95;
+        // Bucket widths that read as round numbers on a time axis
+        const NICE_WIDTHS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1800]
+            .map(function (seconds) { return seconds * 100; });
+
+        if (times.length < 8) {
+            return null;
+        }
+
+        // times arrives sorted
+        const quantile = function (fraction) {
+            const position = fraction * (times.length - 1);
+            const lower = Math.floor(position);
+            const upper = Math.min(times.length - 1, lower + 1);
+            return times[lower] + (times[upper] - times[lower]) * (position - lower);
+        };
+
+        // The fast end stays exact — a team record belongs at its own time —
+        // but the slow tail is cut off and collected into a single bar at the
+        // end. Twenty near-empty buckets stretching out to a walked race cost
+        // the bulk of the field both pixels and resolution.
+        //
+        // The result being viewed is never swept into that bar: if it is
+        // itself a slow outlier the cutoff moves out to include it.
+        //
+        // Tukey's fence rather than a fixed percentile, because it follows how
+        // tightly the times actually cluster. A runner whose 5ks sit inside a
+        // 35-second band, with one 35-minute jog, has 61 of 63 results under
+        // Q3 + 1.5*IQR — a 99th-percentile cut would keep the jog and flatten
+        // the band it exists to show. Floored at the 95th percentile so the
+        // overflow bar never swallows a meaningful share of the population.
+        const q1 = quantile(0.25);
+        const q3 = quantile(0.75);
+        const cutoff = Math.max(q3 + 1.5 * (q3 - q1), quantile(MIN_KEPT_PERCENTILE));
+
+        const lo = times[0];
+        const hi = Math.max(cutoff, markTime);
+
+        // Roughly 2*sqrt(n) buckets: enough shape for a large population
+        // without turning a small one into a comb of single-result spikes.
+        const targetBuckets = Math.min(MAX_BUCKETS,
+            Math.max(MIN_BUCKETS, Math.round(Math.sqrt(times.length) * 2)));
+        const span = hi - lo;
+        const target = span > 0 ? span / targetBuckets : NICE_WIDTHS[0];
+
+        const bucketsAt = function (w) {
+            return Math.floor((hi - Math.floor(lo / w) * w) / w) + 1;
+        };
+
+        let widthIndex = NICE_WIDTHS.findIndex(function (w) { return w >= target; });
+        if (widthIndex === -1) {
+            widthIndex = NICE_WIDTHS.length - 1;
+        }
+        // Widen rather than overrun the bar budget; at the coarsest width we
+        // simply accept what we get.
+        while (widthIndex < NICE_WIDTHS.length - 1 && bucketsAt(NICE_WIDTHS[widthIndex]) > MAX_BUCKETS) {
+            widthIndex++;
+        }
+        const width = NICE_WIDTHS[widthIndex];
+
+        const start = Math.floor(lo / width) * width;
+        const count = Math.floor((hi - start) / width) + 1;
+        // Strictly past the last bucket, so markTime can never land here
+        const overflowFrom = start + count * width;
+
+        const buckets = [];
+        for (let i = 0; i < count; i++) {
+            buckets.push({ start: start + i * width, end: start + (i + 1) * width, count: 0 });
+        }
+
+        let overflow = 0;
+        times.forEach(function (time) {
+            const index = Math.floor((time - start) / width);
+            if (index >= count) {
+                overflow++;
+            } else {
+                buckets[Math.max(0, index)].count++;
+            }
+        });
+        if (overflow > 0) {
+            buckets.push({ start: overflowFrom, end: null, count: overflow, overflow: true });
+        }
+
+        return {
+            bucketWidth: width,
+            buckets: buckets,
+            markIndex: Math.min(count - 1, Math.max(0, Math.floor((markTime - start) / width))),
+            markTime: markTime,
+            overflowFrom: overflow > 0 ? overflowFrom : null,
+            overflowCount: overflow,
+            total: times.length
+        };
+    }
+
+    // everything the single-result page shows: the result itself, where the
+    // time stands on the team and in the runner's own history, and how the
+    // team's times at this distance are spread out around it
+    app.get('/api/results/:result_id/detail', async function (req, res) {
+        try {
+            const result = await Result.findById(new mongoose.Types.ObjectId(req.params.result_id));
+            if (!result) {
+                return res.status(404).json({ error: 'Result not found' });
+            }
+
+            const response = {
+                result: result,
+                stats: null,
+                distributions: null,
+                defaultDistribution: 'all'
+            };
+
+            // Standings only mean something for one runner's time over a fixed
+            // distance — relay/multisport entries and results flagged as not
+            // record eligible have nothing comparable to rank against.
+            //
+            // Neither do the variable race types: "Odd road distance", the
+            // other Odd types, and Swim/Cycling name no distance of their own,
+            // so two results sharing that type are not the same race length
+            // and ranking one against the other would be meaningless.
+            const isSolo = result.members.length === 1 && !result.race.isMultisport;
+            const comparable = isSolo &&
+                result.isRecordEligible === true &&
+                result.time > 0 &&
+                result.race.racetype.isVariable !== true;
+            const member = isSolo ? result.members[0] : null;
+
+            if (comparable) {
+                const sameDistance = {
+                    isRecordEligible: true,
+                    time: { $gt: 0 },
+                    'race.racetype._id': result.race.racetype._id,
+                    $expr: { $eq: [{ $size: '$members' }, 1] }
+                };
+
+                const year = new Date(result.race.racedate).getUTCFullYear();
+                const yearWindow = {
+                    $gte: new Date(Date.UTC(year, 0, 1)),
+                    $lt: new Date(Date.UTC(year + 1, 0, 1))
+                };
+
+                // Ties take the better rank: tied for the fastest time is 1st,
+                // not 2nd. `tied` counts the other results on exactly this
+                // time, so the page can say "T5th".
+                const rankAgainst = async function (extra) {
+                    const scope = Object.assign({}, sameDistance, extra);
+                    const [faster, same, total] = await Promise.all([
+                        Result.countDocuments(Object.assign({}, scope, { time: { $gt: 0, $lt: result.time } })),
+                        Result.countDocuments(Object.assign({}, scope, { time: result.time })),
+                        Result.countDocuments(scope)
+                    ]);
+                    return { rank: faster + 1, total: total, tied: Math.max(0, same - 1) };
+                };
+
+                const personal = await rankAgainst({ 'members._id': member._id });
+                const sameSex = { 'members.sex': member.sex };
+
+                const teamAllTime = await rankAgainst({});
+                const teamGender = await rankAgainst(sameSex);
+
+                // How the time stands among runners of the same sex who were
+                // exactly this age when they ran — the same single-year
+                // treatment the age records grid uses. Age depends on both the
+                // runner's birthday and the date of their race, so this cannot
+                // be a plain query; the same-sex results get filtered in
+                // memory, which is cheap at a few hundred per distance.
+                let teamAgeGroup = null;
+                if (member.dateofbirth) {
+                    const age = ageAtDate(member.dateofbirth, result.race.racedate);
+
+                    const peers = (await Result.find(Object.assign({}, sameDistance, sameSex))
+                        .select('time members.dateofbirth race.racedate'))
+                        .filter(function (r) {
+                            const dob = r.members[0] && r.members[0].dateofbirth;
+                            if (!dob) return false;
+                            return ageAtDate(dob, r.race.racedate) === age;
+                        });
+
+                    teamAgeGroup = {
+                        age: age,
+                        rank: peers.filter(function (r) { return r.time < result.time; }).length + 1,
+                        total: peers.length,
+                        tied: Math.max(0, peers.filter(function (r) { return r.time === result.time; }).length - 1)
+                    };
+                }
+
+                // The time to beat as of race day — what the runner improved
+                // on (or missed), rather than their best ever.
+                const previousBest = await Result.findOne(Object.assign({}, sameDistance, {
+                    'members._id': member._id,
+                    _id: { $ne: result._id },
+                    'race.racedate': { $lt: result.race.racedate }
+                })).sort('time').select('time race.racename race.racedate');
+
+                response.stats = {
+                    // Always the race type's own name — variable types never
+                    // reach here, so there is no distanceName to fall back on
+                    distanceLabel: result.race.racetype.name,
+                    surface: result.race.racetype.surface,
+                    year: year,
+                    sex: member.sex,
+                    category: result.category,
+                    teamAllTime: teamAllTime,
+                    teamYear: await rankAgainst({ 'race.racedate': yearWindow }),
+                    teamGender: teamGender,
+                    teamGenderYear: await rankAgainst(
+                        Object.assign({}, sameSex, { 'race.racedate': yearWindow })),
+                    teamAgeGroup: teamAgeGroup,
+                    personal: personal,
+                    isPersonalBest: personal.rank === 1,
+                    previousBest: previousBest ? {
+                        // Lets the sentence link to that result's own page
+                        _id: previousBest._id,
+                        time: previousBest.time,
+                        racename: previousBest.race.racename,
+                        racedate: previousBest.race.racedate,
+                        improvement: previousBest.time - result.time
+                    } : null
+                };
+
+                // Each histogram is built from exactly the population its rank
+                // is counted against, so the chart and the "Nth best" line can
+                // never disagree.
+                const distributionFor = async function (extra, standing) {
+                    const times = (await Result.find(Object.assign({}, sameDistance, extra))
+                        .select('time').sort('time')).map(function (r) { return r.time; });
+                    const dist = buildTimeDistribution(times, result.time);
+                    return dist ? Object.assign(dist, { rank: standing.rank }) : null;
+                };
+
+                response.distributions = {
+                    all: await distributionFor({}, teamAllTime),
+                    gender: await distributionFor(sameSex, teamGender),
+                    // Null unless the runner has enough of this distance to
+                    // make a shape — buildTimeDistribution wants at least 8.
+                    member: await distributionFor({ 'members._id': member._id }, personal)
+                };
+                // Women are the smaller population and the one a woman's time
+                // is most usefully read against, so that is what her page opens
+                // on; the toggle still gets her to the whole team.
+                response.defaultDistribution = member.sex === 'Female' ? 'gender' : 'all';
+            }
+
+            res.json(response);
+        } catch (err) {
+            console.log('error building result detail', err);
+            res.status(500).json({ error: 'Error while building result detail' });
         }
     });
 
@@ -2437,6 +2946,26 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             await service.updateAllTeamRecordAchievements();
 
+            // Volunteer jobs linked to this race follow it: the new name (and
+            // the merged-into race, when the edit merged two races), and the
+            // new date for jobs that were on race day. A job dated the day
+            // before or after keeps its own date.
+            const linkedJobs = await VolunteerJob.find({ 'race._id': race._id });
+            if (linkedJobs.length > 0) {
+                const oldDay = oldRace.racedate ? new Date(oldRace.racedate).toISOString().slice(0, 10) : null;
+                await VolunteerJob.bulkWrite(linkedJobs.map(function (job) {
+                    const set = {
+                        race: { _id: updatedRace._id, racename: updatedRace.racename, racedate: updatedRace.racedate },
+                        eventName: updatedRace.racename
+                    };
+                    if (oldDay && job.jobDate && new Date(job.jobDate).toISOString().slice(0, 10) === oldDay) {
+                        set.jobDate = updatedRace.racedate;
+                    }
+                    return { updateOne: { filter: { _id: job._id }, update: { $set: set } } };
+                }));
+                VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
+            }
+
 
             // Get the updated race with populated results
             const populatedRace = await Race.aggregate([
@@ -2575,6 +3104,8 @@ module.exports = async function (app, qs, passport, async, _) {
                                 race: { _id: "$$result.race._id" },
                                 miles: { $ifNull: ["$$result.race.racetype.miles", 0] },
                                 agegrade: "$$result.agegrade",
+                                // Open/Master, for the "By result" division filter
+                                category: "$$result.category",
                                 isRecordEligible: "$$result.isRecordEligible",
                                 achievements: "$$result.achievements",
                                 customOptions: "$$result.customOptions",
@@ -2952,6 +3483,138 @@ module.exports = async function (app, qs, passport, async, _) {
 
 
     // get participation stats
+    // Volunteering stats for the Stats page. Logged-in users only: it names
+    // members and what they did, which the public site does not show.
+    // ?year=YYYY narrows to one calendar year; anything else is all time.
+    app.get('/api/stats/volunteering', service.isLoggedIn, async function (req, res) {
+        try {
+            const year = /^\d{4}$/.test(req.query.year || '') ? parseInt(req.query.year, 10) : null;
+            const match = year ? {
+                jobDate: { $gte: new Date(Date.UTC(year, 0, 1)), $lt: new Date(Date.UTC(year + 1, 0, 1)) }
+            } : {};
+
+            const [jobs, yearRows, currentMembers] = await Promise.all([
+                VolunteerJob.find(match).sort('jobDate').lean(),
+                VolunteerJob.aggregate([{ $group: { _id: { $year: '$jobDate' } } }, { $sort: { _id: -1 } }]),
+                Member.find({ memberStatus: 'current' }).select('_id').lean()
+            ]);
+
+            // Event names are typed in by hand for jobs not linked to a race,
+            // so grouping is case- and spacing-insensitive; the label shown is
+            // the most-used spelling. (Job descriptions are free text too and
+            // too inconsistent to group at all, so the page lists no roles.)
+            const normalise = function (text) {
+                return (text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+            };
+            // A job linked to a race groups by that race, so two spellings of
+            // one race cannot split it; other events group by name.
+            const eventKey = function (job) {
+                return job.race && job.race._id ? 'race:' + job.race._id : normalise(job.eventName);
+            };
+            const groupBy = function (keyOf, labelOf) {
+                const groups = new Map();
+                for (const job of jobs) {
+                    const key = keyOf(job);
+                    if (!key) continue;
+                    let group = groups.get(key);
+                    if (!group) {
+                        group = { jobs: 0, volunteers: new Set(), spellings: new Map(), lastDate: null, raceId: null };
+                        groups.set(key, group);
+                    }
+                    if (job.race && job.race._id) group.raceId = job.race._id;
+                    const label = labelOf(job);
+                    group.jobs++;
+                    group.volunteers.add(String(job.member && job.member._id));
+                    group.spellings.set(label, (group.spellings.get(label) || 0) + 1);
+                    group.lastDate = job.jobDate;
+                }
+                return Array.from(groups.values()).map(function (group) {
+                    const label = Array.from(group.spellings.entries()).sort(function (a, b) { return b[1] - a[1]; })[0][0];
+                    return { name: label, raceId: group.raceId, jobs: group.jobs, volunteers: group.volunteers.size, lastDate: group.lastDate };
+                }).sort(function (a, b) { return b.jobs - a.jobs || a.name.localeCompare(b.name); });
+            };
+
+            // One row per member, most jobs first, each carrying their jobs
+            // so the table can expand to show what they did.
+            const byMember = new Map();
+            for (const job of jobs) {
+                if (!job.member || !job.member._id) continue;
+                const id = String(job.member._id);
+                let row = byMember.get(id);
+                if (!row) {
+                    row = {
+                        member: {
+                            _id: job.member._id,
+                            firstname: job.member.firstname,
+                            lastname: job.member.lastname,
+                            username: job.member.username
+                        },
+                        jobs: [],
+                        events: new Set()
+                    };
+                    byMember.set(id, row);
+                }
+                row.jobs.push({
+                    jobDate: job.jobDate,
+                    eventName: job.eventName,
+                    raceId: job.race && job.race._id ? job.race._id : null,
+                    description: job.description
+                });
+                row.events.add(eventKey(job));
+            }
+            const volunteers = Array.from(byMember.values()).map(function (row) {
+                return {
+                    member: row.member,
+                    jobCount: row.jobs.length,
+                    eventCount: row.events.size,
+                    lastDate: row.jobs[row.jobs.length - 1].jobDate,
+                    jobs: row.jobs.slice().reverse()
+                };
+            }).sort(function (a, b) {
+                return b.jobCount - a.jobCount ||
+                    (a.member.lastname || '').localeCompare(b.member.lastname || '');
+            });
+
+            // Jobs per month for one year, or per year across all time
+            let timeline;
+            if (year) {
+                timeline = Array.from({ length: 12 }, function (_, month) { return { label: month, jobs: 0 }; });
+                for (const job of jobs) timeline[new Date(job.jobDate).getUTCMonth()].jobs++;
+            } else {
+                const perYear = new Map();
+                for (const job of jobs) {
+                    const y = new Date(job.jobDate).getUTCFullYear();
+                    perYear.set(y, (perYear.get(y) || 0) + 1);
+                }
+                timeline = Array.from(perYear.entries()).sort(function (a, b) { return a[0] - b[0]; })
+                    .map(function (entry) { return { label: entry[0], jobs: entry[1] }; });
+            }
+
+            const events = groupBy(eventKey, function (job) { return (job.eventName || '').trim(); });
+
+            const currentIds = new Set(currentMembers.map(function (m) { return String(m._id); }));
+            const currentVolunteers = volunteers.filter(function (v) { return currentIds.has(String(v.member._id)); }).length;
+
+            res.json({
+                year: year,
+                years: yearRows.map(function (row) { return row._id; }).filter(Boolean),
+                totals: {
+                    jobs: jobs.length,
+                    volunteers: volunteers.length,
+                    events: events.length,
+                    currentMembers: currentIds.size,
+                    currentVolunteers: currentVolunteers
+                },
+                volunteers: volunteers,
+                events: events,
+                timeline: timeline
+            });
+        } catch (err) {
+            console.log('error building volunteering stats', err);
+            res.status(500).json({ error: 'Error while building volunteering stats' });
+        }
+    });
+
     app.get('/api/stats/participation', service.isUserLoggedIn, function (req, res) {
         const startdateReq = parseInt(req.query.startdate);
         const enddateReq = parseInt(req.query.enddate);
@@ -3116,6 +3779,112 @@ module.exports = async function (app, qs, passport, async, _) {
             res.send(err);
         }
 
+    });
+
+    // ---- Raw age-grading standards tables (admin only) ----
+    const AGEGRADING_NON_DISTANCE_FIELDS = ['_id', '__v', 'type', 'sex', 'age', 'version', 'createdAt', 'updatedAt'];
+
+    // Columns are discovered from the documents, not from the schema: the
+    // collection holds distances the schema never declared (7 miles), and a
+    // schema-driven list would silently drop them. Ordering by the standard
+    // time itself puts them in true short-to-long order without needing a
+    // hand-maintained distance list.
+    function ageGradingDistanceColumns(docs) {
+        const sums = {};
+        const counts = {};
+        docs.forEach(function (doc) {
+            Object.keys(doc).forEach(function (key) {
+                if (AGEGRADING_NON_DISTANCE_FIELDS.indexOf(key) !== -1) return;
+                if (typeof doc[key] !== 'number') return;
+                sums[key] = (sums[key] || 0) + doc[key];
+                counts[key] = (counts[key] || 0) + 1;
+            });
+        });
+        return Object.keys(sums).sort(function (a, b) {
+            return (sums[a] / counts[a]) - (sums[b] / counts[b]);
+        });
+    }
+
+    // Which race dates each stored table is used for — mirrors the version
+    // selection in service.getAgeGrading, so the admin can see at a glance
+    // which table a given result was graded against.
+    function ageGradingVersionRange(type, version) {
+        const road = { '2015': 'races before 2020', '2020': 'races in 2020–2024', '2025': 'races from 2025 on' };
+        const track = { '2005': 'races before 2023', '2023': 'races from 2023 on' };
+        return (type === 'road' ? road[version] : track[version]) || null;
+    }
+
+    // The (sex, type, version) combinations that actually exist, so the UI
+    // never offers a table that would come back empty.
+    app.get('/api/agegrading/meta', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const combos = await AgeGrading.aggregate([
+                {
+                    $group: {
+                        _id: { sex: '$sex', type: '$type', version: '$version' },
+                        count: { $sum: 1 },
+                        minAge: { $min: '$age' },
+                        maxAge: { $max: '$age' }
+                    }
+                },
+                { $sort: { '_id.type': 1, '_id.version': -1, '_id.sex': 1 } }
+            ]);
+
+            res.json({
+                tables: combos.map(function (c) {
+                    return {
+                        sex: c._id.sex,
+                        type: c._id.type,
+                        version: c._id.version,
+                        appliesTo: ageGradingVersionRange(c._id.type, c._id.version),
+                        count: c.count,
+                        minAge: c.minAge,
+                        maxAge: c.maxAge
+                    };
+                })
+            });
+        } catch (err) {
+            console.error('Error fetching age grading meta:', err);
+            res.status(500).json({ error: 'Error fetching age grading meta' });
+        }
+    });
+
+    // One full standards table: every age for a (sex, type, version), with
+    // only the distance columns that table actually populates.
+    app.get('/api/agegrading/table', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const sex = (req.query.sex || '').toLowerCase();
+            const type = (req.query.type || '').toLowerCase();
+            const version = req.query.version;
+
+            if (!sex || !type || !version) {
+                return res.status(400).json({ error: 'sex, type and version are all required' });
+            }
+
+            const docs = await AgeGrading.find({ sex: sex, type: type, version: version })
+                .sort('age')
+                .lean();
+
+            const distances = ageGradingDistanceColumns(docs);
+
+            res.json({
+                sex: sex,
+                type: type,
+                version: version,
+                appliesTo: ageGradingVersionRange(type, version),
+                distances: distances,
+                rows: docs.map(function (doc) {
+                    const values = {};
+                    distances.forEach(function (d) {
+                        values[d] = typeof doc[d] === 'number' ? doc[d] : null;
+                    });
+                    return { age: doc.age, values: values };
+                })
+            });
+        } catch (err) {
+            console.error('Error fetching age grading table:', err);
+            res.status(500).json({ error: 'Error fetching age grading table' });
+        }
     });
 
 
@@ -3516,7 +4285,37 @@ module.exports = async function (app, qs, passport, async, _) {
     // Add this with other route definitions
     app.post('/api/extract-table', service.isAdminLoggedIn, async function (req, res) {
         try {
-            const { url } = req.body;
+            const { url, htmlSource, tableIndex } = req.body;
+
+            // Pasted page source. Two jobs: it is the way in for a host that
+            // refuses server-side requests outright (the browser can load the
+            // page even when we cannot), and it is how parkrun results get in,
+            // since parkrun blocks scraping. Either way the table itself is
+            // found generically; only the page metadata is site-specific.
+            if (htmlSource) {
+                const parsed = parseResultsTableFromHtml(htmlSource, tableIndex);
+                if (!parsed) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'No results table found in the pasted HTML. Make sure you copied the whole page source, including the results.'
+                    });
+                }
+
+                const parkrun = parkrunMetadata(htmlSource);
+                return res.json({
+                    success: true,
+                    headers: parsed.headers,
+                    data: parsed.data,
+                    pageTitle: (parkrun && parkrun.pageTitle) || parsed.pageTitle,
+                    raceDate: parkrun && parkrun.raceDate,
+                    // Lets the client pick parkrun's column names and its
+                    // "3:21 PB" time quirk, instead of assuming every paste is
+                    // a parkrun page the way it used to.
+                    source: parkrun ? 'parkrun' : 'generic',
+                    tables: parsed.tables
+                });
+            }
+
             if (!url) {
                 return res.status(400).json({ success: false, error: 'URL is required' });
             }
@@ -3900,110 +4699,37 @@ module.exports = async function (app, qs, passport, async, _) {
                     }
                 });
             } else {
-                // Original MCRRC parsing logic or any other compatible (unlikely)
-                const response = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive',
-                        'Upgrade-Insecure-Requests': '1'
-                    }
-                });
-                const $ = cheerio.load(response.data);
+                // Original MCRRC parsing logic or any other compatible (unlikely).
+                // Goes through fetchPageHtml so a Cloudflare 403 is retried via
+                // the proxy instead of failing outright.
+                const page = await fetchPageHtml(url);
+                const parsed = parseResultsTableFromHtml(page.html, tableIndex);
 
-                // Extract page title
-                const pageTitle = $('title').text().trim();
-
-                // Common table selectors
-                const tableSelectors = [
-                    'table.results-table',  // Common for results tables
-                    'table.table',          // Bootstrap tables
-                    'table.dataTable',      // DataTables
-                    'table.sortable',       // Sortable tables
-                    'table.grid',           // Grid tables
-                    'table',                // Any table as last resort
-                    'div.table',            // Some sites use div with table class
-                    'div.results'           // Some sites use div for results
-                ];
-
-                let table = null;
-                let headers = [];
-                let data = [];
-
-                // Try each selector until we find a working one
-                for (const selector of tableSelectors) {
-                    const element = $(selector).first();
-                    if (element.length) {
-                        // Try to extract headers - be more strict about what constitutes a header
-                        let potentialHeaders = [];
-                        const headerRow = element.find('thead tr, tr:first-child').first();
-
-                        // Only process if we found a header row
-                        if (headerRow.length) {
-                            // Every cell, blank ones included: the array index is
-                            // what aligns headers to cells, so a gap must not
-                            // close up. See normaliseTableHeaders.
-                            const rawHeaders = [];
-                            headerRow.find('th, td').each(function () {
-                                rawHeaders.push($(this).text().trim());
-                            });
-                            if (looksLikeHeaderRow(rawHeaders)) {
-                                potentialHeaders = normaliseTableHeaders(rawHeaders);
-                            }
-                        }
-
-                        // If we found valid headers, try to extract data
-                        if (potentialHeaders.length > 0) {
-                            const potentialData = [];
-                            // Check if header row uses td elements
-                            const headerUsesTd = headerRow.find('td').length > 0;
-
-                            // Skip the header row when getting data
-                            element.find('tbody tr, tr:not(:first-child)').each(function () {
-                                // If header uses td, skip the first row of data as it's the header
-                                if (headerUsesTd && $(this).is(':first-child')) {
-                                    return;
-                                }
-
-                                const row = {};
-                                $(this).find('td').each(function (index) {
-                                    if (potentialHeaders[index]) {
-                                        row[potentialHeaders[index]] = $(this).text().trim();
-                                    }
-                                });
-                                if (Object.keys(row).length > 0) {
-                                    potentialData.push(row);
-                                }
-                            });
-
-                            // If we found both headers and data, use this table
-                            if (potentialData.length > 0) {
-                                table = element;
-                                headers = potentialHeaders;
-                                data = potentialData;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (!table || headers.length === 0 || data.length === 0) {
+                if (!parsed) {
                     return res.status(400).json({
                         success: false,
-                        error: 'No valid results table found on the page'
+                        error: 'No results table found on the page'
                     });
                 }
 
                 res.json({
                     success: true,
-                    headers: headers,
-                    data: data,
-                    pageTitle: pageTitle
+                    headers: parsed.headers,
+                    data: parsed.data,
+                    pageTitle: parsed.pageTitle,
+                    tables: parsed.tables
                 });
             }
         } catch (error) {
             console.error('Error extracting table:', error);
+            // A site blocking us is not a server fault, and the admin can act on
+            // it (paste the HTML instead), so say so rather than "500".
+            if (error.scrapeBlocked) {
+                return res.status(502).json({
+                    success: false,
+                    error: error.message
+                });
+            }
             res.status(500).json({
                 success: false,
                 error: 'Failed to extract table data: ' + error.message
@@ -4381,7 +5107,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 const rt = await RaceType.findOne({ name: form.race.racetype.name, surface: form.race.racetype.surface }).lean();
                 if (rt) form.race.racetype._id = rt._id;
             }
-            res.render('compRaceForm.ejs', { form, user: req.user || null });
+            res.render('compRaceForm.ejs', { form, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
         } catch (err) {
             res.status(500).send('Server error');
         }
@@ -4924,7 +5650,13 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             // Only distances we hold age grading standards for — the two races are
             // there to be age graded, so anything else is a dead end for the applicant.
-            const racetypes = await RaceType.find({ hasAgeGradedInfo: true, isVariable: { $ne: true } })
+            // The mile is the floor: shorter track events (60m through 1500m) say
+            // little about the distance running the team is asking about.
+            const racetypes = await RaceType.find({
+                hasAgeGradedInfo: true,
+                isVariable: { $ne: true },
+                meters: { $gte: APPLICATION_MIN_RACE_METERS }
+            })
                 .sort({ meters: 1 })
                 .select('name surface meters miles')
                 .lean();
@@ -4942,6 +5674,10 @@ module.exports = async function (app, qs, passport, async, _) {
     const APPLICATION_RACE_COMMITMENT = 8;
     // How far back a submitted race can be and still count as recent.
     const APPLICATION_RACE_MAX_AGE_DAYS = 365;
+    // Shortest distance the apply form will offer, in metres: one mile. Nothing
+    // sits between 1500m and the mile's 1609.34m, so the exact value only has to
+    // be at or below the mile to include it and above 1500 to drop the sprints.
+    const APPLICATION_MIN_RACE_METERS = 1609;
 
     // Age grade for someone who is not (yet) a member — the applicant supplies their
     // own sex/dob, so this can't reuse /api/agegrade/calculate which reads req.user.member.
@@ -4999,7 +5735,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Public: submit a team application
     app.post('/api/team-applications', async function (req, res) {
         try {
-            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces } = req.body;
+            const { firstname, lastname, email, sex, dateofbirth, races, motivation, committedToRaces, isClubMember } = req.body;
 
             if (!firstname || !firstname.trim()) return res.status(400).json({ error: 'First name is required' });
             if (!lastname || !lastname.trim()) return res.status(400).json({ error: 'Last name is required' });
@@ -5007,6 +5743,7 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!['male', 'female', 'other'].includes(sex)) return res.status(400).json({ error: 'Please select a gender' });
             if (!dateofbirth || isNaN(new Date(dateofbirth).getTime())) return res.status(400).json({ error: 'A valid date of birth is required' });
             if (!Array.isArray(races) || races.length < 2) return res.status(400).json({ error: 'Please provide two recent races' });
+            if (typeof isClubMember !== 'boolean') return res.status(400).json({ error: 'Please tell us whether you are a current MCRRC club member' });
             if (typeof committedToRaces !== 'boolean') return res.status(400).json({ error: 'Please answer whether you can commit to ' + APPLICATION_RACE_COMMITMENT + ' races a year' });
             if (!motivation || !String(motivation).trim()) return res.status(400).json({ error: 'Please tell us why you want to join the team' });
 
@@ -5063,11 +5800,38 @@ module.exports = async function (app, qs, passport, async, _) {
                 races: racesToSave,
                 motivation: motivation ? String(motivation).trim() : '',
                 committedToRaces: committedToRaces,
+                isClubMember: isClubMember,
                 ipAddress: req.ip
             });
             await application.save();
 
             sendApplicationNotification(application);
+
+            // Submitted from the public form, so there is no logged-in user —
+            // logActivity falls back to 'system' for the username.
+            const applicantName = application.firstname + ' ' + application.lastname;
+            service.logActivity({
+                action: 'application_submitted',
+                description: applicantName + ' submitted a team application',
+                targetType: 'teamapplication',
+                targetId: application._id.toString(),
+                targetName: applicantName,
+                metadata: {
+                    email: application.email,
+                    isClubMember: application.isClubMember,
+                    committedToRaces: application.committedToRaces,
+                    // The age grades the captains will be judging, so the entry
+                    // says something without opening the application.
+                    ageGrades: application.races.map(function (race) {
+                        return {
+                            racename: race.racename,
+                            distance: race.racetype && race.racetype.name,
+                            agegrade: race.agegrade
+                        };
+                    })
+                },
+                ipAddress: req.ip
+            });
 
             res.status(201).json({ success: true, id: application._id });
         } catch (err) {
@@ -5104,6 +5868,7 @@ module.exports = async function (app, qs, passport, async, _) {
             'Recent races:',
             raceLines,
             '',
+            'Current MCRRC club member: ' + (application.isClubMember ? 'Yes' : 'No — not a club member yet'),
             'Committed to ' + APPLICATION_RACE_COMMITMENT + ' races a year: ' + (application.committedToRaces ? 'Yes' : 'No'),
             '',
             'Why they want to join:',
@@ -5172,22 +5937,72 @@ module.exports = async function (app, qs, passport, async, _) {
             .trim();
     }
 
-    // Generic placeholder templates — meant to be replaced with the real team wording
-    // later. Captains can edit either one in the dialog before it goes out.
-    function buildDecisionTemplate(application, type) {
-        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
-        const captainsEmail = process.env.CAPTAINS_EMAIL || '';
-        const signalUrl = process.env.SIGNAL_URL || '';
+    // The decision emails, as editable templates.
+    //
+    // The wording lives here as the built-in default; captains can override
+    // either one from the applications page, in which case the override is read
+    // from the EmailTemplate collection instead. Values that vary per applicant
+    // or per deployment are written as {{placeholders}} rather than being
+    // interpolated at definition time, so an edited template keeps working.
+    const EMAIL_TEMPLATE_KEYS = {
+        approval: 'application_approval',
+        rejection: 'application_rejection'
+    };
 
+    // Shown in the editor so a captain knows what they can use
+    const EMAIL_TEMPLATE_PLACEHOLDERS = [
+        { token: 'firstname', description: "The applicant's first name" },
+        { token: 'lastname', description: "The applicant's last name" },
+        { token: 'email', description: "The applicant's email address" },
+        { token: 'siteUrl', description: 'Address of this site' },
+        { token: 'captainsEmail', description: "The captains' email address" },
+        { token: 'signalUrl', description: 'Invite link for the Signal group chat' },
+        { token: 'raceCommitment', description: 'Races a member must run per year' }
+    ];
+
+    function emailTemplateValues(application) {
+        return {
+            firstname: application.firstname || '',
+            lastname: application.lastname || '',
+            email: application.email || '',
+            siteUrl: (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org',
+            captainsEmail: process.env.CAPTAINS_EMAIL || '',
+            signalUrl: process.env.SIGNAL_URL || '',
+            raceCommitment: String(APPLICATION_RACE_COMMITMENT)
+        };
+    }
+
+    // {{token}} -> value. An unknown token is left alone rather than blanked, so
+    // a typo is visible in the preview instead of silently deleting text.
+    function renderEmailTemplate(text, values) {
+        return String(text || '').replace(/\{\{\s*(\w+)\s*\}\}/g, function (whole, token) {
+            return Object.prototype.hasOwnProperty.call(values, token) ? values[token] : whole;
+        });
+    }
+
+    // Tokens written in the template that nothing will fill in — almost always a
+    // typo, and worth saying so before the email goes to an applicant.
+    function unknownEmailTokens(text, values) {
+        const found = [];
+        String(text || '').replace(/\{\{\s*(\w+)\s*\}\}/g, function (whole, token) {
+            if (!Object.prototype.hasOwnProperty.call(values, token) && found.indexOf(token) === -1) {
+                found.push(token);
+            }
+            return whole;
+        });
+        return found;
+    }
+
+    function defaultDecisionTemplate(type) {
         if (type === 'rejection') {
             return {
                 subject: 'Your MCRRC Racing Team application',
                 body: [
-                    '<p>Hi ' + application.firstname + ',</p>',
+                    '<p>Hi {{firstname}},</p>',
                     '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
                     '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
                     '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
-                    'reapply any time at <a href="' + siteUrl + '/apply">' + siteUrl + '/apply</a>.</p>',
+                    'reapply any time at <a href="{{siteUrl}}/apply">{{siteUrl}}/apply</a>.</p>',
                     '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
                     '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
                     '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
@@ -5196,22 +6011,22 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         return {
-            subject: 'Welcome to the MCRRC Racing Team, ' + application.firstname + '!',
+            subject: 'Welcome to the MCRRC Racing Team, {{firstname}}!',
             body: [
-                '<p>Hi ' + application.firstname + ',</p>',
+                '<p>Hi {{firstname}},</p>',
                 '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
                 '<p>A few things to get you started:</p>',
                 '<ul>',
-                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="' + siteUrl + '" target="_blank">' + siteUrl + '</a>. Please <a href="' + siteUrl + '/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
-                '  <li>We require team members to race at least ' + APPLICATION_RACE_COMMITMENT + ' times a year and to help out at club events.</li>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
+                '  <li>We require team members to race at least {{raceCommitment}} times a year and to help out at club events.</li>',
                 '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
-                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="'+signalUrl+'" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
-                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please provide your preferred size.</strong></li>',
+                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="{{signalUrl}}" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up</strong></li>',
                 '</ul>',
                 '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
                 'members. Please take a little time and send yours back with the info below. Everything is optional,',
-                'of course. Have a look at <a href="' + siteUrl + '/members/charliestern/bio" target="_blank">one of our runners</a>',
-                'for inspiration:</p>',                
+                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'for inspiration:</p>',
                 '<ul>',
                 '  <li><strong>A photo</strong></li>',
                 '  <li>Name:</li>',
@@ -5226,10 +6041,35 @@ module.exports = async function (app, qs, passport, async, _) {
                 '  <li>Fun fact about yourself:</li>',
                 '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
                 '</ul>',
-
-                '<p>If you have any questions, just reply to this email' + (captainsEmail ? ' or write to <a href="mailto:' + captainsEmail + '">' + captainsEmail + '</a>' : '') + ' and one of the captains will get back to you.</p>',
+                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
                 '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
             ].join('\n')
+        };
+    }
+
+    // The template as it stands: the captains' version if there is one, else the
+    // built-in default. Returns the raw text, placeholders unresolved.
+    async function storedDecisionTemplate(type) {
+        const custom = await EmailTemplate.findOne({ key: EMAIL_TEMPLATE_KEYS[type] }).lean();
+        if (custom) {
+            return {
+                subject: custom.subject,
+                body: custom.body,
+                isCustom: true,
+                updatedAt: custom.updatedAt,
+                updatedByUsername: custom.updatedByUsername
+            };
+        }
+        return Object.assign(defaultDecisionTemplate(type), { isCustom: false });
+    }
+
+    // Ready to send: the current template with this applicant's values filled in.
+    async function buildDecisionTemplate(application, type) {
+        const template = await storedDecisionTemplate(type);
+        const values = emailTemplateValues(application);
+        return {
+            subject: renderEmailTemplate(template.subject, values),
+            body: renderEmailTemplate(template.body, values)
         };
     }
 
@@ -5278,6 +6118,133 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     }
 
+    // ---- Editable decision-email templates ----------------------------------
+
+    function templateSummary(type, template) {
+        return Object.assign({
+            key: EMAIL_TEMPLATE_KEYS[type],
+            type: type,
+            label: type === 'rejection' ? 'Rejection email' : 'Approval email'
+        }, template);
+    }
+
+    // Captain/admin: both templates, as editable source
+    app.get('/api/email-templates', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const templates = [];
+            for (const type of ['approval', 'rejection']) {
+                templates.push(templateSummary(type, await storedDecisionTemplate(type)));
+            }
+            res.json({ templates: templates, placeholders: EMAIL_TEMPLATE_PLACEHOLDERS });
+        } catch (err) {
+            console.error('Error loading email templates:', err);
+            res.status(500).json({ error: 'Error loading email templates' });
+        }
+    });
+
+    // Captain/admin: what a template looks like with a sample applicant filled
+    // in. Rendered server-side by the same function that runs at send time, so
+    // the preview cannot drift from what is actually sent.
+    app.post('/api/email-templates/:type/preview', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const sample = {
+                firstname: 'Alex',
+                lastname: 'Runner',
+                email: 'alex.runner@example.com'
+            };
+            const values = emailTemplateValues(sample);
+            res.json({
+                subject: renderEmailTemplate(req.body.subject, values),
+                body: sanitizeEmailBody(renderEmailTemplate(req.body.body, values)),
+                sampleApplicant: sample.firstname + ' ' + sample.lastname,
+                // Named so the editor can warn about a typo'd token rather than
+                // leaving the captain to spot {{frstname}} in the preview.
+                unknownTokens: unknownEmailTokens([req.body.subject, req.body.body].join('\n'), values)
+            });
+        } catch (err) {
+            console.error('Error previewing email template:', err);
+            res.status(500).json({ error: 'Error previewing the template' });
+        }
+    });
+
+    // Captain/admin: save an edited template
+    app.put('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const key = EMAIL_TEMPLATE_KEYS[type];
+
+            const subject = (req.body.subject || '').trim();
+            const body = sanitizeEmailBody(req.body.body).trim();
+            if (!subject) return res.status(400).json({ error: 'The template needs a subject' });
+            if (!body || !htmlToPlainText(body)) return res.status(400).json({ error: 'The template needs a message' });
+
+            const previous = await storedDecisionTemplate(type);
+
+            await EmailTemplate.findOneAndUpdate(
+                { key: key },
+                { key: key, subject: subject, body: body, updatedAt: new Date(), updatedByUsername: req.user.username },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'email_template_edit',
+                description: 'Edited the team application ' + type + ' email template',
+                targetType: 'emailtemplate',
+                targetId: key,
+                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                metadata: {
+                    type: type,
+                    wasCustom: previous.isCustom,
+                    oldValue: { subject: previous.subject, body: previous.body },
+                    newValue: { subject: subject, body: body }
+                },
+                ipAddress: req.ip
+            });
+
+            res.json(templateSummary(type, await storedDecisionTemplate(type)));
+        } catch (err) {
+            console.error('Error saving email template:', err);
+            res.status(500).json({ error: 'Error saving the template' });
+        }
+    });
+
+    // Captain/admin: drop the override and go back to the built-in wording
+    app.delete('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
+        try {
+            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const key = EMAIL_TEMPLATE_KEYS[type];
+            const previous = await storedDecisionTemplate(type);
+            if (!previous.isCustom) {
+                return res.json(templateSummary(type, previous));
+            }
+
+            await EmailTemplate.deleteOne({ key: key });
+
+            service.logActivity({
+                userId: req.user._id,
+                username: req.user.username,
+                action: 'email_template_reset',
+                description: 'Reset the team application ' + type + ' email template to the default',
+                targetType: 'emailtemplate',
+                targetId: key,
+                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                metadata: {
+                    type: type,
+                    oldValue: { subject: previous.subject, body: previous.body }
+                },
+                ipAddress: req.ip
+            });
+
+            res.json(templateSummary(type, await storedDecisionTemplate(type)));
+        } catch (err) {
+            console.error('Error resetting email template:', err);
+            res.status(500).json({ error: 'Error resetting the template' });
+        }
+    });
+
     // Captain/admin: template to prefill the send-email dialog with
     app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
@@ -5294,7 +6261,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     previouslySentAt: already.sentAt, copy: captainsCopyInfo()
                 });
             }
-            res.json(Object.assign(buildDecisionTemplate(application, type), { copy: captainsCopyInfo() }));
+            const template = await buildDecisionTemplate(application, type);
+            res.json(Object.assign(template, { copy: captainsCopyInfo() }));
         } catch (err) {
             console.error('Error building email template:', err);
             res.status(500).json({ error: 'Error building email template' });
@@ -5609,17 +6577,117 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    app.get('*', function (req, res) {
+    // ---- Social sharing: og:/twitter: meta tags per page -------------------
+    // The SPA is a single static index.ejs for every URL; Angular fills the
+    // page in afterwards. A link-preview crawler (iMessage, Slack, Facebook,
+    // Discord...) never runs that JavaScript — it reads whatever <meta> tags
+    // are already in the HTML this route sends. So unlike the browser tab
+    // title (PageTitleService, client-side), the title/description a shared
+    // link shows has to be decided here, before res.render.
+    //
+    // Mirrors PageTitleService's per-page titles, for the three kinds of page
+    // worth a specific preview: a race, a result, a member. Every other URL
+    // (lists, stats, tools...) keeps the site's default description below —
+    // one lightweight, indexed lookup per request, and never lets a lookup
+    // failure (bad id, member deleted, DB hiccup) break the page render.
+    const DEFAULT_OG_TITLE = 'MCRRC Racing Team';
+    const DEFAULT_OG_DESCRIPTION = 'MCRRC Racing Team Site: Members bios, race results and records.';
+
+    function truncate(text, max) {
+        text = (text || '').trim();
+        return text.length > max ? text.slice(0, max - 1).trim() + '…' : text;
+    }
+
+    // Race/result times are stored in centiseconds; H:MM:SS or M:SS, dropping
+    // the centiseconds — plenty of precision for a social preview
+    function formatRaceTime(centiseconds) {
+        if (!centiseconds && centiseconds !== 0) return null;
+        var totalSeconds = Math.round(centiseconds / 100);
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+        var pad = function (n) { return n < 10 ? '0' + n : String(n); };
+        return hours > 0 ? (hours + ':' + pad(minutes) + ':' + pad(seconds)) : (minutes + ':' + pad(seconds));
+    }
+
+    function memberFullName(member) {
+        return (member.firstname || '') + ' ' + (member.lastname || '');
+    }
+
+    // "Nicolas Crouzier" or "Nicolas Crouzier, Lisa Levin" — same join as the
+    // client's membersNamesFilter
+    function membersNames(members) {
+        return (members || []).map(memberFullName).join(', ');
+    }
+
+    async function socialMetaForPath(path) {
+        var m;
+
+        if ((m = path.match(/^\/races\/([0-9a-fA-F]{24})/))) {
+            const Race = require('./models/race');
+            const race = await Race.findById(m[1]).select('racename racedate location').lean().catch(function () { return null; });
+            if (!race) return null;
+            const year = race.racedate ? new Date(race.racedate).getUTCFullYear() : '';
+            const place = race.location && (race.location.state || race.location.country);
+            return {
+                ogTitle: race.racename + (year ? ' (' + year + ')' : ''),
+                ogDescription: truncate(
+                    race.racename + (place ? ' — ' + place : '') +
+                    '. See the MCRRC Racing Team\'s results and achievements from this race.', 200)
+            };
+        }
+
+        if ((m = path.match(/^\/results\/([0-9a-fA-F]{24})/))) {
+            const Result = require('./models/result');
+            const result = await Result.findById(m[1])
+                .select('members race.racename race.racedate time agegrade').lean().catch(function () { return null; });
+            if (!result || !result.race) return null;
+            const year = result.race.racedate ? new Date(result.race.racedate).getUTCFullYear() : '';
+            const names = membersNames(result.members);
+            const time = formatRaceTime(result.time);
+            var description = names ? names + "'s result at " + result.race.racename : result.race.racename;
+            if (time) description += ': ' + time;
+            description += '. See more MCRRC Racing Team results.';
+            return {
+                ogTitle: (names || 'Result') + ' – ' + result.race.racename + (year ? ' (' + year + ')' : ''),
+                ogDescription: truncate(description, 200)
+            };
+        }
+
+        // Not /members/head-to-head/... (two runners compared, a different
+        // page shape) — only a single member's own pages
+        if ((m = path.match(/^\/members\/([^\/]+)/)) && m[1] !== 'head-to-head') {
+            const Member = require('./models/member');
+            const member = await Member.findOne({ username: m[1] }).select('firstname lastname bio').lean().catch(function () { return null; });
+            if (!member) return null;
+            const name = memberFullName(member).trim();
+            const bioText = truncate((member.bio || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '), 160);
+            return {
+                ogTitle: name,
+                ogDescription: truncate(name + ' — MCRRC Racing Team. ' +
+                    (bioText || 'See race results, stats and achievements.'), 200)
+            };
+        }
+
+        return null;
+    }
+
+    app.get('*', async function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
-        // console.log('Request URL:', req.url);
-        // console.log('Request headers:', req.headers.host);
-        // console.log('NODE_ENV:', process.env.NODE_ENV);
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+        // Never let a bad id or a DB hiccup break the page itself — the site's
+        // default title/description still render
+        const social = await socialMetaForPath(req.path).catch(function () { return null; });
         res.render('index.ejs', {
             user: req.user,
             scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js',
             // Baked into the image at build time; 'dev' when running locally.
             appVersion: process.env.APP_VERSION || 'dev',
-            buildDate: process.env.BUILD_DATE || ''
+            buildDate: process.env.BUILD_DATE || '',
+            ogTitle: (social && social.ogTitle) || DEFAULT_OG_TITLE,
+            ogDescription: (social && social.ogDescription) || DEFAULT_OG_DESCRIPTION,
+            ogUrl: siteUrl + req.originalUrl,
+            ogImage: siteUrl + '/images/ogimage.jpg'
         });
     });
 

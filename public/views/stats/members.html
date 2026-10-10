@@ -2,7 +2,10 @@
     <!-- Navigation -->
     <ul class="nav nav-tabs">
         <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Team Stats</a>
+            <a ui-sref="/stats/team">Racing Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user">
+            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
         </li>
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/us-map">US Races Map</a>

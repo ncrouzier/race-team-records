@@ -41,8 +41,14 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                                 var raceDate = new Date(race.racedate);
                                 if (!latestDate || raceDate > latestDate) {
                                     latestDate = raceDate;
-                                    latestResult = result;
-                                    latestResult.race = race;
+                                    // A copy carrying its race. Setting .race on
+                                    // the cached result itself would loop it back
+                                    // to the race holding it (race -> results ->
+                                    // result -> race), and any later deep compare
+                                    // or copy of the race list — the member stats
+                                    // page's watchers, say — would recurse until
+                                    // the stack ran out ("too much recursion").
+                                    latestResult = angular.extend({}, result, { race: race });
                                 }
                                 break;
                             }
@@ -127,9 +133,18 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
                     if (md.start) {
                         var startDate = new Date(md.start);
                         if (startDate >= sixtyDaysAgo) {
+                            // Someone with an earlier membership period is coming
+                            // back, not arriving. membershipDates is not reliably
+                            // in order, so look for any earlier start rather than
+                            // trusting this entry's position in the array.
+                            var isRejoin = member.membershipDates.some(function (other) {
+                                return other !== md && other.start &&
+                                    new Date(other.start) < startDate;
+                            });
                             statusChanges.push({
                                 member: member,
                                 type: 'entry',
+                                isRejoin: isRejoin,
                                 date: startDate
                             });
                         }
@@ -171,6 +186,17 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
             $scope.statusChangesPage--;
             $scope.updateStatusChangesPage();
         }
+    };
+
+    // "Open", "Master", or "Open and Master" when one run set both records —
+    // the combined achievement keeps category "Open" and lists both in
+    // categories.
+    $scope.recordCategoryText = function (value) {
+        if (!value) return '';
+        if (angular.isArray(value.categories) && value.categories.length) {
+            return value.categories.join(' and ');
+        }
+        return value.category;
     };
 
     // Achievements pagination

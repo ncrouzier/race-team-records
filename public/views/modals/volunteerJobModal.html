@@ -29,32 +29,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group" ng-class="{ 'has-error' : formvolunteerjob.eventName.$invalid && !formvolunteerjob.eventName.$pristine}">
-                    <label class="text-left">Event Name:</label>
-                    <input type="text" name="eventName" class="form-control input-md text-left"
-                           ng-model="formData.eventName" required>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group" ng-class="{ 'has-error' : formvolunteerjob.jobDate.$invalid && !formvolunteerjob.jobDate.$pristine}">
-                    <label class="text-left">Job Date:</label>
-                    <p class="input-group">
-                        <input type="text" name="jobDate" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
-                               ng-model="formData.jobDate" ng-model-options="{timezone: 'utc'}"
-                               is-open="opened" min-date="'2013-01-01'" max-date="'3015-01-01'"
-                               datepicker-append-to-body="true"
-                               required close-text="Close" />
-                        <span class="input-group-btn">
-                            <button type="button" class="btn btn-default" ng-click="open($event)">
-                                <i class="glyphicon glyphicon-calendar"></i>
-                            </button>
-                        </span>
-                    </p>
-                </div>
-            </div>
-        </div>
+        <volunteer-event-fields model="formData"></volunteer-event-fields>
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group" ng-class="{ 'has-error' : formvolunteerjob.description.$invalid && !formvolunteerjob.description.$pristine}">
@@ -67,7 +42,7 @@
 </div>
 <div class="modal-footer">
     <button type="submit" class="btn btn-primary"
-            ng-click="editVolunteerJob()" ng-disabled="formvolunteerjob.$invalid">
+            ng-click="editVolunteerJob()" ng-disabled="formvolunteerjob.$invalid || !hasEvent()">
         Save Changes
     </button>
     <button class="btn btn-danger" ng-click="cancel()">Cancel</button>

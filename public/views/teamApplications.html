@@ -4,7 +4,13 @@
         <div class="feed-card-header">
             <h4>
                 <i class="fa fa-user-plus"></i> Team Applications
-                <a class="crf-chip crf-chip-ghost" href="/apply" target="_blank" style="margin-left: auto;"
+                <button class="crf-chip crf-chip-ghost" ng-click="editEmailTemplates()"
+                    style="margin-left: auto;"
+                    uib-tooltip="Edit the wording of the approval and rejection emails">
+                    <i class="fa fa-file-code-o"></i>
+                    <span class="hidden-xs"> Email templates</span>
+                </button>
+                <a class="crf-chip crf-chip-ghost" href="/apply" target="_blank"
                     uib-tooltip="Open the public application form">
                     <i class="fa fa-external-link"></i>
                     <span class="hidden-xs"> View form</span>
@@ -139,6 +145,18 @@
                         <div>
                             <div class="ta-label">Gender</div>
                             <div style="text-transform: capitalize;">{{ application.sex }}</div>
+                        </div>
+                        <!-- Club membership is a prerequisite, so "No" is flagged
+                             the same way a failed requirement is. Applications
+                             submitted before this question existed have no value
+                             and show nothing rather than a misleading "No". -->
+                        <div ng-if="application.isClubMember !== null && application.isClubMember !== undefined">
+                            <div class="ta-label">MCRRC club member</div>
+                            <div ng-class="application.isClubMember ? 'ta-ag-good' : 'ta-ag-low'">
+                                <i class="fa"
+                                    ng-class="application.isClubMember ? 'fa-check' : 'fa-times'"></i>
+                                {{ application.isClubMember ? 'Yes' : 'Not yet — must join the club' }}
+                            </div>
                         </div>
                         <div>
                             <div class="ta-label">Commits to {{ raceCommitment }} races/year</div>

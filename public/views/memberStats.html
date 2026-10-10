@@ -11,7 +11,9 @@
                             ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
                             class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
                             ng-click="removeMember(currentMember)" title="remove user"></i></h4>
-                    <h6 class="italic"> member <span
+                    <h6 class="italic"
+                        uib-tooltip="{{memberStats.membershipDays | number:0}} days on the team!"
+                        tooltip-append-to-body="true"> member <span
                             ng-repeat="membershipdate in currentMember.membershipDates | orderBy:'start' track by $index"><span
                                 ng-if="membershipdate.end === undefined">since</span><span
                                 ng-if="membershipdate.end !== undefined">from</span> {{membershipdate.start |
@@ -60,18 +62,159 @@
                                         <div class="panel-heading">
                                             <h4><i class="fa fa-calendar"></i> Racing Activity</h4>
                                         </div>
-                                        <div class="panel-body">
+                                        <div class="panel-body stat-carousel">
+                                          <div class="stat-carousel-track"
+                                              ng-style="{transform: statPageOffset()}">
+                                            <!-- Every tile is defined once here and placed by the layout below.
+                                                 The two requirement tiles only show for an admin or for the member
+                                                 themselves; without them page one would sit two short, so two tiles
+                                                 move up from page two to fill it rather than leaving gaps. -->
+                                            <script type="text/ng-template" id="tile-busiest.html">
+                                                                <div class="stat-box text-center hoverhand"
+                                                                    ng-click="trackDrill('activity_busiest_year'); goToMemberYear(memberStats.busiestYear)">
+                                                                    <div class="stat-number">{{memberStats.busiestYear}}</div>
+                                                                    <div class="stat-label">Busiest Year</div>
+                                                                    <div class="stat-sublabel"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        {{memberStats.busiestYearCount}} races</div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-req-races.html">
+                                                                <div class="stat-box text-center hoverhand"
+                                                                    ng-class="{'requirement-met': reqMeetsAll}"
+                                                                    ng-click="trackDrill('activity_races_requirement'); goToMemberYear(reqStats.year)">
+                                                                    <div class="stat-number">
+                                                                        {{reqStats.raceCount || 0}} / {{reqConfig.minRaceCount}}
+                                                                        <i ng-if="reqMeetsRaces" class="fa fa-check text-success"
+                                                                            style="font-size: 16px;"></i>
+                                                                    </div>
+                                                                    <div class="stat-label">{{reqStats.year}} Races Requirement
+
+                                                                    </div>
+                                                                    <div class="stat-sublabel"
+                                                                        ng-if="reqStats.volunteerJobCount > 0"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        {{reqStats.volunteerJobCount}} volunteer
+                                                                        {{reqStats.volunteerJobCount === 1 ? 'job' : 'jobs'}}
+                                                                    </div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-req-agegrade.html">
+                                                                <!-- Opens the result the best age grade came from -->
+                                                                <div class="stat-box text-center"
+                                                                    ng-class="{'requirement-met': reqMeetsAll, hoverhand: !!reqBestAgeGradeResult()}"
+                                                                    ng-click="trackDrill('activity_age_grade_requirement'); goToReqBestAgeGrade()"
+                                                                    uib-tooltip="{{reqBestAgeGradeResult() ? reqBestAgeGradeResult().race.racename : ''}}"
+                                                                    tooltip-enable="!!reqBestAgeGradeResult()" tooltip-append-to-body="true">
+                                                                    <div class="stat-number">
+                                                                        <span
+                                                                            ng-if="currentMember.teamRequirementStats.maxAgeGrade !== 'N/A'">{{currentMember.teamRequirementStats.maxAgeGrade
+                                                                            | number:1}}%</span>
+                                                                        <span
+                                                                            ng-if="currentMember.teamRequirementStats.maxAgeGrade === 'N/A'">N/A</span>
+                                                                        <i ng-if="currentMember.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade"
+                                                                            class="fa fa-check text-success"
+                                                                            style="font-size: 16px;"></i>
+                                                                    </div>
+                                                                    <div class="stat-label">
+                                                                        {{currentMember.teamRequirementStats.year}} Age Grade
+                                                                        ({{reqConfig.minAgeGrade}}%+
+                                                                        needed)</div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-miles.html">
+                                                                <div class="stat-box text-center"
+                                                                    uib-tooltip="That's like {{memberStats.footballFields | number:0}} football fields, or {{memberStats.blueWhales | number:0}} adult blue whales!"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number">{{memberStats.totalMiles |
+                                                                        number:2}}</div>
+                                                                    <div class="stat-label">Total Miles Raced</div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-time.html">
+                                                                <div class="stat-box text-center"
+                                                                    uib-tooltip="Total time spent racing, added up over every race"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number stat-number-long">
+                                                                        {{formatRacingTime(memberStats.totalRacingTime)}}</div>
+                                                                    <div class="stat-label">Total Time Racing</div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-agegrade.html">
+                                                                <div class="stat-box text-center"
+                                                                    uib-tooltip="{{ageGradeLabel(memberStats.avgAgeGrade)}} average age grade"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number">{{memberStats.avgAgeGrade |
+                                                                        number:1}}%<i class="fa fa-star"
+                                                                            ng-class="ageGradeStarClass(memberStats.avgAgeGrade)"
+                                                                            ng-if="ageGradeStarClass(memberStats.avgAgeGrade)"
+                                                                            style="margin-left: 6px;"></i>
+                                                                    </div>
+                                                                    <div class="stat-label">Average Age Grade</div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-runners-beaten.html">
+                                                                <div class="stat-box text-center"
+                                                                    uib-tooltip="Total runners who finished behind, added up over every race"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number">{{memberStats.runnersBeaten |
+                                                                        number:0}}</div>
+                                                                    <div class="stat-label">Runners Beaten</div>
+                                                                    <div class="stat-sublabel"
+                                                                        ng-if="memberStats.sameGenderBeaten > 0"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        of which {{memberStats.sameGenderBeaten | number:0}}
+                                                                        {{isFemaleMember() ? 'women' : 'men'}}
+                                                                    </div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-beaten-by.html">
+                                                                <div class="stat-box text-center"
+                                                                    uib-tooltip="Total runners who finished ahead, added up over every race"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number">{{memberStats.beatenBy |
+                                                                        number:0}}</div>
+                                                                    <div class="stat-label">Beaten By</div>
+                                                                    <div class="stat-sublabel"
+                                                                        ng-if="isFemaleMember() && memberStats.sameGenderAhead > 0"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        of which {{memberStats.sameGenderAhead | number:0}} women
+                                                                    </div>
+                                                                    <div class="stat-sublabel"
+                                                                        ng-if="!isFemaleMember() && memberStats.otherGenderAhead > 0"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        chicked by {{memberStats.otherGenderAhead | number:0}}
+                                                                    </div>
+                                                                </div>
+                                            </script>
+                                            <script type="text/ng-template" id="tile-streak.html">
+                                                                <div class="stat-box text-center hoverhand"
+                                                                    ng-click="trackDrill('activity_streak'); goToStreakResults()"
+                                                                    uib-tooltip="Longest run of consecutive weeks with at least one race ({{memberStats.longestWeekStreakStart | date:'M/d/y':'UTC'}} - {{memberStats.longestWeekStreakEnd | date:'M/d/y':'UTC'}})"
+                                                                    tooltip-append-to-body="true">
+                                                                    <div class="stat-number">{{memberStats.longestWeekStreak}}
+                                                                    </div>
+                                                                    <div class="stat-label">Longest Streak (weeks)</div>
+                                                                    <div class="stat-sublabel"
+                                                                        ng-if="memberStats.longestWeekStreak > 0"
+                                                                        style="font-size: 11px; color: #777;">
+                                                                        {{memberStats.longestWeekStreakRaces}} {{memberStats.longestWeekStreakRaces === 1 ? 'race' : 'races'}}
+                                                                    </div>
+                                                                </div>
+                                            </script>
+
+                                            <div class="stat-carousel-page">
                                             <div class="row">
                                                 <div class="col-sm-4">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username}]})">
+                                                        ng-click="trackDrill('activity_total_races'); goToMemberYear()">
                                                         <div class="stat-number">{{memberStats.totalRaces}}</div>
                                                         <div class="stat-label">Total Races</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-4">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], year: getCurrentYear()})">
+                                                        ng-click="trackDrill('activity_this_year'); goToMemberYear(getCurrentYear())">
                                                         <div class="stat-number">{{memberStats.racesThisYear}}</div>
                                                         <div class="stat-label">Races This Year</div>
                                                     </div>
@@ -85,55 +228,58 @@
                                                 </div>
 
                                             </div>
-                                            <div class="row"
-                                                ng-init="reqStats = currentMember.teamRequirementStats; reqMeetsRaces = (reqStats.raceCount || 0) >= reqConfig.minRaceCount; reqMeetsAG = reqStats.maxAgeGrade >= reqConfig.minAgeGrade; reqMeetsAll = reqMeetsRaces && reqMeetsAG">
-                                                <div class="col-sm-4">
-                                                    <div class="stat-box text-center">
-                                                        <div class="stat-number">{{memberStats.yearsRacing}}</div>
-                                                        <div class="stat-label">Years Racing on the Team</div>
-                                                    </div>
+                                                <div class="row"
+                                                    ng-init="reqStats = currentMember.teamRequirementStats; reqMeetsRaces = (reqStats.raceCount || 0) >= reqConfig.minRaceCount; reqMeetsAG = reqStats.maxAgeGrade >= reqConfig.minAgeGrade; reqMeetsAll = reqMeetsRaces && reqMeetsAG">
+                                                    <div class="col-sm-4" ng-include="'tile-busiest.html'"></div>
+                                                    <div class="col-sm-4" ng-if="showsRequirementTiles()"
+                                                        ng-include="'tile-req-races.html'"></div>
+                                                    <div class="col-sm-4" ng-if="showsRequirementTiles()"
+                                                        ng-include="'tile-req-agegrade.html'"></div>
+                                                    <!-- No requirement tiles: pull the first two of page two up here -->
+                                                    <div class="col-sm-4" ng-if="!showsRequirementTiles()"
+                                                        ng-include="'tile-miles.html'"></div>
+                                                    <div class="col-sm-4" ng-if="!showsRequirementTiles()"
+                                                        ng-include="'tile-time.html'"></div>
                                                 </div>
-                                                <div class="col-sm-4"
-                                                    ng-if="(user.role == 'admin' || (user.member._id && user.member._id === currentMember._id)) && currentMember.teamRequirementStats">
-                                                    <div class="stat-box text-center"
-                                                        ng-class="{'requirement-met': reqMeetsAll}">
-                                                        <div class="stat-number">
-                                                            {{reqStats.raceCount || 0}} / {{reqConfig.minRaceCount}}
-                                                            <i ng-if="reqMeetsRaces" class="fa fa-check text-success"
-                                                                style="font-size: 16px;"></i>
-                                                        </div>
-                                                        <div class="stat-label">{{reqStats.year}} Races Requirement
+                                            </div>
 
-                                                        </div>
-                                                        <div class="stat-sublabel"
-                                                            ng-if="reqStats.volunteerJobCount > 0"
-                                                            style="font-size: 11px; color: #777;">
-                                                            {{reqStats.volunteerJobCount}} volunteer
-                                                            {{reqStats.volunteerJobCount === 1 ? 'job' : 'jobs'}}
-                                                        </div>
+                                            <!-- Page 2: distance, time and streaks -->
+                                            <div class="stat-carousel-page">
+                                                <div ng-if="showsRequirementTiles()">
+                                                    <div class="row">
+                                                        <div class="col-sm-4" ng-include="'tile-miles.html'"></div>
+                                                        <div class="col-sm-4" ng-include="'tile-time.html'"></div>
+                                                        <div class="col-sm-4" ng-include="'tile-agegrade.html'"></div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-sm-4" ng-include="'tile-runners-beaten.html'"></div>
+                                                        <div class="col-sm-4" ng-include="'tile-beaten-by.html'"></div>
+                                                        <div class="col-sm-4" ng-include="'tile-streak.html'"></div>
                                                     </div>
                                                 </div>
-                                                <div class="col-sm-4"
-                                                    ng-if="(user.role == 'admin' || (user.member._id && user.member._id === currentMember._id)) && currentMember.teamRequirementStats">
-                                                    <div class="stat-box text-center"
-                                                        ng-class="{'requirement-met': reqMeetsAll}">
-                                                        <div class="stat-number">
-                                                            <span
-                                                                ng-if="currentMember.teamRequirementStats.maxAgeGrade !== 'N/A'">{{currentMember.teamRequirementStats.maxAgeGrade
-                                                                | number:1}}%</span>
-                                                            <span
-                                                                ng-if="currentMember.teamRequirementStats.maxAgeGrade === 'N/A'">N/A</span>
-                                                            <i ng-if="currentMember.teamRequirementStats.maxAgeGrade >= reqConfig.minAgeGrade"
-                                                                class="fa fa-check text-success"
-                                                                style="font-size: 16px;"></i>
-                                                        </div>
-                                                        <div class="stat-label">
-                                                            {{currentMember.teamRequirementStats.year}} Age Grade
-                                                            ({{reqConfig.minAgeGrade}}%+
-                                                            needed)</div>
+                                                <!-- Two tiles went up to page one, so the four left over sit two to a
+                                                     row rather than leaving one stranded on its own line. -->
+                                                <div ng-if="!showsRequirementTiles()">
+                                                    <div class="row">
+                                                        <div class="col-sm-6" ng-include="'tile-runners-beaten.html'"></div>
+                                                        <div class="col-sm-6" ng-include="'tile-beaten-by.html'"></div>
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-sm-6" ng-include="'tile-agegrade.html'"></div>
+                                                        <div class="col-sm-6" ng-include="'tile-streak.html'"></div>
                                                     </div>
                                                 </div>
                                             </div>
+                                          </div>
+                                        </div>
+                                        <div class="stat-carousel-nav">
+                                            <i class="fa fa-chevron-left hoverhand" ng-click="prevStatPage()"
+                                                uib-tooltip="Previous stats" tooltip-append-to-body="true"></i>
+                                            <span class="stat-carousel-dot hoverhand" ng-repeat="page in statPages"
+                                                ng-class="{active: statPage === page}"
+                                                ng-click="setStatPage(page)"></span>
+                                            <i class="fa fa-chevron-right hoverhand" ng-click="nextStatPage()"
+                                                uib-tooltip="More stats" tooltip-append-to-body="true"></i>
                                         </div>
                                     </div>
                                 </div>
@@ -145,151 +291,39 @@
                                 <div class="col-md-6">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
-                                            <h4 title="Personal bests as MCRRC race team member"><i
-                                                    class="fa fa-trophy"></i> Personal Bests <span
-                                                    style="font-size: 75%;">(as MCRRC race team member)</span> </h4>
+                                            <h4 uib-tooltip="Personal bests as an MCRRC race team member"
+                                                tooltip-append-to-body="true"><i class="fa fa-trophy"></i> Personal
+                                                Bests <span style="font-size: 75%;">(as MCRRC race team
+                                                    member)</span> </h4>
                                         </div>
-                                        <div class="panel-body" style="padding: 0;">
+                                        <div class="panel-body">
                                             <uib-tabset class="activePbTab" active="activePbTab">
-                                                <uib-tab index="0" heading="road"
-                                                    ng-show="(currentMember.personalBests | pbFilter: 'road').length > 0">
-                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
-                                                        <li class="list-group-item text-left pblistheader"
-                                                            ng-show="currentMember.personalBests.length >0">
-                                                            <div class="row">
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Race">RACE</span>
-                                                                </div>
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Time">TIME</span>
-                                                                </div>
+                                                <uib-tab ng-repeat="surface in pbSurfaces" index="$index"
+                                                    heading="{{surface}}"
+                                                    ng-show="(currentMember.personalBests | pbFilter: surface).length > 0">
+                                                    <div class="pb-stats">
+                                                        <div class="pb-item"
+                                                            ng-repeat="pb in currentMember.personalBests | orderBy:'distance' | pbFilter: surface">
+                                                            <!-- Both open the result itself; a PB with no
+                                                                 result on file falls back to its race -->
+                                                            <div class="pb-name">
+                                                                <a class="hoverhandandunderline" ng-if="pb.result._id"
+                                                                    ui-sref="/results/result({ resultId: pb.result._id })" ng-click="trackDrill('personal_bests');"
+                                                                    uib-tooltip="{{pb.result.race.racename}} ({{pb.result.race.racedate | date:'M/d/y':'UTC'}})"
+                                                                    tooltip-append-to-body="true">{{pb.name}}</a>
+                                                                <a class="hoverhandandunderline" ng-if="!pb.result._id"
+                                                                    ng-click="trackDrill('personal_bests_race'); showRaceModal(pb.result.race)"
+                                                                    uib-tooltip="{{pb.result.race.racename}} ({{pb.result.race.racedate | date:'M/d/y':'UTC'}})"
+                                                                    tooltip-append-to-body="true">{{pb.name}}</a>
                                                             </div>
-                                                        </li>
-                                                        <li class="list-group-item text-left pblistrow"
-                                                            ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'road' "
-                                                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                                            ng-mouseleave="hover = false">
-                                                            <div class="row">
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.name}}</span>
-                                                                </div>
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent time"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.time | secondsToTimeString}}</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    </ul>
-                                                </uib-tab>
-                                                <uib-tab index="1" heading="track"
-                                                    ng-show="(currentMember.personalBests | pbFilter: 'track').length > 0">
-                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
-                                                        <li class="list-group-item text-left pblistheader"
-                                                            ng-show="currentMember.personalBests.length >0">
-                                                            <div class="row">
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Race">RACE</span>
-                                                                </div>
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Time">TIME</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                        <li class="list-group-item text-left pblistrow"
-                                                            ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'track'"
-                                                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                                            ng-mouseleave="hover = false">
-                                                            <div class="row">
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.name}}</span>
-                                                                </div>
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent time"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.time | secondsToTimeString}}</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    </ul>
-                                                </uib-tab>
-                                                <uib-tab index="2" heading="trail"
-                                                    ng-show="(currentMember.personalBests | pbFilter: 'trail').length > 0">
-                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
-                                                        <li class="list-group-item text-left pblistheader"
-                                                            ng-show="currentMember.personalBests.length >0">
-                                                            <div class="row">
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Race">RACE</span>
-                                                                </div>
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Time">TIME</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                        <li class="list-group-item text-left pblistrow"
-                                                            ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'trail'"
-                                                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                                            ng-mouseleave="hover = false">
-                                                            <div class="row">
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.name}}</span>
-                                                                </div>
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent time"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.time | secondsToTimeString}}</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    </ul>
-                                                </uib-tab>
-                                                <uib-tab index="3" heading="ultra"
-                                                    ng-show="(currentMember.personalBests | pbFilter: 'ultra').length > 0">
-                                                    <ul class="pb-list list-group" style="margin: 0; border: none;">
-                                                        <li class="list-group-item text-left pblistheader"
-                                                            ng-show="currentMember.personalBests.length >0">
-                                                            <div class="row">
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Race">RACE</span>
-                                                                </div>
-                                                                <div class="col-sm-6" style="font-size: 15px;">
-                                                                    <span class="listheader hoverhand"
-                                                                        title="Time">TIME</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                        <li class="list-group-item text-left pblistrow"
-                                                            ng-repeat="pb in currentMember.personalBests  | orderBy:'distance' | pbFilter: 'ultra'"
-                                                            ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true"
-                                                            ng-mouseleave="hover = false">
-                                                            <div class="row">
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.name}}</span>
-                                                                </div>
-                                                                <div class="col-sm-6">
-                                                                    <span class="hoverhandandunderline resultEvent time"
-                                                                        ng-click="showRaceModal(pb.result.race)">
-                                                                        {{pb.time | secondsToTimeString}}</span>
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    </ul>
+                                                            <a class="pb-time hoverhand" ng-if="pb.result._id"
+                                                                ui-sref="/results/result({ resultId: pb.result._id })" ng-click="trackDrill('personal_bests');"
+                                                                title="Open this result">{{pb.time | secondsToTimeString}}</a>
+                                                            <div class="pb-time hoverhand" ng-if="!pb.result._id"
+                                                                ng-click="trackDrill('personal_bests_race'); showRaceModal(pb.result.race)">
+                                                                {{pb.time | secondsToTimeString}}</div>
+                                                        </div>
+                                                    </div>
                                                 </uib-tab>
                                             </uib-tabset>
                                         </div>
@@ -304,14 +338,14 @@
                                             <div class="row">
                                                 <div class="col-sm-6">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1'}]})">
+                                                        ng-click="trackDrill('highlights_wins'); goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1'}]})">
                                                         <div class="stat-number">{{memberStats.wins}}</div>
                                                         <div class="stat-label">Wins</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1-3'}]})">
+                                                        ng-click="trackDrill('highlights_top3'); goToResultsWithQuery({members:[{username: currentMember.username, ranking: '1-3'}]})">
                                                         <div class="stat-number">{{memberStats.top3Finishes}}</div>
                                                         <div class="stat-label">Top 3 Finishes</div>
                                                     </div>
@@ -326,7 +360,8 @@
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <div class="stat-box text-center hoverhand"
-                                                        ng-click="showRaceModal(memberStats.bestAgeGradeRace)">
+                                                        ng-click="trackDrill('highlights_best_age_grade'); openBestAgeGrade(memberStats.bestAgeGradeResultId, memberStats.bestAgeGradeRace)"
+                                                        title="Open this result">
                                                         <div class="stat-number">{{memberStats.bestAgeGrade |
                                                             number:2}}%</div>
                                                         <div class="stat-label">Best Age Grade</div>
@@ -352,7 +387,7 @@
                                         <div class="panel-body">
                                             <d3-pie-chart data="memberStats.raceTypeBreakdown.categories" width="350"
                                                 height="250"
-                                                on-slice-click="goToResultsWithQuery({members:[{username: currentMember.username}], distance: data.name})">
+                                                on-slice-click="trackDrill('member_distance_pie', data.name); goToDistanceSlice(data)">
                                             </d3-pie-chart>
                                         </div>
                                     </div>
@@ -369,7 +404,8 @@
                                                     dir-paginate="location in memberStats.locationBreakdown | itemsPerPage: 10 track by $index"
                                                     pagination-id="location-pagination">
                                                     <div class="location-name">
-                                                        <a ng-click="goToResultsWithQuery({members:[{username: currentMember.username}], states:[location.state]})"
+                                                        <a ui-sref="/individualresults(locationParams(location))" ng-click="trackDrill('member_locations');"
+                                                            ui-sref-opts="{inherit: false}"
                                                             class="hoverhandandunderline"
                                                             title="View all results for {{currentMember.firstname}} {{currentMember.lastname}} in {{location.displayName}}">
                                                             <span ng-if="location.stateName">
@@ -399,7 +435,7 @@
 
                             <!-- Top Team Members -->
                             <div class="row">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="panel panel-default">
                                         <div class="panel-heading">
                                             <h4><i class="fa fa-users"></i> Top Team Members Raced With</h4>
@@ -410,22 +446,22 @@
                                                     dir-paginate="member in memberStats.topTeamMembers | itemsPerPage: 10 track by $index"
                                                     pagination-id="team-member-pagination">
                                                     <div class="team-member-name">
-                                                        <a class="hoverhand"
-                                                            ui-sref="/members/member({ member: member.username })">
+                                                        <a ui-sref="/members/member({ member: member.username })">
                                                             {{member.firstname}} {{member.lastname}}
                                                         </a>
                                                     </div>
-                                                    <div class="team-member-count">
-                                                        <span
-                                                            ng-click="goToResultsWithQuery({members:[{username: currentMember.username}, {username: member.username}]})"
-                                                            class="hoverhand"
-                                                            title="View all races where {{currentMember.firstname}} {{currentMember.lastname}} and {{member.firstname}} {{member.lastname}} both participated">{{member.count}}
-                                                            races together</span>
-                                                        <br>
-                                                        <a ui-sref="/members/member/head-to-head-compare({member: currentMember.username, member2: member.username})"
-                                                            class="btn btn-xs btn-primary"
-                                                            title="Compare {{currentMember.firstname}} {{currentMember.lastname}} vs {{member.firstname}} {{member.lastname}} head-to-head">
-                                                            <i class="fa fa-trophy"></i> Head-to-Head
+                                                    <div class="team-member-actions">
+                                                        <span class="team-member-count hoverhand"
+                                                            ng-click="trackDrill('raced_with'); goToResultsWithQuery({members:[{username: currentMember.username}, {username: member.username}]})"
+                                                            uib-tooltip="All races {{currentMember.firstname}} and {{member.firstname}} both ran"
+                                                            tooltip-placement="left"
+                                                            tooltip-append-to-body="true">{{member.count}}
+                                                            {{member.count === 1 ? 'race' : 'races'}}</span>
+                                                        <a class="team-member-h2h"
+                                                            ui-sref="/members/member/head-to-head-compare({member: currentMember.username, member2: member.username})"
+                                                            uib-tooltip="Head-to-head vs {{member.firstname}} {{member.lastname}}"
+                                                            tooltip-placement="left" tooltip-append-to-body="true">
+                                                            <i class="fa fa-trophy"></i>
                                                         </a>
                                                     </div>
                                                 </div>
@@ -453,6 +489,89 @@
                                             <member-best-time-chart member="currentMember"
                                                 race-type-breakdown="memberStats.raceTypeBreakdown">
                                             </member-best-time-chart>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Racing Calendar -->
+                            <div class="row" ng-if="memberCalendar">
+                                <div class="col-md-12">
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <h4><i class="fa fa-calendar-check-o"></i> Racing Calendar</h4>
+                                        </div>
+                                        <div class="panel-body cal-panel"
+                            ng-class="{'cal-highlight-gaps': memberCalendar.highlightMissing}">
+
+                                            <div class="cal-headline">
+                                                <div class="cal-score">
+                                                    <span
+                                                        class="cal-score-value">{{memberCalendar.daysRaced}}</span><span
+                                                        class="cal-score-total">/ {{memberCalendar.totalDays}}</span>
+                                                </div>
+                                                <div class="cal-score-text">
+                                                    <strong>calendar days raced</strong>
+                                                    <span>{{currentMember.firstname}} has raced on
+                                                        {{memberCalendar.daysRaced}} of the
+                                                        {{memberCalendar.totalDays}} days in the year.</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="cal-todo" ng-if="memberCalendar.showMissingList">
+                                                <span class="cal-todo-label"><i class="fa fa-flag-o"></i> Still to
+                                                    fill:</span>
+                                                <span class="cal-todo-day"
+                                                    ng-repeat="day in memberCalendar.missingDays track by day.label">
+                                                    {{day.label}}
+                                                </span>
+                                            </div>
+
+                                            <div class="cal-grid-wrap">
+                                                <table class="cal-grid">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="cal-month-label"></th>
+                                                            <th ng-repeat="n in memberCalendar.dayNumbers track by n">
+                                                                {{n}}</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr
+                                                            ng-repeat="month in memberCalendar.months track by month.short">
+                                                            <th class="cal-month-label">{{month.short}}</th>
+                                                            <td ng-repeat="day in month.days track by $index"
+                                                                class="cal-cell"
+                                                                ng-class="[day ? (day.count ? 'cal-level-' + day.level : 'cal-blank') : 'cal-pad',
+                                                                           day.isBusiest ? 'cal-busiest' : '',
+                                                                           day.count ? 'cal-clickable' : '']"
+                                                                uib-tooltip="{{day.title}}" tooltip-class="cal-tooltip"
+                                                tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120"
+                                                                ng-click="trackDrill('member_calendar'); goToMemberCalendarDay(day)"></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="cal-legend">
+                                                <span class="cal-legend-item"><span
+                                                        class="cal-cell cal-blank"></span> never raced</span>
+                                                <span class="cal-legend-scale">
+                                                    quieter
+                                                    <span class="cal-cell cal-level-{{n}}"
+                                                        ng-repeat="n in memberCalendar.levels track by n"></span>
+                                                    busier
+                                                </span>
+                                                <span class="cal-legend-item"
+                                                    ng-if="memberCalendar.hasBusiest"><span
+                                                        class="cal-cell cal-level-8 cal-busiest"></span>
+                                                    busiest: {{memberCalendar.busiestLabelText}}
+                                                    ({{memberCalendar.busiestCount}}
+                                                    {{memberCalendar.busiestCount === 1 ? 'race' : 'races'}}<span
+                                                        ng-if="memberCalendar.busiestTies > 1"> each</span>)</span>
+                                                <span class="cal-legend-note">click any day to see those races</span>
+                                            </div>
+
                                         </div>
                                     </div>
                                 </div>

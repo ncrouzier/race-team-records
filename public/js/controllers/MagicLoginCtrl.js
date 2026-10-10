@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.authentication').controller('MagicLoginController', ['$scope', '$http', '$location', '$stateParams', 'AuthService', function ($scope, $http, $location, $stateParams, AuthService) {
+angular.module('mcrrcApp.authentication').controller('MagicLoginController', ['$scope', '$http', '$location', '$stateParams', 'AuthService', 'Analytics', function ($scope, $http, $location, $stateParams, AuthService, Analytics) {
 
     // Deliberately does NOT auto-submit on load — the token is single-use, and
     // an email-security link scanner that pre-fetches this page would burn it
@@ -23,7 +23,9 @@ angular.module('mcrrcApp.authentication').controller('MagicLoginController', ['$
         $http.post('/api/login/magic/' + $scope.token).success(function (data) {
             AuthService.setUser(data.user);
             var returnTo = $location.search().returnTo;
-            window.location.href = isSafeReturnPath(returnTo) ? returnTo : '/';
+            Analytics.eventThen('login', { method: 'email_link' }, function () {
+                window.location.href = isSafeReturnPath(returnTo) ? returnTo : '/';
+            });
         }).error(function (data) {
             $scope.working = false;
             $scope.failed = true;

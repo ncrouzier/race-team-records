@@ -12,6 +12,15 @@ var volunteerJobSchema = mongoose.Schema({
         dateofbirth: Date
     },
     jobDate: { type: Date, required: true },
+    // Set when the job was at one of the team's races. eventName then mirrors
+    // the race name, so everything that reads eventName keeps working, and
+    // jobDate starts as the race date but may differ (set-up the day before,
+    // packet pickup, ...). Jobs elsewhere have no race and a typed eventName.
+    race: {
+        _id: mongoose.Schema.Types.ObjectId,
+        racename: String,
+        racedate: Date
+    },
     eventName: { type: String, required: true, trim: true },
     description: { type: String, required: true },
     createdAt: Date,
@@ -21,6 +30,7 @@ var volunteerJobSchema = mongoose.Schema({
 // Add indexes for common queries
 volunteerJobSchema.index({ 'member._id': 1 });
 volunteerJobSchema.index({ jobDate: 1 });
+volunteerJobSchema.index({ 'race._id': 1 });
 
 // keep track of when volunteer jobs are updated and created
 volunteerJobSchema.pre('save', function() {

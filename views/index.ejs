@@ -4,7 +4,7 @@
 <head>
 	<base href="/">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>MCRRC Racing Team</title>
+	<title><%= ogTitle || 'MCRRC Racing Team' %></title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -20,24 +20,25 @@
 	<!-- Use EJS variable for script path -->
 	<script src="<%= scriptPath %>"></script>
 
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HBYX9M5YQ"></script>
-	<script>
-		window.dataLayer = window.dataLayer || [];
-		function gtag() { dataLayer.push(arguments); }
-		gtag('js', new Date());
-
-		gtag('config', 'G-2HBYX9M5YQ');
-	</script>
-	<meta property="og:title" content="MCRRC Racing Team" />
+	<!-- Google Analytics. Page views are sent by the app, one per page
+	     (public/js/app.js), hence send_page_view: false; events go through
+	     the Analytics service; user_role is set there too. -->
+	<%- include('partials/ga', { gaConfig: { send_page_view: false } }) %>
+	<!-- Per-page where there is one (a race, a result, a member): set
+	     server-side in app/routes.js's catch-all route, before this renders —
+	     a link-preview crawler (iMessage, Slack, Facebook...) reads these tags
+	     without ever running the client JS that drives the tab title. -->
+	<meta property="og:title" content="<%= ogTitle %>" />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content="http://raceteam.mcrrc.org" />
-	<meta property="og:image" content="http://raceteam.mcrrc.org/images/ogimage.jpg" />
-	<meta property="og:description" content="MCRRC Racing Team Site: Members bios, race results and records." />
-	<link rel="image_src" href="http://mcrrc-ncrouzier.rhcloud.com/images/topcover2.jpg" /><!--formatted-->
-	<link rel="image_src" href="https://www.mcrrc.org/wp-content/uploads/2015/08/MontgomeryCountyWebReady-post3.png" />
-	<!--formatted-->
-	<meta name="description"
-		content="MCRRC Racing Team Site: Members bios and race results. http://raceteam.mcrrc.org" /><!--formatted-->
+	<meta property="og:url" content="<%= ogUrl %>" />
+	<meta property="og:image" content="<%= ogImage %>" />
+	<meta property="og:description" content="<%= ogDescription %>" />
+	<meta name="description" content="<%= ogDescription %>" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="<%= ogTitle %>" />
+	<meta name="twitter:description" content="<%= ogDescription %>" />
+	<meta name="twitter:image" content="<%= ogImage %>" />
+	<link rel="image_src" href="<%= ogImage %>" />
 </head>
 
 <body ng-controller="MainController">
@@ -107,8 +108,18 @@
 											class="fa fa-th"></i> Records by Year</a></li>
 							</ul>
 						</li>
-						<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
-								ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+						<!-- Split: the name goes to the race list, the caret opens the menu -->
+						<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+							class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
+							<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
+							<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
+								title="More ways to see results"><span class="caret"></span></a>
+							<ul class="dropdown-menu" uib-dropdown-menu>
+								<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
+										ui-sref-opts="{inherit: false}" track-event="view_switch"
+						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+							</ul>
+						</li>
 						<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
 									class="fa fa-users"></i></a></li>
 						<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
@@ -127,7 +138,7 @@
 								</li>
 							</ul>
 						</li>
-						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/racetypes') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs') || $state.includes('/agegrading-tables'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span class="caret"></span>
@@ -151,6 +162,8 @@
 								<li ng-class="{active: $state.includes('/banners')}"><a ui-sref="/banners">Banners</a></li>
 								<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race
 										Types</a></li>
+								<li ng-class="{active: $state.includes('/agegrading-tables')}"><a
+										ui-sref="/agegrading-tables">Age Grading Tables</a></li>
 								<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create
 										Report</a></li>
 								<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a>
@@ -202,8 +215,18 @@
 												class="fa fa-th"></i> Records by Year</a></li>
 								</ul>
 							</li>
-							<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
-									ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+							<!-- Split: the name goes to the race list, the caret opens the menu -->
+							<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+								class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
+								<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
+								<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
+									title="More ways to see results"><span class="caret"></span></a>
+								<ul class="dropdown-menu" uib-dropdown-menu>
+									<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
+											ui-sref-opts="{inherit: false}" track-event="view_switch"
+						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+								</ul>
+							</li>
 							<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
 										class="fa fa-users"></i></a></li>
 							<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
@@ -276,8 +299,18 @@
 												<i class="fa fa-th"></i> Records by Year</a></li>
 									</ul>
 								</li>
-								<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
-										ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+								<!-- Split: the name goes to the race list, the caret opens the menu -->
+								<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+									class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
+									<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
+									<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
+										title="More ways to see results"><span class="caret"></span></a>
+									<ul class="dropdown-menu" uib-dropdown-menu>
+										<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
+												ui-sref-opts="{inherit: false}" track-event="view_switch"
+						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+									</ul>
+								</li>
 								<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members
 										<i class="fa fa-users"></i></a></li>
 								<li ng-class="{active: $state.includes('/stats')}"><a ui-sref="/stats">Stats <i
@@ -338,8 +371,18 @@
 											</li>
 										</ul>
 									</li>
-									<li ng-class="{active: $state.includes('/results') || $state.includes('/races')}"><a
-											ui-sref="/results">Team Results <i class="fa fa-list"></i></a></li>
+									<!-- Split: the name goes to the race list, the caret opens the menu -->
+									<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+										class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
+										<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
+										<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
+											title="More ways to see results"><span class="caret"></span></a>
+										<ul class="dropdown-menu" uib-dropdown-menu>
+											<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
+													ui-sref-opts="{inherit: false}" track-event="view_switch"
+						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+										</ul>
+									</li>
 									<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team
 											Members
 											<i class="fa fa-users"></i></a></li>

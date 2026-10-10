@@ -60,6 +60,22 @@ raceSchema.post('deleteOne', function(doc) {
 }); 
 
 
+// A deleted race must not leave volunteer jobs pointing at it. They keep
+// their event name and date, and simply stop being linked to a race. Covers
+// both race.deleteOne() and Race.deleteOne({ _id }), which is how the routes
+// remove races (including the automatic removal of a race left with no
+// results). Merging a race into another moves its jobs first, so by the time
+// the old race is deleted there is nothing left to unlink.
+raceSchema.pre('deleteOne', { document: true, query: true }, async function () {
+    const id = this instanceof mongoose.Query ? (this.getFilter() || {})._id : this._id;
+    if (!id) return;
+    const VolunteerJob = mongoose.model('VolunteerJob');
+    const res = await VolunteerJob.updateMany({ 'race._id': id }, { $unset: { race: 1 } });
+    if (res.modifiedCount > 0) {
+        VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
+    }
+});
+
 raceSchema.methods.updateSystemInfo = function(name,date) {
     try{
         SystemInfo.findOne({

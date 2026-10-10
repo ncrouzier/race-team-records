@@ -111,6 +111,16 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
         }, function () { });
     };
 
+    // Captains can rewrite the approval and rejection wording itself, rather
+    // than editing each outgoing email by hand.
+    $scope.editEmailTemplates = function () {
+        $uibModal.open({
+            templateUrl: 'views/modals/emailTemplateModal.html',
+            controller: 'EmailTemplateModalController',
+            size: 'lg'
+        });
+    };
+
     $scope.decisionEmail = function (application) {
         return application.status === 'rejected' ? application.rejectionEmail : application.approvalEmail;
     };
@@ -318,6 +328,154 @@ angular.module('mcrrcApp.admin').controller('ApplicationEmailModalController', [
             $scope.error = (res.data && res.data.error) || 'Failed to send the email.';
         }).finally(function () {
             $scope.sending = false;
+        });
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+
+}]);
+
+
+angular.module('mcrrcApp.admin').controller('EmailTemplateModalController', ['$scope', '$http', '$uibModalInstance', '$timeout', function ($scope, $http, $uibModalInstance, $timeout) {
+
+    // Tabs sit inside an ng-if, so the flag lives on an object rather than
+    // directly on the scope — same reason as the send-email dialog.
+    $scope.view = { tab: 'edit' };
+    $scope.loading = true;
+    $scope.saving = false;
+    $scope.previewLoading = false;
+    $scope.error = null;
+    $scope.saved = null;
+    $scope.templates = [];
+    $scope.placeholders = [];
+    $scope.current = null;
+    $scope.draft = { subject: '', body: '' };
+    $scope.preview = { subject: '', body: '', sampleApplicant: '', unknownTokens: [] };
+
+    $http.get('/api/email-templates').then(function (res) {
+        $scope.templates = res.data.templates || [];
+        $scope.placeholders = res.data.placeholders || [];
+        if ($scope.templates.length) $scope.selectTemplate($scope.templates[0]);
+    }, function (res) {
+        $scope.error = (res.data && res.data.error) || 'Could not load the templates.';
+    }).finally(function () {
+        $scope.loading = false;
+    });
+
+    $scope.selectTemplate = function (template) {
+        $scope.current = template;
+        $scope.draft = { subject: template.subject, body: template.body };
+        $scope.view.tab = 'edit';
+        $scope.saved = null;
+        $scope.error = null;
+        $scope.preview = { subject: '', body: '', sampleApplicant: '', unknownTokens: [] };
+    };
+
+    $scope.isDirty = function () {
+        if (!$scope.current) return false;
+        return $scope.draft.subject !== $scope.current.subject ||
+            $scope.draft.body !== $scope.current.body;
+    };
+
+    $scope.onDraftChange = function () {
+        $scope.saved = null;
+        // A stale preview next to edited source is worse than no preview
+        if ($scope.view.tab === 'preview') $scope.refreshPreview();
+    };
+
+    // Rendered by the server, by the same code that runs at send time, so what
+    // is shown here is what the applicant receives.
+    $scope.refreshPreview = function () {
+        if (!$scope.current) return;
+        $scope.previewLoading = true;
+        $http.post('/api/email-templates/' + $scope.current.type + '/preview', {
+            subject: $scope.draft.subject,
+            body: $scope.draft.body
+        }).then(function (res) {
+            $scope.preview = {
+                subject: res.data.subject,
+                body: res.data.body,
+                sampleApplicant: res.data.sampleApplicant,
+                unknownTokens: res.data.unknownTokens || []
+            };
+        }, function (res) {
+            $scope.error = (res.data && res.data.error) || 'Could not render the preview.';
+        }).finally(function () {
+            $scope.previewLoading = false;
+        });
+    };
+
+    $scope.showPreview = function () {
+        $scope.view.tab = 'preview';
+        $scope.refreshPreview();
+    };
+
+    // Drop a placeholder in at the cursor, so it lands where the captain is
+    // typing rather than at the end of the message.
+    $scope.insertPlaceholder = function (token) {
+        var text = '{{' + token + '}}';
+        var field = document.getElementById('et-body');
+        if (!field || $scope.view.tab !== 'edit') {
+            $scope.draft.body = ($scope.draft.body || '') + text;
+            $scope.onDraftChange();
+            return;
+        }
+        var start = field.selectionStart;
+        var end = field.selectionEnd;
+        var body = $scope.draft.body || '';
+        $scope.draft.body = body.slice(0, start) + text + body.slice(end);
+        $scope.onDraftChange();
+        $timeout(function () {
+            field.focus();
+            field.selectionStart = field.selectionEnd = start + text.length;
+        });
+    };
+
+    function applySaved(template, message) {
+        // Replace the entry in the list so the "edited" marker and the dirty
+        // check both follow what is now stored.
+        for (var i = 0; i < $scope.templates.length; i++) {
+            if ($scope.templates[i].key === template.key) {
+                $scope.templates[i] = template;
+                break;
+            }
+        }
+        $scope.current = template;
+        $scope.draft = { subject: template.subject, body: template.body };
+        $scope.saved = message;
+    }
+
+    $scope.save = function () {
+        if (!$scope.current) return;
+        $scope.error = null;
+        $scope.saved = null;
+        $scope.saving = true;
+        $http.put('/api/email-templates/' + $scope.current.type, {
+            subject: $scope.draft.subject,
+            body: $scope.draft.body
+        }).then(function (res) {
+            applySaved(res.data, 'Template saved. New ' + res.data.type + ' emails will use it.');
+        }, function (res) {
+            $scope.error = (res.data && res.data.error) || 'Could not save the template.';
+        }).finally(function () {
+            $scope.saving = false;
+        });
+    };
+
+    $scope.resetTemplate = function () {
+        if (!$scope.current || !$scope.current.isCustom) return;
+        if (!confirm('Discard the edited ' + $scope.current.type + ' template and go back to the built-in wording?')) return;
+        $scope.error = null;
+        $scope.saved = null;
+        $scope.saving = true;
+        $http.delete('/api/email-templates/' + $scope.current.type).then(function (res) {
+            applySaved(res.data, 'Back to the built-in template.');
+        }, function (res) {
+            $scope.error = (res.data && res.data.error) || 'Could not reset the template.';
+        }).finally(function () {
+            $scope.saving = false;
         });
     };
 

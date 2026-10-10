@@ -408,6 +408,24 @@ footer {
         text-align: left;
     }
 
+    // The chevron is the only part of a race row that expands it (the rest
+    // opens the race page), so it gets a hit area bigger than the glyph and
+    // a hover state of its own.
+    .race-expand-toggle {
+        display: inline-block;
+        margin: -4px 1px -4px -6px;
+        padding: 4px 6px;
+        border-radius: 4px;
+        // Inherits the row's text colour: dark on a collapsed row, white on
+        // an expanded one's teal background. The grey tint reads on both.
+        color: inherit;
+        cursor: pointer;
+
+        &:hover {
+            background-color: fade(@gray-light, 30%);
+        }
+    }
+
     .resultlistrow.my-result-row {
         border-left: 3px solid #f0ad4e !important;
         background-color: #fff8e1 !important;
@@ -488,6 +506,23 @@ footer {
 
 
 
+// Team stats: "Most Races Completed" title with its race type picker
+.panel-heading.most-races-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    h4 {
+        margin: 0;
+    }
+
+    select {
+        width: auto;
+        color: @gray-dark;
+    }
+}
+
 .my-member-row {
     background-color: #fff8e1 !important;
     border-left: 3px solid #f0ad4e !important;
@@ -506,50 +541,54 @@ footer {
     }
 }
 
-.pb-list {
-    .pblistheader {
-        padding: 15px;
-        border: 0px;
-        border-bottom: 2px solid #dee2e6;
-        font-weight: bold;
-        color: @brand-primary;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 8px 8px 0 0;
-        font-size: 1.1em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .pblistrow {
-        padding: 12px 15px;
-        border: 0px;
+// Deliberately mirrors .location-stats / .team-members-stats further down: all
+// three are list panels on the member stats page and should read as one component.
+.pb-stats {
+    .pb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
         border-bottom: 1px solid #e9ecef;
-        transition: background-color 0.2s ease;
-
-        &:hover {
-            background-color: #f8f9fa;
-            transform: translateX(2px);
-        }
 
         &:last-child {
             border-bottom: none;
-            border-radius: 0 0 8px 8px;
         }
 
-        .row {
-            align-items: center;
-        }
-
-        .resultEvent {
+        .pb-name {
             font-weight: 600;
-            color: @brand-primary;
-            transition: color 0.2s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
 
-            &:hover {
-                color: @brand-primary-dark;
-                text-decoration: none;
+            a {
+                color: @gray-dark;
+
+                &:hover,
+                &:focus {
+                    color: @brand-primary;
+                }
             }
+        }
 
+        // A link to the result now; it keeps the badge look on hover
+        a.pb-time:hover,
+        a.pb-time:focus {
+            background-color: @brand-primary-dark;
+            color: white;
+            text-decoration: none;
+        }
+
+        .pb-time {
+            background-color: @brand-primary;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            white-space: nowrap;
+            flex: 0 0 auto;
         }
     }
 }
@@ -960,9 +999,98 @@ footer {
     cursor: hand;
 }
 
-.introtext {
-    line-height: 1.1;
+// The welcome card shown to logged-out visitors and non-members.
+.intro-card {
+    // Copy left, actions right: the paragraph is capped at a readable measure,
+    // which otherwise leaves the right half of a full-width card empty.
+    .intro-body {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+
+    // Shrinks rather than holding a wide basis, so the actions stay beside the
+    // copy instead of dropping underneath and stretching across the card.
+    .intro-copy {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+
+    .intro-title {
+        margin: 0 0 10px;
+        font-size: 22px;
+        font-weight: 700;
+        color: @gray-darker;
+    }
+
+    // Body copy, not a footnote: this used to be wrapped in <small><i>, which
+    // rendered the whole paragraph italic and cramped it against a 1.1
+    // line-height.
+    .introtext {
+        margin: 0;
+        max-width: 80ch;
+        font-size: 15px;
+        line-height: 1.6;
+        color: @gray;
+    }
+
+    .intro-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+
+    // Built on the shared button look used by the age grade and pace tools, so
+    // the site has one button vocabulary rather than a bootstrap default here
+    // and a custom one there.
+    .intro-btn {
+        .mcrrc-btn-look();
+        justify-content: center;
+        min-width: 210px;
+        padding: 11px 20px;
+        font-size: 14px;
+        white-space: nowrap;
+
+        i {
+            font-size: 0.95em;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .intro-body {
+            gap: 18px;
+        }
+
+        .intro-btn {
+            min-width: 150px;
+            padding: 9px 14px;
+            font-size: 13px;
+        }
+    }
+
+    // Team orange, matching the banner wordmark: this is the one call to action
+    // on the page for a visitor who is not on the team, so it should not read as
+    // just another blue link among the blue cards below it.
+    .intro-btn-primary {
+        background: @team-orange-cta;
+        border-color: @team-orange-cta;
+        color: #fff;
+        box-shadow: 0 2px 6px fade(@team-orange-cta, 35%);
+
+        // Has to repeat the mixin's :not(:disabled) — without it this selector
+        // is a pseudo-class less specific than the shared hover rule and the
+        // button turns brand-blue on hover.
+        &:hover:not(:disabled),
+        &:focus:not(:disabled) {
+            background: darken(@team-orange-cta, 8%);
+            border-color: darken(@team-orange-cta, 8%);
+            color: #fff;
+        }
+    }
 }
+
 
 
 
@@ -1111,6 +1239,81 @@ footer {
 
 .hoverlistbg {
     background-color: @brand-primary-very-light;
+}
+
+// Records page pager, under the list for admins' "All"
+// Three columns, the outer two equal, so the page links sit at the true
+// centre of the list whatever the counter's width.
+.records-pager {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px 16px;
+    margin-top: 10px;
+
+    .records-pager-count {
+        font-size: 13px;
+        color: @gray;
+        text-align: left;
+    }
+
+    .pagination {
+        margin: 0;
+    }
+}
+
+// Team Results "By race": count | pages | page size
+.results-pager {
+    .results-page-size {
+        justify-self: end;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        font-size: 13px;
+        font-weight: normal;
+        color: @gray;
+
+        select {
+            width: auto;
+            height: 28px;
+            padding: 2px 6px;
+        }
+    }
+}
+
+// Navbar item that is both a link and a menu: the name goes to the page,
+// the caret beside it opens the menu
+.navbar-nav > li.nav-split-dropdown {
+    display: flex;
+
+    > a.nav-split-main {
+        padding-right: 3px;
+    }
+
+    > a.nav-split-caret {
+        padding-left: 3px;
+        padding-right: 8px;
+    }
+}
+
+// Records page rows highlight with CSS rather than ng-mouseenter: with a
+// couple of thousand rows, every mouse move used to re-check the whole page.
+// Same look as .hoverlistbg and the .goldhover family.
+.records-list > li.resultlistrow:hover {
+    background-color: @brand-primary-very-light;
+
+    &.gold {
+        .goldhover;
+    }
+
+    &.silver {
+        .silverhover;
+    }
+
+    &.bronze {
+        .bronzehover;
+    }
 }
 
 .lightergraybg {
@@ -1655,11 +1858,72 @@ footer {
         margin-bottom: 5px;
     }
 
+    // for values too long to read at the full size, like "12d 3h 45m 12s"
+    .stat-number.stat-number-long {
+        font-size: 1.6em;
+        // keeps the same overall height as a full-size stat number, so the box
+        // still lines up with its neighbours
+        line-height: (2.5 * @line-height-base / 1.6);
+    }
+
     .stat-label {
         font-size: 0.9em;
         color: @gray;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+    }
+}
+
+// Paginated panel of stat boxes (member Racing Activity)
+.stat-carousel-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 12px;
+
+    .fa {
+        color: @gray-light;
+        padding: 0 8px;
+        transition: color 0.2s ease;
+
+        &:hover {
+            color: @brand-primary;
+        }
+    }
+
+    .stat-carousel-dot {
+        width: 9px;
+        height: 9px;
+        margin: 0 4px;
+        border-radius: 50%;
+        background-color: @gray-lighter;
+        border: 1px solid @gray-light;
+        display: inline-block;
+
+        &.active {
+            background-color: @brand-primary;
+            border-color: @brand-primary;
+        }
+    }
+}
+
+.stat-carousel {
+    overflow: hidden;
+    // the last row of stat boxes already carries its own bottom margin
+    padding-bottom: 0;
+
+    // kept in sync with the translateX offset set by the controller
+    @stat-carousel-gap: 30px;
+
+    .stat-carousel-track {
+        display: flex;
+        gap: @stat-carousel-gap;
+        transition: transform 0.35s ease;
+    }
+
+    .stat-carousel-page {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
 }
 
@@ -1817,11 +2081,14 @@ footer {
     }
 }
 
+// Deliberately mirrors .location-stats above: the two sit side by side as
+// list panels on the member stats page and should read as the same component.
 .team-members-stats {
     .team-member-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
         padding: 8px 0;
         border-bottom: 1px solid #e9ecef;
 
@@ -1830,9 +2097,24 @@ footer {
         }
 
         .team-member-name {
-
             font-weight: 600;
             color: @gray-dark;
+            // Long names shorten rather than wrapping the row onto a second
+            // line, which is what made these rows twice the height of the
+            // neighbouring location rows.
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        // Count and head-to-head sit on one line together. Previously the
+        // button lived inside the count pill, which stretched the pill into a
+        // two-line block and hid the button against its own background.
+        .team-member-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
         }
 
         .team-member-count {
@@ -1842,6 +2124,30 @@ footer {
             border-radius: 12px;
             font-size: 0.8em;
             font-weight: 600;
+            white-space: nowrap;
+        }
+
+        // Icon-only: the label is redundant next to a trophy, and spelling it
+        // out on every row is what made this panel so tall.
+        .team-member-h2h {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 11px;
+            color: @brand-primary;
+            background: @brand-primary-very-light;
+            border: 1px solid #dce9ef;
+
+            &:hover,
+            &:focus {
+                background: @brand-primary;
+                border-color: @brand-primary;
+                color: #fff;
+                text-decoration: none;
+            }
         }
     }
 }
@@ -5128,6 +5434,140 @@ footer {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+// Pulling ranking data off a results page, and confirming what it would change
+.race-edit-modal-class {
+    .result-extraction {
+        padding: 12px 15px 0;
+        margin-bottom: 15px;
+        background: rgba(248, 249, 250, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+    }
+
+    .column-mapping {
+        margin-bottom: 12px;
+
+        p {
+            font-size: 12px;
+            margin: 6px 0;
+        }
+
+        .column-mapping-table {
+            background: white;
+            margin-bottom: 0;
+
+            td,
+            th {
+                vertical-align: middle;
+                font-size: 12px;
+            }
+
+            select {
+                min-width: 160px;
+            }
+        }
+    }
+
+    .table-choice {
+        margin-bottom: 12px;
+
+        label {
+            font-weight: normal;
+            font-size: 12px;
+        }
+    }
+
+    .paste-source {
+        margin-bottom: 12px;
+
+        textarea {
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        p {
+            font-size: 12px;
+        }
+    }
+
+    // The link sits in a narrow table cell, so the input stays small and the
+    // full URL is available through its tooltip.
+    .result-link-cell {
+        white-space: nowrap;
+
+        input {
+            width: 130px;
+            display: inline-block;
+        }
+
+        a {
+            margin-left: 5px;
+        }
+    }
+
+    .proposed-changes {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid @brand-primary;
+        border-radius: 6px;
+        background: @brand-primary-very-light;
+
+        .proposed-changes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+
+            h5 {
+                margin: 0;
+                font-weight: 600;
+            }
+        }
+
+        .proposed-changes-table {
+            background: white;
+
+            // A change that overwrites a value someone already entered is worth
+            // a second look, so it is tinted rather than just listed.
+            .change-overwrites {
+                background-color: #fcf8e3;
+            }
+
+            // A result that does not exist yet, as opposed to an edit to one
+            // that does.
+            .change-adds {
+                background-color: #dff0d8;
+            }
+
+            td,
+            th {
+                vertical-align: middle;
+            }
+        }
+
+        .proposed-changes-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .proposed-additions {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+
+            h5 {
+                font-weight: 600;
+            }
+        }
+    }
+
+    // Pending results, not yet written to the database
+    .result-row-new > td {
+        background-color: #dff0d8 !important;
+    }
+}
+
 .race-edit-modal-class .achievements-content {
     transition: all 0.3s ease;
 }
@@ -6064,7 +6504,7 @@ footer {
                 margin: 0 10px;
                 padding: 10px 0;
 
-                #distance-slider {
+                .range-slider {
                     height: 8px;
 
                     .noUi-connects {
@@ -6116,7 +6556,7 @@ footer {
                 .nouislider-container {
                     margin: 0 5px;
 
-                    #distance-slider .noUi-handle {
+                    .range-slider .noUi-handle {
                         width: 28px;
                         height: 28px;
                     }
@@ -6184,37 +6624,6 @@ footer {
             }
         }
 
-        // Selected items styling
-        .selected-items {
-            margin-top: 3px;
-
-            .selected-item {
-                display: inline-block;
-                background: #006687;
-                color: white;
-                padding: 3px 6px;
-                margin: 1px;
-                border-radius: 3px;
-                font-size: 11px;
-
-                .ranking-info {
-                    color: #4fc3f7;
-                    font-weight: 600;
-                    margin-left: 4px;
-                }
-
-                .fa-times {
-                    color: white;
-                    opacity: 0.8;
-                    margin-left: 4px;
-                    cursor: pointer;
-
-                    &:hover {
-                        opacity: 1;
-                    }
-                }
-            }
-        }
 
 
 
@@ -6300,63 +6709,6 @@ footer {
         }
 
         // Active filters styling
-        .active-filters {
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px solid #e9ecef;
-
-            .active-filters-label {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                color: #333;
-                margin-bottom: 5px;
-
-                i {
-                    color: #006687;
-                }
-            }
-
-            .filter-tags {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-
-                .filter-tag {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: #e3f2fd;
-                    color: #006687;
-                    padding: 6px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    font-weight: 500;
-                    border: 1px solid #bbdefb;
-                    transition: all 0.2s ease;
-
-                    &:hover {
-                        background: #bbdefb;
-                        transform: translateY(-1px);
-                        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-                    }
-
-                    i {
-                        cursor: pointer;
-                        padding: 2px;
-                        border-radius: 50%;
-                        transition: all 0.2s ease;
-
-                        &:hover {
-                            background: #006687;
-                            color: white;
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -7500,6 +7852,10 @@ footer {
         color: #fff;
         margin-top: 2px;
 
+        // pb / agegrade / teamrecord / multi render an emoji, which already
+        // has its own colour and stays visible regardless of this container's
+        // `color`. A background here would be a look, not a fix, so those are
+        // left alone.
         &.feed-icon-pb {
             // background: #f5a623;
         }
@@ -7521,12 +7877,18 @@ footer {
             // background: @brand-primary;
         }
 
+        // entry and exit render a Font Awesome glyph via <i>, which has no
+        // colour of its own — it inherits this container's `color: #fff`.
+        // With no background behind it that is a white icon on the feed
+        // card's white background: present in the DOM, invisible on screen.
+        // These need a background for the same reason .raceCountBox has one;
+        // the emoji-based badges above do not.
         &.feed-icon-entry {
-            // background: #2ecc71;
+            background: #2ecc71;
         }
 
         &.feed-icon-exit {
-            // background: #95a5a6;
+            background: #95a5a6;
         }
     }
 
@@ -8815,6 +9177,78 @@ footer {
 
     p:last-child {
         margin-bottom: 0;
+    }
+}
+
+// Email template editor — reuses .ta-email-body / .ta-email-preview for the
+// source box and the rendered pane, and adds the bits specific to editing the
+// template itself rather than one outgoing message.
+.et-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.et-custom-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: @brand-primary;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.et-origin {
+    font-size: 12px;
+    margin-bottom: 12px;
+    color: @gray;
+}
+
+.et-source {
+    // Placeholders and tags are easier to spot with the lines a little apart
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.et-preview-meta {
+    font-size: 12px;
+    color: @gray;
+    margin-bottom: 6px;
+}
+
+.et-preview-subject {
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    font-size: 13px;
+
+    + .ta-email-preview {
+        border-radius: 0 0 6px 6px;
+    }
+}
+
+.et-placeholders {
+    margin: 12px 0;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+
+    .et-placeholders-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: @gray-dark;
+        margin-bottom: 8px;
+    }
+
+    .crf-chip {
+        font-family: Menlo, Consolas, monospace;
+        font-size: 11.5px;
+        margin: 0 4px 4px 0;
     }
 }
 
@@ -10214,4 +10648,1896 @@ footer {
         animation: none;
     }
 
+}
+
+// =====================================================================
+// AGE GRADING TABLES (admin) — the raw standards, as stored.
+// Shares the .mcrrc-btn / caption-label vocabulary with the age grade
+// tool above, so the two age-grading pages read as one family.
+// =====================================================================
+.agt-tool {
+
+    .agt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .agt-title {
+        margin-top: 0;
+        margin-bottom: 6px;
+        font-size: 26px;
+    }
+
+    .agt-subtitle {
+        max-width: 640px;
+        margin-bottom: 0;
+        font-size: 14px;
+        color: @gray-light;
+
+        code {
+            white-space: nowrap;
+        }
+    }
+
+    .agt-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .agt-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px;
+        margin-top: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #e4e8eb;
+    }
+
+    .agt-field {
+        display: flex;
+        flex-direction: column;
+
+        // Direct child only, so the toggle buttons nested below do not pick
+        // up the small uppercase caption styling.
+        > label {
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: @gray-light;
+        }
+    }
+
+    // Gap'd rather than a bootstrap .btn-group: these buttons carry their own
+    // border and shadow, which look wrong butted together.
+    .agt-toggle {
+        display: flex;
+        gap: 6px;
+    }
+
+    .agt-toggle .mcrrc-btn {
+        height: 36px;
+        text-transform: capitalize;
+    }
+
+    .agt-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .agt-stat {
+        display: flex;
+        align-items: baseline;
+        gap: 7px;
+        padding: 8px 14px;
+        background: @brand-primary-very-light;
+        border: 1px solid #dce9ef;
+        border-radius: 4px;
+    }
+
+    .agt-stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: @brand-primary;
+        line-height: 1;
+    }
+
+    .agt-stat-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: @gray;
+    }
+
+    .agt-note {
+        margin-top: 12px;
+        font-size: 13px;
+        color: @gray-light;
+
+        i {
+            margin-right: 5px;
+        }
+    }
+
+    .agt-empty {
+        margin-top: 22px;
+        padding: 26px;
+        text-align: center;
+        font-size: 15px;
+        color: @gray-light;
+        background: #f8f9fa;
+        border: 1px dashed #d6dde2;
+        border-radius: 6px;
+
+        i {
+            margin-right: 6px;
+        }
+    }
+
+    // The grid runs to 106 rows by 22 columns, so it scrolls inside its own
+    // box with the header row and the age column pinned — otherwise you lose
+    // track of which cell you are reading.
+    .agt-table-wrap {
+        margin-top: 18px;
+        max-height: 70vh;
+        overflow: auto;
+        border: 1px solid #e4e8eb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .agt-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13px;
+        white-space: nowrap;
+
+        th,
+        td {
+            padding: 5px 12px;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f4f7f9;
+            text-align: right;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: @gray;
+            // A real border would scroll away from a sticky cell, so the rule
+            // under the header is drawn as a shadow instead.
+            box-shadow: inset 0 -1px 0 #d6dde2;
+        }
+
+        tbody td {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            color: @gray-dark;
+        }
+
+        tbody tr:nth-child(even) td,
+        tbody tr:nth-child(even) .agt-age-col {
+            background: #fbfcfd;
+        }
+
+        // Every tenth year gets a rule above it: at ~100 rows the eye needs
+        // decade anchors to stay on the right line.
+        tbody tr.agt-decade th,
+        tbody tr.agt-decade td {
+            box-shadow: inset 0 1px 0 #dfe6ea;
+        }
+
+        .agt-age-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #fff;
+            text-align: left;
+            font-weight: 700;
+            color: @gray-dark;
+            box-shadow: inset -1px 0 0 #e4e8eb;
+        }
+
+        thead .agt-age-col {
+            z-index: 3;
+            background: #f4f7f9;
+            box-shadow: inset -1px 0 0 #d6dde2, inset 0 -1px 0 #d6dde2;
+        }
+
+        tbody tr:hover td,
+        tbody tr:hover .agt-age-col {
+            background: @brand-primary-very-light;
+        }
+
+        // A distance the table does not carry, rather than a zero.
+        .agt-missing {
+            background-image: linear-gradient(135deg, transparent 45%, #eef1f3 45%, #eef1f3 55%, transparent 55%);
+        }
+    }
+}
+
+// =====================================================================
+// TEAM RACING CALENDAR — a 12 x 31 heatmap of the club's racing year.
+// The blank cells are the feature, not the background: they are the
+// calendar days the team has never raced.
+// =====================================================================
+@cal-blank: #e9edf0;
+// Eight steps from a pale tint to a shade darker than the brand blue, so the
+// busiest bands still separate from each other at the top of the scale.
+@cal-l1: lighten(@brand-primary, 52%);
+@cal-l2: lighten(@brand-primary, 45%);
+@cal-l3: lighten(@brand-primary, 38%);
+@cal-l4: lighten(@brand-primary, 30%);
+@cal-l5: lighten(@brand-primary, 22%);
+@cal-l6: lighten(@brand-primary, 14%);
+@cal-l7: lighten(@brand-primary, 6%);
+@cal-l8: darken(@brand-primary, 8%);
+
+.cal-panel {
+
+    .cal-headline {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .cal-score {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        white-space: nowrap;
+    }
+
+    .cal-score-value {
+        font-size: 34px;
+        font-weight: 700;
+        line-height: 1;
+        color: @brand-primary;
+    }
+
+    .cal-score-total {
+        font-size: 18px;
+        font-weight: 600;
+        color: @gray-light;
+    }
+
+    .cal-score-text {
+        font-size: 13px;
+        color: @gray;
+
+        strong {
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 12px;
+            color: @gray-darkish;
+        }
+    }
+
+    // The whole point of the panel: the handful of days still unraced,
+    // called out as a to-do list rather than left to be hunted for.
+    .cal-todo {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        padding: 10px 12px;
+        background: #fff9ec;
+        border: 1px solid #f0e2c4;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+
+    .cal-todo-label {
+        font-weight: 700;
+        color: @brand-warning;
+    }
+
+    .cal-todo-day {
+        padding: 2px 8px;
+        background: #fff;
+        border: 1px solid #e6d5ae;
+        border-radius: 10px;
+        font-weight: 600;
+        color: @gray-dark;
+        white-space: nowrap;
+    }
+
+    // 31 columns never fit a phone; the grid keeps its cell size and scrolls
+    // rather than shrinking into unreadable slivers.
+    .cal-grid-wrap {
+        margin-top: 16px;
+        overflow-x: auto;
+    }
+
+    // Centred rather than flush left: the grid is narrower than a full-width
+    // panel, and left-aligned it reads as though it were cut off.
+    .cal-grid {
+        margin: 0 auto;
+        border-collapse: separate;
+        border-spacing: 3px;
+
+        thead th {
+            font-size: 10px;
+            font-weight: 600;
+            color: @gray-light;
+            text-align: center;
+            padding: 0;
+        }
+
+        .cal-month-label {
+            padding-right: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: @gray;
+            text-align: right;
+            white-space: nowrap;
+        }
+    }
+
+    .cal-legend {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        font-size: 12px;
+        color: @gray-light;
+    }
+
+    .cal-legend-item,
+    .cal-legend-scale {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .cal-legend-note {
+        margin-left: auto;
+    }
+}
+
+// Calendar cell tooltips carry two lines — the day's totals, then the races
+// on it — so they have to opt out of the nowrap default set on .tooltip-inner
+// above, and be given a width to wrap a long list of race names against.
+.cal-tooltip .tooltip-inner {
+    width: max-content;
+    max-width: min(320px, 90vw);
+    // pre-line keeps the newline between the two lines while still wrapping
+    // the race list; nowrap would run both off the edge as one line.
+    white-space: pre-line;
+    // Appending to <body> drops the grid's ambient font-size, so restate it.
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+// Also used in the legend, which sits outside the grid.
+.cal-cell {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border-radius: 2px;
+    background: @cal-blank;
+
+    &.cal-level-1 { background: @cal-l1; }
+    &.cal-level-2 { background: @cal-l2; }
+    &.cal-level-3 { background: @cal-l3; }
+    &.cal-level-4 { background: @cal-l4; }
+    &.cal-level-5 { background: @cal-l5; }
+    &.cal-level-6 { background: @cal-l6; }
+    &.cal-level-7 { background: @cal-l7; }
+    &.cal-level-8 { background: @cal-l8; }
+
+    // A day never raced. Plain by default; only the grids where the gaps are
+    // few (the team's all-time view) outline them in amber, where they read as
+    // a short list of days left to collect rather than as a wall of warnings.
+    &.cal-blank {
+        background: #fff;
+        box-shadow: inset 0 0 0 1px darken(@cal-blank, 6%);
+    }
+
+    .cal-highlight-gaps &.cal-blank {
+        box-shadow: inset 0 0 0 1px @brand-warning;
+    }
+
+    // Padding for the 29th to 31st of short months: no day, no marker.
+    &.cal-pad {
+        background: transparent;
+    }
+
+    // The single busiest day of the year. Colour alone cannot carry this — it
+    // already sits in the darkest band with its neighbours — so it gets a gold
+    // ring and a star that read at a glance.
+    &.cal-busiest {
+        position: relative;
+        box-shadow: 0 0 0 2px @gold, 0 0 6px fade(@gold, 70%);
+
+        &:after {
+            content: "\2605";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            line-height: 1;
+            color: @gold;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+        }
+    }
+
+    &.cal-clickable {
+        cursor: pointer;
+
+        &:hover {
+            box-shadow: 0 0 0 2px @gray-dark;
+        }
+
+        &.cal-busiest:hover {
+            box-shadow: 0 0 0 2px @gray-dark, 0 0 6px fade(@gold, 70%);
+        }
+    }
+}
+
+.cal-legend .cal-cell {
+    display: inline-block;
+}
+
+// =====================================================================
+// MILESTONE COUNTERS — round-number time barriers per distance.
+// =====================================================================
+// Opts out of the nowrap default on .tooltip-inner; restates font-size because
+// appending to <body> drops the panel's ambient size.
+.ms-tooltip .tooltip-inner {
+    width: max-content;
+    max-width: min(300px, 90vw);
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+}
+
+.ms-panel {
+
+    .ms-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #e4e8eb;
+    }
+
+    .ms-intro {
+        max-width: 620px;
+        margin: 0;
+        font-size: 13px;
+        color: @gray-light;
+    }
+
+    .ms-toggle {
+        display: flex;
+        gap: 6px;
+        flex: 0 0 auto;
+    }
+
+    .ms-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px solid @gray-lighter;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    // Fixed width so every distance's tiers line up in a column, which is what
+    // makes the ladder readable down the page as well as across.
+    .ms-distance {
+        flex: 0 0 130px;
+        font-weight: 700;
+        color: @gray-dark;
+
+        small {
+            display: block;
+            font-weight: 400;
+            font-size: 11px;
+            color: @gray-light;
+        }
+    }
+
+    .ms-tiers {
+        display: flex;
+        gap: 10px;
+        flex: 1 1 auto;
+        flex-wrap: wrap;
+    }
+
+    .ms-tier {
+        flex: 1 1 0;
+        min-width: 110px;
+        padding: 8px 10px;
+        text-align: center;
+        background: @brand-primary-very-light;
+        border: 1px solid #dce9ef;
+        border-radius: 4px;
+
+        // The hardest barrier the logged-in reader has cleared at this distance.
+        // Amber rather than another blue: it has to separate from the tiles
+        // around it, which are already the panel's brand colour.
+        &.is-mine {
+            position: relative;
+            background: #fff8e9;
+            border-color: @brand-warning;
+            box-shadow: inset 0 0 0 1px @brand-warning;
+
+            .ms-tier-primary {
+                color: darken(@brand-warning, 8%);
+            }
+        }
+
+        &.is-clickable {
+            cursor: pointer;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+            &:hover {
+                border-color: @brand-primary;
+                box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+            }
+        }
+
+        // A barrier nobody has broken yet is still worth showing — it is the
+        // next thing to chase — but it should not read as a live counter.
+        &.is-empty {
+            background: #fafbfc;
+            border-color: @gray-lighter;
+
+            .ms-tier-primary {
+                color: @gray-light;
+            }
+        }
+    }
+
+    .ms-tier-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: @gray;
+    }
+
+    // The headline figure is how many different runners have cleared the
+    // barrier; the caption is how many times it has been done.
+    .ms-tier-primary {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: @brand-primary;
+    }
+
+    .ms-tier-secondary {
+        font-size: 11px;
+        color: @gray-light;
+    }
+
+    .ms-mine-flag {
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 1px 7px;
+        border-radius: 8px;
+        background: @brand-warning;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1.5;
+    }
+}
+
+@media (max-width: 767px) {
+    .ms-panel .ms-row {
+        display: block;
+    }
+
+    .ms-panel .ms-distance {
+        margin-bottom: 8px;
+    }
+}
+
+
+// =====================================
+// SINGLE RESULT PAGE ==================
+// =====================================
+// views/resultDetail.html — one runner's performance in one race, reachable
+// at /results/:resultId from the runner's name in the results list.
+
+.result-detail-page {
+    padding-bottom: 30px;
+
+    .rd-loading,
+    .rd-empty {
+        padding: 60px 20px;
+        text-align: center;
+        color: @gray;
+    }
+
+    .rd-breadcrumb {
+        margin-bottom: 8px;
+
+        a {
+            color: @gray;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    }
+
+    // Name, meta and figures are one block. A white card on the page frame,
+    // the same as the home page's feed cards.
+    .rd-hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px 32px;
+        margin-bottom: 20px;
+        padding: 18px 22px;
+        border: 1px solid #e6e9ec;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        color: @gray-dark;
+    }
+
+    // Takes the slack so the figures keep their natural width, and wraps
+    // underneath them once there is no room left
+    .rd-hero-head {
+        flex: 1 1 340px;
+        min-width: 0;
+    }
+
+    .rd-racename {
+        margin: 0 0 6px 0;
+        font-weight: 700;
+        font-size: 30px;
+        line-height: 1.15;
+        color: @brand-primary;
+    }
+
+    // Runner and race inside the title stay links, in the site's link blue
+    .rd-title-link {
+        color: @brand-primary;
+
+        &:hover,
+        &:focus {
+            color: @brand-primary-dark;
+            text-decoration: none;
+        }
+    }
+
+    .rd-title-at {
+        font-weight: 400;
+        color: @gray-light;
+    }
+
+    // Admin edit button beside the title (race on the race page, result here)
+    .rd-edit-btn {
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+
+    .rd-racemeta {
+        color: @gray;
+        font-size: 13px;
+
+        .rd-meta-item {
+            display: inline-block;
+            margin-right: 16px;
+            white-space: nowrap;
+
+            i {
+                margin-right: 4px;
+                color: @gray-light;
+            }
+        }
+
+        a.rd-meta-item {
+            cursor: pointer;
+            color: @gray;
+
+            &:hover,
+            &:focus {
+                color: @brand-primary;
+                text-decoration: none;
+            }
+        }
+
+        // Photo albums leave the site, so they read as links outright
+        a.rd-photo-link {
+            color: @brand-primary;
+
+            i {
+                color: inherit;
+            }
+
+            &:hover,
+            &:focus {
+                color: @brand-primary-dark;
+                text-decoration: none;
+
+                .rd-photo-text {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+
+    .rd-hero-figures {
+        display: flex;
+        gap: 28px;
+    }
+
+    .rd-figure {
+        text-align: center;
+    }
+
+    .rd-figure-value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: @gray-darker;
+
+        // The medal colours are pale enough to vanish on white; darkened,
+        // they keep their meaning and stay readable.
+        &.ageworld {
+            color: darken(@gold, 22%);
+        }
+
+        &.agenational {
+            color: darken(@silver, 15%);
+        }
+
+        &.ageregional {
+            color: darken(@bronze, 25%);
+        }
+    }
+
+    .rd-figure-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: @gray;
+    }
+
+    // Achievements render through <achievement-feed>, which reuses the home
+    // page's .feed-card language rather than a style of its own.
+
+    // White cards on the frame, like the home page's feed cards, with a
+    // brand-blue top edge and a pale blue heading to carry some colour.
+    // Tooltips inside must use tooltip-append-to-body: overflow is hidden
+    // here to clip the heading to the rounded corners.
+    .rd-panel {
+        border: 1px solid #dde6ea;
+        border-top: 3px solid @brand-primary;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+        color: @gray-dark;
+
+        > .panel-heading {
+            padding: 13px 18px;
+            border-bottom: 1px solid #dbe8ee;
+            border-radius: 0;
+            background: linear-gradient(180deg, #eaf4f8 0%, @brand-primary-very-light 100%);
+            color: @brand-primary-dark;
+            font-size: 16px;
+            font-weight: 600;
+
+            small {
+                font-weight: 400;
+                color: @gray;
+            }
+        }
+    }
+
+    .rd-nodata {
+        color: @gray-light;
+        font-style: italic;
+    }
+
+    // A bar per available ranking: how much of the field finished behind
+    .rd-placement {
+        margin-bottom: 18px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .rd-placement-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4px;
+    }
+
+    .rd-placement-label {
+        font-weight: 600;
+        color: @gray-dark;
+    }
+
+    .rd-placement-rank {
+        font-size: 18px;
+        font-weight: 700;
+
+        small {
+            margin-left: 4px;
+            font-size: 12px;
+            font-weight: 400;
+            color: @gray;
+        }
+    }
+
+    .rd-placement-track {
+        height: 10px;
+        border-radius: 5px;
+        background: @gray-lighter;
+        overflow: hidden;
+    }
+
+    .rd-placement-fill {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.4s ease;
+    }
+
+    .rd-placement-foot {
+        margin-top: 4px;
+        font-size: 12px;
+        color: @gray;
+    }
+
+    .rd-pb-banner {
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-left: 3px solid @gold;
+        border-radius: 4px;
+        background: lighten(@gold, 38%);
+        color: @gray-darker;
+        font-weight: 600;
+
+        i {
+            margin-right: 6px;
+            color: darken(@gold, 22%);
+        }
+    }
+
+    .rd-standings {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+            display: flex;
+            align-items: baseline;
+            // Keeps the text off a long rank ("T2560th") however wide it gets
+            column-gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid @gray-lighter;
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+
+    // Each standing line links to the full list it was ranked against; the
+    // link carries the line's layout and looks like the line, not a link,
+    // until hovered
+    .rd-standing-link {
+        display: flex;
+        flex: 1 1 auto;
+        align-items: baseline;
+        column-gap: 12px;
+        min-width: 0;
+        color: inherit;
+
+        &:hover,
+        &:focus {
+            text-decoration: none;
+
+            .rd-standing-text {
+                color: @brand-primary;
+                text-decoration: underline;
+            }
+        }
+    }
+
+    // A column for the usual "195th"; longer ranks widen it rather than
+    // running into the text
+    .rd-standing-rank {
+        flex: 0 0 auto;
+        min-width: 66px;
+        white-space: nowrap;
+        font-size: 20px;
+        font-weight: 700;
+        color: @brand-primary;
+    }
+
+    // Four-digit and tied ranks ("1746th", "T2560th") step down a size
+    .rd-standing-rank-long {
+        font-size: 16px;
+    }
+
+    .rd-standing-text {
+        color: @gray-dark;
+
+        small {
+            color: @gray-light;
+        }
+    }
+
+    // Context rather than the headline comparison — e.g. the whole-team line
+    // under a woman's women-only standings.
+    .rd-standing-secondary {
+        .rd-standing-rank {
+            font-size: 16px;
+            color: @gray;
+        }
+
+        .rd-standing-text {
+            color: @gray;
+            font-size: 13px;
+        }
+    }
+
+    .rd-prevbest {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid @gray-lighter;
+        font-size: 13px;
+        color: @gray;
+    }
+
+    .rd-improved {
+        color: @brand-success;
+        font-weight: 600;
+    }
+
+    .rd-slower {
+        color: @brand-danger;
+        font-weight: 600;
+    }
+
+    // Heading carries the population toggle on the right
+    .rd-chart-heading {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    // Same dark-teal-when-active treatment as the member page's tabs
+    .rd-scope-toggle {
+        .btn {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            border-color: #d5dde2;
+            background: #fff;
+            color: @brand-primary-dark;
+
+            &:hover,
+            &:focus {
+                background: @brand-primary-very-light;
+                color: @brand-primary-dark;
+            }
+
+            &.active {
+                border-color: @brand-primary-dark;
+                background: @brand-primary-dark;
+                color: #fff;
+                box-shadow: none;
+            }
+        }
+    }
+
+    .rd-chart-container {
+        position: relative;
+        height: 340px;
+    }
+
+    .rd-chart-caption {
+        margin-top: 10px;
+        text-align: center;
+        font-size: 13px;
+        color: @gray;
+    }
+
+    .rd-legs {
+        margin-bottom: 0;
+    }
+
+    .rd-leg-transition {
+        color: @gray-light;
+        font-style: italic;
+    }
+
+    .rd-comments {
+        margin-top: 20px;
+        padding: 12px 16px;
+        border-left: 3px solid @brand-primary;
+        background: @brand-primary-very-light;
+        color: @gray-dark;
+    }
+}
+
+@media (max-width: 767px) {
+    .result-detail-page {
+        .rd-hero {
+            display: block;
+        }
+
+        .rd-hero-figures {
+            margin-top: 16px;
+            gap: 18px;
+        }
+
+        .rd-figure-value {
+            font-size: 22px;
+        }
+
+        .rd-racemeta .rd-meta-item {
+            display: block;
+            margin-right: 0;
+            margin-bottom: 4px;
+        }
+    }
+}
+
+
+// =====================================
+// SINGLE RACE PAGE ====================
+// =====================================
+// views/raceDetail.html — one race and every team result in it, at
+// /races/:raceId. Replaces the old race details modal, and deliberately
+// shares the .rd-* language of the single result page.
+
+.race-detail-page {
+    // The header, hero and panel chrome are identical to the result page;
+    // reusing the rules keeps the two pages looking like one feature.
+    &:extend(.result-detail-page all);
+
+    // Admin-only column holding each row's edit and delete buttons
+    .rd-admin-cell {
+        width: 1%;
+        white-space: nowrap;
+
+        .rd-delete-btn:hover,
+        .rd-delete-btn:focus {
+            color: #fff;
+            background-color: @brand-danger;
+            border-color: @brand-danger;
+        }
+    }
+
+    // No runner name to lead with here, so the figures carry the band on
+    // their own and spread across it.
+    // The race band carries up to five figures, so they are allowed to wrap
+    // among themselves rather than pushing the race name off its line.
+    .rd-hero-race {
+        .rd-hero-figures {
+            flex-wrap: wrap;
+            gap: 16px 32px;
+        }
+    }
+
+    .rd-figure-detail {
+        margin-top: 2px;
+        font-size: 12px;
+        opacity: 0.85;
+    }
+
+    // A one-dimensional strip of dots needs far less height than a real chart
+    .rd-strip-container {
+        position: relative;
+        height: 170px;
+    }
+
+    // What the team took out of the race, as a row of chips
+    .rd-highlights {
+        margin-bottom: 20px;
+    }
+
+    .rd-highlight {
+        display: inline-block;
+        margin: 0 8px 8px 0;
+        padding: 4px 12px;
+        border-radius: 12px;
+        border: 1px solid @gray-lighter;
+        background: #fff;
+        color: @gray-dark;
+        font-size: 13px;
+
+        i {
+            margin-right: 4px;
+            color: @brand-primary;
+        }
+
+        small {
+            color: @gray-light;
+        }
+    }
+
+    .rd-highlight-gold {
+        border-color: @gold;
+        background: lighten(@gold, 38%);
+
+        i {
+            color: darken(@gold, 22%);
+        }
+    }
+
+    .rd-highlight-pb {
+        border-color: @brand-warning;
+        background: @lightyellow-bg;
+    }
+
+    .rd-highlight-record {
+        border-color: @brand-danger;
+        background: lighten(@brand-danger, 38%);
+    }
+
+    .rd-table-body {
+        padding: 0;
+    }
+
+    .rd-results-table {
+        margin-bottom: 0;
+
+        // Same header as the team results list
+        > thead > tr > th {
+            padding: 10px 12px;
+            border-bottom: 3px solid @blue-dark;
+            font-size: 12px;
+            font-weight: bold;
+            color: @blue-dark;
+            white-space: nowrap;
+        }
+
+        > tbody > tr > td {
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+        > tbody > tr:hover {
+            background-color: @brand-primary-very-light;
+        }
+    }
+
+    // The old modal sized these from its own nested rules; on the page they
+    // need their own, or the state flag renders at its natural size.
+    .location-flag {
+        width: 18px;
+        height: 13px;
+        border-radius: 2px;
+        margin-left: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .location-flag-emoji {
+        font-size: 15px;
+        margin-left: 4px;
+    }
+
+    // Your own result, same highlight the results list uses
+    .rd-my-result > td {
+        background-color: @lightyellow-bg;
+    }
+
+    // The whole row opens the result; the runner's name inside still goes to
+    // the member page.
+    .rd-clickable-row {
+        cursor: pointer;
+    }
+}
+
+@media (max-width: 767px) {
+    .race-detail-page .rd-hero-race .rd-hero-figures {
+        gap: 24px;
+    }
+}
+
+
+// Achievements on the race page run to twenty-odd rows. Two columns on a
+// wide screen halve the height, which is the difference between the results
+// table being on screen and being a scroll away.
+.achievement-feed {
+    @media (min-width: 768px) {
+        .feed-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .feed-item {
+            flex: 0 0 50%;
+            max-width: 50%;
+
+            &:nth-child(odd) {
+                border-right: 1px solid #f1f3f5;
+            }
+
+            // With two per row the last pair, not just the last item, is what
+            // should lose its underline.
+            &:nth-last-child(-n + 2) {
+                border-bottom: none;
+            }
+        }
+
+        // An odd count leaves the final item alone on its row; without this it
+        // keeps a divider pointing at nothing.
+        .feed-item:last-child:nth-child(odd) {
+            border-right: none;
+        }
+    }
+}
+
+
+// A three-digit race count fills the fixed-width badge edge to edge. Smaller
+// type restores a margin either side without changing the badge itself.
+// The selector has to out-specify .feed-card's own
+// `.feed-icon-racecount { font-size: inherit !important }`.
+.feed-card .feed-icon.feed-icon-racecount.feed-icon-racecount-long {
+    font-size: 10px !important;
+    letter-spacing: -0.03em;
+}
+
+
+// =====================================
+// VOLUNTEERING STATS ==================
+// =====================================
+// views/stats/volunteering.html — the Stats page's volunteering tab, for
+// logged-in users. Figures across the top, then who / when / where / what.
+
+// .jumbotron in the selector: the site's `.container .jumbotron` sets the
+// text to brand blue, and this has to out-rank it.
+.jumbotron.volunteer-stats-page {
+    color: @gray-dark;
+
+    .vs-nowrap {
+        white-space: nowrap;
+    }
+
+    .vs-more {
+        display: block;
+        padding: 8px 12px;
+        border-top: 1px solid @gray-lighter;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .vs-toolbar {
+        margin: 15px 0 10px;
+    }
+
+    .vs-title {
+        margin: 0;
+        font-weight: 600;
+        color: @brand-primary-dark;
+
+        small {
+            color: @gray;
+        }
+    }
+
+    .vs-message {
+        margin: 30px 0;
+        padding: 20px;
+        border-radius: 8px;
+        background: #fff;
+        text-align: center;
+        color: @gray;
+        font-size: 15px;
+    }
+
+    .vs-figures {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .vs-figure {
+        flex: 1 1 160px;
+        padding: 14px 18px;
+        border-top: 3px solid @brand-primary;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .vs-figure-value {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: @brand-primary-dark;
+    }
+
+    .vs-figure-label {
+        margin-top: 2px;
+        font-size: 13px;
+        color: @gray;
+
+        small {
+            color: @gray-light;
+        }
+    }
+
+    // Tables sit edge to edge in their panels
+    .vs-flush {
+        padding: 0;
+    }
+
+    .vs-table {
+        margin-bottom: 0;
+        font-size: 14px;
+
+        > thead > tr > th {
+            padding: 9px 12px;
+            border-bottom: 3px solid @blue-dark;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: @blue-dark;
+        }
+
+        > tbody > tr > td {
+            padding: 8px 12px;
+            vertical-align: middle;
+        }
+    }
+
+    .vs-rank {
+        width: 36px;
+        color: @gray-light;
+    }
+
+    .vs-row {
+        cursor: pointer;
+
+        &:hover > td {
+            background-color: @brand-primary-very-light;
+        }
+    }
+
+    .vs-chevron {
+        width: 14px;
+        margin-right: 4px;
+        font-size: 11px;
+        color: @gray-light;
+    }
+
+    .vs-muted {
+        color: @gray;
+        font-size: 13px;
+    }
+
+    .vs-jobs-row > td {
+        border-top: none !important;
+        padding-top: 0 !important;
+        background: @brand-primary-very-light;
+    }
+
+    .vs-jobs {
+        margin: 0;
+        padding: 0 0 6px 18px;
+        list-style: none;
+        font-size: 13px;
+
+        li {
+            padding: 2px 0;
+        }
+    }
+
+    // A count drawn as a bar, with the number at the end
+    .vs-bar-col {
+        width: 30%;
+    }
+
+    .vs-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .vs-bar-fill {
+        height: 8px;
+        border-radius: 4px;
+        background: @brand-primary;
+    }
+
+    .vs-bar-value {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .vs-chart {
+        position: relative;
+        height: 220px;
+    }
+}
+
+// Volunteer job modals: race-or-event picker (volunteerEventFields directive)
+.vj-event-fields {
+    .vj-event-type {
+        margin-bottom: 12px;
+
+        .btn.active {
+            border-color: @brand-primary-dark;
+            background: @brand-primary-dark;
+            color: #fff;
+        }
+    }
+
+    .vj-help {
+        margin: 4px 0 0;
+        font-size: 12px;
+    }
+}
+
+
+// =====================================
+// TEAM RESULTS: BY RACE / BY RESULT ===
+// =====================================
+
+// The toggle at the top of Team Results: a small segmented pill, the current
+// view on a white thumb, the other as quiet text
+.results-view-toggle {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(0, 102, 135, 0.1);
+    float: none;
+
+    > a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.3;
+        color: @brand-primary-dark;
+        opacity: 0.7;
+        text-decoration: none;
+        transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+
+        .fa {
+            font-size: 12px;
+        }
+
+        &:hover,
+        &:focus {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+        }
+
+        &.active {
+            opacity: 1;
+            background: #fff;
+            color: @brand-primary-dark;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            cursor: default;
+        }
+    }
+}
+
+// views/directives/individualResults.html — one compact line per result.
+// Same list language as "By race" (header in dark blue over a thick rule,
+// white rows), tighter: smaller type, less padding, one line per row.
+.individual-results {
+    position: relative;
+    text-align: left;
+
+    // Placed over the hovered cell for the shared tooltip; never in the way
+    .ir-tip-anchor {
+        position: absolute;
+        display: block;
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+
+
+
+
+
+
+
+    .ir-age {
+        color: @gray;
+    }
+
+    .ir-position {
+        color: @gray-light;
+        font-size: 12px;
+    }
+
+    // The logged-in member's own results: the same amber as the race list's
+    // my-result-row. A bar drawn inside, not a border, so columns stay put.
+    .resultlistrow.ir-row.ir-mine {
+        background-color: #fff8e1;
+        box-shadow: inset 3px 0 0 #f0ad4e;
+
+        &:hover {
+            background-color: darken(#fff8e1, 3%);
+        }
+    }
+
+    // The result the reader arrived from (?highlight=), in green so it
+    // reads apart from the reader's own amber rows (and wins over them)
+    .resultlistrow.ir-row.ir-highlight {
+        background-color: lighten(@brand-success, 42%);
+        box-shadow: inset 4px 0 0 @brand-success;
+
+        &:hover {
+            background-color: lighten(@brand-success, 38%);
+        }
+    }
+
+
+
+    .ir-clear {
+        font-size: 13px;
+    }
+
+    advanced-filter-panel {
+        margin-bottom: 10px;
+    }
+
+    .ir-message {
+        padding: 40px 0;
+        color: @gray;
+    }
+
+    .ir-list {
+        margin-bottom: 10px;
+
+        > li.ir-message-row {
+            padding: 20px;
+            text-align: center;
+            color: @gray;
+        }
+    }
+
+    // # (and the count, in the header; as wide as that needs, set by the
+    // list) | date | runner | age | race | distance | time | pace | AG |
+    // place | icons
+    .ir-row {
+        display: grid;
+        grid-template-columns: var(--ir-num-w, 38px) 92px minmax(120px, 1.2fr) 40px minmax(160px, 1.8fr) 100px 74px 48px 56px 92px 62px;
+        align-items: center;
+        column-gap: 10px;
+        padding: 5px 12px;
+        font-size: 13px;
+
+        > span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .ir-head {
+        padding-top: 8px;
+        padding-bottom: 6px;
+        font-size: 11px;
+
+        .fa {
+            margin-left: 2px;
+        }
+
+        .ir-sort-idle {
+            opacity: 0.3;
+        }
+    }
+
+    .resultlistrow.ir-row {
+        cursor: pointer;
+        color: @gray-dark;
+
+        &:hover {
+            background-color: @brand-primary-very-light;
+        }
+    }
+
+    .ir-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .ir-date {
+        color: @gray;
+    }
+
+    .ir-race small,
+    .ir-distance small {
+        margin-left: 4px;
+        color: @gray-light;
+    }
+
+    .ir-time {
+        font-weight: 600;
+    }
+
+    .ir-place small {
+        color: @gray-light;
+    }
+
+    .ir-flags {
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+
+    // Admins get a last column for the edit / delete menu
+    .ir-list-admin .ir-row {
+        grid-template-columns: var(--ir-num-w, 38px) 92px minmax(120px, 1.2fr) 40px minmax(160px, 1.8fr) 100px 74px 48px 56px 92px 62px 28px;
+    }
+
+    // Below 1200px the page is 970px wide (the list ~920px) and the columns
+    // above need ~1010px: tighter columns, gaps and type. Runner and race
+    // give up the most; their full text shows on hover when cut.
+    @media (max-width: (@screen-lg-min - 1)) {
+        .ir-row {
+            grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px;
+            column-gap: 6px;
+            padding-left: 8px;
+            padding-right: 8px;
+            font-size: 12px;
+        }
+
+        // The header keeps its 11px: the # column is sized for it
+        .ir-head {
+            font-size: 11px;
+        }
+
+        .ir-list-admin .ir-row {
+            grid-template-columns: var(--ir-num-w, 38px) 80px minmax(90px, 1.2fr) 38px minmax(120px, 1.8fr) 84px 66px 50px 50px 78px 58px 26px;
+        }
+    }
+
+    // Kept to the text's height, so admins see rows no taller than anyone
+    .ir-row > span.ir-admin {
+        overflow: visible;
+        text-align: right;
+        line-height: 1;
+
+        .btn {
+            padding: 0 6px;
+            font-size: 12px;
+            line-height: 16px;
+            border-color: transparent;
+            background: transparent;
+
+            &:hover,
+            &:focus {
+                border-color: @gray-lighter;
+                background: #fff;
+            }
+        }
+    }
+
+    .ir-admin-delete {
+        color: @brand-danger !important;
+    }
+}
+
+// Wrapper of the shared Advanced Filters panel (Team Results "By race" and
+// "By result"); a custom element is inline by default
+advanced-filter-panel {
+    display: block;
+}
+
+// =====================================
+// TEAM RESULTS: SEARCH BAR AND ACTIVE FILTERS
+// =====================================
+// Shared by "By race" (results.html) and "By result" (individualResults.html):
+// the search line, then the Advanced Filters panel, then the active filters
+// as tags, outside the panel so they stay visible when it is folded.
+
+.results-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    text-align: left;
+
+    .results-filter-bar-end {
+        margin-left: auto;
+        font-size: 13px;
+        color: @gray;
+    }
+}
+
+.results-search {
+    position: relative;
+    flex: 1 1 240px;
+    max-width: 340px;
+
+    > .fa-search {
+        position: absolute;
+        left: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: @gray-light;
+    }
+
+    input {
+        width: 100%;
+        padding-left: 28px;
+    }
+}
+
+.results-advanced-toggle {
+    border: none;
+    background: linear-gradient(135deg, @brand-primary-dark 0%, #005a73 100%);
+    font-weight: 500;
+
+    .results-advanced-count {
+        margin-left: 4px;
+        padding: 0 6px;
+        border-radius: 8px;
+        background: #fff;
+        color: @brand-primary-dark;
+        font-size: 11px;
+        font-weight: 700;
+    }
+}
+
+// Lifted out of .filter-panel .filter-content, unchanged apart from sitting on
+// the page rather than at the foot of the panel
+.active-filters-bar {
+    margin: -2px 0 10px;
+    text-align: left;
+
+    // Selected items styling
+    .selected-items {
+        margin-top: 3px;
+
+        .selected-item {
+            display: inline-block;
+            background: #006687;
+            color: white;
+            padding: 3px 6px;
+            margin: 1px;
+            border-radius: 3px;
+            font-size: 11px;
+
+            .ranking-info {
+                color: #4fc3f7;
+                font-weight: 600;
+                margin-left: 4px;
+            }
+
+            .fa-times {
+                color: white;
+                opacity: 0.8;
+                margin-left: 4px;
+                cursor: pointer;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+
+    .active-filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 8px;
+
+        .active-filters-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+
+            i {
+                color: #006687;
+            }
+        }
+
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+
+            .filter-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: #e3f2fd;
+                color: #006687;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 12px;
+                font-weight: 500;
+                border: 1px solid #bbdefb;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: #bbdefb;
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+                }
+
+                i {
+                    cursor: pointer;
+                    padding: 2px;
+                    border-radius: 50%;
+                    transition: all 0.2s ease;
+
+                    &:hover {
+                        background: #006687;
+                        color: white;
+                    }
+                }
+            }
+        }
+    }
+
+    .active-filters-label {
+        margin-bottom: 0;
+    }
+
+    // "By result": the result arrived from (?highlight=), in the gold of its row
+    // Matches the highlighted row's green
+    .selected-item.selected-item-highlight {
+        background: lighten(@brand-success, 42%);
+        color: @gray-darker;
+        box-shadow: inset 0 0 0 1px @brand-success;
+
+        a {
+            color: @gray-darker;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .fa-times {
+            color: @gray-darker;
+        }
+    }
 }

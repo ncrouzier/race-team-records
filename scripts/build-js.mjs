@@ -18,8 +18,6 @@ const libFiles = [
     'public/libs/angular-utils-pagination/dirPagination.js',
     'public/libs/angular-dialog-service/dist/dialogs.min.js',
     'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-    'public/libs/angulartics/dist/angulartics.min.js',
-    'public/libs/angulartics-google-analytics/dist/angulartics-google-analytics.min.js',
     'public/libs/jspdf/dist/jspdf.min.js',
     'public/libs/async/dist/async.min.js',
     'public/libs/datamaps/dist/datamaps.all.hires.min.js',

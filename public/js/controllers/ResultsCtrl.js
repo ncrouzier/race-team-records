@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$analytics', 'AuthService', 'ResultsService', 'UtilsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', 'MembersService', '$timeout', function($scope, $analytics, AuthService, ResultsService, UtilsService, dialogs, localStorageService,$stateParams,$location, $q, MembersService, $timeout) {
+angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'Analytics', 'AuthService', 'ResultsService', 'UtilsService', 'dialogs', 'localStorageService','$stateParams','$location', '$q', 'MembersService', '$timeout', 'AdvancedFiltersService', '$state', function($scope, Analytics, AuthService, ResultsService, UtilsService, dialogs, localStorageService,$stateParams,$location, $q, MembersService, $timeout, AdvancedFiltersService, $state) {
     
 
     $scope.authService = AuthService;
@@ -35,37 +35,8 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         $scope.racesList.sort(customRaceSort($scope.racesList, $scope.sortCriteria, $scope.sortDirection));
     };
 
-    // Helper function to check if a ranking is within a specified range
-    function isRankingInRange(actualRank, rankingFilter) {
-        if (!actualRank || !rankingFilter) {
-            return false;
-        }
-        
-        // Convert to string to handle both numbers and strings
-        var filterStr = String(rankingFilter).trim();
-        
-        // Check if it's a range (contains dash)
-        if (filterStr.includes('-')) {
-            var parts = filterStr.split('-');
-            if (parts.length === 2) {
-                var minRank = parseInt(parts[0].trim());
-                var maxRank = parseInt(parts[1].trim());
-                
-                // Validate the range
-                if (!isNaN(minRank) && !isNaN(maxRank) && minRank <= maxRank) {
-                    return actualRank >= minRank && actualRank <= maxRank;
-                }
-            }
-        } else {
-            // Single number comparison
-            var targetRank = parseInt(filterStr);
-            if (!isNaN(targetRank)) {
-                return actualRank === targetRank;
-            }
-        }
-        
-        return false;
-    }
+    // "3" or "1-3" against a rank; shared with "By result"
+    var isRankingInRange = AdvancedFiltersService.isRankingInRange;
 
     function customRaceSort(arr, field, order) {
         return (race1, race2) => {
@@ -153,14 +124,47 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         dateTo: '',
         distanceMin: 0,
         distanceMax: 100,
+        // Age grade range; narrows each race to the results inside it
+        agMin: 0,
+        agMax: 100,
         raceTypes: [],
         countries: [],
         states: [],
-        selectedMembers: []
+        selectedMembers: [],
+        // {month, day, label} — a single day of the year, matched across every
+        // year. Set by clicking a cell in the racing calendar on the stats pages.
+        calendarDay: null,
+        // {racetype, surfaces, sex, maxTime, label} — the performances behind one
+        // milestone counter on the team stats page.
+        milestone: null,
+        // Admin data-cleanup filter: keep only races that still have at least one
+        // result missing the chosen ranking field. One of MISSING_RANKING_OPTIONS.
+        missingRanking: null
+    };
+
+    // Ranking fields an admin can hunt for gaps in (shared with "By result")
+    $scope.missingRankingOptions = AdvancedFiltersService.MISSING_RANKING_OPTIONS;
+
+    // How many of a race's results match the chosen gap — shown on the race row
+    // so an admin can see how much work each race needs. Most options match a
+    // result missing any one of their fields; the requireAll ones need every
+    // field to be missing.
+    $scope.missingRankingCount = function(race) {
+        var option = $scope.filters.missingRanking;
+        if (!option || !race || !race.results) return 0;
+        return race.results.filter(function(result) {
+            return AdvancedFiltersService.resultMissing(result, option);
+        }).length;
     };
 
     // Distance range for slider
     $scope.distanceRange = {
+        min: 0,
+        max: 100
+    };
+
+    // Age grade range for its slider: up to 100%, or the best on file
+    $scope.ageGradeRange = {
         min: 0,
         max: 100
     };
@@ -225,15 +229,12 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         }).then(async function(finalRaces) {
             $scope.loadingStates.races = false;
             await $scope.populateFilterOptions();
-            $scope.applyFilters();
+            // Filters from the URL (this applies them). Runs in a digest: this
+            // async function resumes outside Angular.
+            $scope.$evalAsync(function() { $scope.processStateParams(); });
             
-            // Process state params after everything is loaded
-            $scope.processStateParams();
-            
-            // Initialize the distance slider after data is loaded
-            setTimeout(function() {
-                $scope.initDistanceSlider();
-            }, 100);
+            // The distance slider follows distanceRange on its own
+            // (<advanced-filter-panel>)
             
             return finalRaces;
         }).catch(function(error) {
@@ -253,151 +254,35 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     // Initialize races when controller loads
     $scope.loadRaces();
 
-    // Filter functions
-    $scope.toggleFilterPanel = function() {
-        $scope.filterPanelExpanded = !$scope.filterPanelExpanded;
-    };
+    // The Advanced Filters panel's handlers (toggles, add/remove a race type,
+    // country, state or member, the distance inputs), shared with "By result"
+    AdvancedFiltersService.attach($scope);
 
-    $scope.toggleAdvancedFilters = function() {
-        $scope.showAdvancedFilters = !$scope.showAdvancedFilters;
-        if ($scope.showAdvancedFilters) {
-            $scope.filterPanelExpanded = true;
-        }
-    };
-
-    $scope.clearAllFilters = function() {
-        $scope.searchQuery = '';
-        $scope.filters = {
+    function cleanFilters() {
+        return {
             dateFrom: '',
             dateTo: '',
             distanceMin: 0,
             distanceMax: $scope.distanceRange.max,
+            agMin: 0,
+            agMax: $scope.ageGradeRange.max,
             raceTypes: [],
             countries: [],
             states: [],
-            selectedMembers: []
+            selectedMembers: [],
+            calendarDay: null,
+            milestone: null,
+            missingRanking: null
         };
-        $scope.applyFilters();
-    };
+    }
 
-
-
-    $scope.clearDistanceFilter = function() {
-        $scope.filters.distanceMin = 0;
-        $scope.filters.distanceMax = $scope.distanceRange.max;
-        
-        // Reset the slider to default values
-        var distanceSlider = document.getElementById('distance-slider');
-        if (distanceSlider && distanceSlider.noUiSlider) {
-            distanceSlider.noUiSlider.set([0, $scope.distanceRange.max]);
-        }
-        
-        $scope.applyFilters();
-    };
-
-    $scope.onDistanceMinChange = function() {
-        // Ensure min doesn't exceed max
-        if ($scope.filters.distanceMinUI > $scope.filters.distanceMaxUI) {
-            // $scope.filters.distanceMin = $scope.filters.distanceMax;
-        }
-        $scope.filters.distanceMin = $scope.filters.distanceMinUI;
-        $scope.applyFilters();
-    };
-
-    $scope.onDistanceMaxChange = function() {
-        // Ensure max doesn't go below min
-        if ($scope.filters.distanceMaxUI < $scope.filters.distanceMinUI) {
-            $scope.filters.distanceMax = $scope.filters.distanceMinUI;
-        }
-        // Ensure max doesn't exceed the actual max distance
-        if ($scope.filters.distanceMaxUI > $scope.distanceRange.max) {
-            $scope.filters.distanceMax = $scope.distanceRange.max;
-        }
-        $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
-        $scope.applyFilters();
-    };
-
-    // Initialize noUiSlider
-    $scope.initDistanceSlider = function() {
-        if (typeof noUiSlider !== 'undefined') {
-            var distanceSlider = document.getElementById('distance-slider');
-            if (distanceSlider) {
-                noUiSlider.create(distanceSlider, {
-                    start: [$scope.filters.distanceMin, $scope.filters.distanceMax],
-                    connect: true,
-                    range: {
-                        'min': $scope.distanceRange.min,
-                        'max': $scope.distanceRange.max
-                    },
-                    step: 0.1,
-                    format: {
-                        to: function (value) {
-                            return Math.round(value * 10) / 10;
-                        },
-                        from: function (value) {
-                            return Math.round(value * 10) / 10;
-                        }
-                    }
-                });
-
-                // Update Angular model when slider changes (real-time updates)
-                distanceSlider.noUiSlider.on('update', function (values, handle) {
-                    if (!$scope.$$phase) {
-                        $scope.$apply(function() {
-                            $scope.filters.distanceMinUI = parseFloat(values[0]);
-                            $scope.filters.distanceMaxUI = parseFloat(values[1]);
-                            $scope.filters.distanceMin = $scope.filters.distanceMinUI;
-                            $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
-                            $scope.applyFilters();
-                        });
-                    }
-                });
-            }
-        }
-    };
-
-    // Update slider when input fields change
-    $scope.updateSliderFromInputs = function() {
-        var distanceSlider = document.getElementById('distance-slider');
-        if (distanceSlider && distanceSlider.noUiSlider) {
-            distanceSlider.noUiSlider.set([$scope.filters.distanceMin, $scope.filters.distanceMax]);
-        }
-    };
-
-    // Handle min distance input change
-    $scope.onDistanceMinInputChange = function() {
-        // Ensure min doesn't exceed max
-        if ($scope.filters.distanceMinUI > $scope.filters.distanceMaxUI) {
-            $scope.filters.distanceMinUI = $scope.filters.distanceMaxUI;
-            $scope.filters.distanceMin = $scope.filters.distanceMax;
-        }
-        // Ensure min is not negative
-        if ($scope.filters.distanceMinUI < 0) {
-            $scope.filters.distanceMinUI = 0;
-            $scope.filters.distanceMin = 0;
-        }
-
-        $scope.filters.distanceMin = $scope.filters.distanceMinUI;
+    $scope.clearAllFilters = function() {
+        $scope.searchQuery = '';
+        $scope.filters = cleanFilters();
         $scope.updateSliderFromInputs();
+        $scope.updateAgeGradeSliderFromInputs();
         $scope.applyFilters();
-    };
-
-    // Handle max distance input change
-    $scope.onDistanceMaxInputChange = function() {
-
-        // Ensure max doesn't go below min
-        if ($scope.filters.distanceMaxUI < $scope.filters.distanceMinUI) {
-            //$scope.filters.distanceMax = $scope.filters.distanceMin;
-            return;
-        }
-        // Ensure max doesn't exceed the actual max distance
-        if ($scope.filters.distanceMaxUI > $scope.distanceRange.max) {
-            $scope.filters.distanceMaxUI = $scope.distanceRange.max;     
-             $scope.filters.distanceMax = $scope.distanceRange.max;            
-        }
-        $scope.filters.distanceMax = $scope.filters.distanceMaxUI;
-        $scope.updateSliderFromInputs();
-        $scope.applyFilters();
+        $scope.trackFilterClear('all');
     };
 
 
@@ -407,10 +292,14 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                $scope.filters.dateTo || 
                $scope.filters.distanceMin > 0 || 
                $scope.filters.distanceMax < $scope.distanceRange.max ||
+               $scope.ageGradeFilterOn() ||
                ($scope.filters.raceTypes && $scope.filters.raceTypes.length > 0) ||
                ($scope.filters.countries && $scope.filters.countries.length > 0) ||
                ($scope.filters.states && $scope.filters.states.length > 0) ||
-               ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0);
+               ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0) ||
+               !!$scope.filters.calendarDay ||
+               !!$scope.filters.milestone ||
+               !!$scope.filters.missingRanking;
     };
 
     $scope.getActiveFilterCount = function() {
@@ -422,6 +311,7 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         
         // Count distance filter (only if not at default values)
         if ($scope.filters.distanceMin > 0 || $scope.filters.distanceMax < $scope.distanceRange.max) count++;
+        if ($scope.ageGradeFilterOn()) count++;
         
         // Count individual items in array filters
         if ($scope.filters.raceTypes && $scope.filters.raceTypes.length > 0) {
@@ -436,17 +326,19 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         if ($scope.filters.selectedMembers && $scope.filters.selectedMembers.length > 0) {
             count += $scope.filters.selectedMembers.length;
         }
-        
+        if ($scope.filters.calendarDay) count++;
+        if ($scope.filters.milestone) count++;
+        if ($scope.filters.missingRanking) count++;
+
         return count;
     };
 
-    $scope.getRaceTypeClass = function(s) {
-        if (s !== undefined) {
-            return s.replace(/ /g, '') + '-col';
-        }
+    $scope.applyFilters = function() {
+        filterRaces();
+        syncUrl();
     };
 
-    $scope.applyFilters = function() {
+    function filterRaces() {
         // Validate distance range - ensure min doesn't exceed max
         if ($scope.filters.distanceMin > $scope.filters.distanceMax) {
             $scope.filters.distanceMin = $scope.filters.distanceMax;
@@ -496,8 +388,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                 
             }
 
-            // Advanced filters (only if advanced filters are enabled)
-            if ($scope.showAdvancedFilters) {
+            // Advanced filters. They apply whether or not the panel is shown —
+            // hiding it only hides it, as on "By result" — and their tags stay
+            // visible below it (.active-filters-bar).
+            {
                 // Date range filter
                 var raceDate = new Date(race.racedate);
                 
@@ -522,6 +416,15 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                         23, 59, 59, 999
                     ));
                     if (raceDate > toDate) {
+                        return false;
+                    }
+                }
+
+                // Day-of-year filter: the same calendar day in every year, so
+                // "Jul 4" keeps thirteen years of Independence Day races.
+                if ($scope.filters.calendarDay) {
+                    if (raceDate.getUTCMonth() !== $scope.filters.calendarDay.month ||
+                        raceDate.getUTCDate() !== $scope.filters.calendarDay.day) {
                         return false;
                     }
                 }
@@ -637,16 +540,82 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                         return false;
                     }
                 }
+
+                // Admin: keep only races that still need ranking data filled in
+                if ($scope.filters.missingRanking) {
+                    if ($scope.missingRankingCount(race) === 0) {
+                        return false;
+                    }
+                }
             }
 
             return true;
         });
-    };
+
+        // Age grade range: like the milestone below, it narrows each race to
+        // the results inside the range (a result with no age grade is out),
+        // and drops races left with none. Shallow copies, as there.
+        if ($scope.ageGradeFilterOn()) {
+            var agMin = $scope.filters.agMin, agMax = $scope.filters.agMax;
+            $scope.filteredRacesList = $scope.filteredRacesList.reduce(function(acc, race) {
+                var kept = (race.results || []).filter(function(result) {
+                    var ag = parseFloat(result.agegrade);
+                    return ag >= agMin && ag <= agMax;
+                });
+                if (kept.length) {
+                    acc.push(kept.length === race.results.length ? race : angular.extend({}, race, { results: kept }));
+                }
+                return acc;
+            }, []);
+        }
+
+        // The milestone filter is the other one that narrows a race's results
+        // rather than just keeping or dropping the race. Without it a "sub-16
+        // 5k" link would list every team result in those races, and the rows on
+        // screen would not add up to the number that was clicked. The race is
+        // shallow-copied so the shared cached list is never mutated.
+        if ($scope.filters.milestone) {
+            var ms = $scope.filters.milestone;
+            $scope.filteredRacesList = $scope.filteredRacesList.reduce(function(acc, race) {
+                if (race.racetype.name !== ms.racetype) return acc;
+                if (ms.surfaces && ms.surfaces.indexOf(race.racetype.surface) === -1) return acc;
+
+                var kept = (race.results || []).filter(function(result) {
+                    if (!result.members || result.members.length !== 1) return false;
+                    if (result.isRecordEligible === false) return false;
+                    if (ms.maxTime && (!result.time || result.time >= ms.maxTime)) return false;
+                    // The age-grade view has no gender restriction — age grading
+                    // already normalises for it.
+                    if (ms.minAgeGrade && !(parseFloat(result.agegrade) >= ms.minAgeGrade)) return false;
+                    return !ms.sex || result.members[0].sex === ms.sex;
+                });
+                if (kept.length) {
+                    acc.push(angular.extend({}, race, { results: kept }));
+                }
+                return acc;
+            }, []);
+        }
+    }
 
     // Watch for changes in search query and apply filters
-    $scope.$watch('searchQuery', function() {
+    $scope.$watch('searchQuery', function(term, old) {
         $scope.applyFilters();
+        if (term !== old) trackSearch();
     });
+
+    // Analytics: this list's name on its filter, sort and search events
+    $scope.analyticsList = 'race_results';
+
+    // One search event once the typing stops, with how many races it found.
+    // The term is sent as typed (it may be a runner's name; member page URLs
+    // carry usernames anyway).
+    function trackSearch() {
+        Analytics.eventSoon('search:race_results', 'search', function() {
+            var term = ($scope.searchQuery || '').trim();
+            if (term.length < 2) return null;
+            return { list: 'race_results', search_term: term, result_count: $scope.filteredRacesList.length };
+        });
+    }
 
     // Populate available filter options
     $scope.populateFilterOptions = async function() {
@@ -659,165 +628,41 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
                 select: '-bio -personalBests -teamRequirementStats'
             });
 
-        // Get unique race types and calculate distance range
-        var raceTypes = {};
-        var countries = {};
-        var states = {};
-        var members = {};
-        var maxDistance = 0;
-
-        $scope.racesList.forEach(function(race) {
-            // Race types
-            if (race.racetype && race.racetype._id) {
-                raceTypes[race.racetype._id] = race.racetype;
-            }
-
-            // Countries and States
-            if (race.location) {
-                if (race.location.country) {
-                    countries[race.location.country] = true;
-                }
-                if (race.location.state) {
-                    states[race.location.state] = true;
-                }
-            }
-
-            // Members
-            if (race.results) {
-                race.results.forEach(function(result) {
-                    if (result.members) {
-                        result.members.forEach(function(member) {
-                            if (member._id) {
-                                members[member._id] = {
-                                    _id: member._id,
-                                    firstname: member.firstname,
-                                    lastname: member.lastname,
-                                    username: member.username
-                                };
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Calculate max distance
-            if (race.racetype && race.racetype.miles && race.racetype.miles > maxDistance) {
-                maxDistance = race.racetype.miles;
-            }
-        });
+        // Race types, countries and states on offer, with counts (shared
+        // with "By result")
+        var options = AdvancedFiltersService.buildOptions($scope.racesList);
+        $scope.availableRaceTypes = options.raceTypes;
+        $scope.availableCountries = options.countries;
+        $scope.availableStates = options.states;
 
         // Update distance range
-        $scope.distanceRange.max = Math.ceil(maxDistance);
-        
+        $scope.distanceRange.max = options.maxDistance;
+
         // Update filter max if it's currently set to the old max
         if ($scope.filters.distanceMax === 100) {
             $scope.filters.distanceMax = $scope.distanceRange.max;
         }
+        $scope.ageGradeRange.max = options.maxAgeGrade;
+        if ($scope.filters.agMax === 100) {
+            $scope.filters.agMax = $scope.ageGradeRange.max;
+        }
 
-        // Count occurrences of race types
-        var raceTypeCounts = {};
-        
+        var members = {};
         $scope.racesList.forEach(function(race) {
-            if (race.racetype && race.racetype._id) {
-                raceTypeCounts[race.racetype._id] = (raceTypeCounts[race.racetype._id] || 0) + 1;
-            }
-        });
-        
-        $scope.availableRaceTypes = Object.keys(raceTypes).map(function(key) {
-            var raceType = raceTypes[key];
-            return {
-                _id: raceType._id,
-                name: raceType.name,
-                surface: raceType.surface,
-                miles: raceType.miles,
-                isVariable: raceType.isVariable,
-                count: raceTypeCounts[raceType._id] || 0
-            };
-        }).sort(function(a, b) {
-            // Put special race types at the end
-            var specialTypes = ['swim', 'cycling', 'multisport', 'odd trail distance', 'odd road distance', 'odd track distance', 'odd ultra distance'];
-            var runningTypes = ['odd trail distance', 'odd road distance', 'odd track distance', 'odd ultra distance'];
-            var aIsSpecial = specialTypes.some(function(type) {
-                return a.name.toLowerCase().includes(type);
-            });
-            var bIsSpecial = specialTypes.some(function(type) {
-                return b.name.toLowerCase().includes(type);
-            });
-            
-            if (aIsSpecial && !bIsSpecial) return 1;
-            if (!aIsSpecial && bIsSpecial) return -1;
-            if (aIsSpecial && bIsSpecial) {
-                // If one is running and other isn't, put running first
-                var aIsRunning = runningTypes.some(function(type) {
-                    return a.name.toLowerCase().includes(type);
+            (race.results || []).forEach(function(result) {
+                (result.members || []).forEach(function(member) {
+                    if (member._id) {
+                        members[member._id] = {
+                            _id: member._id,
+                            firstname: member.firstname,
+                            lastname: member.lastname,
+                            username: member.username
+                        };
+                    }
                 });
+            });
+        });
 
-                var bIsRunning = runningTypes.some(function(type) {
-                    return b.name.toLowerCase().includes(type);
-                });
-
-                if (aIsRunning && !bIsRunning) return -1;
-                if (!aIsRunning && bIsRunning) return 1;
-                
-                // Otherwise sort by count (descending), then by name
-                if (b.count !== a.count) {
-                    return b.count - a.count;
-                }
-                return a.name.localeCompare(b.name);
-            }
-            
-            // Regular race types: sort by distance (ascending), then by count (descending), then by name
-            if (a.miles !== b.miles) {
-                return a.miles - b.miles;
-            }
-            if (b.count !== a.count) {
-                return b.count - a.count;
-            }
-            return a.name.localeCompare(b.name);
-        });
-        
-        // Count occurrences of countries and states
-        var countryCounts = {};
-        var stateCounts = {};
-        
-        $scope.racesList.forEach(function(race) {
-            if (race.location) {
-                if (race.location.country) {
-                    countryCounts[race.location.country] = (countryCounts[race.location.country] || 0) + 1;
-                }
-                if (race.location.state) {
-                    stateCounts[race.location.state] = (stateCounts[race.location.state] || 0) + 1;
-                }
-            }
-        });
-        
-        // Get countries and states from UtilsService with counts
-        $scope.availableCountries = UtilsService.countries.filter(function(country) {
-            return Object.keys(countries).indexOf(country.code) !== -1;
-        }).map(function(country) {
-            return {
-                name: country.name,
-                code: country.code,
-                count: countryCounts[country.code] || 0
-            };
-        }).sort(function(a, b) {
-            // Sort alphabetically by name
-            return a.name.localeCompare(b.name);
-        });
-        
-        $scope.availableStates = UtilsService.states.filter(function(state) {
-            return Object.keys(states).indexOf(state.code) !== -1;
-        }).map(function(state) {
-            return {
-                name: state.name,
-                code: state.code,
-                count: stateCounts[state.code] || 0
-            };
-        }).sort(function(a, b) {
-            // Sort alphabetically by name
-            return a.name.localeCompare(b.name);
-        });
-        
         $scope.availableMembers = Object.keys(members).map(function(key) {
             return members[key];
         }).sort(function(a, b) {
@@ -827,149 +672,6 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
         // Also populate allMembers for the dropdown
         // $scope.allMembers = $scope.availableMembers;
              
-    };
-
-    // Add country to filter list
-    $scope.addCountryToFilter = function(selectedCountry) {
-        if (selectedCountry && selectedCountry.code) {
-            // Check if country is already in the list
-            var exists = $scope.filters.countries.some(function(country) {
-                return country.code === selectedCountry.code;
-            });
-            
-            if (!exists) {
-                $scope.filters.countries.push(selectedCountry);
-                $scope.applyFilters();
-                
-                // Show visual feedback
-                $scope.showCountryFeedback = true;
-                $timeout(function() {
-                    $scope.showCountryFeedback = false;
-                }, 1500);
-            } else {
-                // Show feedback even if already exists
-                $scope.showCountryFeedback = true;
-                $timeout(function() {
-                    $scope.showCountryFeedback = false;
-                }, 1500);
-            }
-        }
-    };
-
-    // Remove country from filter list
-    $scope.removeCountryFromFilter = function(countryCode) {
-        $scope.filters.countries = $scope.filters.countries.filter(function(country) {
-            return country.code !== countryCode;
-        });
-        $scope.applyFilters();
-    };
-
-    // Add state to filter list
-    $scope.addStateToFilter = function(selectedState) {
-        if (selectedState && selectedState.code) {
-            // Check if state is already in the list
-            var exists = $scope.filters.states.some(function(state) {
-                return state.code === selectedState.code;
-            });
-            
-            if (!exists) {
-                $scope.filters.states.push(selectedState);
-                $scope.applyFilters();
-                
-                // Show visual feedback
-                $scope.showStateFeedback = true;
-                $timeout(function() {
-                    $scope.showStateFeedback = false;
-                }, 1500);
-            } else {
-                // Show feedback even if already exists
-                $scope.showStateFeedback = true;
-                $timeout(function() {
-                    $scope.showStateFeedback = false;
-                }, 1500);
-            }
-            
-            // Clear the selection to revert to placeholder
-            $scope.selectedState = null;
-        }
-    };
-
-    // Remove state from filter list
-    $scope.removeStateFromFilter = function(stateCode) {
-        $scope.filters.states = $scope.filters.states.filter(function(state) {
-            return state.code !== stateCode;
-        });
-        $scope.applyFilters();
-    };
-
-    // Add race type to filter list
-    $scope.addRaceTypeToFilter = function(selectedRaceType) {
-        if (selectedRaceType && selectedRaceType.name) {
-            // Check if race type is already in the list
-            var exists = $scope.filters.raceTypes.some(function(raceType) {
-                return raceType.name === selectedRaceType.name && raceType.surface === selectedRaceType.surface;
-            });
-            
-            if (!exists) {
-                $scope.filters.raceTypes.push(selectedRaceType);
-                $scope.applyFilters();
-                
-                // Show visual feedback
-                $scope.showRaceTypeFeedback = true;
-                $timeout(function() {
-                    $scope.showRaceTypeFeedback = false;
-                }, 1500);
-            } else {
-                // Show feedback even if already exists
-                $scope.showRaceTypeFeedback = true;
-                $timeout(function() {
-                    $scope.showRaceTypeFeedback = false;
-                }, 1500);
-            }
-        }
-    };
-
-    // Remove race type from filter list
-    $scope.removeRaceTypeFromFilter = function(raceTypeToRemove) {
-        $scope.filters.raceTypes = $scope.filters.raceTypes.filter(function(raceType) {
-            return !(raceType.name === raceTypeToRemove.name && raceType.surface == raceTypeToRemove.surface);
-        });
-        $scope.applyFilters();
-    };
- 
-    // Add member to filter list
-    $scope.addMemberToFilter = function(selectedMember) {
-        if (selectedMember && selectedMember._id) {
-            // Check if member is already in the list
-            var exists = $scope.filters.selectedMembers.some(function(member) {
-                return member._id === selectedMember._id;
-            });
-            
-            if (!exists) {
-                $scope.filters.selectedMembers.push(selectedMember);
-                $scope.applyFilters();
-                
-                // Show visual feedback
-                $scope.showMemberFeedback = true;
-                $timeout(function() {
-                    $scope.showMemberFeedback = false;
-                }, 1500);
-            } else {
-                // Show feedback even if already exists
-                $scope.showMemberFeedback = true;
-                $timeout(function() {
-                    $scope.showMemberFeedback = false;
-                }, 1500);
-            }
-        }
-    };
-
-    // Remove member from filter list
-    $scope.removeMemberFromFilter = function(memberId) {
-        $scope.filters.selectedMembers = $scope.filters.selectedMembers.filter(function(member) {
-            return member._id !== memberId;
-        });
-        $scope.applyFilters();
     };
 
     $scope.expand = function(raceinfo) {
@@ -1084,108 +786,189 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', '$
     };
 
     // Process state parameters after all data is loaded
-    $scope.processStateParams = function() {
-        if($stateParams.raceId){
-            $scope.showRaceModal({_id:$stateParams.raceId},true);
-        }
+    // ---- Filters <-> URL ---------------------------------------------------
+    // "By race" keeps its filters in the URL, like "By result", so a filtered
+    // list can be linked to, reloaded and shared:
+    //   q            search box
+    //   types        race types, name|surface: types=5k|road,1 mile|track
+    //   distance     a race type name, from links: 5k (also 5000m), or "other"
+    //                (odd distances and non-running surfaces); becomes types
+    //   from, to     date range, YYYY-MM-DD    minmi, maxmi  distance range
+    //   agmin, agmax age grade range, in %
+    //   country, state   codes, comma separated
+    //   runner       usernames, each optionally :ranking (nicolas:1-3)
+    //   month, day   one day of the year, every year (1-based month)
+    //   missing      (admin) a missing-ranking option
+    // Older links passed a hidden JSON `search` param instead; it is still
+    // read, through AdvancedFiltersService.queryToParams.
+    var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var urlReady = false;
+    var syncPending = null;
 
-        if($stateParams.search){
-            // $scope.searchQuery = $stateParams.search;
-            
-            if (isJson($stateParams.search)) {
-                let searchParams = JSON.parse($stateParams.search);
-                // Update advanced filters based on search parameters
-                if (searchParams.countries && Array.isArray(searchParams.countries)) {
-                    searchParams.countries.forEach(function(country) {
-                        let foundCountry = $scope.availableCountries.find(c => c.code === country);
-                        if (foundCountry) {
-                            $scope.filters.countries.push(foundCountry);
-                        }
-                    });
-                }
-                if (searchParams.states && Array.isArray(searchParams.states)) {
-                    searchParams.states.forEach(function(state) {
-                        let foundState = $scope.availableStates.find(s => s.code === state);
-                        if (foundState) {
-                            $scope.filters.states.push(foundState);
-                        }
-                    });
-                }
-                if (searchParams.members && Array.isArray(searchParams.members)) {
-                    searchParams.members.forEach(function(member) {
-                        let foundMember = $scope.allMembers.find(m => 
-                            m.username && m.username.toLowerCase() === member.username.toLowerCase()
-                        );
-                        if (foundMember) {
-                            // Create a copy to avoid modifying the original member object
-                            let memberWithRanking = Object.assign({}, foundMember);
-                            if (member.ranking) {
-                                memberWithRanking.ranking = member.ranking;
-                            }
-                            $scope.filters.selectedMembers.push(memberWithRanking);
-                        }
-                    });                    
-                }
+    function paramList(text, upper) {
+        return (text || '').split(',').map(function(x) {
+            x = x.trim();
+            return upper ? x.toUpperCase() : x;
+        }).filter(Boolean);
+    }
 
-                if (searchParams.distance) {
+    function toDay(date) {
+        if (!date) return null;
+        var d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+        var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
 
-                    if (searchParams.distance.toLowerCase() === 'other'){
-                        // Add all "other" race types based on StatsService logic
-                        $scope.availableRaceTypes.forEach(raceType => {
-                            let isOther = false;                            
-                            // Check if race type is variable                            
-                            if (raceType.isVariable ) {                   
-                                isOther = true;
-                            }
-                            // Check if surface is not road, track, trail, or ultra
-                            else if (raceType.surface !== 'road' && raceType.surface !== 'track' && 
-                                     raceType.surface !== 'trail' && raceType.surface !== 'ultra') {
-                                isOther = true;
-                            }
-                            
-                            if (isOther) {
-                                $scope.filters.raceTypes.push(raceType);
-                            }
-                        });
-                    } else {
-                        let matchingRaceTypes = $scope.availableRaceTypes.filter(rt => {
-                            // Handle metric distance matching
-                            if (searchParams.distance === '5k' && rt.name === '5000m') {
-                                return true;
-                            } else if (searchParams.distance === '10k' && rt.name === '10000m') {
-                                return true;
-                            } else {
-                                return rt.name === searchParams.distance;
-                            }
-                        });
-                        matchingRaceTypes.forEach(raceType => {
-                            $scope.filters.raceTypes.push(raceType);
-                        });
-                    }
-                    
-                   
-                }
-                if (searchParams.year) {
-                    // Create Date objects in local timezone for proper display in date inputs
-                    $scope.filters.dateFrom = new Date(searchParams.year, 0, 1); // January 1st
-                    $scope.filters.dateTo = new Date(searchParams.year, 11, 31); // December 31st
-                }
-                if (searchParams.query) {
-                    $scope.searchQuery = searchParams.query;
-                }
-                
-                // Show advanced filters panel since we're using advanced search
-                $scope.filterPanelExpanded = true;
-                $scope.showAdvancedFilters = true;
-                
-                // Apply filters after setting up state params
-                $scope.applyFilters();
+    function fromDay(text) {
+        var parts = (text || '').split('-');
+        return parts.length === 3 ? new Date(parts[0], parts[1] - 1, parts[2]) : '';
+    }
+
+    function filtersToParams() {
+        var f = $scope.filters;
+        return {
+            q: $scope.searchQuery || null,
+            types: f.raceTypes.length ? f.raceTypes.map(function(t) {
+                return (t.name + '|' + t.surface).toLowerCase();
+            }).join(',') : null,
+            from: toDay(f.dateFrom),
+            to: toDay(f.dateTo),
+            minmi: f.distanceMin > 0 ? String(f.distanceMin) : null,
+            maxmi: f.distanceMax < $scope.distanceRange.max ? String(f.distanceMax) : null,
+            agmin: f.agMin > 0 ? String(f.agMin) : null,
+            agmax: f.agMax < $scope.ageGradeRange.max ? String(f.agMax) : null,
+            country: f.countries.length ? f.countries.map(function(c) { return c.code; }).join(',') : null,
+            state: f.states.length ? f.states.map(function(st) { return st.code; }).join(',') : null,
+            runner: f.selectedMembers.length ? f.selectedMembers.map(function(m) {
+                return m.username + (m.ranking ? ':' + m.ranking : '');
+            }).join(',') : null,
+            month: f.calendarDay ? String(f.calendarDay.month + 1) : null,
+            day: f.calendarDay ? String(f.calendarDay.day) : null,
+            missing: f.missingRanking ? f.missingRanking.key : null,
+            // Only ever read: these turn into the params above
+            distance: null,
+            search: null
+        };
+    }
+
+    function sameAsUrl(params) {
+        return Object.keys(params).every(function(k) {
+            return (params[k] || null) === ($state.params[k] || null);
+        });
+    }
+
+    // Filters -> URL, replacing the history entry: Back leaves the page
+    // rather than stepping through every filter change. Once per tick: a
+    // slider drag or Clear applies the filters several times in a row, and
+    // each transition would cut off the one before.
+    function syncUrl() {
+        if (!urlReady || syncPending) return;
+        syncPending = $timeout(function() {
+            syncPending = null;
+            // Not while the link that opened the page is still landing: the
+            // replace would take the place of the previous history entry.
+            // A tick after it settles: the router writes the link's URL in
+            // its own success hook, which a new transition would cancel.
+            if ($state.transition) {
+                $state.transition.promise.then(function() { $timeout(syncUrl); }, angular.noop);
+                return;
+            }
+            var params = filtersToParams();
+            if (!sameAsUrl(params)) {
+                $state.go('/results', params, { location: 'replace', inherit: false });
+            }
+        });
+    }
+
+    // URL -> filters. Needs the filter options (race types, countries...)
+    // and the members, so it runs once the races are loaded.
+    $scope.processStateParams = function(params) {
+        params = params || $stateParams;
+        if (params.search) {
+            try {
+                params = AdvancedFiltersService.queryToParams(JSON.parse(params.search));
+            } catch (e) {
+                params = {};
             }
         }
-    };
-    
+        var f = $scope.filters = cleanFilters();
+        $scope.searchQuery = params.q || '';
 
-   
+        var types = paramList(params.types).map(function(t) { return t.toLowerCase(); });
+        if (types.length) {
+            f.raceTypes = $scope.availableRaceTypes.filter(function(rt) {
+                return types.indexOf((rt.name + '|' + rt.surface).toLowerCase()) !== -1;
+            });
+        } else if (params.distance) {
+            var distance = String(params.distance).toLowerCase();
+            f.raceTypes = $scope.availableRaceTypes.filter(function(rt) {
+                if (distance === 'other') {
+                    // Odd distances, and anything not run on road, track,
+                    // trail or ultra
+                    return rt.isVariable || ['road', 'track', 'trail', 'ultra'].indexOf(rt.surface) === -1;
+                }
+                var name = rt.name.toLowerCase();
+                // Track 5000m and 10000m go with 5k and 10k
+                return name === distance || (distance === '5k' && name === '5000m') ||
+                    (distance === '10k' && name === '10000m');
+            });
+        }
+
+        f.dateFrom = fromDay(params.from);
+        f.dateTo = fromDay(params.to);
+        var minmi = parseFloat(params.minmi), maxmi = parseFloat(params.maxmi);
+        if (!isNaN(minmi)) f.distanceMin = minmi;
+        if (!isNaN(maxmi)) f.distanceMax = maxmi;
+        var agmin = parseFloat(params.agmin), agmax = parseFloat(params.agmax);
+        if (!isNaN(agmin)) f.agMin = agmin;
+        if (!isNaN(agmax)) f.agMax = agmax;
+
+        paramList(params.country, true).forEach(function(code) {
+            var found = $scope.availableCountries.find(function(c) { return c.code === code; });
+            if (found) f.countries.push(found);
+        });
+        paramList(params.state, true).forEach(function(code) {
+            var found = $scope.availableStates.find(function(st) { return st.code === code; });
+            if (found) f.states.push(found);
+        });
+        paramList(params.runner).forEach(function(entry) {
+            var parts = entry.split(':');
+            var found = ($scope.allMembers || []).find(function(m) {
+                return m.username && m.username.toLowerCase() === parts[0].toLowerCase();
+            });
+            if (found) {
+                // A copy, so the ranking does not land on the shared member
+                var member = Object.assign({}, found);
+                if (parts[1]) member.ranking = parts[1];
+                f.selectedMembers.push(member);
+            }
+        });
+
+        var month = parseInt(params.month, 10), day = parseInt(params.day, 10);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            f.calendarDay = { month: month - 1, day: day, label: MONTHS_SHORT[month - 1] + ' ' + day };
+        }
+        f.missingRanking = $scope.missingRankingOptions.find(function(o) { return o.key === params.missing; }) || null;
+
+        // The slider follows the restored range
+        $timeout(function() {
+            $scope.updateSliderFromInputs();
+            $scope.updateAgeGradeSliderFromInputs();
+        });
+
+        urlReady = true;
+        $scope.applyFilters();
+    };
+
+    // A link to "By race" followed while already on it changes only the
+    // URL's (dynamic) params; ui-router calls this on the controller instance
+    this.uiOnParamsChanged = function() {
+        // Our own syncUrl landing, or about to: nothing to read
+        if (!urlReady || syncPending || sameAsUrl(filtersToParams())) return;
+        $scope.processStateParams($state.params);
+    };
+
 }]);
 
 angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated) {
@@ -1316,7 +1099,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         $scope.formData.race.location.state = originalResult.race.location.state;
         $scope.formData.race.racedate = new Date(originalResult.race.racedate);
         $scope.formData.race.order = originalResult.race.order;
+        // The rest of the race's shared details: same results page, same field
+        $scope.formData.resultlink = originalResult.resultlink;
         $scope.formData.ranking = {};
+        if (originalResult.ranking && originalResult.ranking.overalltotal) {
+            $scope.formData.ranking.overalltotal = originalResult.ranking.overalltotal;
+        }
         $scope.formData.members = [];
         $scope.formData.members[0] = {};        
         $scope.nbOfMembers = 1;
@@ -1719,228 +1507,6 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 }]);
 
 
-angular.module('mcrrcApp.results').controller('RaceModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'raceinfo','fromStateParams', 'MembersService', 'ResultsService', 'localStorageService','$state','NotificationService', 'UtilsService', 'AuthService', function($scope, $uibModalInstance, $filter, raceinfo, fromStateParams,MembersService, ResultsService, localStorageService,$state,NotificationService, UtilsService, AuthService) {
-
-    $scope.authService = AuthService;
-    $scope.$watch('authService.isLoggedIn()', function(user) {
-        $scope.user = user;
-    });
-
-    $scope.raceinfo = raceinfo;
-    if (fromStateParams){
-        $scope.fromStateParams = fromStateParams;
-    }else{
-        //default
-        $scope.fromStateParams = false;
-    }
-   
-
-    var sum = 0;
-    var count = 0;
-    for (i = 0; i < $scope.raceinfo.results.length; i++) {
-        if ($scope.raceinfo.results[i].time !== 'undefined') {
-            sum += $scope.raceinfo.results[i].time;
-            count++;
-        }
-    }
-    if (count !== 0) {
-        $scope.avg = Math.ceil(sum / count);
-    }
-
-    // Calculate fastest time result
-    $scope.fastestTimeResult = null;
-    var fastestTime = Infinity;
-    for (i = 0; i < $scope.raceinfo.results.length; i++) {
-        if ($scope.raceinfo.results[i].time && $scope.raceinfo.results[i].time < fastestTime) {
-            fastestTime = $scope.raceinfo.results[i].time;
-            $scope.fastestTimeResult = $scope.raceinfo.results[i];
-        }
-    }
-
-    // Calculate best age grade result
-    $scope.bestAgeGradeResult = null;
-    var bestAgeGrade = 0;
-    for (i = 0; i < $scope.raceinfo.results.length; i++) {
-        if ($scope.raceinfo.results[i].agegrade && $scope.raceinfo.results[i].agegrade > bestAgeGrade) {
-            bestAgeGrade = $scope.raceinfo.results[i].agegrade;
-            $scope.bestAgeGradeResult = $scope.raceinfo.results[i];
-        }
-    }
-
-    $scope.cancel = function() {
-        if($scope.fromStateParams){         
-            $state.go('/results');
-        }        
-        $uibModalInstance.dismiss('cancel');        
-    };
-
-    $scope.getRaceTypeClass = function(s) {
-        if (s !== undefined) {
-            return s.replace(/ /g, '') + '-col';
-        }
-    };
-    $scope.getSurfaceClass = function(surfaceName) {
-        if (!surfaceName) return '';
-        // Convert to lowercase and replace spaces with hyphens
-        return 'surface-' + surfaceName.toLowerCase().replace(/\s+/g, '-');
-    };
-
-    $scope.getStateFlag = function(stateCode) {
-        return UtilsService.getStateFlag(stateCode);
-    };
-
-    $scope.getCountryFlag = function(countryCode) {
-        return UtilsService.getCountryFlag(countryCode);
-    };
-
-    $scope.showResultDetailsModal = function(result,race) {
-        ResultsService.showResultDetailsModal(result,race).then(function(result) {});
-    };
-
-   
-    
-    $scope.sortBy = function (criteria) {
-        if ($scope.sortCriteria === criteria) {
-            $scope.sortDirection = $scope.sortDirection === true ? false : true;
-        } else {
-            $scope.sortCriteria = criteria;
-            $scope.sortDirection = true;
-        }
-        //sortDirection true = asc, false = desc
-        $scope.raceinfo.results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
-    };
-
-    $scope.sortResultsBy = function (results,criteria) {
-        if ($scope.sortCriteria === criteria) {
-            $scope.sortDirection = $scope.sortDirection === true ? false : true;
-        } else {
-            $scope.sortCriteria = criteria;
-            $scope.sortDirection = true;
-        }
-        //sortDirection true = asc, false = desc
-        results.sort(customResultSort($scope.raceinfo.results, $scope.sortCriteria, $scope.sortDirection));
-    };
-
-    function customResultSort(arr, field, order) {
-        return (result1, result2) => {
-            if (field === 'race.racedate') {
-                if (result1.race.racedate < result2.race.racedate) {
-                    return order === true ? -1 : 1;
-                } else if (result1.race.racedate > result2.race.racedate) {
-                    return order === true ? 1 : -1;
-                }
-
-                if (result1.race.order < result2.race.order) {
-                    return order === true ? -1 : 1;
-                } else if (result1.race.order > result2.race.order) {
-                    return order === true ? 1 : -1;
-                }
-
-                if (result1.race.racename < result2.race.racename) {
-                    return order === true ? -1 : 1;
-                } else if (result1.race.racename > result2.race.racename) {
-                    return order === true ? 1 : -1;
-                }
-
-                if (result1.time < result2.time) {
-                    return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-
-                return 0;
-            }
-
-            if (field === 'pace') {
-                //if result is multisport, put at the end
-                if (result1.race.isMultisport) {
-                    return 1;
-                }
-                if (result2.race.isMultisport) {
-                    return -1;
-                }
-                if (result1.time / result1.race.racetype.miles < result2.time / result2.race.racetype.miles) {
-                    return order === true ? -1 : 1;
-                } else if (result1.time / result1.race.racetype.miles > result2.time / result2.race.racetype.miles) {
-                    return order === true ? 1 : -1;
-                }
-                return 0;
-            }
-
-            if (field === 'time') {
-                if (result1.time < result2.time) {
-                    return order === true ? -1 : 1;
-                } else if (result1.time > result2.time) {
-                    return order === true ? 1 : -1;
-                }
-                return 0;
-            }
-
-            if (field === 'agegrade') {
-                //if result has no agegrade, put at the end    
-                if (result1.agegrade === undefined) {
-                    return 1;
-                }
-                if (result2.agegrade === undefined) {
-                    return -1;
-                }
-                if (result1.agegrade < result2.agegrade) {
-                    return order === true ? -1 : 1;
-                } else if (result1.agegrade > result2.agegrade) {
-                    return order === true ? 1 : -1;
-                }
-                return 0;
-            }
-        };
-    }
-
-    $scope.copyRaceLinkToClipboard = function() {
-        navigator.clipboard.writeText(window.location.origin+'/races/' + $scope.raceinfo._id)
-          .then(() => {
-            NotificationService.clipboardCopyNotifiction(true,window.location.origin+'/races/' + $scope.raceinfo._id);            
-          })
-          .catch(err => {
-            NotificationService.clipboardCopyNotifiction(false,window.location.origin+'/races/' + $scope.raceinfo._id);     
-            console.error('Failed to copy text: ', err);
-          });
-      };
-
-    // Edit race functionality
-    $scope.editRace = function() {
-        if ($scope.user && $scope.user.role === 'admin') {
-            ResultsService.showEditRaceModal($scope.raceinfo).then(function(updatedRace) {
-                if (updatedRace) {
-                    // Update the current race info
-                    $scope.raceinfo = updatedRace;
-                }
-            });
-        }
-    };
-
-    // Gender filter functionality
-    $scope.genderFilter = null;
-
-    $scope.setGenderFilter = function(gender) {
-        $scope.genderFilter = gender;
-    };
-
-    $scope.getFilteredResults = function() {
-        if (!$scope.genderFilter) {
-            return $scope.raceinfo.results;
-        }
-        return $scope.raceinfo.results.filter(function(result) {
-            // Check if any member in the result has the specified gender
-            return result.members && result.members.some(function(member) {
-                return member.sex === $scope.genderFilter;
-            });
-        });
-    };
-
-
-
-}]);
-
-
 angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController', ['$scope', '$uibModalInstance', '$filter', 'result','race', 'MembersService', 'ResultsService', 'localStorageService', function($scope, $uibModalInstance, $filter, result, race, MembersService, ResultsService, localStorageService) {
 
     $scope.result = result;
@@ -1963,7 +1529,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
 }]);
 
 // Race Edit Modal Controller
-angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', 'race', 'ResultsService', 'UtilsService', function($scope, $uibModalInstance, race, ResultsService, UtilsService) {
+angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', '$q', 'race', 'ResultsService', 'UtilsService', 'MembersService', 'ResultExtractionService', 'NotificationService', function($scope, $uibModalInstance, $q, race, ResultsService, UtilsService, MembersService, ResultExtractionService, NotificationService) {
     
 
     
@@ -2116,7 +1682,370 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
     $scope.markResultsModified = function() {
         $scope.resultsModified = true;
     };
-       
+
+    // --- Retrieving ranking data from a results link -----------------------
+    //
+    // Same scrape the result extractor page does, but instead of creating
+    // results it lines the scraped rows up against the results already stored
+    // for this race and offers the differences as edits to confirm.
+
+    $scope.extraction = {
+        url: '',
+        htmlSource: '',
+        showPasteBox: false,
+        loading: false,
+        // Team members in the scraped results who have no result stored on this
+        // race at all — offered as results to create.
+        additions: [],
+        // One entry per existing result with at least one differing field.
+        proposals: null,
+        // Every results table found on the page, so a wrong guess can be swapped
+        tables: [],
+        tableIndex: null,
+        // The scraped table is kept so the column mapping can be corrected and
+        // the proposals rebuilt without fetching the page again.
+        tableHeaders: [],
+        tableData: [],
+        columnMapping: {},
+        rowOptions: {},
+        showMapping: false,
+        error: null
+    };
+
+    $scope.mappableFields = ResultExtractionService.mappableFields;
+
+    $scope.availableFieldsFor = function(header) {
+        return ResultExtractionService.availableFieldsFor($scope.extraction.columnMapping, header);
+    };
+
+    // First non-empty value under a column, shown beside the dropdown so the
+    // admin can tell what they are mapping without opening the source page.
+    $scope.columnSample = function(header) {
+        var row = ($scope.extraction.tableData || []).find(function(candidate) {
+            return candidate[header];
+        });
+        return row ? row[header] : '';
+    };
+
+    // A field can only describe one column, so claiming it releases the other.
+    $scope.onColumnMappingChange = function(header) {
+        var field = $scope.extraction.columnMapping[header];
+        if (field) {
+            Object.keys($scope.extraction.columnMapping).forEach(function(other) {
+                if (other !== header && $scope.extraction.columnMapping[other] === field) {
+                    $scope.extraction.columnMapping[other] = '';
+                }
+            });
+        }
+        rebuildProposals();
+    };
+
+    // The fields offered as edits, in the order they appear in the table.
+    var EXTRACTABLE_FIELDS = [
+        { key: 'time', label: 'Time', isTime: true },
+        { key: 'agerank', label: 'Age rank' },
+        { key: 'agetotal', label: 'Age total' },
+        { key: 'genderrank', label: 'Gender rank' },
+        { key: 'gendertotal', label: 'Gender total' },
+        { key: 'overallrank', label: 'Overall rank' },
+        { key: 'overalltotal', label: 'Overall total' }
+    ];
+
+    // Members who were on the team on race day, used for name matching. A race
+    // from 2014 should match the 2014 roster, not today's.
+    $scope.raceDayMembers = [];
+    MembersService.getMembers({
+        'filters[memberStatus]': 'all',
+        'sort': 'firstname lastname'
+    }).then(function(members) {
+        $scope.allMembersForExtraction = members;
+        $scope.raceDayMembers = ResultExtractionService.membersActiveOn(members, $scope.race.racedate);
+    });
+
+    function currentValue(result, field) {
+        return field === 'time' ? result.time : (result.ranking ? result.ranking[field] : undefined);
+    }
+
+    // Centiseconds split into the h/m/s/cs inputs the results table binds to
+    function timeExpFor(centiseconds) {
+        return {
+            hours: Math.floor(centiseconds / 360000),
+            minutes: Math.floor(((centiseconds % 8640000) % 360000) / 6000),
+            seconds: Math.floor((((centiseconds % 8640000) % 360000) % 6000) / 100),
+            centiseconds: Math.floor((((centiseconds % 8640000) % 360000) % 6000) % 100)
+        };
+    }
+
+    function isEmptyValue(value) {
+        return value === undefined || value === null || value === '' || value <= 0;
+    }
+
+    // Keep a freshly scraped table, guess its columns, and build the first set
+    // of proposals. Shared by the two ways of getting one: fetching a URL, and
+    // pasting page source.
+    function receiveTable(data, sourceUrl) {
+        if (!data || !data.success) {
+            $scope.extraction.error = (data && data.error) || 'Failed to load the results table';
+            $scope.extraction.loading = false;
+            return;
+        }
+
+        var url = sourceUrl || '';
+        var isParkrun = url.includes('parkrun.') || data.source === 'parkrun';
+
+        $scope.extraction.tables = data.tables || [];
+        $scope.extraction.tableHeaders = data.headers || [];
+        $scope.extraction.tableData = data.data || [];
+        $scope.extraction.columnMapping = ResultExtractionService.guessColumnMapping(
+            isParkrun ? 'parkrun.' : url, data.headers, { fallbackToGenericHeaders: true });
+        $scope.extraction.rowOptions = {
+            stripPersonalBest: isParkrun,
+            stripDigitsFromGender: isParkrun
+        };
+
+        rebuildProposals(true);
+    }
+
+    // Re-derive the proposals from the stored table and the current mapping.
+    // Called again whenever the admin corrects a column.
+    function rebuildProposals(isFirstRun) {
+            var columnMapping = $scope.extraction.columnMapping;
+            var options = $scope.extraction.rowOptions;
+            var tableData = $scope.extraction.tableData || [];
+
+            // Race-day roster, falling back to whatever is loaded if the member
+            // list has not come back yet.
+            var members = $scope.raceDayMembers && $scope.raceDayMembers.length
+                ? $scope.raceDayMembers
+                : ($scope.allMembersForExtraction || []);
+
+            var proposals = [];
+            var additions = [];
+
+            tableData.forEach(function(row) {
+                var parsed = ResultExtractionService.parseRow(row, columnMapping, tableData, options);
+                if (!parsed) return;
+
+                var member = ResultExtractionService.matchMember(parsed.firstname, parsed.lastname, members);
+                if (!member) return; // not one of ours, ignore silently
+
+                // Find the stored result for that member on this race
+                var existing = $scope.raceResults.find(function(result) {
+                    return (result.members || []).some(function(resultMember) {
+                        return resultMember._id === member._id;
+                    });
+                });
+
+                // On the team on race day and in the results, but with nothing
+                // stored — offer to create the result rather than just noting it.
+                if (!existing) {
+                    additions.push({
+                        name: member.firstname + ' ' + member.lastname,
+                        member: member,
+                        parsed: parsed,
+                        values: EXTRACTABLE_FIELDS.map(function(field) {
+                            var scraped = field.key === 'time' ? parsed.time : parsed.ranking[field.key];
+                            if (isEmptyValue(scraped)) return null;
+                            return { label: field.label, value: scraped, isTime: field.isTime };
+                        }).filter(function(value) { return value !== null; }),
+                        add: true
+                    });
+                    return;
+                }
+
+                var changes = EXTRACTABLE_FIELDS.map(function(field) {
+                    var scraped = field.key === 'time' ? parsed.time : parsed.ranking[field.key];
+                    if (isEmptyValue(scraped)) return null;
+
+                    var current = currentValue(existing, field.key);
+                    if (!isEmptyValue(current) && Number(current) === Number(scraped)) return null;
+
+                    return {
+                        key: field.key,
+                        label: field.label,
+                        isTime: field.isTime,
+                        current: current,
+                        scraped: scraped,
+                        // Filling a blank is nearly always right, so it starts
+                        // ticked; overwriting a value an admin may have entered
+                        // by hand does not.
+                        wasEmpty: isEmptyValue(current),
+                        apply: isEmptyValue(current)
+                    };
+                }).filter(function(change) { return change !== null; });
+
+                if (changes.length > 0) {
+                    proposals.push({
+                        result: existing,
+                        name: member.firstname + ' ' + member.lastname,
+                        changes: changes
+                    });
+                }
+            });
+
+            $scope.extraction.proposals = proposals;
+            $scope.extraction.additions = additions;
+            $scope.extraction.loading = false;
+
+            if (isFirstRun && proposals.length === 0 && additions.length === 0) {
+                // Most often a column was read wrongly, so point at the fix
+                $scope.extraction.showMapping = true;
+                NotificationService.showNotifiction(true,
+                    'Nothing matched — check the column mapping below');
+            }
+    }
+
+    function extractionFailed(response) {
+        $scope.extraction.error = (response && response.data && response.data.error) ||
+            'Failed to load the results table';
+        $scope.extraction.loading = false;
+    }
+
+    function startExtraction() {
+        $scope.extraction.loading = true;
+        $scope.extraction.error = null;
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+    }
+
+    // Re-read the page, taking a different one of the tables found on it
+    $scope.useTable = function(tableIndex) {
+        $scope.extraction.tableIndex = tableIndex;
+        if (($scope.extraction.htmlSource || '').trim()) {
+            $scope.parsePastedResults(tableIndex);
+        } else {
+            $scope.fetchResultsFromLink(tableIndex);
+        }
+    };
+
+    $scope.fetchResultsFromLink = function(tableIndex) {
+        var url = ($scope.extraction.url || '').trim();
+        if (!url) return;
+
+        startExtraction();
+        ResultExtractionService.fetchTable(url, tableIndex).then(function(data) {
+            receiveTable(data, url);
+        }).catch(extractionFailed);
+    };
+
+    // For sites that block server-side requests: the admin opens the page in
+    // their browser, copies the source, and pastes it here.
+    $scope.parsePastedResults = function(tableIndex) {
+        var html = ($scope.extraction.htmlSource || '').trim();
+        if (!html) return;
+
+        startExtraction();
+        ResultExtractionService.parseHtmlSource(html, tableIndex).then(function(data) {
+            // The URL box may still hold the page the source came from; it is
+            // used for the per-site column guesses and stored on edited results.
+            receiveTable(data, ($scope.extraction.url || '').trim());
+        }).catch(extractionFailed);
+    };
+
+    $scope.proposedChangeCount = function() {
+        if (!$scope.extraction.proposals) return 0;
+        return $scope.extraction.proposals.reduce(function(count, proposal) {
+            return count + proposal.changes.filter(function(change) { return change.apply; }).length;
+        }, 0);
+    };
+
+    $scope.proposedAdditionCount = function() {
+        return ($scope.extraction.additions || []).filter(function(addition) {
+            return addition.add;
+        }).length;
+    };
+
+    $scope.setAllProposedChanges = function(apply) {
+        ($scope.extraction.proposals || []).forEach(function(proposal) {
+            proposal.changes.forEach(function(change) { change.apply = apply; });
+        });
+        ($scope.extraction.additions || []).forEach(function(addition) {
+            addition.add = apply;
+        });
+    };
+
+    // Write the confirmed changes onto the loaded results, and add the confirmed
+    // new ones to the table. Nothing is persisted until the admin saves the
+    // race, same as every other edit in this modal.
+    $scope.applyProposedChanges = function() {
+        var resultLink = ($scope.extraction.url || '').trim();
+        var applied = 0;
+
+        ($scope.extraction.proposals || []).forEach(function(proposal) {
+            proposal.changes.forEach(function(change) {
+                if (!change.apply) return;
+                if (change.key === 'time') {
+                    proposal.result.time = change.scraped;
+                    proposal.result.timeExp = timeExpFor(change.scraped);
+                } else {
+                    if (!proposal.result.ranking) proposal.result.ranking = {};
+                    proposal.result.ranking[change.key] = change.scraped;
+                }
+                applied++;
+            });
+
+            // The link the data came from, so the next admin can check the
+            // source. Empty when the HTML was pasted without a URL.
+            if (!proposal.result.resultlink && resultLink) {
+                proposal.result.resultlink = resultLink;
+            }
+        });
+
+        var added = 0;
+        ($scope.extraction.additions || []).forEach(function(addition) {
+            if (!addition.add) return;
+            // Goes into the same table as the stored results so it can be
+            // checked and edited before saving; created on save, not now.
+            $scope.raceResults.push({
+                isNew: true,
+                members: [addition.member],
+                time: addition.parsed.time,
+                timeExp: timeExpFor(addition.parsed.time),
+                ranking: angular.copy(addition.parsed.ranking),
+                resultlink: resultLink,
+                isRecordEligible: true,
+                comments: '',
+                legs: []
+            });
+            added++;
+        });
+
+        if (added > 0) {
+            $scope.raceResults.sort(function(result1, result2) {
+                return (result1.time || 0) - (result2.time || 0);
+            });
+        }
+
+        if (applied > 0 || added > 0) {
+            $scope.markResultsModified();
+        }
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+
+        var parts = [];
+        if (applied > 0) parts.push(applied + (applied === 1 ? ' change' : ' changes'));
+        if (added > 0) parts.push(added + (added === 1 ? ' new result' : ' new results'));
+        NotificationService.showNotifiction(true,
+            (parts.length ? parts.join(' and ') : 'Nothing') + ' applied — save the race to keep them');
+    };
+
+    $scope.discardProposedChanges = function() {
+        $scope.extraction.proposals = null;
+        $scope.extraction.additions = [];
+        // Drop the scraped table too, so the panel goes back to a clean start
+        // rather than leaving a mapping UI with nothing behind it.
+        $scope.extraction.tableHeaders = [];
+        $scope.extraction.tableData = [];
+        $scope.extraction.tables = [];
+        $scope.extraction.showMapping = false;
+    };
+
+    // Drop a result that was added from an extraction but not saved yet
+    $scope.removeNewResult = function(index) {
+        $scope.raceResults.splice(index, 1);
+    };
+
+
     // Helper functions
     $scope.getRaceTypeClass = function(surface) {
         if (surface !== undefined) {
@@ -2295,11 +2224,20 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
        
         // Save the race first
         ResultsService.updateRace($scope.race).then(function(updatedRace) {
-            
-            // If results were loaded and modified, save them after race is saved
-            if ($scope.resultsModified && $scope.raceResults && $scope.raceResults.length > 0) {
-                // Prepare results for bulk update
-                var resultsToUpdate = $scope.raceResults.map(function(result) {
+
+            // Results added from an extraction have no _id yet: they are created
+            // against this race, while the rest are updated in place.
+            var newResults = ($scope.raceResults || []).filter(function(result) {
+                return result.isNew;
+            });
+            var storedResults = ($scope.raceResults || []).filter(function(result) {
+                return !result.isNew;
+            });
+
+            var work = [];
+
+            if ($scope.resultsModified && storedResults.length > 0) {
+                var resultsToUpdate = storedResults.map(function(result) {
                     return {
                         _id: result._id,
                         time: result.time,
@@ -2313,20 +2251,40 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
                         achievements: result.achievements
                     };
                 });
-                
-                // Update results in bulk, then close modal
-                ResultsService.updateResultsBulk(resultsToUpdate).then(function(response) {
+                work.push(ResultsService.updateResultsBulk(resultsToUpdate).then(function(response) {
                     updatedRace.results = response.results;
-                    $uibModalInstance.close(updatedRace);
-                }).catch(function(error) {
-                    console.error('Error updating results:', error);
-                    // Still close the modal even if results update fails
-                    $uibModalInstance.close(updatedRace);
-                });
-            } else {
-                // No results to update, just close the modal
-                $uibModalInstance.close(updatedRace);
+                }));
             }
+
+            if (newResults.length > 0) {
+                var resultsToCreate = newResults.map(function(result) {
+                    return {
+                        time: result.time,
+                        ranking: result.ranking,
+                        members: result.members,
+                        legs: result.legs || [],
+                        comments: result.comments || '',
+                        resultlink: result.resultlink || '',
+                        isRecordEligible: result.isRecordEligible !== false
+                    };
+                });
+                // The bulk endpoint attaches these to the existing race by _id,
+                // and works out age grades and personal bests as it goes.
+                work.push(ResultsService.saveResultsBulk(resultsToCreate, $scope.race));
+            }
+
+            if (work.length === 0) {
+                $uibModalInstance.close(updatedRace);
+                return;
+            }
+
+            $q.all(work).then(function() {
+                $uibModalInstance.close(updatedRace);
+            }).catch(function(error) {
+                console.error('Error saving results:', error);
+                // Still close the modal even if the results step fails
+                $uibModalInstance.close(updatedRace);
+            });
         }).catch(function(error) {
             console.error('Error saving race:', error);
             // Don't close modal if race save fails

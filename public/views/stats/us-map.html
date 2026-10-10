@@ -2,7 +2,10 @@
     <!-- Navigation -->
     <ul class="nav nav-tabs">
         <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Team Stats</a>
+            <a ui-sref="/stats/team">Racing Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user">
+            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
         </li>
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/us-map">US Races Map</a>
@@ -49,7 +52,7 @@
                                 <td>{{$index+1}}</td>
                                 <td><img ng-src="{{state.flag}}" alt="State flag" style="width: 20px; height: 15px;"
                                         onerror="this.style.display='none'"> {{state.name}} ({{state.code}})</td>
-                                <td><a ng-click="goToResultsWithQuery({ states: [state.code]})"
+                                <td><a ng-click="trackDrill('us_map_state', state.code); goToResultsWithQuery({ states: [state.code]})"
                                         class="hoverhandandunderline" uib-tooltip="View all results in {{state.name}}"
                                         tooltip-placement="left">{{state.count}}</a></td>
                             </tr>

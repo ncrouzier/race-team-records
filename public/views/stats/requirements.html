@@ -111,7 +111,7 @@
                             </td>
                             <td>
                                 <span
-                                    ng-click="goToResultsWithQuery({members:[{username: req.member.username}], year: selectedYear})"
+                                    ng-click="trackDrill('requirements_member'); goToResultsWithQuery({members:[{username: req.member.username}], year: selectedYear})"
                                     class="hoverhand"
                                     ng-class="{'text-success': req.meetsRaceRequirement, 'text-danger': !req.meetsRaceRequirement}">
                                     <i class="fa"

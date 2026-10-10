@@ -1587,7 +1587,9 @@ module.exports = {
             // Build bulk operations: replace teamRecord achievements only when
             // the set differs from what's already on the result. When a result
             // sets both the Open and Master record, collapse the two into a
-            // single combined achievement (category: "Open").
+            // single combined achievement whose text names both — one record
+            // run should count (and show) as one 🔥, not two. category stays
+            // "Open" for existing readers; categories lists both.
             const bulkOperations = [];
             for (const result of results) {
                 const idStr = result._id.toString();
@@ -1601,13 +1603,14 @@ module.exports = {
                     const sex = openAch.value.sex;
                     expectedList = [{
                         name: 'teamRecord',
-                        text: `New team record: ${openAch.value.racetypeName} (${getSurfaceText(openAch.value.surface)}) : Open ${sex}!`,
+                        text: `New team record: ${openAch.value.racetypeName} (${getSurfaceText(openAch.value.surface)}) : Open and Master ${sex}!`,
                         value: {
                             time: openAch.value.time,
                             racetypeId: openAch.value.racetypeId,
                             racetypeName: openAch.value.racetypeName,
                             surface: openAch.value.surface,
                             category: 'Open',
+                            categories: ['Open', 'Master'],
                             sex: sex
                         }
                     }];

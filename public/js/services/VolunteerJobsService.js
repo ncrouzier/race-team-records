@@ -23,6 +23,17 @@ angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular
         });
     };
 
+    // Volunteer jobs at one race, for the race page (logged-in users only).
+    // Resolves with [] rather than failing, so the page just omits the section.
+    factory.getRaceVolunteerJobs = function (raceId) {
+        if (!raceId) return $q.resolve([]);
+        return Restangular.one('races', raceId).getList('volunteerjobs').then(function (jobs) {
+            return jobs.plain ? jobs.plain() : jobs;
+        }, function () {
+            return [];
+        });
+    };
+
     // Get all volunteer jobs with cache support (memory -> IndexedDB -> API)
     // Wrapped in $q.resolve() so the returned promise is always digest-aware
     factory.getVolunteerJobsWithCacheSupport = function (params) {

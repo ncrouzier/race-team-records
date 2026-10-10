@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', '$analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, $analytics, dialogs, $filter, localStorageService, AuthService) {
+angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$stateParams', '$state', 'MembersService', 'ResultsService', 'StatsService', 'UtilsService', 'Analytics', 'dialogs', '$filter', 'localStorageService', 'AuthService', 'AdvancedFiltersService', function ($scope, $stateParams, $state, MembersService, ResultsService, StatsService, UtilsService, Analytics, dialogs, $filter, localStorageService, AuthService, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -31,6 +31,16 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
     $scope.member2Results = [];
     $scope.sharedRaces = [];
     $scope.comparisonStats = {};
+
+    // A best age grade opens the result it came from; with no result id on
+    // file it falls back to the race, as it used to
+    $scope.openBestAgeGrade = function(resultId, race) {
+        if (resultId) {
+            $state.go('/results/result', { resultId: resultId });
+        } else if (race && $scope.showRaceModal) {
+            $scope.showRaceModal(race);
+        }
+    };
     $scope.headToHeadRecord = { member1Wins: 0, member2Wins: 0, ties: 0 };
 
     // Mode variables
@@ -281,10 +291,8 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewMemberHeadToHead', {
-                category: 'Member',
-                label: 'viewing member head-to-head tab ' + currentMember.firstname + ' ' + currentMember.lastname
-            });
+            // No names: the page's URL and title already say who
+            Analytics.event('head_to_head', { kind: 'member_tab' });
 
         } catch (error) {
             console.error('Error loading member head-to-head data:', error);
@@ -366,10 +374,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 $scope.$apply();
             }
 
-            $analytics.eventTrack('viewHeadToHead', {
-                category: 'Member',
-                label: 'viewing head-to-head tab ' + member1.firstname + ' ' + member1.lastname + ' vs ' + member2.firstname + ' ' + member2.lastname
-            });
+            Analytics.event('head_to_head', { kind: 'pair' });
 
         } catch (error) {
             console.error('Error loading head-to-head data:', error);
@@ -431,10 +436,11 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             top3Finishes: 0,
             bestAgeGrade: 0,
             bestAgeGradeRace: null,
+            bestAgeGradeResultId: null,
             avgAgeGrade: 0,
             totalMiles: 0,
-            uniqueLocations: new Set(),
             uniqueStates: new Set(),
+            uniqueOtherCountries: new Set(),
             uniqueCountries: new Set(),
             raceTypeBreakdown: {},
             locationBreakdown: {}
@@ -449,11 +455,18 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
             const raceYear = new Date(result.race.racedate).getUTCFullYear();
             years.add(raceYear);
 
-            // Track locations
+            // Places raced: US states plus non-US countries, matching the
+            // "Most Traveled Runners" definition in StatsService. A race abroad
+            // has no state, and adding '' for it used to inflate the state
+            // count by one for anyone who had raced outside the US.
             if (result.race.location) {
-                const locationKey = result.race.location.country + (result.race.location.state ? ' - ' + result.race.location.state : '');
-                stats.uniqueLocations.add(locationKey);
-                stats.uniqueStates.add(result.race.location.state || '');
+                if (result.race.location.country === 'USA') {
+                    if (result.race.location.state) {
+                        stats.uniqueStates.add(result.race.location.state);
+                    }
+                } else if (result.race.location.country) {
+                    stats.uniqueOtherCountries.add(result.race.location.country);
+                }
                 stats.uniqueCountries.add(result.race.location.country);
             }
 
@@ -491,6 +504,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                 if (result.agegrade > stats.bestAgeGrade) {
                     stats.bestAgeGrade = result.agegrade;
                     stats.bestAgeGradeRace = result.race;
+                    stats.bestAgeGradeResultId = result._id;
                 }
             }
         });
@@ -499,9 +513,10 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
         stats.yearsRacing = years.size;
         stats.avgRacesPerYear = results.length / years.size;
         stats.avgAgeGrade = ageGradeCount > 0 ? totalAgeGrade / ageGradeCount : 0;
-        stats.uniqueLocations = stats.uniqueLocations.size;
         stats.uniqueStates = stats.uniqueStates.size;
+        stats.uniqueOtherCountries = stats.uniqueOtherCountries.size;
         stats.uniqueCountries = stats.uniqueCountries.size;
+        stats.uniqueLocations = stats.uniqueStates + stats.uniqueOtherCountries;
 
         return stats;
     };
@@ -874,7 +889,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
 
     $scope.goToResultsWithQuery = function (query) {
         if (query && (query.members || query.distance || query.year)) {
-            $state.go('/results', { search: JSON.stringify(query) });
+            AdvancedFiltersService.goToRaceList($state, query);
         }
     };
 

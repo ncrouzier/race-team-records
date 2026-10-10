@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', '$analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', function ($scope, $location, $timeout, $state, $stateParams, $http, $analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig) {
+angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$location', '$timeout', '$state', '$stateParams', '$http', 'Analytics', 'AuthService', 'MembersService', 'ResultsService', 'dialogs', '$filter', 'localStorageService', 'UtilsService', 'TeamRequirementsConfig', 'AdvancedFiltersService', function ($scope, $location, $timeout, $state, $stateParams, $http, Analytics, AuthService, MembersService, ResultsService, dialogs, $filter, localStorageService, UtilsService, TeamRequirementsConfig, AdvancedFiltersService) {
 
     $scope.authService = AuthService;
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
@@ -251,10 +251,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             // Navigate to member detail page (bio tab by default)
             $state.go('/members/member/bio', { member: $scope.currentMember.username });
 
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
-            });
         });
         if (!$scope.$$phase) {
             $scope.$apply();
@@ -334,10 +330,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
             if (!$scope.$$phase) {
                 $scope.$apply();
             }
-            $analytics.eventTrack('viewMember', {
-                category: 'Member',
-                label: 'viewing member ' + $scope.currentMember.firstname + ' ' + $scope.currentMember.lastname
-            });
         });
     };
 
@@ -551,6 +543,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     };
 
+    // Clicking anywhere on a result row opens that result's own page; the
+    // race name inside it still goes to the race, so it stops the click from
+    // reaching here.
+    $scope.goToResult = function (result) {
+        if (result && result._id) {
+            $state.go('/results/result', { resultId: result._id });
+        }
+    };
+
     $scope.showResultDetailsModal = function (result) {
         ResultsService.showResultDetailsModal(result).then(function (result) { });
     };
@@ -567,8 +568,7 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
         // Only navigate if we have valid parameters
         if (Object.keys(cleanedParams).length > 0) {
-            var searchQuery = JSON.stringify(cleanedParams);
-            $state.go('/results', { search: searchQuery });
+            AdvancedFiltersService.goToRaceList($state, cleanedParams);
         }
     };
 

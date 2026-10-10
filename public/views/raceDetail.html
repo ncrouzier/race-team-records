@@ -1,0 +1,301 @@
+<div class="jumbotron race-detail-page">
+
+    <div ng-if="loading" class="rd-loading">
+        <i class="fa fa-spinner fa-spin"></i> Loading race...
+    </div>
+
+    <div ng-if="!loading && notFound" class="rd-empty">
+        <h3>Race not found</h3>
+        <p>This race may have been removed.</p>
+        <button class="btn btn-primary" ng-click="goToResults()">Back to results</button>
+    </div>
+
+    <div ng-if="!loading && !notFound">
+
+        <!-- Name, meta and the day's figures are one block, with the race
+             name carrying it -->
+        <div class="rd-hero rd-hero-race">
+            <div class="rd-hero-head">
+
+            <h2 class="rd-racename">
+                {{raceinfo.racename}}
+                <race-icon race="raceinfo"></race-icon>
+                <button ng-if="user.role === 'admin'" class="btn btn-xs btn-default rd-edit-btn"
+                    ng-click="editRace()" uib-tooltip="Edit race details" tooltip-placement="top">
+                    <i class="fa fa-pencil"></i>
+                </button>
+                <button ng-if="user.role === 'admin' && raceinfo.results.length" class="btn btn-xs btn-default rd-edit-btn"
+                    ng-click="addResult()" uib-tooltip="Add a result to this race" tooltip-placement="top">
+                    <i class="fa fa-plus"></i>
+                </button>
+            </h2>
+
+            <div class="rd-racemeta">
+                <span class="rd-meta-item">
+                    <i class="fa fa-calendar"></i> {{raceinfo.racedate | date:'longDate':'UTC'}}
+                </span>
+                <span class="rd-meta-item">
+                    <i class="fa fa-map-marker"></i>
+                    <span ng-if="raceinfo.location.state !== null">
+                        {{raceinfo.location.state}}
+                        <img ng-if="getStateFlag(raceinfo.location.state)"
+                            ng-src="{{getStateFlag(raceinfo.location.state)}}" alt="{{raceinfo.location.state}}"
+                            class="location-flag" onerror="this.style.display='none'">
+                    </span>
+                    <span ng-if="raceinfo.location.state === null">
+                        {{raceinfo.location.country}}
+                        <span ng-if="getCountryFlag(raceinfo.location.country)" class="location-flag-emoji">
+                            {{getCountryFlag(raceinfo.location.country)}}
+                        </span>
+                    </span>
+                </span>
+                <span class="rd-meta-item" ng-if="!raceinfo.isMultisport">
+                    <i class="fa fa-road"></i>
+                    <span ng-if="raceinfo.racetype.isVariable">{{raceinfo.distanceName}}</span>
+                    <span ng-if="!raceinfo.racetype.isVariable">{{raceinfo.racetype.name}}</span>
+                    <span ng-class="getSurfaceClass(raceinfo.racetype.surface)">({{raceinfo.racetype.surface}})</span>
+                </span>
+                <span class="rd-meta-item" ng-if="raceinfo.isMultisport">
+                    <i class="fa fa-road"></i> Multiple-sport event
+                    <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
+                </span>
+                <!-- One album is a plain link; several share one link that opens a list -->
+                <a class="rd-meta-item rd-photo-link" ng-if="getPhotoLinks().length === 1"
+                    ng-href="{{getPhotoLinks()[0].url}}" target="_blank" rel="noopener">
+                    <i class="fa fa-camera"></i> <span class="rd-photo-text">{{getPhotoLinks()[0].label || 'Photos'}}</span>
+                </a>
+                <span class="rd-meta-item" ng-if="getPhotoLinks().length > 1" uib-dropdown dropdown-append-to-body>
+                    <a class="rd-photo-link hoverhand" uib-dropdown-toggle>
+                        <i class="fa fa-camera"></i> <span class="rd-photo-text">Photos ({{getPhotoLinks().length}})</span>
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" uib-dropdown-menu>
+                        <li ng-repeat="link in getPhotoLinks()">
+                            <a ng-href="{{link.url}}" target="_blank" rel="noopener">
+                                {{link.label || 'Album ' + ($index + 1)}}
+                            </a>
+                        </li>
+                    </ul>
+                </span>
+            </div>
+            </div>
+
+            <div class="rd-hero-figures">
+                <div class="rd-figure">
+                    <div class="rd-figure-value">{{raceinfo.results.length}}</div>
+                    <div class="rd-figure-label">racer<span ng-if="raceinfo.results.length !== 1">s</span></div>
+                </div>
+                <div class="rd-figure" ng-if="fastestMaleResult">
+                    <div class="rd-figure-value">{{fastestMaleResult.time | secondsToTimeString}}</div>
+                    <div class="rd-figure-label">fastest man</div>
+                    <div class="rd-figure-detail">
+                        {{fastestMaleResult.members[0].firstname}} {{fastestMaleResult.members[0].lastname}}
+                    </div>
+                </div>
+                <div class="rd-figure" ng-if="fastestFemaleResult">
+                    <div class="rd-figure-value">{{fastestFemaleResult.time | secondsToTimeString}}</div>
+                    <div class="rd-figure-label">fastest woman</div>
+                    <div class="rd-figure-detail">
+                        {{fastestFemaleResult.members[0].firstname}} {{fastestFemaleResult.members[0].lastname}}
+                    </div>
+                </div>
+                <div class="rd-figure" ng-if="bestAgeGradeResult">
+                    <div class="rd-figure-value">{{bestAgeGradeResult.agegrade | number:1}}%</div>
+                    <div class="rd-figure-label">best age grade</div>
+                    <div class="rd-figure-detail">
+                        {{bestAgeGradeResult.members[0].firstname}} {{bestAgeGradeResult.members[0].lastname}}
+                    </div>
+                </div>
+                <div class="rd-figure" ng-if="avg">
+                    <div class="rd-figure-value">{{avg | secondsToTimeString}}</div>
+                    <div class="rd-figure-label">average time</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- What the team took out of this race -->
+        <div class="rd-highlights" ng-if="hasHighlights()">
+            <span class="rd-highlight rd-highlight-gold" ng-if="highlights.overallPodiums">
+                <i class="fa fa-trophy"></i>
+                {{highlights.overallPodiums}} overall podium<span
+                    ng-if="highlights.overallPodiums !== 1">s</span>
+            </span>
+            <span class="rd-highlight rd-highlight-gold" ng-if="highlights.genderPodiums">
+                <i class="fa fa-trophy"></i>
+                {{highlights.genderPodiums}} gender podium<span ng-if="highlights.genderPodiums !== 1">s</span>
+            </span>
+            <span class="rd-highlight" ng-if="highlights.agePodiums">
+                <i class="fa fa-star"></i>
+                {{highlights.agePodiums}} age-group podium<span ng-if="highlights.agePodiums !== 1">s</span>
+            </span>
+            <span class="rd-highlight" ng-if="highlights.topTenPercent">
+                <i class="fa fa-bolt"></i>
+                {{highlights.topTenPercent}} in the top 10% of the field
+                <small>of {{highlights.rankedCount}} ranked</small>
+            </span>
+            <span class="rd-highlight rd-highlight-pb" ng-if="highlights.personalBests">
+                🧨 {{highlights.personalBests}} personal best<span ng-if="highlights.personalBests !== 1">s</span>
+            </span>
+            <span class="rd-highlight rd-highlight-record" ng-if="highlights.teamRecords">
+                🔥 {{highlights.teamRecords}} team record<span ng-if="highlights.teamRecords !== 1">s</span>
+            </span>
+        </div>
+
+        <!-- Team results -->
+        <div class="panel panel-default rd-panel">
+            <div class="panel-heading rd-chart-heading">
+                <span>
+                    Team results
+                    <small>— {{getFilteredResults().length}} of {{raceinfo.results.length}}</small>
+                </span>
+                <span class="btn-group btn-group-xs rd-scope-toggle">
+                    <button type="button" class="btn btn-default" ng-class="{active: !genderFilter}"
+                        ng-click="setGenderFilter(null)">
+                        <i class="fa fa-users"></i> ALL MEMBERS
+                    </button>
+                    <button type="button" class="btn btn-default" ng-class="{active: genderFilter === 'Female'}"
+                        ng-click="setGenderFilter('Female')" uib-tooltip="Here for the women's race"
+                        tooltip-placement="top" tooltip-append-to-body="true">
+                        <i class="fa fa-venus"></i> WOMEN ONLY
+                    </button>
+                </span>
+            </div>
+            <div class="panel-body rd-table-body">
+                <div ng-if="raceinfo.results.length === 0" class="rd-nodata">
+                    No team results recorded for this race.
+                </div>
+
+                <div class="table-responsive" ng-if="raceinfo.results.length > 0">
+                    <table class="table rd-results-table">
+                        <thead>
+                            <tr>
+                                <th>RACER</th>
+                                <th class="text-center">AGE</th>
+                                <th class="text-center">GENDER</th>
+                                <th class="text-center">OVERALL</th>
+                                <th class="text-center" ng-if="!raceinfo.isMultisport">
+                                    PACE
+                                    <i ng-if="raceinfo.results[0].agegrade" ng-click="sortBy('agegrade')"
+                                        title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
+                                </th>
+                                <th class="text-center" ng-if="raceinfo.isMultisport">LEGS</th>
+                                <th class="text-right">
+                                    <span class="hoverhand" ng-click="sortBy('time')" title="Sort by net time">NET
+                                        TIME</span>
+                                </th>
+                                <th ng-if="user.role === 'admin'"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="result in getFilteredResults()"
+                                ng-class="{'rd-my-result': isMyResult(result)}"
+                                ng-click="goToResult(result)" title="Open this result" class="rd-clickable-row">
+                                <td>
+                                    <result-members-names-full result="result"
+                                        race="raceinfo"></result-members-names-full>
+                                    <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
+                                    <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"
+                                        ng-if="result.comments" uib-tooltip-html="result.comments"></i>
+                                </td>
+                                <td class="text-center">
+                                    <span class="hoverhand" ng-if="result.ranking.agerank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="hoverhand" ng-if="result.ranking.genderrank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="hoverhand" ng-if="result.ranking.overallrank"
+                                        ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
+                                        ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"
+                                        uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
+                                        tooltip-append-to-body="true"></span>
+                                </td>
+                                <td class="text-center" ng-if="!raceinfo.isMultisport">
+                                    <!-- A tap on the pace (or a rank) shows its tooltip rather than
+                                         opening the result, which matters on a phone -->
+                                    <result-pace race="raceinfo" result="result"></result-pace>
+                                </td>
+                                <td class="text-center" ng-if="raceinfo.isMultisport">
+                                    <span class="hoverhandandunderline" title="View leg breakdown"
+                                        ng-click="$event.stopPropagation(); showResultDetailsModal(result)">View details</span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="resultTime">{{result.time | secondsToTimeString}}</span>
+                                    <a ng-if="result.resultlink" ng-href="{{result.resultlink}}" target="_blank"
+                                        ng-click="$event.stopPropagation()">
+                                        <i class="fa fa-link hoverhand" title="View official result"></i>
+                                    </a>
+                                </td>
+                                <td ng-if="user.role === 'admin'" class="text-right rd-admin-cell">
+                                    <button type="button" class="btn btn-xs btn-default"
+                                        ng-click="$event.stopPropagation(); editResult(result)" title="Edit result">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-default rd-delete-btn"
+                                        ng-click="$event.stopPropagation(); deleteResult(result)" title="Delete result">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Every team finish time on one axis -->
+        <div class="panel panel-default rd-panel" ng-if="raceinfo.results.length > 1">
+            <div class="panel-heading">
+                Finish times
+                <small>— one dot per racer; click a dot to open that result</small>
+            </div>
+            <div class="panel-body">
+                <div class="rd-strip-container">
+                    <canvas id="raceTimesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team members who volunteered at this race (logged-in users only) -->
+        <div class="panel panel-default rd-panel" ng-if="volunteerJobs.length > 0">
+            <div class="panel-heading">
+                Volunteers
+                <small>— {{volunteerCount()}} team member<span ng-if="volunteerCount() !== 1">s</span>
+                    helped at this race</small>
+            </div>
+            <div class="panel-body rd-table-body">
+                <table class="table rd-results-table">
+                    <thead>
+                        <tr>
+                            <th>VOLUNTEER</th>
+                            <th>JOB</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="job in volunteerJobs">
+                            <td>
+                                <a ui-sref="/members/member({ member: job.member.username })">{{job.member.firstname}}
+                                    {{job.member.lastname}}</a>
+                            </td>
+                            <td>{{job.description}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- What the team earned here, in the home feed's language. Last,
+             because it is the longest block and the least urgent: a race page
+             is read for its results. -->
+        <achievement-feed entries="achievementEntries" heading="Achievements"></achievement-feed>
+
+    </div>
+</div>

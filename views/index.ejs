@@ -4,7 +4,7 @@
 <head>
 	<base href="/">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>MCRRC Racing Team</title>
+	<title><%= ogTitle || 'MCRRC Racing Team' %></title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,16 +24,21 @@
 	     (public/js/app.js), hence send_page_view: false; events go through
 	     the Analytics service; user_role is set there too. -->
 	<%- include('partials/ga', { gaConfig: { send_page_view: false } }) %>
-	<meta property="og:title" content="MCRRC Racing Team" />
+	<!-- Per-page where there is one (a race, a result, a member): set
+	     server-side in app/routes.js's catch-all route, before this renders —
+	     a link-preview crawler (iMessage, Slack, Facebook...) reads these tags
+	     without ever running the client JS that drives the tab title. -->
+	<meta property="og:title" content="<%= ogTitle %>" />
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content="http://raceteam.mcrrc.org" />
-	<meta property="og:image" content="http://raceteam.mcrrc.org/images/ogimage.jpg" />
-	<meta property="og:description" content="MCRRC Racing Team Site: Members bios, race results and records." />
-	<link rel="image_src" href="http://mcrrc-ncrouzier.rhcloud.com/images/topcover2.jpg" /><!--formatted-->
-	<link rel="image_src" href="https://www.mcrrc.org/wp-content/uploads/2015/08/MontgomeryCountyWebReady-post3.png" />
-	<!--formatted-->
-	<meta name="description"
-		content="MCRRC Racing Team Site: Members bios and race results. http://raceteam.mcrrc.org" /><!--formatted-->
+	<meta property="og:url" content="<%= ogUrl %>" />
+	<meta property="og:image" content="<%= ogImage %>" />
+	<meta property="og:description" content="<%= ogDescription %>" />
+	<meta name="description" content="<%= ogDescription %>" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="<%= ogTitle %>" />
+	<meta name="twitter:description" content="<%= ogDescription %>" />
+	<meta name="twitter:image" content="<%= ogImage %>" />
+	<link rel="image_src" href="<%= ogImage %>" />
 </head>
 
 <body ng-controller="MainController">

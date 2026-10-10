@@ -6577,17 +6577,117 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    app.get('*', function (req, res) {
+    // ---- Social sharing: og:/twitter: meta tags per page -------------------
+    // The SPA is a single static index.ejs for every URL; Angular fills the
+    // page in afterwards. A link-preview crawler (iMessage, Slack, Facebook,
+    // Discord...) never runs that JavaScript — it reads whatever <meta> tags
+    // are already in the HTML this route sends. So unlike the browser tab
+    // title (PageTitleService, client-side), the title/description a shared
+    // link shows has to be decided here, before res.render.
+    //
+    // Mirrors PageTitleService's per-page titles, for the three kinds of page
+    // worth a specific preview: a race, a result, a member. Every other URL
+    // (lists, stats, tools...) keeps the site's default description below —
+    // one lightweight, indexed lookup per request, and never lets a lookup
+    // failure (bad id, member deleted, DB hiccup) break the page render.
+    const DEFAULT_OG_TITLE = 'MCRRC Racing Team';
+    const DEFAULT_OG_DESCRIPTION = 'MCRRC Racing Team Site: Members bios, race results and records.';
+
+    function truncate(text, max) {
+        text = (text || '').trim();
+        return text.length > max ? text.slice(0, max - 1).trim() + '…' : text;
+    }
+
+    // Race/result times are stored in centiseconds; H:MM:SS or M:SS, dropping
+    // the centiseconds — plenty of precision for a social preview
+    function formatRaceTime(centiseconds) {
+        if (!centiseconds && centiseconds !== 0) return null;
+        var totalSeconds = Math.round(centiseconds / 100);
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+        var pad = function (n) { return n < 10 ? '0' + n : String(n); };
+        return hours > 0 ? (hours + ':' + pad(minutes) + ':' + pad(seconds)) : (minutes + ':' + pad(seconds));
+    }
+
+    function memberFullName(member) {
+        return (member.firstname || '') + ' ' + (member.lastname || '');
+    }
+
+    // "Nicolas Crouzier" or "Nicolas Crouzier, Lisa Levin" — same join as the
+    // client's membersNamesFilter
+    function membersNames(members) {
+        return (members || []).map(memberFullName).join(', ');
+    }
+
+    async function socialMetaForPath(path) {
+        var m;
+
+        if ((m = path.match(/^\/races\/([0-9a-fA-F]{24})/))) {
+            const Race = require('./models/race');
+            const race = await Race.findById(m[1]).select('racename racedate location').lean().catch(function () { return null; });
+            if (!race) return null;
+            const year = race.racedate ? new Date(race.racedate).getUTCFullYear() : '';
+            const place = race.location && (race.location.state || race.location.country);
+            return {
+                ogTitle: race.racename + (year ? ' (' + year + ')' : ''),
+                ogDescription: truncate(
+                    race.racename + (place ? ' — ' + place : '') +
+                    '. See the MCRRC Racing Team\'s results and achievements from this race.', 200)
+            };
+        }
+
+        if ((m = path.match(/^\/results\/([0-9a-fA-F]{24})/))) {
+            const Result = require('./models/result');
+            const result = await Result.findById(m[1])
+                .select('members race.racename race.racedate time agegrade').lean().catch(function () { return null; });
+            if (!result || !result.race) return null;
+            const year = result.race.racedate ? new Date(result.race.racedate).getUTCFullYear() : '';
+            const names = membersNames(result.members);
+            const time = formatRaceTime(result.time);
+            var description = names ? names + "'s result at " + result.race.racename : result.race.racename;
+            if (time) description += ': ' + time;
+            description += '. See more MCRRC Racing Team results.';
+            return {
+                ogTitle: (names || 'Result') + ' – ' + result.race.racename + (year ? ' (' + year + ')' : ''),
+                ogDescription: truncate(description, 200)
+            };
+        }
+
+        // Not /members/head-to-head/... (two runners compared, a different
+        // page shape) — only a single member's own pages
+        if ((m = path.match(/^\/members\/([^\/]+)/)) && m[1] !== 'head-to-head') {
+            const Member = require('./models/member');
+            const member = await Member.findOne({ username: m[1] }).select('firstname lastname bio').lean().catch(function () { return null; });
+            if (!member) return null;
+            const name = memberFullName(member).trim();
+            const bioText = truncate((member.bio || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '), 160);
+            return {
+                ogTitle: name,
+                ogDescription: truncate(name + ' — MCRRC Racing Team. ' +
+                    (bioText || 'See race results, stats and achievements.'), 200)
+            };
+        }
+
+        return null;
+    }
+
+    app.get('*', async function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
-        // console.log('Request URL:', req.url);
-        // console.log('Request headers:', req.headers.host);
-        // console.log('NODE_ENV:', process.env.NODE_ENV);
+        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+        // Never let a bad id or a DB hiccup break the page itself — the site's
+        // default title/description still render
+        const social = await socialMetaForPath(req.path).catch(function () { return null; });
         res.render('index.ejs', {
             user: req.user,
             scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js',
             // Baked into the image at build time; 'dev' when running locally.
             appVersion: process.env.APP_VERSION || 'dev',
-            buildDate: process.env.BUILD_DATE || ''
+            buildDate: process.env.BUILD_DATE || '',
+            ogTitle: (social && social.ogTitle) || DEFAULT_OG_TITLE,
+            ogDescription: (social && social.ogDescription) || DEFAULT_OG_DESCRIPTION,
+            ogUrl: siteUrl + req.originalUrl,
+            ogImage: siteUrl + '/images/ogimage.jpg'
         });
     });
 

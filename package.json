@@ -18,6 +18,7 @@
     "dev": "npm run build:css && npm run build:js:dev && npm run copy:assets && run-p server watch",
     "prod": "npm run build && run-p server:prod watch",
     "migrate:cross-country-to-trail": "node migrations/migrate-cross-country-to-trail.js",
+    "migrate:race-series": "node migrations/backfill-race-series.js",
     "test": "jest"
   },
   "name": "mcrrc-race-team-records",

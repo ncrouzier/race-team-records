@@ -1,0 +1,258 @@
+<div class="jumbotron race-detail-page series-page">
+
+    <div ng-if="loading" class="rd-loading"><i class="fa fa-spinner fa-spin"></i> Loading series...</div>
+
+    <div ng-if="!loading && (notFound || loadError)" class="rd-empty">
+        <h3>{{ notFound ? 'Series not found' : 'The series could not be loaded' }}</h3>
+        <p><a ui-sref="/series">See all race series</a></p>
+    </div>
+
+    <div ng-if="!loading && series">
+
+        <!-- Name, meta and the series' figures -->
+        <div class="rd-hero rd-hero-race">
+            <div class="rd-hero-head">
+                <div class="rd-title-row">
+                    <h2 class="rd-racename" ng-class="{'rd-title-long': series.name.length > 40}">{{ series.name }}
+                        <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="series.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                    </h2>
+                    <div class="rd-hero-actions" ng-if="user.role === 'admin'">
+                        <a class="btn btn-xs btn-default rd-edit-btn"
+                            ui-sref="/race-series-detail({seriesId: series._id})" uib-tooltip="Edit this series" tooltip-placement="top" tooltip-append-to-body="true">
+                            <i class="fa fa-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="rd-racemeta">
+                    <span class="rd-meta-item"><a ui-sref="/series"><i class="fa fa-calendar-check-o"></i> Race series</a></span>
+                    <span class="rd-meta-item"><i class="fa fa-calendar"></i> {{ years() }}</span>
+                    <span class="rd-meta-item" ng-if="series.location">
+                        <i class="fa fa-map-marker"></i> {{ series.location }}
+                        <img ng-if="getStateFlag(series.location)" ng-src="{{ getStateFlag(series.location) }}"
+                            alt="{{ series.location }}" class="location-flag" onerror="this.style.display='none'">
+                    </span>
+                    <span class="rd-meta-item" ng-if="series.racetype">
+                        <i class="fa fa-road"></i> {{ series.racetype.name }}
+                        <span ng-if="series.racetype.surface">({{ series.racetype.surface }})</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="rd-hero-figures">
+                <div class="rd-figure">
+                    <div class="rd-figure-value">{{ stats.summary.editions }}</div>
+                    <div class="rd-figure-label">{{ editionWord(stats.summary.editions) }}</div>
+                </div>
+                <div class="rd-figure">
+                    <div class="rd-figure-value">{{ stats.summary.results }}</div>
+                    <div class="rd-figure-label">team results</div>
+                    <div class="rd-figure-detail">by {{ stats.summary.runners }} runners</div>
+                </div>
+                <div class="rd-figure" ng-if="stats.bests.men.length">
+                    <div class="rd-figure-value">{{ stats.bests.men[0].time | secondsToTimeString }}</div>
+                    <div class="rd-figure-label">fastest man</div>
+                    <div class="rd-figure-detail">{{ stats.bests.men[0].member.firstname }} {{ stats.bests.men[0].member.lastname }}, {{ stats.bests.men[0].date | date:'y':'UTC' }}</div>
+                </div>
+                <div class="rd-figure" ng-if="stats.bests.women.length">
+                    <div class="rd-figure-value">{{ stats.bests.women[0].time | secondsToTimeString }}</div>
+                    <div class="rd-figure-label">fastest woman</div>
+                    <div class="rd-figure-detail">{{ stats.bests.women[0].member.firstname }} {{ stats.bests.women[0].member.lastname }}, {{ stats.bests.women[0].date | date:'y':'UTC' }}</div>
+                </div>
+                <div class="rd-figure" ng-if="stats.bests.teams.length && !stats.bests.men.length && !stats.bests.women.length"
+                    uib-tooltip="{{ names(stats.bests.teams[0].members) }}" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                    <div class="rd-figure-value">{{ stats.bests.teams[0].time | secondsToTimeString }}</div>
+                    <div class="rd-figure-label">fastest team</div>
+                    <div class="rd-figure-detail">{{ stats.bests.teams[0].date | date:'y':'UTC' }}, {{ stats.bests.teams[0].members.length <= 2 ? names(stats.bests.teams[0].members) : stats.bests.teams[0].members.length + ' runners' }}</div>
+                </div>
+                <div class="rd-figure" ng-if="stats.summary.genderPodiums">
+                    <div class="rd-figure-value">{{ stats.summary.genderPodiums }}</div>
+                    <div class="rd-figure-label">gender podiums</div>
+                </div>
+                <!-- How the course rates: members' age grade here against their usual,
+                     at the same distance and surface first, then on the same surface -->
+                <div class="rd-figure" ng-if="stats.course" uib-tooltip="{{ courseTip() }}"
+                    tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" tooltip-class="tooltip-wrap">
+                    <div class="rd-figure-value">{{ signed((stats.course.sameDistance || stats.course.sameSurface).diff) }}</div>
+                    <div class="rd-figure-label">age grade vs usual <i class="fa fa-question-circle"></i></div>
+                    <div class="rd-figure-detail" ng-if="stats.course.sameDistance">
+                        at {{ series.racetype.name }}<span ng-if="stats.course.sameSurface">;
+                            {{ signed(stats.course.sameSurface.diff) }} vs any {{ series.racetype.surface }} race</span>
+                    </div>
+                    <div class="rd-figure-detail" ng-if="!stats.course.sameDistance">vs any {{ series.racetype.surface }} race</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editions -->
+        <div class="panel panel-default rd-panel">
+            <div class="panel-heading">Editions</div>
+            <div class="panel-body rd-table-body">
+                <div class="table-responsive">
+                    <table class="table rd-results-table">
+                        <thead>
+                            <tr>
+                                <th>DATE</th>
+                                <th>RACE</th>
+                                <th class="text-center">TEAM RESULTS</th>
+                                <th>FASTEST</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr dir-paginate="e in stats.editions | itemsPerPage: 20" pagination-id="editions">
+                                <td>{{ e.race.racedate | date:'MMM d, y':'UTC' }}</td>
+                                <td>
+                                    <a ui-sref="/races({raceId: e.race._id})">{{ e.race.racename }}</a>
+                                    <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="e.race.clubRace && !series.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                                    <span class="sd-aside" ng-if="e.offDistance"
+                                        uib-tooltip="Run at another distance: not counted for times"
+                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ e.race.racetype.isVariable && e.race.distanceName ? e.race.distanceName : e.race.racetype.name }})</span>
+                                </td>
+                                <td class="text-center">{{ e.results }}</td>
+                                <td>
+                                    <span ng-if="e.fastest">{{ e.fastest.time | secondsToTimeString }}
+                                        <span class="text-muted" ng-if="!e.fastest.team">{{ e.fastest.members[0].firstname }} {{ e.fastest.members[0].lastname }}</span>
+                                        <span class="text-muted" ng-if="e.fastest.team">{{ names(e.fastest.members) }}</span></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <dir-pagination-controls pagination-id="editions"></dir-pagination-controls>
+            </div>
+        </div>
+
+        <!-- Best performances -->
+        <div class="row">
+            <div ng-class="bestColumn" ng-repeat="list in bestLists">
+                <div class="panel panel-default rd-panel">
+                    <div class="panel-heading">{{ list.title }}</div>
+                    <div class="panel-body rd-table-body">
+                        <p class="rd-nodata" ng-if="!list.rows.length">No results yet.</p>
+                        <table class="table sd-best-table" ng-if="list.rows.length">
+                            <tbody>
+                                <tr ng-repeat="b in list.rows">
+                                    <td class="sd-rank">{{ $index + 1 }}</td>
+                                    <td ng-if="!list.teams"><a ui-sref="/members/member({member: b.member.username})">{{ b.member.firstname }} {{ b.member.lastname }}</a></td>
+                                    <td ng-if="list.teams" class="sd-team-names">
+                                        <span ng-repeat="t in b.members"><a ui-sref="/members/member({member: t.username})">{{ t.firstname }} {{ t.lastname }}</a>{{ $last ? '' : ', ' }}</span>
+                                    </td>
+                                    <td class="text-right sd-value">
+                                        <a ui-sref="/results/result({resultId: b.resultId})" title="Open this result">
+                                            <span ng-if="list.show === 'time'">{{ b.time | secondsToTimeString }}</span>
+                                            <span ng-if="list.show === 'agegrade'">{{ b.agegrade | number:2 }}%</span>
+                                        </a>
+                                    </td>
+                                    <td class="text-muted text-right">{{ b.date | date:'y':'UTC' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="text-muted sd-note" ng-if="hasOffDistance()">
+            Editions run at another distance count for turnout<span ng-if="stats.summary.hasAgeGrades"> and age grade</span>, not for times.
+        </p>
+
+        <!-- Members -->
+        <div class="panel panel-default rd-panel">
+            <div class="panel-heading rd-chart-heading">
+                <span>Members <small>— {{ stats.members.length }} who ran it</small></span>
+                <input class="form-control input-sm sd-member-search" ng-model="memberFilter.text" placeholder="Find a member">
+            </div>
+            <div class="panel-body rd-table-body">
+                <div class="table-responsive">
+                    <table class="table rd-results-table sd-members-table">
+                        <thead>
+                            <tr>
+                                <!-- Click a heading to sort; again to reverse -->
+                                <th class="hoverhand sd-sortable" ng-click="sortMembers('name')">MEMBER <i class="fa" ng-class="memberSortIcon('name')"></i></th>
+                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('count')">EDITIONS <i class="fa" ng-class="memberSortIcon('count')"></i></th>
+                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('years')">YEARS <i class="fa" ng-class="memberSortIcon('years')"></i></th>
+                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('best')">BEST TIME <i class="fa" ng-class="memberSortIcon('best')"></i></th>
+                                <th ng-if="stats.summary.hasAgeGrades" class="hoverhand sd-sortable text-center" ng-click="sortMembers('ageGrade')">BEST AGE GRADE <i class="fa" ng-class="memberSortIcon('ageGrade')"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody dir-paginate="m in memberRows | itemsPerPage: 25" current-page="memberPage.current" pagination-id="members">
+                            <tr class="hoverhand" ng-click="toggle(m)">
+                                <td>
+                                    <i class="fa fa-fw text-muted" ng-class="open[m.member._id] ? 'fa-caret-down' : 'fa-caret-right'"></i>
+                                    <a ui-sref="/members/member({member: m.member.username})" ng-click="$event.stopPropagation()">{{ m.member.firstname }} {{ m.member.lastname }}</a>
+                                </td>
+                                <td class="text-center">{{ m.count }}</td>
+                                <td class="text-center">{{ m.firstYear === m.lastYear ? m.firstYear : m.firstYear + '–' + m.lastYear }}</td>
+                                <td class="text-center">{{ m.best ? (m.best.time | secondsToTimeString) : '—' }}<span class="sd-aside" ng-if="m.best.team && !stats.summary.teamSeries"
+                                        uib-tooltip="With a team, such as a relay" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">(team)</span></td>
+                                <td class="text-center" ng-if="stats.summary.hasAgeGrades">{{ m.bestAgeGrade ? (m.bestAgeGrade | number:2) + '%' : '—' }}</td>
+                            </tr>
+                            <!-- Every time this member ran it, newest first -->
+                            <tr class="sd-history" ng-if="open[m.member._id]">
+                                <td colspan="{{ stats.summary.hasAgeGrades ? 5 : 4 }}">
+                                    <table class="table table-condensed sd-history-table">
+                                        <thead>
+                                            <tr>
+                                                <th>DATE</th>
+                                                <th>EDITION</th>
+                                                <th class="text-right">TIME</th>
+                                                <th class="text-right" title="Behind this member's best time here">VS BEST</th>
+                                                <th class="text-right">PACE</th>
+                                                <th class="text-right" title="Age grade" ng-if="stats.summary.hasAgeGrades">AG</th>
+                                                <th class="text-right" title="Overall place">PLACE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="h in m.history">
+                                                <td class="sd-nowrap">{{ h.date | date:'MMM d, y':'UTC' }}</td>
+                                                <td>
+                                                    <a ui-sref="/results/result({resultId: h.resultId})" title="Open this result">{{ h.racename }}</a>
+                                                    <!-- In a team series every row is a team's: say who with.
+                                                         Elsewhere, flag the odd relay. -->
+                                                    <span class="sd-aside" ng-if="h.team && stats.summary.teamSeries && h.teammates.length"
+                                                        uib-tooltip="Club members on the same team" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">(with {{ names(h.teammates) }})</span>
+                                                    <span class="sd-aside" ng-if="h.team && !stats.summary.teamSeries"
+                                                        uib-tooltip="A team result, such as a relay{{ h.teammates.length ? ', with ' + names(h.teammates) : '' }}"
+                                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">(team)</span>
+                                                    <span class="sd-aside" ng-if="h.runs"
+                                                        uib-tooltip="{{ otherRunsTip(h) }}" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ h.runs }} runs)</span>
+                                                    <span class="sd-aside" ng-if="h.offDistance"
+                                                        uib-tooltip="Run at another distance: not compared on time"
+                                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ h.distance }})</span>
+                                                </td>
+                                                <!-- Every value sits in the same box, so shading the best moves nothing -->
+                                                <td class="text-right sd-num sd-time">
+                                                    <span class="sd-val" ng-class="{'sd-val-best': h.bestTime}" ng-if="h.time > 0"
+                                                        uib-tooltip="Best time here" tooltip-enable="h.bestTime"
+                                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">{{ h.time | secondsToTimeString }}</span>
+                                                </td>
+                                                <td class="text-right sd-num text-muted">
+                                                    <span ng-if="h.behindBest > 0">+{{ h.behindBest | secondsToTimeString }}</span>
+                                                    <span ng-if="h.bestTime">best</span>
+                                                </td>
+                                                <td class="text-right sd-num">{{ paceText(h.pace) }}</td>
+                                                <td class="text-right sd-num" ng-if="stats.summary.hasAgeGrades">
+                                                    <span class="sd-val" ng-class="{'sd-val-best': h.bestAgeGrade}" ng-if="h.agegrade"
+                                                        uib-tooltip="Best age grade here" tooltip-enable="h.bestAgeGrade"
+                                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">{{ h.agegrade | number:2 }}%</span>
+                                                </td>
+                                                <td class="text-right sd-num">
+                                                    <span ng-if="h.place" uib-tooltip="{{ placeTip(h.place) }}" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                                                        <span ng-if="h.place.overallrank">{{ h.place.overallrank }}<small ng-if="h.place.overalltotal">/{{ h.place.overalltotal }}</small></span>
+                                                        <span ng-if="!h.place.overallrank && h.place.genderrank">{{ h.place.genderrank }}<small ng-if="h.place.gendertotal">/{{ h.place.gendertotal }}</small> <small>(gender)</small></span>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="sd-history-key">
+                                        <span class="sd-val sd-val-best">&nbsp;&nbsp;&nbsp;</span> best time<span ng-if="stats.summary.hasAgeGrades"> and best age grade</span> here
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <dir-pagination-controls pagination-id="members"></dir-pagination-controls>
+            </div>
+        </div>
+    </div>
+</div>

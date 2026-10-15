@@ -57,7 +57,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-bar-chart"></i> General Stats</h4>
+                        <h4>General Stats</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -111,7 +111,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-users"></i> Best Turnout</h4>
+                        <h4>Best Turnout</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -143,7 +143,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading most-races-heading">
-                        <h4><i class="fa fa-flag-checkered"></i> Most Races Completed</h4>
+                        <h4>Most Races Completed</h4>
                         <select class="form-control input-sm" ng-model="mostRacesFilter.type"
                             ng-change="refreshMostRaces()" title="Count only one kind of race (all surfaces)">
                             <option value="">All races</option>
@@ -180,7 +180,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-globe"></i> Most Traveled Runners</h4>
+                        <h4>Most Traveled Runners</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -213,7 +213,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-road"></i> Most Miles Raced</h4>
+                        <h4>Most Miles Raced</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -241,7 +241,7 @@
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-trophy"></i> Most Wins</h4>
+                        <h4>Most Wins</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -268,11 +268,14 @@
             </div>
         </div>
 
-        <div class="row">
+        <!-- From here on one wrapping row: panels shown for All Time only drop out
+             and the rest close up, with no empty half rows when a year is picked.
+             The series panels' controller is TeamSeriesStatsController (SeriesCtrl.js). -->
+        <div class="row stats-flow" ng-controller="TeamSeriesStatsController">
             <div class="col-md-6">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-star"></i> Best Age Grades</h4>
+                        <h4>Best Age Grades</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -304,7 +307,7 @@
             <div class="col-md-6" ng-if="miscStats.year === 'All Time'">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-calendar"></i> Most Consistent Racers</h4>
+                        <h4>Most Consistent Racers</h4>
                     </div>
                     <div class="panel-body" style="padding: 0;">
                         <ul class="list-group" style="margin: 0; border: none;">
@@ -327,13 +330,168 @@
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-6" ng-if="miscStats.year === 'All Time'">
+                <div class="panel panel-default">
+                    <div class="panel-heading most-races-heading">
+                        <h4>Most Loyal Racers
+                            <i class="fa fa-info-circle series-stats-info" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" tooltip-class="tooltip-wrap"
+                                uib-tooltip="The most editions of a single race, counting each member's most-run race."></i></h4>
+                        <span class="series-stats-toggle">
+                            <label class="checkbox-inline series-stats-filter"><input type="checkbox" ng-model="seriesFilter.loyaltyNoParkrun"> No parkruns</label>
+                        </span>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <p class="text-muted series-stats-note" ng-if="!loyaltyStats() && !seriesStatsError"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                        <p class="text-muted series-stats-note" ng-if="seriesStatsError">Could not load the race series stats.</p>
+                        <ul class="list-group" style="margin: 0; border: none;" ng-if="loyaltyStats()">
+                            <li class="list-group-item text-left" style="border: none;"
+                                ng-repeat="row in loyaltyStats().mostEditions track by $index"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && row.member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                <div class="row">
+                                    <div class="col-sm-8">
+                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: row.member.username })">{{row.member.firstname}} {{row.member.lastname}}</a></strong>
+                                        <br><small><a ui-sref="/series-detail({ seriesId: row.series._id })">{{row.series.name}}</a></small>
+                                    </div>
+                                    <div class="col-sm-4 text-right">
+                                        {{row.count}} editions
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6" ng-if="miscStats.year === 'All Time'">
+                <div class="panel panel-default">
+                    <div class="panel-heading most-races-heading">
+                        <h4>Fastest &amp; Toughest Courses
+                            <i class="fa fa-info-circle series-stats-info" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" tooltip-class="tooltip-wrap"
+                                uib-tooltip="Members' age grade at the race against their usual at the same distance and surface elsewhere. Races with at least 10 comparable results; results 20 or more points below a member's usual are left out (not raced)."></i></h4>
+                        <span class="series-stats-toggle">
+                            <button type="button" class="mcrrc-btn" ng-class="{'is-on': courseView === 'fastest'}"
+                                ng-click="setCourseView('fastest')">Fastest</button>
+                            <button type="button" class="mcrrc-btn" ng-class="{'is-on': courseView === 'toughest'}"
+                                ng-click="setCourseView('toughest')">Toughest</button>
+                            <label class="checkbox-inline series-stats-filter"><input type="checkbox" ng-model="seriesFilter.courseNoParkrun"> No parkruns</label>
+                        </span>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <p class="text-muted series-stats-note" ng-if="!courseStats() && !seriesStatsError"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                        <ul class="list-group" style="margin: 0; border: none;" ng-if="courseStats()">
+                            <li class="list-group-item text-left" style="border: none;"
+                                ng-repeat="row in (courseView === 'fastest' ? courseStats().fastestCourses : courseStats().toughestCourses) track by $index"
+                                ng-class="{hoverlistbg: hover}" ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                <div class="row">
+                                    <div class="col-sm-8">
+                                        <strong>{{$index + 1}}. <a ui-sref="/series-detail({ seriesId: row.series._id })">{{row.series.name}}</a></strong>
+                                        <br><small>{{row.results}} results</small>
+                                    </div>
+                                    <div class="col-sm-4 text-right"
+                                        uib-tooltip="{{ row.diff > 0 ? 'Members run better here than usual' : 'Members run worse here than usual' }}"
+                                        tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                                        {{signed(row.diff)}}
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6" ng-if="miscStats.year === 'All Time'">
+                <div class="panel panel-default">
+                    <div class="panel-heading most-races-heading">
+                        <h4>Team Best Times
+                            <i class="fa fa-info-circle series-stats-info" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" tooltip-class="tooltip-wrap"
+                                uib-tooltip="The fastest time by a team member at each race series, men and women apart, at its usual distance and from runners on their own. Members by the number of races they hold it at."></i></h4>
+                        <span class="series-stats-toggle">
+                            <button type="button" class="mcrrc-btn" ng-class="{'is-on': recordSex === 'all'}" ng-click="setRecordSex('all')">All</button>
+                            <button type="button" class="mcrrc-btn" ng-class="{'is-on': recordSex === 'men'}" ng-click="setRecordSex('men')">Men</button>
+                            <button type="button" class="mcrrc-btn" ng-class="{'is-on': recordSex === 'women'}" ng-click="setRecordSex('women')">Women</button>
+                            <label class="checkbox-inline series-stats-filter"><input type="checkbox" ng-model="seriesFilter.recordNoParkrun"> No parkruns</label>
+                        </span>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <p class="text-muted series-stats-note" ng-if="!recordStats() && !seriesStatsError"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                        <ul class="list-group" style="margin: 0; border: none;" ng-if="recordStats()">
+                            <li class="list-group-item text-left hoverhand" style="border: none;"
+                                ng-repeat="row in recordStats().recordHolders[recordSex] track by row.member._id" ng-click="toggleRecords(row)"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && row.member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                <div class="row">
+                                    <div class="col-sm-8">
+                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: row.member.username })" ng-click="$event.stopPropagation()">{{row.member.firstname}} {{row.member.lastname}}</a></strong>
+                                        <br><small ng-if="!openRecords[row.member._id]">{{ row.preview }}<span
+                                                ng-if="row.records.length > 3"> and {{row.records.length - 3}} more</span></small>
+                                    </div>
+                                    <div class="col-sm-4 text-right">{{row.count}} {{row.count === 1 ? 'race' : 'races'}}</div>
+                                </div>
+                                <!-- Every race this member holds the team's best time at -->
+                                <div class="best-times" ng-if="openRecords[row.member._id]" ng-click="$event.stopPropagation()">
+                                    <table class="table table-condensed">
+                                        <thead>
+                                            <tr><th>Race</th><th>Distance</th><th class="text-right">Time</th><th class="text-right">Year</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr ng-repeat="r in row.records track by $index">
+                                                <td><a ui-sref="/series-detail({ seriesId: r.series._id })">{{r.series.name}}</a></td>
+                                                <td class="text-muted">{{r.distance}}</td>
+                                                <td class="text-right best-times-time">
+                                                    <a ui-sref="/results/result({ resultId: r.resultId })" title="Open this result">{{r.time | secondsToTimeString}}</a>
+                                                </td>
+                                                <td class="text-right text-muted">{{r.year}}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading most-races-heading">
+                        <h4><img class="club-mark" src="/images/mcrrc_logo_256.png" alt=""> Club Race Participation
+                            <i class="fa fa-info-circle series-stats-info" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" tooltip-class="tooltip-wrap"
+                                uib-tooltip="Races run at MCRRC club races{{ miscStats.year !== 'All Time' ? ' in ' + miscStats.year : '' }}{{ club ? ': ' + club.clubRaces + ' club races, run by ' + club.runners + ' members' : '' }}. A relay counts for each of its runners."></i></h4>
+                    </div>
+                    <div class="panel-body" style="padding: 0;">
+                        <p class="text-muted series-stats-note" ng-if="!club && !clubError"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                        <p class="text-muted series-stats-note" ng-if="clubError">Could not load club race participation.</p>
+                        <p class="text-muted series-stats-note" ng-if="club && !club.members.length">No club race results for this period.</p>
+                        <ul class="list-group" style="margin: 0; border: none;" ng-if="club.members.length">
+                            <li class="list-group-item text-left" style="border: none;"
+                                ng-repeat="row in club.members track by row.member._id"
+                                ng-class="{hoverlistbg: hover, 'my-member-row': user.member.username && row.member.username === user.member.username}"
+                                ng-mouseenter="hover = true" ng-mouseleave="hover = false">
+                                <div class="row">
+                                    <div class="col-sm-8">
+                                        <strong>{{$index + 1}}. <a ui-sref="/members/member({ member: row.member.username })">{{row.member.firstname}} {{row.member.lastname}}</a></strong>
+                                    </div>
+                                    <!-- Their club race results, on Individual Results -->
+                                    <div class="col-sm-4 text-right">
+                                        <a class="hoverhandandunderline" ng-click="trackDrill('club_races')"
+                                            ui-sref="/individualresults({ runner: row.member.username, club: '1', year: miscStats.year !== 'All Time' ? miscStats.year : null })"
+                                            ui-sref-opts="{inherit: false}"
+                                            uib-tooltip="View these results for {{row.member.firstname}} {{row.member.lastname}}"
+                                            tooltip-placement="left" tooltip-append-to-body="true">{{row.races}} club {{row.races === 1 ? 'race' : 'races'}}</a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row" ng-if="milestones">
             <div class="col-md-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-tachometer"></i> Milestone Counters</h4>
+                        <h4>Milestone Counters</h4>
                     </div>
                     <div class="panel-body ms-panel">
 
@@ -386,7 +544,7 @@
             <div class="col-md-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h4><i class="fa fa-calendar-check-o"></i> Racing Calendar</h4>
+                        <h4>Racing Calendar</h4>
                     </div>
                     <div class="panel-body cal-panel"
                             ng-class="{'cal-highlight-gaps': raceCalendar.highlightMissing}">

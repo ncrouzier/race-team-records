@@ -1,0 +1,75 @@
+<div class="jumbotron">
+    <!-- Laid out like Individual Results (directives/individualResults.html) -->
+    <div class="individual-results series-list">
+
+        <div class="results-filter-bar">
+            <div class="results-search">
+                <i class="fa fa-search"></i>
+                <input type="text" class="form-control input-sm" ng-model="filters.text"
+                    ng-model-options="{debounce: 150}" placeholder="Race series..." autofocus>
+                <span class="searchclear fa fa-times-circle" ng-show="filters.text" ng-click="filters.text = ''"></span>
+            </div>
+            <button type="button" class="btn btn-sm" ng-class="filters.clubOnly ? 'btn-primary' : 'btn-default'"
+                ng-click="filters.clubOnly = !filters.clubOnly" aria-pressed="{{ filters.clubOnly }}">
+                <i class="fa" ng-class="filters.clubOnly ? 'fa-check-square-o' : 'fa-square-o'"></i>
+                <img class="club-mark" src="/images/mcrrc_logo_256.png" alt=""> MCRRC club races only
+            </button>
+            <!-- The same switch as the two results views -->
+            <div class="results-view-toggle results-filter-bar-end" role="tablist">
+                <a role="tab" aria-selected="false" ui-sref="/results"
+                    track-event="view_switch" track-params="{from: 'race_series', to: 'race_results', via: 'switch'}"><i class="fa fa-flag-checkered"></i> Race Results</a>
+                <a role="tab" aria-selected="false" ui-sref="/individualresults" ui-sref-opts="{inherit: false}"
+                    track-event="view_switch" track-params="{from: 'race_series', to: 'individual_results', via: 'switch'}"><i class="fa fa-user"></i> Individual Results</a>
+                <a class="active" role="tab" aria-selected="true" ui-sref="/series"><i class="fa fa-calendar-check-o"></i> Race Series</a>
+            </div>
+        </div>
+
+        <div ng-if="loading" class="text-center ir-message">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
+            <p>Loading race series...</p>
+        </div>
+        <div ng-if="loadError" class="text-center ir-message">
+            <i class="fa fa-exclamation-triangle fa-2x"></i>
+            <p>Could not load the race series.</p>
+        </div>
+
+        <ul class="results-list list-group ir-list sl-list" ng-if="!loading && !loadError">
+            <!-- Click a heading to sort; again to reverse -->
+            <li class="list-group-item resultlistheader ir-row sl-row ir-head">
+                <span class="ir-num" title="Position in this list, of {{ rows.length | number }} series">#</span>
+                <span class="hoverhand" ng-click="sortBy('name')">SERIES <i class="fa" ng-class="sortIcon('name')"></i></span>
+                <span class="hoverhand" ng-click="sortBy('distance')">DISTANCE <i class="fa" ng-class="sortIcon('distance')"></i></span>
+                <span class="hoverhand" ng-click="sortBy('years')" title="First and latest edition">YEARS <i class="fa" ng-class="sortIcon('years')"></i></span>
+                <span class="ir-num hoverhand" ng-click="sortBy('editions')">EDITIONS <i class="fa" ng-class="sortIcon('editions')"></i></span>
+                <span class="ir-num hoverhand" ng-click="sortBy('results')" title="Team results across every edition">RESULTS <i class="fa" ng-class="sortIcon('results')"></i></span>
+            </li>
+
+            <li class="list-group-item ir-message-row" ng-if="rows.length === 0">
+                No race series match.
+            </li>
+
+            <li class="list-group-item resultlistrow ir-row sl-row"
+                dir-paginate="s in rows | itemsPerPage: PAGE_SIZE" current-page="pagination.current"
+                pagination-id="series" ng-click="open(s)" title="Open this series">
+                <span class="ir-num ir-position">{{ (pagination.current - 1) * PAGE_SIZE + $index + 1 }}</span>
+                <span class="sl-name">
+                    <a ui-sref="/series-detail({seriesId: s._id})" ng-click="$event.stopPropagation()">{{ s.name }}</a>
+                    <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="s.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" ng-click="$event.stopPropagation()">
+                </span>
+                <span class="ir-distance">{{ s.racetype }}</span>
+                <span class="ir-date">{{ years(s) }}</span>
+                <span class="ir-num ir-time">{{ s.editions }}</span>
+                <span class="ir-num">{{ s.results | number }}</span>
+            </li>
+        </ul>
+
+        <!-- The count, with the pages when there is more than one -->
+        <div class="records-pager" ng-if="!loading && rows.length">
+            <span class="records-pager-count" ng-if="rows.length > PAGE_SIZE">
+                {{ (pagination.current - 1) * PAGE_SIZE + 1 | number }}–{{ pageEnd() | number }} of {{ rows.length | number }} series
+            </span>
+            <span class="records-pager-count" ng-if="rows.length <= PAGE_SIZE">{{ rows.length | number }} series</span>
+            <dir-pagination-controls pagination-id="series"></dir-pagination-controls>
+        </div>
+    </div>
+</div>

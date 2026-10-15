@@ -127,6 +127,12 @@
           </div>
         </div>
       </div>
+      <!-- New results only: an edit keeps the race's series (app/raceSeriesSync.js) -->
+      <div class="row" ng-if="!editmode">
+        <div class="col-md-12">
+          <race-series-picker race="formData.race" choice="formData.seriesChoice"></race-series-picker>
+        </div>
+      </div>
       <div class="row">
         <div class="col-md-5">
           <div class="form-group">

@@ -18,13 +18,15 @@
         <a class="ir-clear hoverhand" ng-if="activeFilterCount() > 0" ng-click="clearFilters()">
             <i class="fa fa-times"></i> Clear
         </a>
-        <!-- Two ways to browse the same results: grouped under their races
-             at /results, or one row per result here -->
+        <!-- Three ways to browse the results: grouped under their races at
+             /results, one row per result here, or by race series at /series -->
         <div class="results-view-toggle results-filter-bar-end" role="tablist">
             <a role="tab" aria-selected="false" ui-sref="/results"
                 track-event="view_switch" track-params="{from: 'individual_results', to: 'race_results', via: 'switch'}"><i class="fa fa-flag-checkered"></i> Race Results</a>
             <a class="active" role="tab" aria-selected="true" ui-sref="/individualresults"
                 ui-sref-opts="{inherit: false}"><i class="fa fa-user"></i> Individual Results</a>
+            <a role="tab" aria-selected="false" ui-sref="/series"
+                track-event="view_switch" track-params="{from: 'individual_results', to: 'race_series', via: 'switch'}"><i class="fa fa-calendar-check-o"></i> Race Series</a>
         </div>
     </div>
 

@@ -1,0 +1,67 @@
+<div class="race-series-picker" ng-if="loading || data">
+    <label class="control-label">Race series
+        <i class="fa fa-question-circle text-muted"
+            uib-tooltip="Groups this race with its other editions (the same race in other years, or the same parkrun). Only an admin's pick counts in series stats." tooltip-append-to-body="true" tooltip-class="tooltip-wrap"></i>
+        <i class="fa fa-spinner fa-spin text-muted" ng-if="loading"></i>
+    </label>
+
+    <p class="rsp-locked" ng-if="locked()">
+        <i class="fa fa-check text-success"></i>
+        This race is already recorded, in the <strong>{{ data.existing.series.name }}</strong> series.
+    </p>
+
+    <p class="rsp-current" ng-if="editMode && data">
+        <span ng-if="!current()">Not in a series yet.</span>
+        <span ng-if="current().status === 'confirmed'">
+            <i class="fa fa-check text-success"></i> In the <strong>{{ current().name }}</strong> series.
+        </span>
+        <span ng-if="current().status === 'suggested'">
+            Suggested for <strong>{{ current().name }}</strong>, not confirmed yet.
+            <button type="button" class="btn btn-xs btn-success" ng-click="confirmCurrent()"
+                ng-disabled="choice.seriesId === current()._id">
+                <i class="fa fa-check"></i> {{ choice.seriesId === current()._id ? 'Will be confirmed' : 'Confirm' }}
+            </button>
+        </span>
+        <span class="text-muted" ng-if="choice"> · changes when you save</span>
+    </p>
+
+    <div ng-if="!locked() && data">
+        <div class="radio" ng-repeat="c in data.candidates track by c._id">
+            <label>
+                <input type="radio" name="rspSeries" ng-model="sel.key" ng-value="c._id" ng-change="pick()">
+                <strong>{{ c.name }}</strong>
+                <span class="text-muted">{{ c.racetype }} · {{ c.total }} races</span>
+                <span class="label label-default" ng-if="c.match === 'similar'" uib-tooltip="{{ c.reason }}" tooltip-append-to-body="true">similar name</span>
+                <span class="label label-warning" ng-if="c.match === 'exact' && c.reason !== 'same name' && c.reason !== 'same parkrun' && c.reason !== 'current suggestion'">{{ c.reason }}</span>
+                <span class="label label-warning" ng-if="c.offDistance && c.match === 'similar'">other distance</span>
+            </label>
+        </div>
+        <div class="radio" ng-if="data.newSeries">
+            <label>
+                <input type="radio" name="rspSeries" ng-model="sel.key" value="new" ng-change="pick()">
+                <strong>New series</strong> with
+                <span ng-repeat="r in data.newSeries.races">{{ r.racename }} ({{ r.racedate | date:'y' : 'UTC' }}){{ $last ? '' : ', ' }}</span>
+            </label>
+            <input class="form-control input-sm rsp-new-name" ng-if="sel.key === 'new'" ng-model="sel.newName"
+                ng-change="pick()" placeholder="Series name">
+        </div>
+        <div class="radio rsp-other">
+            <label>
+                <input type="radio" name="rspSeries" ng-model="sel.key" value="other" ng-change="pick()">
+                Another series
+            </label>
+            <ui-select ng-model="sel.other" theme="select2" class="rsp-other-select" on-select="pickOther()">
+                <ui-select-match placeholder="Search all series…">{{ $select.selected.name }}</ui-select-match>
+                <ui-select-choices repeat="s in allSeries | filter: {name: $select.search} | limitTo: 50">
+                    {{ s.name }} <small class="text-muted">{{ s.racetype.name }} · {{ s.total }} races<span ng-if="s.location"> · {{ s.location }}</span></small>
+                </ui-select-choices>
+            </ui-select>
+        </div>
+        <div class="radio">
+            <label>
+                <input type="radio" name="rspSeries" ng-model="sel.key" value="none" ng-change="pick()">
+                None <span class="text-muted" ng-if="data.candidates.length || data.newSeries">— not another edition of these</span>
+            </label>
+        </div>
+    </div>
+</div>

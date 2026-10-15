@@ -7799,6 +7799,103 @@ footer {
   margin-bottom: 0px;
   border-bottom: 1px solid #ddd;
 }
+.rd-series-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rd-series-nav .rd-series-step {
+  padding: 0 6px;
+  border: 1px solid #eeeeee;
+  border-radius: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.rd-series-nav .rd-series-step:hover,
+.rd-series-nav .rd-series-step:focus {
+  border-color: #008cba;
+  background: #F7FBFC;
+}
+.rd-series-nav .rd-series-step .fa {
+  font-size: 10px;
+}
+.row.stats-flow {
+  display: flex;
+  flex-wrap: wrap;
+}
+.row.stats-flow:before,
+.row.stats-flow:after {
+  display: none;
+}
+.row.stats-flow > [class*="col-"] {
+  float: none;
+  width: 100%;
+}
+@media (min-width: 992px) {
+  .row.stats-flow > .col-md-6 {
+    width: 50%;
+  }
+}
+.series-stats-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.series-stats-note {
+  margin: 0;
+  padding: 8px 15px;
+  font-size: 12px;
+}
+.series-stats-toggle .series-stats-filter {
+  margin: 0 0 0 6px;
+  padding-top: 0;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.best-times {
+  margin: 8px -15px -10px;
+  max-height: 280px;
+  overflow-y: auto;
+  border-top: 1px solid #eeeeee;
+  background: #F7FBFC;
+  cursor: default;
+}
+.best-times .table {
+  margin: 0;
+  font-size: 12px;
+  background: transparent;
+}
+.best-times .table > thead > tr > th {
+  position: sticky;
+  top: 0;
+  background: #F7FBFC;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #6f6f6f;
+  border-bottom-width: 1px;
+}
+.best-times .table > thead > tr > th,
+.best-times .table > tbody > tr > td {
+  padding: 3px 15px;
+}
+.best-times .table > tbody > tr > td {
+  border-top-color: #e1f0f4;
+}
+.best-times .best-times-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.series-stats-info {
+  font-size: 13px;
+  color: #999999;
+  cursor: help;
+}
 .panel-heading.most-races-heading {
   display: flex;
   align-items: center;
@@ -8130,6 +8227,10 @@ footer {
   text-align: left;
   max-width: 500px;
   white-space: nowrap;
+}
+.tooltip-wrap .tooltip-inner {
+  white-space: normal;
+  max-width: 300px;
 }
 .diff-add {
   background: #e3f4ea;
@@ -16415,11 +16516,7 @@ footer {
 }
 .result-detail-page .rd-hero,
 .race-detail-page .rd-hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 32px;
+  display: block;
   margin-bottom: 20px;
   padding: 18px 22px;
   border: 1px solid #e6e9ec;
@@ -16430,16 +16527,65 @@ footer {
 }
 .result-detail-page .rd-hero-head,
 .race-detail-page .rd-hero-head {
-  flex: 1 1 340px;
   min-width: 0;
+}
+.result-detail-page .rd-title-row,
+.race-detail-page .rd-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
 }
 .result-detail-page .rd-racename,
 .race-detail-page .rd-racename {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0 0 6px 0;
   font-weight: 700;
-  font-size: 30px;
+  font-size: clamp(22px, 1.2vw + 16px, 30px);
   line-height: 1.15;
   color: #008cba;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.result-detail-page .rd-racename.rd-title-long,
+.race-detail-page .rd-racename.rd-title-long {
+  font-size: clamp(20px, 0.8vw + 15px, 25px);
+}
+.result-detail-page .rd-hero-actions,
+.race-detail-page .rd-hero-actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  padding-top: 6px;
+}
+.result-detail-page .rd-hero-actions .rd-edit-btn,
+.race-detail-page .rd-hero-actions .rd-edit-btn {
+  margin-left: 0;
+}
+.result-detail-page .rd-runners,
+.race-detail-page .rd-runners {
+  margin-bottom: 4px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #222222;
+  overflow-wrap: anywhere;
+}
+.result-detail-page .rd-runners a,
+.race-detail-page .rd-runners a {
+  color: #222222;
+}
+.result-detail-page .rd-runners a:hover,
+.result-detail-page .rd-runners a:focus,
+.race-detail-page .rd-runners a:hover,
+.race-detail-page .rd-runners a:focus {
+  color: #008cba;
+  text-decoration: none;
+}
+.result-detail-page .rd-runners .rd-runners-at,
+.race-detail-page .rd-runners .rd-runners-at {
+  font-weight: 400;
+  color: #999999;
 }
 .result-detail-page .rd-title-link,
 .race-detail-page .rd-title-link {
@@ -16451,11 +16597,6 @@ footer {
 .race-detail-page .rd-title-link:focus {
   color: #006687;
   text-decoration: none;
-}
-.result-detail-page .rd-title-at,
-.race-detail-page .rd-title-at {
-  font-weight: 400;
-  color: #999999;
 }
 .result-detail-page .rd-edit-btn,
 .race-detail-page .rd-edit-btn {
@@ -16477,6 +16618,11 @@ footer {
 .race-detail-page .rd-racemeta .rd-meta-item i {
   margin-right: 4px;
   color: #999999;
+}
+.result-detail-page .rd-racemeta .rd-series-nav,
+.race-detail-page .rd-racemeta .rd-series-nav {
+  white-space: normal;
+  max-width: 100%;
 }
 .result-detail-page .rd-racemeta a.rd-meta-item,
 .race-detail-page .rd-racemeta a.rd-meta-item {
@@ -16514,11 +16660,15 @@ footer {
 .result-detail-page .rd-hero-figures,
 .race-detail-page .rd-hero-figures {
   display: flex;
-  gap: 28px;
+  flex-wrap: wrap;
+  gap: 14px 36px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #eeeeee;
 }
 .result-detail-page .rd-figure,
 .race-detail-page .rd-figure {
-  text-align: center;
+  text-align: left;
 }
 .result-detail-page .rd-figure-value,
 .race-detail-page .rd-figure-value {
@@ -16574,6 +16724,172 @@ footer {
 .race-detail-page .rd-nodata {
   color: #999999;
   font-style: italic;
+}
+.result-detail-page .rd-achievements,
+.race-detail-page .rd-achievements {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eeeeee;
+}
+.result-detail-page .rd-achievements:first-child,
+.race-detail-page .rd-achievements:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.result-detail-page .rd-achievements-label,
+.race-detail-page .rd-achievements-label {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6f6f;
+}
+.result-detail-page .rd-achievements-label span,
+.race-detail-page .rd-achievements-label span {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #F7FBFC;
+  color: #006687;
+  text-align: center;
+  letter-spacing: 0;
+}
+.result-detail-page .rd-achievement-list,
+.race-detail-page .rd-achievement-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px 22px;
+}
+.result-detail-page .rd-achievement,
+.race-detail-page .rd-achievement {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.result-detail-page .rd-achievement-icon,
+.race-detail-page .rd-achievement-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #cce8f1;
+  box-shadow: inset 0 0 0 1px #8ccbe0;
+  font-size: 14px;
+  cursor: default;
+}
+.result-detail-page .rd-achievement-icon.rd-achievement-count,
+.race-detail-page .rd-achievement-icon.rd-achievement-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #006687;
+  font-variant-numeric: tabular-nums;
+}
+.result-detail-page .rd-achievement-text,
+.race-detail-page .rd-achievement-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.result-detail-page .rd-counts-runner + .rd-counts-runner,
+.race-detail-page .rd-counts-runner + .rd-counts-runner {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eeeeee;
+}
+.result-detail-page .rd-counts-name,
+.race-detail-page .rd-counts-name {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.result-detail-page .rd-counts-team .rd-counts-runner + .rd-counts-runner,
+.race-detail-page .rd-counts-team .rd-counts-runner + .rd-counts-runner {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.result-detail-page .rd-counts-team .rd-counts-name,
+.race-detail-page .rd-counts-team .rd-counts-name {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.result-detail-page .rd-counts-team .rd-counts,
+.race-detail-page .rd-counts-team .rd-counts {
+  gap: 6px;
+}
+.result-detail-page .rd-counts-team .rd-count,
+.race-detail-page .rd-counts-team .rd-count {
+  flex-basis: 105px;
+  max-width: 170px;
+  padding: 4px 9px;
+}
+.result-detail-page .rd-counts-team .rd-count-value,
+.race-detail-page .rd-counts-team .rd-count-value {
+  font-size: 16px;
+}
+.result-detail-page .rd-counts-team .rd-count-label,
+.race-detail-page .rd-counts-team .rd-count-label {
+  font-size: 11px;
+}
+.result-detail-page .rd-counts,
+.race-detail-page .rd-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.result-detail-page .rd-count,
+.race-detail-page .rd-count {
+  flex: 1 1 130px;
+  max-width: 220px;
+  padding: 8px 12px;
+  border: 1px solid #dce9ef;
+  border-radius: 6px;
+  background: #F7FBFC;
+  color: #333333;
+}
+.result-detail-page a.rd-count-link,
+.race-detail-page a.rd-count-link {
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.result-detail-page a.rd-count-link:hover,
+.result-detail-page a.rd-count-link:focus,
+.race-detail-page a.rd-count-link:hover,
+.race-detail-page a.rd-count-link:focus {
+  border-color: #008cba;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+  text-decoration: none;
+  color: #333333;
+}
+.result-detail-page a.rd-count-link .rd-count-value,
+.race-detail-page a.rd-count-link .rd-count-value {
+  color: #008cba;
+}
+.result-detail-page .rd-count-value,
+.race-detail-page .rd-count-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #222222;
+  font-variant-numeric: tabular-nums;
+}
+.result-detail-page .rd-count-label,
+.race-detail-page .rd-count-label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: #333333;
+  overflow-wrap: anywhere;
+}
+.result-detail-page .rd-count-label span,
+.race-detail-page .rd-count-label span {
+  color: #999999;
 }
 .result-detail-page .rd-placement,
 .race-detail-page .rd-placement {
@@ -16789,27 +17105,6 @@ footer {
   background: #F7FBFC;
   color: #333333;
 }
-@media (max-width: 767px) {
-  .result-detail-page .rd-hero,
-  .race-detail-page .rd-hero {
-    display: block;
-  }
-  .result-detail-page .rd-hero-figures,
-  .race-detail-page .rd-hero-figures {
-    margin-top: 16px;
-    gap: 18px;
-  }
-  .result-detail-page .rd-figure-value,
-  .race-detail-page .rd-figure-value {
-    font-size: 22px;
-  }
-  .result-detail-page .rd-racemeta .rd-meta-item,
-  .race-detail-page .rd-racemeta .rd-meta-item {
-    display: block;
-    margin-right: 0;
-    margin-bottom: 4px;
-  }
-}
 .race-detail-page .rd-admin-cell {
   width: 1%;
   white-space: nowrap;
@@ -16819,10 +17114,6 @@ footer {
   color: #fff;
   background-color: #F04124;
   border-color: #F04124;
-}
-.race-detail-page .rd-hero-race .rd-hero-figures {
-  flex-wrap: wrap;
-  gap: 16px 32px;
 }
 .race-detail-page .rd-figure-detail {
   margin-top: 2px;
@@ -16905,11 +17196,6 @@ footer {
 }
 .race-detail-page .rd-clickable-row {
   cursor: pointer;
-}
-@media (max-width: 767px) {
-  .race-detail-page .rd-hero-race .rd-hero-figures {
-    gap: 24px;
-  }
 }
 @media (min-width: 768px) {
   .achievement-feed .feed-list {
@@ -17118,6 +17404,23 @@ footer {
   color: #006687;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   cursor: default;
+}
+@media (max-width: 1px) {
+  .results-view-toggle {
+    display: flex;
+    width: 100%;
+    margin-left: 0;
+  }
+  .results-view-toggle > a {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 5px 6px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .results-view-toggle > a .fa {
+    display: none;
+  }
 }
 .individual-results {
   position: relative;
@@ -17444,6 +17747,285 @@ advanced-filter-panel {
   color: #fff;
   background-color: #F04124;
   border-color: #F04124;
+}
+.race-series {
+  text-align: left;
+}
+.race-series p,
+.race-series .help-block {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.race-series .rs-intro {
+  padding-bottom: 0;
+}
+.race-series .rs-intro .nav-tabs {
+  margin-top: 10px;
+  font-size: 13px;
+}
+.race-series .rs-back {
+  margin-right: 4px;
+}
+.race-series .rs-details {
+  border-bottom: 1px solid #eeeeee;
+  background: #F7FBFC;
+}
+.race-series .rs-details label {
+  font-size: 13px;
+}
+.race-series .rs-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.race-series .rs-toolbar .checkbox-inline {
+  padding-top: 0;
+}
+.race-series .rs-toolbar-end {
+  margin-left: auto;
+}
+.race-series .rs-search {
+  max-width: 280px;
+}
+.race-series .rs-selection {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #c8dde6;
+  border-radius: 6px;
+  background: #F7FBFC;
+  font-size: 13px;
+}
+.race-series .rs-selection-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.race-series .rs-selection-row .form-control {
+  width: auto;
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+.race-series .rs-picker {
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+.race-series .rs-club-actions {
+  margin-left: 12px;
+}
+.race-series .rs-club-cell .rs-meta {
+  white-space: nowrap;
+}
+.race-series .rs-table {
+  font-size: 13px;
+}
+.race-series .rs-table > tbody > tr > td {
+  vertical-align: middle;
+}
+.race-series .rs-table > tbody > tr.rs-pending > td {
+  background: #fffaf0;
+}
+.race-series .rs-meta {
+  font-size: 12px;
+}
+.race-series .rs-names {
+  font-size: 12px;
+}
+.race-series .rs-check {
+  width: 24px;
+}
+.race-series .rs-date {
+  white-space: nowrap;
+}
+.race-series .rs-arrow {
+  width: 24px;
+  text-align: center;
+}
+.race-series .rs-offdistance {
+  margin-left: 4px;
+  font-weight: 600;
+}
+.race-series .rs-offdistance.label-ghost {
+  color: #999999;
+  background: transparent;
+  border: 1px solid #eeeeee;
+}
+.race-series .rs-actions {
+  white-space: nowrap;
+}
+.race-series .rs-actions .btn {
+  margin-left: 2px;
+}
+.race-series .rs-section {
+  border-top: 1px solid #eeeeee;
+}
+.race-series .rs-section h5 {
+  margin-top: 0;
+  font-weight: 600;
+}
+.race-series .rs-delete {
+  margin-top: 16px;
+}
+.race-series .rs-delete:hover {
+  color: #fff;
+  background-color: #F04124;
+  border-color: #F04124;
+}
+.individual-results.series-list .sl-row {
+  grid-template-columns: 30px minmax(180px, 1fr) 130px 96px 80px 80px;
+}
+@media (max-width: 1px) {
+  .individual-results.series-list .sl-row {
+    grid-template-columns: 28px minmax(120px, 1fr) 70px 64px 56px;
+  }
+  .individual-results.series-list .sl-row > span:nth-child(4) {
+    display: none;
+  }
+}
+.series-page .sd-best-table {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+.series-page .sd-best-table > tbody > tr:first-child > td {
+  border-top: none;
+}
+.series-page .sd-team-names {
+  font-size: 12px;
+}
+.series-page .sd-rank {
+  width: 24px;
+  color: #999999;
+}
+.series-page .sd-value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.series-page .sd-note {
+  font-size: 12px;
+  margin-top: -10px;
+}
+.series-page .sd-sortable {
+  white-space: nowrap;
+  user-select: none;
+}
+.series-page .sd-sortable .fa {
+  margin-left: 2px;
+}
+.series-page .sd-sort-idle {
+  opacity: 0.3;
+}
+.series-page .sd-member-search {
+  max-width: 200px;
+  font-weight: 400;
+}
+.series-page .sd-history > td {
+  background: #F7FBFC;
+  padding: 4px 12px 10px 34px;
+}
+.series-page .sd-history-table {
+  margin: 0;
+  font-size: 12px;
+  background: transparent;
+}
+.series-page .sd-history-table > thead > tr > th {
+  font-size: 10px;
+  color: #6f6f6f;
+  border-bottom-width: 1px;
+  padding-top: 6px;
+}
+.series-page .sd-history-table > tbody > tr > td {
+  border-top-color: #e1f0f4;
+}
+.series-page .sd-history-table .label {
+  margin-left: 4px;
+  font-size: 9px;
+  vertical-align: middle;
+}
+.series-page .sd-history-table small {
+  color: #999999;
+}
+.series-page .sd-num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.series-page .sd-time {
+  font-weight: 600;
+}
+.series-page .sd-val {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 3px;
+  line-height: 1.6;
+}
+.series-page .sd-val-best {
+  background: #fde9b8;
+  box-shadow: inset 0 0 0 1px #f5cf74;
+}
+.series-page .sd-history-key {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6f6f6f;
+}
+.series-page .sd-history-key .sd-val {
+  margin-right: 4px;
+}
+.series-page .sd-aside {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #6f6f6f;
+  border-bottom: 1px dotted #999999;
+  white-space: nowrap;
+  cursor: help;
+}
+.series-page .sd-nowrap {
+  white-space: nowrap;
+}
+.club-mark {
+  width: 1.4em;
+  height: 1.4em;
+  margin-left: 4px;
+  vertical-align: -0.35em;
+}
+h2 .club-mark {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.1em;
+}
+.race-series-picker {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid #c8dde6;
+  border-radius: 6px;
+  background: #F7FBFC;
+  text-align: left;
+}
+.race-series-picker .radio {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.race-series-picker .label {
+  font-weight: 600;
+  margin-left: 4px;
+}
+.race-series-picker .rsp-locked,
+.race-series-picker .rsp-current {
+  margin: 0;
+  font-size: 13px;
+}
+.race-series-picker .rsp-current .btn {
+  margin-left: 6px;
+}
+.race-series-picker .rsp-new-name,
+.race-series-picker .rsp-other-select {
+  max-width: 320px;
+  margin: 4px 0 0 20px;
+}
+.race-series-picker .rsp-other-select {
+  display: block;
 }
 .navbar .open > .admin-menu {
   display: grid;

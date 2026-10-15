@@ -169,6 +169,13 @@
             </div>
         </div>
 
+        <!-- Admin-only dialog; the server also ignores a series change from anyone else -->
+        <div class="row">
+            <div class="col-md-12">
+                <race-series-picker race="race" choice="race.seriesChoice" mode="edit"></race-series-picker>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
@@ -177,6 +184,12 @@
                         <label>
                             <input type="checkbox" ng-model="race.isMultisport" ng-checked="race.isMultisport">
                             This is a multisport event (triathlon, duathlon, etc.)
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="race.clubRace">
+                            MCRRC club race
                         </label>
                     </div>
                 </div>

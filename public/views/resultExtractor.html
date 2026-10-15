@@ -236,6 +236,8 @@
                 </div>
             </div>
         </div>
+        <race-series-picker race="seriesRace" choice="seriesPick.choice"></race-series-picker>
+
         <div class="alert alert-info" ng-if="!canProcess().canProcess" ng-bind-html="canProcess().message">
         </div>
         <button class="btn btn-success" ng-click="processResults()" ng-disabled="!canProcess().canProcess">

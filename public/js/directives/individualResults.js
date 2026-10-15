@@ -70,7 +70,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 location: location.state || location.country || '', multisport: !!r.isMultisport,
                 variable: !!type.isVariable, miles: type.miles,
                 typeId: (type.name || '').toLowerCase() + '|' + (type.surface || '').toLowerCase(),
-                state: (location.state || '').toUpperCase(), country: (location.country || '').toUpperCase()
+                state: (location.state || '').toUpperCase(), country: (location.country || '').toUpperCase(),
+                clubRace: !!r.clubRace
             };
             if (!typeSeen[race.typeKey]) {
                 typeSeen[race.typeKey] = true;
@@ -155,7 +156,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             raceTypes: [], countries: [], states: [], selectedMembers: [], missingRanking: null,
             // search box and links
             search: '', year: '', month: '', day: '', sex: '', division: '',
-            race: '', age: null, agemin: null, agemax: null, eligible: false, win: false,
+            race: '', age: null, agemin: null, agemax: null, eligible: false, win: false, club: false,
             under: null, variable: false,
             highlight: '',
             sort: DEFAULT_SORT, desc: SORTS[DEFAULT_SORT].desc
@@ -230,6 +231,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
         f.agemax = toInt(p.agemax);
         f.eligible = p.eligible === '1' || p.eligible === 'true';
         f.win = p.win === '1' || p.win === 'true';
+        f.club = p.club === '1' || p.club === 'true';
         f.under = parseTime(p.under);
         f.variable = p.variable === '1' || p.variable === 'true';
         f.highlight = p.highlight || '';
@@ -291,6 +293,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             agemax: f.agemax !== null && f.agemax !== undefined ? String(f.agemax) : null,
             eligible: f.eligible ? '1' : null,
             win: f.win ? '1' : null,
+            club: f.club ? '1' : null,
             under: f.under ? formatTime(f.under) : null,
             variable: f.variable ? '1' : null,
             agmin: f.agMin > 0 ? String(f.agMin) : null,
@@ -455,6 +458,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     // Wins, as the team stats count them: first overall or first
                     // of the runner's gender
                     if (f.win && !(r.overallrank === 1 || r.genderrank === 1)) return false;
+                    // MCRRC club races (marked on the race by an admin)
+                    if (f.club && !r.race.clubRace) return false;
                     // Milestone cutoff: strictly under a time
                     if (f.under && !(r.time > 0 && r.time < f.under)) return false;
                     if (ageGradeOn && !(r.agegrade >= f.agMin && r.agegrade <= f.agMax)) return false;
@@ -650,6 +655,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 if (f.under) chips.push({ key: 'under', label: 'Under ' + formatTime(f.under) });
                 if (f.eligible) chips.push({ key: 'eligible', label: 'Counted for team standings' });
                 if (f.win) chips.push({ key: 'win', label: 'Wins (1st overall or gender)' });
+                if (f.club) chips.push({ key: 'club', label: 'MCRRC club races' });
                 return chips;
             }
 
@@ -676,6 +682,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 if (kind === 'agerange') { f.agemin = null; f.agemax = null; }
                 if (kind === 'eligible') f.eligible = false;
                 if (kind === 'win') f.win = false;
+                if (kind === 'club') f.club = false;
                 if (kind === 'under') f.under = null;
                 if (kind === 'variable') f.variable = false;
                 if (kind === 'agRange') scope.clearAgeGradeFilter();

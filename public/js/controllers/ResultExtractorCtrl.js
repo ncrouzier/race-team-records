@@ -669,6 +669,26 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             });
         };
 
+        // The race as <race-series-picker> sees it: one stable object, kept in step
+        // with the form, in the shape each saved result's race will have
+        $scope.seriesRace = {};
+        $scope.seriesPick = { choice: null };
+        $scope.$watch(function () {
+            var fd = $scope.formData || {};
+            var loc = fd.location || {};
+            return [fd.raceName, fd.raceDate, fd.raceType && fd.raceType._id, loc.country, loc.state, fd.distanceName].join('|');
+        }, function () {
+            var fd = $scope.formData || {};
+            angular.copy({
+                racename: fd.raceName,
+                racedate: fd.raceDate ? new Date(fd.raceDate).getTime() : null,
+                racetype: fd.raceType,
+                location: fd.location,
+                isMultisport: false,
+                distanceName: fd.distanceName
+            }, $scope.seriesRace);
+        });
+
         $scope.saveResults = function() {
             if (!$scope.processedResults.length) {
                 NotificationService.showNotifiction(false,'No results to save');
@@ -716,7 +736,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             $scope.isLoading = true;
             $scope.savingMessage = 'Saving ' + resultsToSave.length + ' results...';
             
-            ResultsService.saveResults(resultsToSave)
+            ResultsService.saveResults(resultsToSave, $scope.seriesPick.choice)
                 .then(function(savedResults) {
                     Analytics.event('results_import', { count: savedResults.length });
                     $scope.processedResults = []; // Clear processed results after successful save

@@ -12,6 +12,8 @@ var raceSchema = mongoose.Schema({
     racedate: Date,
     order: Number, //order in case multiple races on same day, 0 earliest increases as day goes on 
     isMultisport: Boolean,
+    // An MCRRC club race, marked by an admin: nothing else in the data says so
+    clubRace: Boolean,
     racetype: racetypeSchema,
     location:{
       country: String,
@@ -49,6 +51,23 @@ raceSchema.pre('save', function() {
     this.updateSystemInfo('mcrrc',date);
 });
 
+// Race series follow their races (app/raceSeriesSync.js). This schema is also
+// embedded in every result, and Mongoose runs these hooks for the embedded
+// copies too: only a race document itself counts.
+raceSchema.pre('save', function () {
+    if (this.$isSubdocument) return;
+    this.$locals.seriesNew = this.isNew;
+    this.$locals.seriesChanged = !this.isNew &&
+        (this.isModified('racename') || this.isModified('racetype') || this.isModified('location'));
+});
+
+raceSchema.post('save', function (doc) {
+    if (doc.$isSubdocument) return;
+    const raceSeriesSync = require('../raceSeriesSync');
+    if (doc.$locals.seriesNew) raceSeriesSync.raceCreated(doc._id);
+    else if (doc.$locals.seriesChanged) raceSeriesSync.raceChanged(doc._id);
+});
+
 //or deleted
 raceSchema.post('deleteOne', function(doc) {
     var date = Date.now();
@@ -67,8 +86,10 @@ raceSchema.post('deleteOne', function(doc) {
 // results). Merging a race into another moves its jobs first, so by the time
 // the old race is deleted there is nothing left to unlink.
 raceSchema.pre('deleteOne', { document: true, query: true }, async function () {
+    if (this.$isSubdocument) return;
     const id = this instanceof mongoose.Query ? (this.getFilter() || {})._id : this._id;
     if (!id) return;
+    require('../raceSeriesSync').raceDeleted(id);
     const VolunteerJob = mongoose.model('VolunteerJob');
     const res = await VolunteerJob.updateMany({ 'race._id': id }, { $unset: { race: 1 } });
     if (res.modifiedCount > 0) {

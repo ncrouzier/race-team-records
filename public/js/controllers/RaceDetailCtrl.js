@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', '$http', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics, $http) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -541,11 +541,28 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
             $scope.raceinfo = raceinfo;
             summarise(raceinfo.results);
             loadVolunteerJobs();
+            loadSeries(raceinfo._id);
             // The year tells apart the same race run in different years
             PageTitleService.set($scope, raceinfo.racename + ' (' + new Date(raceinfo.racedate).getUTCFullYear() + ')');
 
             // The canvas only exists once the view has rendered the race.
             $timeout(buildTimesChart);
+        });
+    }
+
+    // The race series this race is an edition of, if an admin confirmed one
+    $scope.raceSeries = null;
+
+    // An edition either side of this one: its year, or its date when it is in
+    // the same year (a weekly parkrun)
+    $scope.editionLabel = function (edition) {
+        var date = new Date(edition.racedate);
+        var sameYear = $scope.raceinfo && date.getUTCFullYear() === new Date($scope.raceinfo.racedate).getUTCFullYear();
+        return sameYear ? $filter('date')(date, 'MMM d', 'UTC') : String(date.getUTCFullYear());
+    };
+    function loadSeries(raceId) {
+        $http.get('/api/series/by-race/' + raceId).then(function (res) {
+            $scope.raceSeries = res.data || null;
         });
     }
 

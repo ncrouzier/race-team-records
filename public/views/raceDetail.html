@@ -17,18 +17,24 @@
         <div class="rd-hero rd-hero-race">
             <div class="rd-hero-head">
 
-            <h2 class="rd-racename">
-                {{raceinfo.racename}}
-                <race-icon race="raceinfo"></race-icon>
-                <button ng-if="user.role === 'admin'" class="btn btn-xs btn-default rd-edit-btn"
-                    ng-click="editRace()" uib-tooltip="Edit race details" tooltip-placement="top">
-                    <i class="fa fa-pencil"></i>
-                </button>
-                <button ng-if="user.role === 'admin' && raceinfo.results.length" class="btn btn-xs btn-default rd-edit-btn"
-                    ng-click="addResult()" uib-tooltip="Add a result to this race" tooltip-placement="top">
-                    <i class="fa fa-plus"></i>
-                </button>
-            </h2>
+            <!-- Title, with admin buttons kept apart so a long name wraps cleanly -->
+            <div class="rd-title-row">
+                <h2 class="rd-racename" ng-class="{'rd-title-long': raceinfo.racename.length > 40}">
+                    {{raceinfo.racename}}
+                    <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="raceinfo.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                    <race-icon race="raceinfo"></race-icon>
+                </h2>
+                <div class="rd-hero-actions" ng-if="user.role === 'admin'">
+                    <button class="btn btn-xs btn-default rd-edit-btn"
+                        ng-click="editRace()" uib-tooltip="Edit race details" tooltip-placement="top" tooltip-append-to-body="true">
+                        <i class="fa fa-pencil"></i>
+                    </button>
+                    <button ng-if="raceinfo.results.length" class="btn btn-xs btn-default rd-edit-btn"
+                        ng-click="addResult()" uib-tooltip="Add a result to this race" tooltip-placement="top" tooltip-append-to-body="true">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+            </div>
 
             <div class="rd-racemeta">
                 <span class="rd-meta-item">
@@ -58,6 +64,18 @@
                 <span class="rd-meta-item" ng-if="raceinfo.isMultisport">
                     <i class="fa fa-road"></i> Multiple-sport event
                     <span ng-bind-html="raceinfo | raceinfoSportIcons | unsafe"></span>
+                </span>
+                <!-- The series, with the editions either side of this one -->
+                <span class="rd-meta-item rd-series-nav" ng-if="raceSeries">
+                    <a class="rd-series-step" ng-if="raceSeries.previous" ui-sref="/races({raceId: raceSeries.previous._id})"
+                        uib-tooltip="Previous edition: {{raceSeries.previous.racename}}, {{raceSeries.previous.racedate | date:'longDate':'UTC'}}" tooltip-placement="top" tooltip-append-to-body="true">
+                        <i class="fa fa-chevron-left"></i> {{editionLabel(raceSeries.previous)}}</a>
+                    <a ui-sref="/series-detail({seriesId: raceSeries._id})"
+                        uib-tooltip="All {{raceSeries.editions}} editions of this race, and how the team did across them" tooltip-placement="top" tooltip-append-to-body="true">
+                        <i class="fa fa-calendar-check-o"></i> Part of the {{raceSeries.name}} series</a>
+                    <a class="rd-series-step" ng-if="raceSeries.next" ui-sref="/races({raceId: raceSeries.next._id})"
+                        uib-tooltip="Next edition: {{raceSeries.next.racename}}, {{raceSeries.next.racedate | date:'longDate':'UTC'}}" tooltip-placement="top" tooltip-append-to-body="true">
+                        {{editionLabel(raceSeries.next)}} <i class="fa fa-chevron-right"></i></a>
                 </span>
                 <!-- One album is a plain link; several share one link that opens a list -->
                 <a class="rd-meta-item rd-photo-link" ng-if="getPhotoLinks().length === 1"

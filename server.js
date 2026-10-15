@@ -148,6 +148,9 @@ app.use(async function (req, res, next) {
             const service = require('./app/service');
             const count = await service.getUnseenActivityLogCount(req.user);
             res.set('X-Unseen-Activity-Count', String(count));
+            const RaceSeries = require('./app/models/raceseries');
+            const pendingSeries = await RaceSeries.countDocuments({ 'races.status': 'suggested' });
+            res.set('X-Pending-Series-Count', String(pendingSeries));
         } catch (err) {
             console.error('Error setting unseen activity count header:', err);
         }
@@ -192,6 +195,8 @@ const weatherLimiter = rateLimit({
 app.get('/api/weather/current', weatherLimiter);
 
 // routes ======================================================================
+// Before routes.js, which ends with the catch-all that serves the app for any GET
+require('./app/raceSeriesRoutes.js')(app);
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 
 

@@ -4,6 +4,7 @@ const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const service = require('./service');
+const raceSeriesSync = require('./raceSeriesSync');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
@@ -2123,6 +2124,30 @@ module.exports = async function (app, qs, passport, async, _) {
                 response.defaultDistribution = member.sex === 'Female' ? 'gender' : 'all';
             }
 
+            // Where this race falls in each runner's history: their Nth race,
+            // Nth on this surface, and so on (app/memberRaceCounts.js). Every
+            // runner of a relay has a history of their own.
+            const RaceSeries = require('./models/raceseries');
+            const { memberRaceCounts } = require('./memberRaceCounts');
+            // The race's series, when it is a public one (two confirmed editions)
+            let series = null;
+            const found = await RaceSeries.findOne(
+                { races: { $elemMatch: { race: result.race._id, status: 'confirmed' } } }, 'name races').lean();
+            const confirmed = found ? found.races.filter(l => l.status === 'confirmed').map(l => String(l.race)) : [];
+            if (confirmed.length >= 2) series = { _id: found._id, name: found.name, raceIds: new Set(confirmed) };
+            response.memberCounts = [];
+            for (const m of result.members) {
+                const history = await Result.find({ 'members._id': m._id },
+                    'race._id race.racename race.racedate race.order race.racetype race.isMultisport').lean();
+                const counts = memberRaceCounts({ result: result, history: history, series: series });
+                if (counts) {
+                    response.memberCounts.push({
+                        member: { _id: m._id, firstname: m.firstname, lastname: m.lastname, username: m.username },
+                        counts: counts
+                    });
+                }
+            }
+
             res.json(response);
         } catch (err) {
             console.log('error building result detail', err);
@@ -2180,6 +2205,8 @@ module.exports = async function (app, qs, passport, async, _) {
                                 },
                                 racetype: req.body.race.racetype
                             }).then(async r => {
+                                // The series the admin picked for this race on the form, if any
+                                raceSeriesSync.raceAssigned(r._id, req.body.seriesChoice, req.user.username);
                                 try {
 
                                     Result.create({
@@ -2221,6 +2248,7 @@ module.exports = async function (app, qs, passport, async, _) {
                         }
 
                     } else { // race exists
+                        raceSeriesSync.raceAssigned(race._id, req.body.seriesChoice, req.user.username);
                         try {
 
                             Result.create({
@@ -2422,6 +2450,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 const cleanResults = await cleanQuery.exec();
                 if (cleanResults) {
                     if (cleanResults.length === 0) {
+                        // The edit moved the last result onto the new race: its series link moves too
+                        raceSeriesSync.raceReplaced(oldraceid, r._id);
                         Race.deleteOne({
                             _id: oldraceid
                         }).then(raceD => {
@@ -2464,6 +2494,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 cleanResults = await cleanQuery.exec();
                 if (cleanResults) {
                     if (cleanResults.length === 0) {
+                        // The edit moved the last result onto `race`: its series link moves too
+                        raceSeriesSync.raceReplaced(oldraceid, race._id);
                         Race.deleteOne({
                             _id: oldraceid
                         }).then(raceD => {
@@ -2538,6 +2570,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     racetype: race.racetype
                 });
             }
+
+            // The series the admin picked for this race on the form, if any
+            raceSeriesSync.raceAssigned(raceToUse._id, req.body.seriesChoice, req.user.username);
 
             const createdResults = [];
             const memberIds = new Set(); // Track unique members for PB updates
@@ -2790,6 +2825,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 raceToUse.racedate = req.body.racedate;
                 raceToUse.order = req.body.order;
                 raceToUse.isMultisport = req.body.isMultisport;
+                // Left as it is by callers that do not send it
+                if (req.body.clubRace !== undefined) raceToUse.clubRace = !!req.body.clubRace;
                 raceToUse.racetype = req.body.racetype;
                 raceToUse.location = req.body.location;
                 raceToUse.achievements = req.body.achievements || [];
@@ -3009,7 +3046,14 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // If we found an existing race we are merging into it, delete the old race AFTER all updates are complete
             if (existingRace) {
+                raceSeriesSync.raceReplaced(race._id, existingRace._id);
                 await race.deleteOne();
+            }
+
+            // The series picked in the edit dialog, applied after any merge above.
+            // Only admins can change a race's series.
+            if (req.user.role === 'admin') {
+                raceSeriesSync.raceAssigned(raceToUse._id, req.body.seriesChoice, req.user.username, { override: true });
             }
 
             res.json(raceWithResults);

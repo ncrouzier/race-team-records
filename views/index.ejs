@@ -109,7 +109,7 @@
 							</ul>
 						</li>
 						<!-- Split: the name goes to the race list, the caret opens the menu -->
-						<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+						<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults') || $state.includes('/series') || $state.includes('/series-detail')}"
 							class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
 							<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
@@ -117,7 +117,8 @@
 							<ul class="dropdown-menu" uib-dropdown-menu>
 								<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
 										ui-sref-opts="{inherit: false}" track-event="view_switch"
-						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+						track-params="{to: 'individual_results', via: 'navbar'}">Individual Results <i class="fa fa-user"></i></a></li>
+								<li ng-class="{active: $state.includes('/series') || $state.includes('/series-detail')}"><a ui-sref="/series">Race Series <i class="fa fa-calendar-check-o"></i></a></li>
 							</ul>
 						</li>
 						<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
@@ -140,7 +141,7 @@
 						</li>
 						<!-- Admin tools, in labelled groups (not fly-out submenus, which
 						     need hover and do not work on phones) -->
-						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span class="caret"></span>
@@ -153,6 +154,8 @@
 										<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a ui-sref="/tools/resultExtractor">Result Extractor</a></li>
 										<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
 										<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
+										<li ng-class="{active: $state.includes('/race-series') || $state.includes('/race-series-detail')}"><a ui-sref="/race-series">Race Series
+											<span ng-if="pendingSeriesCount > 0" ng-cloak class="crf-unseen-badge" uib-tooltip="Series with suggestions to review">{{pendingSeriesCount}}</span></a></li>
 										<li ng-class="{active: $state.includes('/agegrading-tables')}"><a ui-sref="/agegrading-tables">Age Grading Tables</a></li>
 									</ul>
 								</li>
@@ -229,7 +232,7 @@
 								</ul>
 							</li>
 							<!-- Split: the name goes to the race list, the caret opens the menu -->
-							<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+							<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults') || $state.includes('/series') || $state.includes('/series-detail')}"
 								class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
 								<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
 								<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
@@ -237,7 +240,8 @@
 								<ul class="dropdown-menu" uib-dropdown-menu>
 									<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
 											ui-sref-opts="{inherit: false}" track-event="view_switch"
-						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+						track-params="{to: 'individual_results', via: 'navbar'}">Individual Results <i class="fa fa-user"></i></a></li>
+								<li ng-class="{active: $state.includes('/series') || $state.includes('/series-detail')}"><a ui-sref="/series">Race Series <i class="fa fa-calendar-check-o"></i></a></li>
 								</ul>
 							</li>
 							<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members <i
@@ -313,7 +317,7 @@
 									</ul>
 								</li>
 								<!-- Split: the name goes to the race list, the caret opens the menu -->
-								<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+								<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults') || $state.includes('/series') || $state.includes('/series-detail')}"
 									class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
 									<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
 									<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
@@ -321,7 +325,8 @@
 									<ul class="dropdown-menu" uib-dropdown-menu>
 										<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
 												ui-sref-opts="{inherit: false}" track-event="view_switch"
-						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+						track-params="{to: 'individual_results', via: 'navbar'}">Individual Results <i class="fa fa-user"></i></a></li>
+								<li ng-class="{active: $state.includes('/series') || $state.includes('/series-detail')}"><a ui-sref="/series">Race Series <i class="fa fa-calendar-check-o"></i></a></li>
 									</ul>
 								</li>
 								<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team Members
@@ -385,7 +390,7 @@
 										</ul>
 									</li>
 									<!-- Split: the name goes to the race list, the caret opens the menu -->
-									<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults')}"
+									<li ng-class="{active: $state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults') || $state.includes('/series') || $state.includes('/series-detail')}"
 										class="uib-dropdown nav-split-dropdown" uib-dropdown on-toggle="toggled(open)">
 										<a ui-sref="/results" class="nav-split-main">Team Results <i class="fa fa-list"></i></a>
 										<a href class="uib-dropdown-toggle nav-split-caret" uib-dropdown-toggle
@@ -393,7 +398,8 @@
 										<ul class="dropdown-menu" uib-dropdown-menu>
 											<li ng-class="{active: $state.includes('/individualresults')}"><a ui-sref="/individualresults"
 													ui-sref-opts="{inherit: false}" track-event="view_switch"
-						track-params="{to: 'individual_results', via: 'navbar'}"> <i class="fa fa-user"></i> Individual Results</a></li>
+						track-params="{to: 'individual_results', via: 'navbar'}">Individual Results <i class="fa fa-user"></i></a></li>
+								<li ng-class="{active: $state.includes('/series') || $state.includes('/series-detail')}"><a ui-sref="/series">Race Series <i class="fa fa-calendar-check-o"></i></a></li>
 										</ul>
 									</li>
 									<li ng-class="{active: $state.includes('/members')}"><a ui-sref="/members">Team

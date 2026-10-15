@@ -10,8 +10,40 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
     $scope.result = null;
     $scope.race = null;
     $scope.stats = null;
-    // Achievements earned by this run, fed to <achievement-feed>
-    $scope.achievementEntries = [];
+    // Achievements earned by this run, listed in their own panel
+    $scope.achievements = [];
+
+    // The same badges as the achievement feed elsewhere, by lowercased name
+    var BADGES = {
+        pb: { icon: '🧨', label: 'Personal best' },
+        agegrade: { icon: '🎖️', label: 'Age grade' },
+        teamrecord: { icon: '🔥', label: 'Team record' },
+        birthday: { icon: '🎂', label: 'Raced on their birthday' },
+        newlocation: { icon: '📍', label: 'New location for the team' },
+        racecount: { icon: '', label: 'Race count' }
+    };
+
+    // Each achievement once (some are stored several times over), with its badge.
+    // No name on any: the runner is the page's title, and a team's are the team's.
+    function achievementRows(list) {
+        var seen = {};
+        return (list || []).filter(function (a) {
+            var key = a.name + '|' + a.text;
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+        }).map(function (a) {
+            var key = (a.name || '').toLowerCase();
+            var badge = BADGES[key] || { icon: '🌟', label: 'Achievement' };
+            var count = key === 'racecount' && a.value && a.value.raceCount;
+            return {
+                icon: count || badge.icon,
+                cls: count ? 'rd-achievement-count' : '',
+                label: badge.label,
+                text: a.text
+            };
+        });
+    }
     // Histograms of the team's times at this distance, keyed 'all' and
     // 'gender'; distributionScope says which one the chart is showing.
     $scope.distributions = null;
@@ -385,6 +417,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
             PageTitleService.set($scope, $filter('membersNamesFilter')(detail.result.members) + ' – ' +
                 $scope.race.racename + ' (' + new Date($scope.race.racedate).getUTCFullYear() + ')');
             $scope.stats = detail.stats;
+            $scope.memberCounts = detail.memberCounts || [];
             $scope.distributions = detail.distributions || null;
             // Fall back to the whole team if the gender-scoped set was too
             // small to bucket.
@@ -393,9 +426,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
                     detail.defaultDistribution : 'all';
             $scope.distributionOptions = buildDistributionOptions(detail.result);
             $scope.placements = buildPlacements(detail.result);
-            $scope.achievementEntries = (detail.result.achievements || []).map(function (achievement) {
-                return angular.extend({}, achievement, { member: detail.result.members[0] });
-            });
+            $scope.achievements = achievementRows(detail.result.achievements);
 
             // The canvas only exists once the view has rendered the result.
             $timeout(buildDistributionChart);

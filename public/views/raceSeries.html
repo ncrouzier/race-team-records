@@ -1,0 +1,233 @@
+<div class="jumbotron">
+
+    <div class="feed-card race-series">
+        <div class="feed-card-header">
+            <h4><i class="fa fa-calendar-check-o"></i> Race Series
+                <small>the same race across editions</small>
+            </h4>
+        </div>
+
+        <div class="feed-card-body rs-intro">
+            <p class="text-muted">
+                Races are grouped automatically when their names match, but each link is only a suggestion until an
+                admin confirms it. Only confirmed links count in series stats.
+            </p>
+            <ul class="nav nav-tabs">
+                <li ng-repeat="t in TABS" ng-class="{active: tab === t.key}">
+                    <a href ng-click="setTab(t.key)">{{ t.label }}
+                        <span class="crf-unseen-badge" ng-if="t.key === 'review' && pendingTotal() > 0">{{ pendingTotal() }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="feed-card-body">
+            <div class="alert alert-danger" ng-if="listError">{{ listError }}</div>
+            <p class="text-muted" ng-if="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+            <p class="text-muted" ng-if="loadError">The series could not be loaded.</p>
+
+            <!-- ============ To review ============ -->
+            <div ng-if="tab === 'review' && !loading && !loadError">
+                <div class="rs-toolbar">
+                    <input class="form-control input-sm rs-search" ng-model="filters.text" placeholder="Filter by name">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" ng-model="filters.onlyFlagged"> Only series with flagged editions
+                    </label>
+                    <button class="crf-chip crf-chip-primary rs-toolbar-end" ng-click="confirmAllClean()"
+                        ng-disabled="bulkBusy || !cleanToReview().length"
+                        uib-tooltip="Every edition has the same name and distance: nothing flagged" tooltip-append-to-body="true">
+                        <i class="fa" ng-class="bulkBusy ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                        Confirm all {{ cleanToReview().length }} unflagged series
+                    </button>
+                </div>
+
+                <p class="text-muted" ng-if="!toReview().length">
+                    <i class="fa fa-check text-success"></i> Nothing to review{{ filters.text || filters.onlyFlagged ? ' with these filters' : '' }}.
+                </p>
+
+                <div class="table-responsive" ng-if="toReview().length">
+                    <table class="table rs-table">
+                        <thead>
+                            <tr>
+                                <th>Series</th>
+                                <th>Names used</th>
+                                <th>Editions</th>
+                                <th>Flagged</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr dir-paginate="s in toReview() | itemsPerPage: 25" pagination-id="review">
+                                <td>
+                                    <a ui-sref="/race-series-detail({seriesId: s._id})"><strong>{{ s.name }}</strong></a>
+                                    <div class="text-muted rs-meta">
+                                        {{ s.racetype.name }}<span ng-if="s.location"> · {{ s.location }}</span> · {{ years(s) }}
+                                        <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="s.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
+                                    </div>
+                                </td>
+                                <td class="rs-names">
+                                    <span ng-repeat="n in s.names | limitTo: 4">{{ n }}<br></span>
+                                    <span class="text-muted" ng-if="s.names.length > 4">+ {{ s.names.length - 4 }} more</span>
+                                </td>
+                                <td>{{ s.pending }} to review<span class="text-muted" ng-if="s.total > s.pending"> of {{ s.total }}</span></td>
+                                <td>
+                                    <span class="label label-warning" ng-if="s.flagged"
+                                        uib-tooltip="Different distance or state: worth a look before confirming" tooltip-append-to-body="true">{{ s.flagged }} flagged</span>
+                                </td>
+                                <td class="text-right rs-actions">
+                                    <button class="btn btn-xs btn-success" ng-click="confirmAll(s)" ng-disabled="s.busy || !s.pending"
+                                        uib-tooltip="Confirm every suggested edition" tooltip-append-to-body="true">
+                                        <i class="fa" ng-class="s.busy ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                                        {{ s.pending ? 'Confirm all' : 'Confirmed' }}
+                                    </button>
+                                    <a class="btn btn-xs btn-default" ui-sref="/race-series-detail({seriesId: s._id})">Review</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <dir-pagination-controls pagination-id="review"></dir-pagination-controls>
+            </div>
+
+            <!-- ============ All series ============ -->
+            <div ng-if="tab === 'all' && !loading && !loadError">
+                <div class="rs-toolbar">
+                    <input class="form-control input-sm rs-search" ng-model="filters.allText" placeholder="Filter by name">
+                    <label class="checkbox-inline"><input type="checkbox" ng-model="filters.clubOnly"> MCRRC club races only</label>
+                    <span class="text-muted rs-toolbar-end">{{ allSeries().length }} series</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table rs-table">
+                        <thead>
+                            <tr>
+                                <th>Series</th>
+                                <th>Distance</th>
+                                <th>Where</th>
+                                <th>Years</th>
+                                <th>Editions</th>
+                                <th class="text-center" uib-tooltip="A series is a club race when every edition is marked as one" tooltip-append-to-body="true">Club race</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr dir-paginate="s in allSeries() | itemsPerPage: 50" pagination-id="all">
+                                <td>
+                                    <a ui-sref="/race-series-detail({seriesId: s._id})"><strong>{{ s.name }}</strong></a>
+                                </td>
+                                <td>{{ s.racetype.name }}</td>
+                                <td>{{ s.location }}</td>
+                                <td>{{ years(s) }}</td>
+                                <td>
+                                    {{ s.total }}
+                                    <span class="label label-warning" ng-if="s.pending">{{ s.pending }} to review</span>
+                                    <span class="text-muted" ng-if="s.offDistance" uib-tooltip="Editions run at another distance" tooltip-append-to-body="true">
+                                        · {{ s.offDistance }} off-distance</span>
+                                </td>
+                                <td class="text-center rs-club-cell">
+                                    <input type="checkbox" ng-checked="s.clubRace" ng-click="setClubRace(s)" ng-disabled="s.busy"
+                                        aria-label="MCRRC club race"
+                                        uib-tooltip="{{ s.clubRace ? 'Unmark every edition' : 'Mark every edition as a club race' }}" tooltip-append-to-body="true">
+                                    <div class="text-muted rs-meta" ng-if="s.clubRaces && !s.clubRace">{{ s.clubRaces }} of {{ s.total }}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <dir-pagination-controls pagination-id="all"></dir-pagination-controls>
+            </div>
+
+            <!-- ============ Ungrouped races ============ -->
+            <div ng-if="tab === 'ungrouped'">
+                <p class="text-muted">
+                    Races in no series. Most are one-offs; pick editions of the same race to group them.
+                </p>
+                <div class="rs-toolbar">
+                    <input class="form-control input-sm rs-search" ng-model="ungroupedQuery.text" ng-change="loadUngrouped()"
+                        ng-model-options="{debounce: 300}" placeholder="Search race names">
+                    <span class="text-muted rs-toolbar-end" ng-if="ungrouped">
+                        {{ ungrouped.total }} races<span ng-if="ungrouped.total > ungrouped.races.length">, showing the latest {{ ungrouped.races.length }}</span>
+                    </span>
+                </div>
+
+                <div class="rs-selection" ng-if="selectedIds().length">
+                    <strong>{{ selectedIds().length }} selected</strong>
+                    <div class="rs-selection-row">
+                        <input class="form-control input-sm" ng-model="newSeries.name" placeholder="New series name">
+                        <button class="btn btn-sm btn-primary" ng-click="createSeries()" ng-disabled="!newSeries.name">
+                            Create series
+                        </button>
+                    </div>
+                    <div class="rs-selection-row">
+                        <ui-select ng-model="addTarget.series" theme="select2" class="rs-picker">
+                            <ui-select-match placeholder="…or add to an existing series">{{ $select.selected.name }}</ui-select-match>
+                            <ui-select-choices repeat="s in series | filter: {name: $select.search} | limitTo: 50">
+                                {{ s.name }} <small class="text-muted">{{ s.racetype.name }} · {{ s.total }} races</small>
+                            </ui-select-choices>
+                        </ui-select>
+                        <button class="btn btn-sm btn-default" ng-click="addToSeries()" ng-disabled="!addTarget.series">Add</button>
+                    </div>
+                    <div class="alert alert-danger" ng-if="groupError">{{ groupError }}</div>
+                </div>
+
+                <p class="text-muted" ng-if="ungroupedLoading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                <div class="table-responsive" ng-if="ungrouped.races.length">
+                    <table class="table table-condensed rs-table">
+                        <tbody>
+                            <tr ng-repeat="race in ungrouped.races track by race._id" ng-class="{info: selected[race._id]}">
+                                <td class="rs-check"><input type="checkbox" ng-model="selected[race._id]" ng-change="toggleRace(race)"></td>
+                                <td class="text-muted rs-date">{{ race.racedate | date:'MMM d, y' : 'UTC' }}</td>
+                                <td><a ui-sref="/races({raceId: race._id})" target="_blank">{{ race.racename }}</a></td>
+                                <td class="text-muted">{{ race.racetype.name }}</td>
+                                <td class="text-muted">{{ race.location }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============ Possible merges ============ -->
+            <div ng-if="tab === 'merges'">
+                <p class="text-muted">
+                    Similar names at the same distance: a typo, a sponsor added to the name, a renamed race… or two
+                    different races. Not used for automatic suggestions.
+                </p>
+                <p class="text-muted" ng-if="mergesLoading"><i class="fa fa-spinner fa-spin"></i> Comparing names…</p>
+                <div class="alert alert-danger" ng-if="mergesError">{{ mergesError }}</div>
+                <p class="text-muted" ng-if="merges && !merges.length"><i class="fa fa-check text-success"></i> No similar names left.</p>
+
+                <div class="table-responsive" ng-if="merges.length">
+                    <table class="table rs-table">
+                        <tbody>
+                            <tr ng-repeat="pair in merges">
+                                <td>
+                                    <a ui-sref="/race-series-detail({seriesId: pair.first._id})"><strong>{{ pair.first.name }}</strong></a>
+                                    <span class="text-muted">({{ pair.first.count }} races)</span>
+                                </td>
+                                <td class="rs-arrow"><i class="fa fa-arrows-h text-muted"></i></td>
+                                <td>
+                                    <span ng-if="pair.second.type === 'series'">
+                                        <a ui-sref="/race-series-detail({seriesId: pair.second._id})"><strong>{{ pair.second.name }}</strong></a>
+                                        <span class="text-muted">({{ pair.second.count }} races)</span>
+                                    </span>
+                                    <span ng-if="pair.second.type === 'race'">
+                                        <a ui-sref="/races({raceId: pair.second._id})" target="_blank">{{ pair.second.race.racename }}</a>
+                                        <span class="text-muted">{{ pair.second.race.racedate | date:'y' : 'UTC' }}, {{ pair.second.race.location }}</span>
+                                    </span>
+                                    <div class="text-muted rs-meta">{{ pair.distance }} · {{ pair.why }}</div>
+                                    <div class="text-danger rs-meta" ng-if="pair.error">{{ pair.error }}</div>
+                                </td>
+                                <td class="text-right rs-actions">
+                                    <button class="btn btn-xs btn-success" ng-click="mergePair(pair)" ng-disabled="pair.busy">
+                                        {{ pair.second.type === 'series' ? 'Merge into ' + pair.first.name : 'Add to series' }}
+                                    </button>
+                                    <button class="btn btn-xs btn-default" ng-click="notSame(pair)" ng-disabled="pair.busy">
+                                        Different races
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

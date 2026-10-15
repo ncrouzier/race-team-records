@@ -65,6 +65,11 @@ app.config(['$httpProvider', function($httpProvider) {
                 if (header !== null && header !== undefined) {
                     $rootScope.unseenActivityCount = parseInt(header, 10) || 0;
                 }
+                // Same mechanism: race series with suggestions waiting for review
+                var pending = response.headers('X-Pending-Series-Count');
+                if (pending !== null && pending !== undefined) {
+                    $rootScope.pendingSeriesCount = parseInt(pending, 10) || 0;
+                }
                 return response;
             }
         };

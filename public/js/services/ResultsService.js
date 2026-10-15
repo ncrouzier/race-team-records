@@ -163,10 +163,11 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Object} race - Race information
      * @return {Promise} - Promise that resolves with the saved results
      */
-    factory.saveResultsBulk = function (resultsToSave, race) {
+    factory.saveResultsBulk = function (resultsToSave, race, seriesChoice) {
         return Restangular.all('results/bulk').post({
             results: resultsToSave,
-            race: race
+            race: race,
+            seriesChoice: seriesChoice
         });
     };
 
@@ -186,7 +187,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {Array} resultsToSave - Array of results to save
      * @return {Promise} - Promise that resolves when all results are saved
      */
-    factory.saveResults = function (resultsToSave) {
+    factory.saveResults = function (resultsToSave, seriesChoice) {
         // Extract race information from the first result
         var race = null;
         if (resultsToSave.length > 0 && resultsToSave[0].race) {
@@ -199,7 +200,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         }
 
         // Save all results in one bulk request
-        return factory.saveResultsBulk(resultsToSave, race).then(
+        return factory.saveResultsBulk(resultsToSave, race, seriesChoice).then(
             function (response) {
                 if (response.success) {
                     NotificationService.showNotifiction(true, response.message || response.createdCount + " results saved successfully!");

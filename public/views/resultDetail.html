@@ -16,33 +16,39 @@
         <div class="rd-hero">
             <div class="rd-hero-head">
 
-                <h2 class="rd-racename">
-                    <a ng-repeat="member in result.members"
-                        ui-sref="/members/member({ member: member.username })"
-                        class="rd-title-link">{{member.firstname}}
-                        {{member.lastname}}<span ng-if="!$last">,&nbsp;</span></a>
-                    <span class="rd-title-at">at</span>
-                    <a class="rd-title-link hoverhand" ng-click="goToRace()">{{race.racename}}</a>
-                    <race-icon race="race"></race-icon>
-                    <button ng-if="user.role === 'admin'" type="button" class="btn btn-xs btn-default rd-edit-btn"
-                        ng-click="editResult()" uib-tooltip="Edit result" tooltip-placement="top"
-                        tooltip-append-to-body="true">
-                        <i class="fa fa-pencil"></i>
-                    </button>
-                </h2>
-
+                <!-- Who ran it, as a byline over the race as the title: the same
+                     title as the race page, the runner set apart by colour and
+                     weight rather than by outsizing the race -->
+                <div class="rd-runners">
+                    <span ng-repeat="member in result.members"><a ui-sref="/members/member({ member: member.username })">{{member.firstname}}
+                        {{member.lastname}}</a><span ng-if="!$last">, </span></span>
+                    <span class="rd-runners-at">at</span>
+                </div>
+                <div class="rd-title-row">
+                    <h2 class="rd-racename" ng-class="{'rd-title-long': race.racename.length > 40}">
+                        <a class="rd-title-link hoverhand" ng-click="goToRace()">{{race.racename}}</a>
+                        <race-icon race="race"></race-icon>
+                    </h2>
+                    <div class="rd-hero-actions" ng-if="user.role === 'admin'">
+                        <button type="button" class="btn btn-xs btn-default rd-edit-btn"
+                            ng-click="editResult()" uib-tooltip="Edit result" tooltip-placement="top"
+                            tooltip-append-to-body="true">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="rd-racemeta">
                     <span class="rd-meta-item" ng-if="result.members.length === 1">
                         <i class="fa fa-user"></i>
                         <span ng-if="result.members[0].dateofbirth">{{result.members[0].dateofbirth |
                             ageAtDateFilter:race.racedate}} years old &middot; </span>{{result.members[0].sex}}<span
                             ng-if="result.category"> &middot; {{result.category}}</span>
-                        <result-icon result="result" race="race" race-display="true"></result-icon>
+                        <result-icon result="result" race="race" race-display="true" hide-achievements="true"></result-icon>
                     </span>
                     <span class="rd-meta-item" ng-if="result.members.length > 1">
                         <i class="fa fa-users"></i> {{result.members.length}} team members<span
                             ng-if="result.category"> &middot; {{result.category}}</span>
-                        <result-icon result="result" race="race" race-display="true"></result-icon>
+                        <result-icon result="result" race="race" race-display="true" hide-achievements="true"></result-icon>
                     </span>
                     <span class="rd-meta-item">
                         <i class="fa fa-calendar"></i> {{race.racedate | date:'longDate':'UTC'}}
@@ -94,8 +100,66 @@
             </div>
         </div>
 
-        <!-- Achievements earned by this run, in the home feed's language -->
-        <achievement-feed entries="achievementEntries"></achievement-feed>
+        <!-- Where this race falls in each runner's history (one row per runner),
+             then what the run earned -->
+        <div class="panel panel-default rd-panel" ng-if="memberCounts.length || achievements.length"
+            ng-class="{'rd-counts-team': memberCounts.length > 1}">
+            <div class="panel-heading">
+                <span ng-if="memberCounts.length === 1">In {{memberCounts[0].member.firstname}}'s racing</span>
+                <span ng-if="memberCounts.length > 1">In each runner's racing</span>
+                <span ng-if="!memberCounts.length">Achievements</span>
+            </div>
+            <div class="panel-body">
+                <div class="rd-counts-runner" ng-repeat="mc in memberCounts track by mc.member._id">
+                    <div class="rd-counts-name" ng-if="memberCounts.length > 1">
+                        <a ui-sref="/members/member({ member: mc.member.username })">{{mc.member.firstname}} {{mc.member.lastname}}</a>
+                    </div>
+                    <div class="rd-counts">
+                    <div class="rd-count">
+                        <div class="rd-count-value">{{mc.counts.overall.n | addOrdinalSuffix}}</div>
+                        <div class="rd-count-label">team race <span>of {{mc.counts.overall.of}}</span></div>
+                    </div>
+                    <div class="rd-count" ng-if="mc.counts.surface">
+                        <div class="rd-count-value">{{mc.counts.surface.n | addOrdinalSuffix}}</div>
+                        <div class="rd-count-label">{{mc.counts.surface.surface}} race <span>of {{mc.counts.surface.of}}</span></div>
+                    </div>
+                    <div class="rd-count" ng-if="mc.counts.distance">
+                        <div class="rd-count-value">{{mc.counts.distance.n | addOrdinalSuffix}}</div>
+                        <div class="rd-count-label">{{mc.counts.distance.name}} <span>of {{mc.counts.distance.of}}</span></div>
+                    </div>
+                    <div class="rd-count">
+                        <div class="rd-count-value">{{mc.counts.year.n | addOrdinalSuffix}}</div>
+                        <div class="rd-count-label">race of {{mc.counts.year.year}} <span>of {{mc.counts.year.of}}</span></div>
+                    </div>
+                    <a class="rd-count rd-count-link" ng-if="mc.counts.series" ui-sref="/series-detail({ seriesId: mc.counts.series._id })">
+                        <div class="rd-count-value">{{mc.counts.series.n | addOrdinalSuffix}}</div>
+                        <div class="rd-count-label">{{mc.counts.series.name}} <span>of {{mc.counts.series.of}}</span></div>
+                    </a>
+                    <a class="rd-count rd-count-link" ng-if="mc.counts.previous" ui-sref="/results/result({ resultId: mc.counts.previous.resultId })"
+                        uib-tooltip="Previous race: {{mc.counts.previous.racename}}, {{mc.counts.previous.racedate | date:'longDate':'UTC'}}"
+                        tooltip-placement="top" tooltip-append-to-body="true">
+                        <div class="rd-count-value">{{mc.counts.previous.days === 0 ? 'Same day' : mc.counts.previous.days}}</div>
+                        <div class="rd-count-label"><span ng-if="mc.counts.previous.days !== 0">{{mc.counts.previous.days === 1 ? 'day' : 'days'}} since</span>
+                            <span ng-if="mc.counts.previous.days === 0">as</span> the race before</div>
+                    </a>
+                    </div>
+                </div>
+                <div class="rd-achievements" ng-if="achievements.length">
+                    <div class="rd-achievements-label" ng-if="memberCounts.length">
+                        Achievements <span>{{achievements.length}}</span>
+                    </div>
+                    <div class="rd-achievement-list">
+                        <div class="rd-achievement" ng-repeat="a in achievements track by $index">
+                            <span class="rd-achievement-icon" ng-class="a.cls" uib-tooltip="{{a.label}}"
+                                tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">{{a.icon}}</span>
+                            <span class="rd-achievement-text">{{a.text}}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
 
         <div class="row">
 

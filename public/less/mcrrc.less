@@ -507,6 +507,130 @@ footer {
 
 
 // Team stats: "Most Races Completed" title with its race type picker
+// Racing Stats: one wrapping row of half-width panels (stats/team.html). A
+// panel shown for All Time only drops out and the next moves up, where floated
+// columns would leave half a row empty or snag on a taller neighbour.
+// Race page: the series link with the editions either side of it
+.rd-series-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .rd-series-step {
+        padding: 0 6px;
+        border: 1px solid @gray-lighter;
+        border-radius: 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        text-decoration: none;
+
+        &:hover,
+        &:focus {
+            border-color: @brand-primary;
+            background: @brand-primary-very-light;
+        }
+
+        .fa {
+            font-size: 10px;
+        }
+    }
+}
+
+.row.stats-flow {
+    display: flex;
+    flex-wrap: wrap;
+
+    // Bootstrap's clearfix would be a flex item of its own
+    &:before,
+    &:after {
+        display: none;
+    }
+
+    > [class*="col-"] {
+        float: none;
+        width: 100%;
+    }
+
+    @media (min-width: @screen-md-min) {
+        > .col-md-6 {
+            width: 50%;
+        }
+    }
+}
+
+// Racing Stats: the race series panels' view toggles and intro lines
+.series-stats-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.series-stats-note {
+    margin: 0;
+    padding: 8px 15px;
+    font-size: 12px;
+}
+
+// "No parkruns", beside the view buttons in the panel header
+.series-stats-toggle .series-stats-filter {
+    margin: 0 0 0 6px;
+    padding-top: 0;
+    font-size: 12px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+// Team Best Times: a member's races, opened under their row. Long lists
+// scroll inside the panel rather than stretching it.
+.best-times {
+    margin: 8px -15px -10px;
+    max-height: 280px;
+    overflow-y: auto;
+    border-top: 1px solid @gray-lighter;
+    background: @brand-primary-very-light;
+    cursor: default;
+
+    .table {
+        margin: 0;
+        font-size: 12px;
+        background: transparent;
+
+        > thead > tr > th {
+            position: sticky;
+            top: 0;
+            background: @brand-primary-very-light;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: @gray;
+            border-bottom-width: 1px;
+        }
+
+        > thead > tr > th,
+        > tbody > tr > td {
+            padding: 3px 15px;
+        }
+
+        > tbody > tr > td {
+            border-top-color: darken(@brand-primary-very-light, 6%);
+        }
+    }
+
+    .best-times-time {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+}
+
+.series-stats-info {
+    font-size: 13px;
+    color: @gray-light;
+    cursor: help;
+}
+
 .panel-heading.most-races-heading {
     display: flex;
     align-items: center;
@@ -912,6 +1036,13 @@ footer {
     text-align: left;
     max-width: 500px;
     white-space: nowrap;
+}
+
+// For tooltips that explain rather than label: wrapped to a readable width
+// (tooltip-class="tooltip-wrap")
+.tooltip-wrap .tooltip-inner {
+    white-space: normal;
+    max-width: 300px;
 }
 
 // Inline word-diff highlighting, used in the Activity Log detail modal
@@ -11296,13 +11427,11 @@ footer {
     }
 
     // Name, meta and figures are one block. A white card on the page frame,
-    // the same as the home page's feed cards.
+    // the same as the home page's feed cards. Shared by the race, result and
+    // race series pages: the title and its lines on top, the figures in a row
+    // underneath, so a long name never has to squeeze beside them.
     .rd-hero {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px 32px;
+        display: block;
         margin-bottom: 20px;
         padding: 18px 22px;
         border: 1px solid #e6e9ec;
@@ -11312,19 +11441,73 @@ footer {
         color: @gray-dark;
     }
 
-    // Takes the slack so the figures keep their natural width, and wraps
-    // underneath them once there is no room left
     .rd-hero-head {
-        flex: 1 1 340px;
         min-width: 0;
     }
 
+    // The title, with any admin buttons kept to its right rather than inside
+    // it, where a long name would wrap them into the middle of a line
+    .rd-title-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
     .rd-racename {
+        flex: 1 1 auto;
+        min-width: 0;
         margin: 0 0 6px 0;
         font-weight: 700;
-        font-size: 30px;
+        font-size: ~"clamp(22px, 1.2vw + 16px, 30px)";
         line-height: 1.15;
         color: @brand-primary;
+        // Lines of even length, and a name with no spaces still breaks
+        text-wrap: balance;
+        overflow-wrap: anywhere;
+
+        // A long name a size down, so it stays at two lines or so
+        &.rd-title-long {
+            font-size: ~"clamp(20px, 0.8vw + 15px, 25px)";
+        }
+    }
+
+    .rd-hero-actions {
+        flex: none;
+        display: flex;
+        gap: 4px;
+        padding-top: 6px;
+
+        .rd-edit-btn {
+            margin-left: 0;
+        }
+    }
+
+    // The result page's byline: who ran it, above the race title. Dark and
+    // bold against the title's blue, so the runner stands out by colour and
+    // weight without outsizing the race.
+    .rd-runners {
+        margin-bottom: 4px;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: @gray-darker;
+        overflow-wrap: anywhere;
+
+        a {
+            color: @gray-darker;
+
+            &:hover,
+            &:focus {
+                color: @brand-primary;
+                text-decoration: none;
+            }
+        }
+
+        // Reads on into the title below: "Ann Lee at" / "Cherry Blossom 10 Miler"
+        .rd-runners-at {
+            font-weight: 400;
+            color: @gray-light;
+        }
     }
 
     // Runner and race inside the title stay links, in the site's link blue
@@ -11336,11 +11519,6 @@ footer {
             color: @brand-primary-dark;
             text-decoration: none;
         }
-    }
-
-    .rd-title-at {
-        font-weight: 400;
-        color: @gray-light;
     }
 
     // Admin edit button beside the title (race on the race page, result here)
@@ -11362,6 +11540,12 @@ footer {
                 margin-right: 4px;
                 color: @gray-light;
             }
+        }
+
+        // The series link carries a race name of any length: it may wrap
+        .rd-series-nav {
+            white-space: normal;
+            max-width: 100%;
         }
 
         a.rd-meta-item {
@@ -11395,13 +11579,18 @@ footer {
         }
     }
 
+    // A row of their own under the title and meta, wrapping among themselves
     .rd-hero-figures {
         display: flex;
-        gap: 28px;
+        flex-wrap: wrap;
+        gap: 14px 36px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid @gray-lighter;
     }
 
     .rd-figure {
-        text-align: center;
+        text-align: left;
     }
 
     .rd-figure-value {
@@ -11466,6 +11655,180 @@ footer {
     .rd-nodata {
         color: @gray-light;
         font-style: italic;
+    }
+
+    // Achievements, under the race counts in the same panel: a small label,
+    // then one compact line each, two columns where there is room
+    .rd-achievements {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid @gray-lighter;
+
+        // Alone in the panel (nothing to count): no rule above it
+        &:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+    }
+
+    .rd-achievements-label {
+        margin-bottom: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: @gray;
+
+        span {
+            display: inline-block;
+            min-width: 18px;
+            margin-left: 4px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: @brand-primary-very-light;
+            color: @brand-primary-dark;
+            text-align: center;
+            letter-spacing: 0;
+        }
+    }
+
+    .rd-achievement-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 8px 22px;
+    }
+
+    .rd-achievement {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .rd-achievement-icon {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        // A clear step off the white panel: the brand blue, tinted, and ringed
+        background: mix(@brand-primary, #fff, 20%);
+        box-shadow: inset 0 0 0 1px mix(@brand-primary, #fff, 45%);
+        font-size: 14px;
+        cursor: default;
+
+        // A race count shows its number, as the race count badge does
+        &.rd-achievement-count {
+            font-size: 11px;
+            font-weight: 700;
+            color: @brand-primary-dark;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    .rd-achievement-text {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    // A result's place in its runner's history: a row of small tiles per runner
+    .rd-counts-runner + .rd-counts-runner {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid @gray-lighter;
+    }
+
+    .rd-counts-name {
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    // A team's result repeats a row per runner: smaller tiles keep it compact
+    .rd-counts-team {
+        .rd-counts-runner + .rd-counts-runner {
+            margin-top: 10px;
+            padding-top: 8px;
+        }
+
+        .rd-counts-name {
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .rd-counts {
+            gap: 6px;
+        }
+
+        .rd-count {
+            flex-basis: 105px;
+            max-width: 170px;
+            padding: 4px 9px;
+        }
+
+        .rd-count-value {
+            font-size: 16px;
+        }
+
+        .rd-count-label {
+            font-size: 11px;
+        }
+    }
+
+    .rd-counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .rd-count {
+        flex: 1 1 130px;
+        max-width: 220px;
+        padding: 8px 12px;
+        border: 1px solid #dce9ef;
+        border-radius: 6px;
+        background: @brand-primary-very-light;
+        color: @gray-dark;
+    }
+
+    a.rd-count-link {
+        text-decoration: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &:hover,
+        &:focus {
+            border-color: @brand-primary;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12);
+            text-decoration: none;
+            color: @gray-dark;
+        }
+
+        .rd-count-value {
+            color: @brand-primary;
+        }
+    }
+
+    .rd-count-value {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.15;
+        color: @gray-darker;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rd-count-label {
+        font-size: 12px;
+        line-height: 1.3;
+        color: @gray-dark;
+        overflow-wrap: anywhere;
+
+        span {
+            color: @gray-light;
+        }
     }
 
     // A bar per available ranking: how much of the field finished behind
@@ -11695,29 +12058,6 @@ footer {
     }
 }
 
-@media (max-width: 767px) {
-    .result-detail-page {
-        .rd-hero {
-            display: block;
-        }
-
-        .rd-hero-figures {
-            margin-top: 16px;
-            gap: 18px;
-        }
-
-        .rd-figure-value {
-            font-size: 22px;
-        }
-
-        .rd-racemeta .rd-meta-item {
-            display: block;
-            margin-right: 0;
-            margin-bottom: 4px;
-        }
-    }
-}
-
 
 // =====================================
 // SINGLE RACE PAGE ====================
@@ -11741,17 +12081,6 @@ footer {
             color: #fff;
             background-color: @brand-danger;
             border-color: @brand-danger;
-        }
-    }
-
-    // No runner name to lead with here, so the figures carry the band on
-    // their own and spread across it.
-    // The race band carries up to five figures, so they are allowed to wrap
-    // among themselves rather than pushing the race name off its line.
-    .rd-hero-race {
-        .rd-hero-figures {
-            flex-wrap: wrap;
-            gap: 16px 32px;
         }
     }
 
@@ -11865,11 +12194,6 @@ footer {
     }
 }
 
-@media (max-width: 767px) {
-    .race-detail-page .rd-hero-race .rd-hero-figures {
-        gap: 24px;
-    }
-}
 
 
 // Achievements on the race page run to twenty-odd rows. Two columns on a
@@ -12154,6 +12478,26 @@ footer {
             color: @brand-primary-dark;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
             cursor: default;
+        }
+    }
+
+    // Three tabs do not fit a phone's width with their icons: a full row of
+    // equal tabs, labels only
+    @media (max-width: @screen-xs-max) {
+        display: flex;
+        width: 100%;
+        margin-left: 0;
+
+        > a {
+            flex: 1 1 0;
+            justify-content: center;
+            padding: 5px 6px;
+            font-size: 12px;
+            text-align: center;
+
+            .fa {
+                display: none;
+            }
         }
     }
 }
@@ -12597,6 +12941,379 @@ advanced-filter-panel {
             background-color: @brand-danger;
             border-color: @brand-danger;
         }
+    }
+}
+
+// =====================================
+// ADMIN: RACE SERIES (raceSeries.html, raceSeriesDetail.html)
+// =====================================
+.race-series {
+    text-align: left;
+
+    // The page sits in a .jumbotron, which enlarges every <p>
+    p,
+    .help-block {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .rs-intro {
+        padding-bottom: 0;
+
+        .nav-tabs {
+            margin-top: 10px;
+            font-size: 13px;
+        }
+    }
+
+    .rs-back {
+        margin-right: 4px;
+    }
+
+    .rs-details {
+        border-bottom: 1px solid @gray-lighter;
+        background: @brand-primary-very-light;
+
+        label {
+            font-size: 13px;
+        }
+    }
+
+    .rs-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        margin-bottom: 12px;
+        font-size: 13px;
+
+        .checkbox-inline {
+            padding-top: 0;
+        }
+    }
+
+    .rs-toolbar-end {
+        margin-left: auto;
+    }
+
+    .rs-search {
+        max-width: 280px;
+    }
+
+    .rs-selection {
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        border: 1px solid #c8dde6;
+        border-radius: 6px;
+        background: @brand-primary-very-light;
+        font-size: 13px;
+    }
+
+    .rs-selection-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+
+        .form-control {
+            width: auto;
+            flex: 1 1 220px;
+            max-width: 360px;
+        }
+    }
+
+    .rs-picker {
+        flex: 1 1 220px;
+        max-width: 360px;
+    }
+
+    .rs-club-actions {
+        margin-left: 12px;
+    }
+
+    .rs-club-cell .rs-meta {
+        white-space: nowrap;
+    }
+
+    .rs-table {
+        font-size: 13px;
+
+        > tbody > tr > td {
+            vertical-align: middle;
+        }
+
+        > tbody > tr.rs-pending > td {
+            background: #fffaf0;
+        }
+    }
+
+    .rs-meta {
+        font-size: 12px;
+    }
+
+    .rs-names {
+        font-size: 12px;
+    }
+
+    .rs-check {
+        width: 24px;
+    }
+
+    .rs-date {
+        white-space: nowrap;
+    }
+
+    .rs-arrow {
+        width: 24px;
+        text-align: center;
+    }
+
+    .rs-offdistance {
+        margin-left: 4px;
+        font-weight: 600;
+
+        &.label-ghost {
+            color: @gray-light;
+            background: transparent;
+            border: 1px solid @gray-lighter;
+        }
+    }
+
+    .rs-actions {
+        white-space: nowrap;
+
+        .btn {
+            margin-left: 2px;
+        }
+    }
+
+    .rs-section {
+        border-top: 1px solid @gray-lighter;
+
+        h5 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+    }
+
+    .rs-delete {
+        margin-top: 16px;
+
+        &:hover {
+            color: #fff;
+            background-color: @brand-danger;
+            border-color: @brand-danger;
+        }
+    }
+}
+
+// =====================================
+// PUBLIC: RACE SERIES (series.html, seriesDetail.html)
+// =====================================
+.individual-results.series-list {
+    // # | series | distance | years | editions | results; the count of series is
+    // in the pager line, so # only needs room for three digits
+    .sl-row {
+        grid-template-columns: 30px minmax(180px, 1fr) 130px 96px 80px 80px;
+    }
+
+
+    @media (max-width: @screen-xs-max) {
+        .sl-row {
+            grid-template-columns: 28px minmax(120px, 1fr) 70px 64px 56px;
+        }
+
+        // Years go on phones: the series page has them
+        .sl-row > span:nth-child(4) {
+            display: none;
+        }
+    }
+}
+
+.series-page {
+    .sd-best-table {
+        margin-bottom: 0;
+        font-size: 13px;
+
+        > tbody > tr:first-child > td {
+            border-top: none;
+        }
+    }
+
+    .sd-team-names {
+        font-size: 12px;
+    }
+
+    .sd-rank {
+        width: 24px;
+        color: @gray-light;
+    }
+
+    .sd-value {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .sd-note {
+        font-size: 12px;
+        margin-top: -10px;
+    }
+
+    .sd-sortable {
+        white-space: nowrap;
+        user-select: none;
+
+        .fa {
+            margin-left: 2px;
+        }
+    }
+
+    .sd-sort-idle {
+        opacity: 0.3;
+    }
+
+    .sd-member-search {
+        max-width: 200px;
+        font-weight: 400;
+    }
+
+    // A member's own history, opened under their row
+    .sd-history > td {
+        background: @brand-primary-very-light;
+        padding: 4px 12px 10px 34px;
+    }
+
+    .sd-history-table {
+        margin: 0;
+        font-size: 12px;
+        background: transparent;
+
+        > thead > tr > th {
+            font-size: 10px;
+            color: @gray;
+            border-bottom-width: 1px;
+            padding-top: 6px;
+        }
+
+        > tbody > tr > td {
+            border-top-color: darken(@brand-primary-very-light, 6%);
+        }
+
+        .label {
+            margin-left: 4px;
+            font-size: 9px;
+            vertical-align: middle;
+        }
+
+        small {
+            color: @gray-light;
+        }
+    }
+
+
+    .sd-num {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .sd-time {
+        font-weight: 600;
+    }
+
+    // A value's box: the same padding on every value, so the shaded best one
+    // lines up with the rest
+    .sd-val {
+        display: inline-block;
+        padding: 0 5px;
+        border-radius: 3px;
+        line-height: 1.6;
+    }
+
+    .sd-val-best {
+        background: #fde9b8;
+        box-shadow: inset 0 0 0 1px #f5cf74;
+    }
+
+    .sd-history-key {
+        margin-top: 4px;
+        font-size: 11px;
+        color: @gray;
+
+        .sd-val {
+            margin-right: 4px;
+        }
+    }
+
+    // A quiet note after a race name: what was different about that run
+    // (another distance, a team result); the tooltip says why it matters
+    .sd-aside {
+        margin-left: 6px;
+        font-size: 11px;
+        color: @gray;
+        border-bottom: 1px dotted @gray-light;
+        white-space: nowrap;
+        cursor: help;
+    }
+
+    .sd-nowrap {
+        white-space: nowrap;
+    }
+
+}
+
+// The club logo beside an MCRRC club race; sized by the text around it, its
+// tooltip says what it is
+.club-mark {
+    width: 1.4em;
+    height: 1.4em;
+    margin-left: 4px;
+    vertical-align: -0.35em;
+}
+
+h2 .club-mark {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.1em;
+}
+
+// <race-series-picker> on the add-result forms
+.race-series-picker {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border: 1px solid #c8dde6;
+    border-radius: 6px;
+    background: @brand-primary-very-light;
+    text-align: left;
+
+    .radio {
+        margin: 4px 0;
+        font-size: 13px;
+    }
+
+    .label {
+        font-weight: 600;
+        margin-left: 4px;
+    }
+
+    .rsp-locked,
+    .rsp-current {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .rsp-current .btn {
+        margin-left: 6px;
+    }
+
+    .rsp-new-name,
+    .rsp-other-select {
+        max-width: 320px;
+        margin: 4px 0 0 20px;
+    }
+
+    .rsp-other-select {
+        display: block;
     }
 }
 

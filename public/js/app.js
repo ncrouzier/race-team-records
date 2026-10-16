@@ -74,6 +74,22 @@ app.config(['$httpProvider', function($httpProvider) {
             }
         };
     }]);
+
+    // A save went through: the cached data sets check whether it changed them
+    // (DataCacheService). Not for requests that write nothing the caches hold.
+    var NOT_EDITS = /(^|\/)api\/(heartbeat|login|logout|signup|forgot|reset|activitylogs|agegrade|extract)/;
+    $httpProvider.interceptors.push(['$injector', function($injector) {
+        return {
+            response: function(response) {
+                var config = response.config || {};
+                if (config.method && config.method !== 'GET' && /(^|\/)api\//.test(config.url || '') &&
+                    !NOT_EDITS.test(config.url)) {
+                    $injector.get('DataCacheService').localEdit();
+                }
+                return response;
+            }
+        };
+    }]);
 }]);
 
 app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$transitions', 'ActivityLogService', 'Analytics', '$timeout', 'PageTitleService', function($http, $rootScope, $interval, AuthService, Restangular, $transitions, ActivityLogService, Analytics, $timeout, PageTitleService) {
@@ -236,13 +252,16 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$htt
     });
 
 
+        // Today's birthdays: the server matches day and month only. Asked
+        // fresh on each visit (a few members at most), not kept: a new day
+        // is a new question.
         var birthdayParams = {
-            "filters[dateofbirth]": moment().format('LLL'),//birthday today
+            "filters[dateofbirth]": moment().format('LL'),
             "filters[memberStatus]": 'current',
             sort: 'dateofbirth'
         };
 
-        MembersService.getMembersWithCacheSupport(birthdayParams).then(function(members) {
+        MembersService.getMembers(birthdayParams).then(function(members) {
             $scope.birthdays = members;
         });
 

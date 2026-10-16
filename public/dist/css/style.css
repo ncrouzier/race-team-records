@@ -17922,6 +17922,25 @@ advanced-filter-panel {
   max-width: 200px;
   font-weight: 400;
 }
+.series-page .sd-mine > td {
+  background-color: #fff8e1;
+}
+.series-page .sd-mine > td:first-child {
+  box-shadow: inset 3px 0 0 #f0ad4e;
+}
+.series-page .sd-mine.hoverhand:hover > td {
+  background-color: #fff4d2;
+}
+.series-page .sd-show-me {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.series-page .sd-me,
+.series-page .text-muted.sd-me {
+  color: #985f0d;
+  font-weight: 600;
+}
 .series-page .sd-history > td {
   background: #F7FBFC;
   padding: 4px 12px 10px 34px;

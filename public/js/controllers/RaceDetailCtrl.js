@@ -3,9 +3,6 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
-        // Volunteer jobs are for logged-in eyes only, so they load (or clear)
-        // as the login state settles or changes
-        loadVolunteerJobs();
     });
 
     $scope.loading = true;
@@ -19,7 +16,7 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
     $scope.highlights = null;
     // Every achievement earned here, flattened for <achievement-feed>
     $scope.achievementEntries = [];
-    // Volunteer jobs linked to this race; empty for logged-out visitors
+    // Volunteer jobs linked to this race
     $scope.volunteerJobs = [];
 
     $scope.genderFilter = null;
@@ -497,8 +494,9 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         });
     };
 
+    // Public, like the volunteering stats
     function loadVolunteerJobs() {
-        if (!$scope.user || !$scope.raceinfo) {
+        if (!$scope.raceinfo) {
             $scope.volunteerJobs = [];
             return;
         }

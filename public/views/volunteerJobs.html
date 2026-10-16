@@ -60,9 +60,9 @@
                                 <a ui-sref="/members({member: job.member.username})">
                                     {{job.member.firstname}} {{job.member.lastname}}
                                 </a>
-                                <i ng-show="job.member.sex == 'Male'" class="fa fa-mars" title="Men"
+                                <i ng-show="memberSex(job) == 'Male'" class="fa fa-mars" title="Men"
                                     style="margin-left: 5px;"></i>
-                                <i ng-show="job.member.sex == 'Female'" class="fa fa-venus" title="Women"
+                                <i ng-show="memberSex(job) == 'Female'" class="fa fa-venus" title="Women"
                                     style="margin-left: 5px;"></i>
                             </td>
                             <td><volunteer-event-name job="job"></volunteer-event-name></td>

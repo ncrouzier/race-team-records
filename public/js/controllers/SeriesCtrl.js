@@ -97,8 +97,8 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
     };
 }]);
 
-angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$stateParams', '$filter', 'PageTitleService', 'UtilsService', 'AuthService', 'SeriesService', 'Analytics',
-    function ($scope, $stateParams, $filter, PageTitleService, UtilsService, AuthService, SeriesService, Analytics) {
+angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$stateParams', '$filter', '$timeout', 'PageTitleService', 'UtilsService', 'AuthService', 'SeriesService', 'Analytics',
+    function ($scope, $stateParams, $filter, $timeout, PageTitleService, UtilsService, AuthService, SeriesService, Analytics) {
 
     // For the admin's edit button
     $scope.authService = AuthService;
@@ -110,6 +110,7 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
     $scope.memberFilter = { text: '' };
     $scope.memberSort = { key: 'count', desc: true };
     $scope.memberPage = { current: 1 };
+    $scope.MEMBERS_PER_PAGE = 25;
     $scope.memberRows = [];
     $scope.open = {};
 
@@ -258,6 +259,42 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
     $scope.otherRunsTip = function (h) {
         var times = (h.otherTimes || []).map(function (t) { return $filter('secondsToTimeString')(t); });
         return 'Ran it ' + h.runs + ' times; the best is shown' + (times.length ? '. Also: ' + times.join(', ') : '');
+    };
+
+    // The logged-in runner stands out wherever they appear, in the same amber
+    // as their own results elsewhere (race list, individual results)
+    $scope.isMe = function (member) {
+        var me = $scope.user && $scope.user.member;
+        return !!(me && member && String(member._id) === String(me._id));
+    };
+    $scope.includesMe = function (members) {
+        return (members || []).some($scope.isMe);
+    };
+
+    // Where the logged-in runner is in the members table (as filtered and
+    // sorted), or -1: it often runs to several pages
+    function myRow() {
+        var rows = $scope.memberRows || [];
+        for (var i = 0; i < rows.length; i++) {
+            if ($scope.isMe(rows[i].member)) return i;
+        }
+        return -1;
+    }
+    $scope.canShowMe = function () {
+        return myRow() !== -1;
+    };
+
+    // Their page, their history open, and their row in view
+    $scope.showMe = function () {
+        var i = myRow();
+        if (i === -1) return;
+        $scope.memberPage.current = Math.floor(i / $scope.MEMBERS_PER_PAGE) + 1;
+        $scope.open[$scope.memberRows[i].member._id] = true;
+        Analytics.event('expand_row', { list: 'series_members', via: 'show_me' });
+        $timeout(function () {
+            var row = document.querySelector('.sd-members-table .sd-mine');
+            if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        });
     };
 
     $scope.toggle = function (m) {

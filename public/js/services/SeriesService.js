@@ -1,5 +1,5 @@
 // Race series from cached data. The series index (which races are editions of
-// what) is cached like the race list, until SystemInfo.seriesUpdate moves; joined
+// what) is cached like the race list, following SystemInfo.seriesUpdate; joined
 // with the cached race list, it gives every public series page what the
 // /api/series endpoints compute, through the same shared code
 // (app/raceSeriesStats.js, app/memberRaceCounts.js, in the bundle as
@@ -9,50 +9,37 @@
 // switch over without changing what they render, and falls back to that endpoint
 // when the race list is not already cached: one page is never worth downloading
 // the whole list for (ResultsService.peekCachedRaceList).
-angular.module('mcrrcApp').factory('SeriesService', ['$http', '$q', 'SystemService', 'ResultsService', 'DexieService',
-    function ($http, $q, SystemService, ResultsService, DexieService) {
+angular.module('mcrrcApp').factory('SeriesService', ['$http', '$q', 'ResultsService', 'DexieService', 'DataCacheService',
+    function ($http, $q, ResultsService, DexieService, DataCacheService) {
 
     var MIN_PUBLIC_EDITIONS = 2;
 
     var factory = {};
-    var memory = { stamp: null, index: null };
-    var indexInFlight = null;
 
     // ---- The series index -------------------------------------------------
 
-    function stampOf(sysinfo) {
-        return (sysinfo && sysinfo.seriesUpdate) || 'none';
-    }
-
-    // The index, from memory, then IndexedDB, then the network
-    factory.getIndex = function () {
-        if (indexInFlight) return indexInFlight;
-        indexInFlight = $q.when(SystemService.getSystemInfo('mcrrc')).then(function (sysinfo) {
-            var stamp = stampOf(sysinfo);
-            if (memory.index && memory.stamp === stamp) return memory.index;
-            return $q.when(DexieService.open().then(function () {
+    // Answered at once from the copy this browser keeps, replaced in the
+    // background when seriesUpdate moves (DataCacheService)
+    var seriesIndex = DataCacheService.create({
+        name: 'series',
+        stampFields: ['seriesUpdate'],
+        readStore: function () {
+            return $q.when(DexieService.open()).then(function () {
                 return DexieService.series.get('index');
-            })).catch(function () {
-                return null;
             }).then(function (stored) {
-                if (stored && stored.stamp === stamp) return JSON.parse(stored.data);
-                return $http.get('/api/series/index').then(function (res) {
-                    // Storing is a bonus: a browser without IndexedDB (private
-                    // mode) still gets the index, just fetched each visit
-                    try {
-                        $q.when(DexieService.series.put({ instance: 'index', stamp: stamp, data: JSON.stringify(res.data) }))
-                            .catch(angular.noop);
-                    } catch (e) { /* no IndexedDB */ }
-                    return res.data;
-                });
-            }).then(function (index) {
-                memory = { stamp: stamp, index: index };
-                return index;
+                return stored && stored.data ? { stamp: stored.stamp, data: JSON.parse(stored.data) } : null;
             });
-        }).finally(function () {
-            indexInFlight = null;
-        });
-        return indexInFlight;
+        },
+        writeStore: function (entry) {
+            return $q.when(DexieService.series.put({ instance: 'index', stamp: entry.stamp, data: JSON.stringify(entry.data) }));
+        },
+        fetchFresh: function () {
+            return $http.get('/api/series/index').then(function (res) { return res.data; });
+        }
+    });
+
+    factory.getIndex = function () {
+        return seriesIndex.get();
     };
 
     // ---- Index + race list, joined ----------------------------------------

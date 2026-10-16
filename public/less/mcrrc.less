@@ -13178,6 +13178,35 @@ advanced-filter-panel {
         font-weight: 400;
     }
 
+    // The logged-in runner: their rows in the amber of their own results
+    // elsewhere (race list, individual results), the bar drawn inside so
+    // columns stay put; their name in amber where it sits in someone else's
+    // row or a headline figure
+    .sd-mine > td {
+        background-color: #fff8e1;
+    }
+
+    .sd-mine > td:first-child {
+        box-shadow: inset 3px 0 0 #f0ad4e;
+    }
+
+    .sd-mine.hoverhand:hover > td {
+        background-color: darken(#fff8e1, 3%);
+    }
+
+    // Jumps to the logged-in runner's row in the members table
+    .sd-show-me {
+        margin-left: 8px;
+        font-size: 13px;
+        font-weight: 400;
+    }
+
+    .sd-me,
+    .text-muted.sd-me {
+        color: darken(#f0ad4e, 30%);
+        font-weight: 600;
+    }
+
     // A member's own history, opened under their row
     .sd-history > td {
         background: @brand-primary-very-light;

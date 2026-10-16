@@ -1,89 +1,6 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'MemoryCacheService', function (Restangular, $uibModal, $q, MemoryCacheService) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'DexieService', 'DataCacheService', function (Restangular, $uibModal, $q, DexieService, DataCacheService) {
     var factory = {};
     var members = Restangular.all('members');
-
-    // Cache names for MemoryCacheService
-    var CACHE_NAMES = {
-        MEMBERS: 'members',
-        LOADING_PROMISES: 'loadingPromises'
-    };
-
-
-
-    // Helper function to strip functions and clean objects for IndexedDB storage
-    function stripFunctions(obj) {
-        try {
-            // First try the simple approach
-            var cleaned = JSON.parse(JSON.stringify(obj));
-
-            // Additional cleaning for member objects
-            if (Array.isArray(cleaned)) {
-                cleaned = cleaned.map(function (member) {
-                    if (member && typeof member === 'object') {
-                        // Remove any problematic properties that might cause IndexedDB issues
-                        var cleanMember = {};
-                        for (var key in member) {
-                            if (member.hasOwnProperty(key)) {
-                                var value = member[key];
-                                // Skip functions, undefined, and complex nested objects
-                                if (typeof value !== 'function' && value !== undefined) {
-                                    // Handle dates
-                                    if (value instanceof Date) {
-                                        cleanMember[key] = value.toISOString();
-                                    }
-                                    // Handle simple types
-                                    else if (typeof value === 'string' ||
-                                        typeof value === 'number' ||
-                                        typeof value === 'boolean' ||
-                                        value === null) {
-                                        cleanMember[key] = value;
-                                    }
-                                    // Handle arrays and objects (but be careful with deep nesting)
-                                    else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
-                                        try {
-                                            // Try to serialize and deserialize to ensure it's safe
-                                            var testSerialize = JSON.stringify(value);
-                                            if (testSerialize.length < 1000000) { // Limit size to 1MB
-                                                cleanMember[key] = JSON.parse(testSerialize);
-                                            } else {
-                                                console.warn("Skipping large property:", key, "size:", testSerialize.length);
-                                            }
-                                        } catch (e) {
-                                            console.warn("Skipping problematic property:", key, e.message);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return cleanMember;
-                    }
-                    return member;
-                });
-            }
-
-            return cleaned;
-        } catch (error) {
-            console.error("Error in stripFunctions:", error);
-            // Fallback: return a minimal version with just essential properties
-            if (Array.isArray(obj)) {
-                return obj.map(function (member) {
-                    if (member && typeof member === 'object') {
-                        return {
-                            _id: member._id,
-                            firstname: member.firstname,
-                            lastname: member.lastname,
-                            username: member.username,
-                            memberStatus: member.memberStatus,
-                            dateofbirth: member.dateofbirth,
-                            sex: member.sex
-                        };
-                    }
-                    return member;
-                });
-            }
-            return obj;
-        }
-    }
 
     // =====================================
     // MEMBERS API CALLS ===================
@@ -96,38 +13,37 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         });
     };
 
-    //retrieve members with cache support (memory cache only)
+    // Members, kept in this browser like the race list: answered at once from
+    // the copy here, replaced in the background when members change
+    // (DataCacheService). One copy per query: pages ask for different
+    // fields, filters and orders, which only the server applies.
+    var memberLists = {};
     factory.getMembersWithCacheSupport = function (params) {
-        var cacheKey = JSON.stringify(params || {});
-
-        // Check memory cache first
-        var cachedMembers = MemoryCacheService.get(CACHE_NAMES.MEMBERS, cacheKey);
-        if (cachedMembers) {
-            return $q.resolve(cachedMembers);
+        var key = JSON.stringify(params || {});
+        if (!memberLists[key]) {
+            memberLists[key] = DataCacheService.create({
+                name: 'members:' + key,
+                stampFields: DataCacheService.RACE_DATA,
+                readStore: function () {
+                    return $q.when(DexieService.open()).then(function () {
+                        return DexieService.members.get(key);
+                    }).then(function (stored) {
+                        if (!stored || !stored.data) return null;
+                        return {
+                            stamp: stored.stamp,
+                            data: Restangular.restangularizeCollection(null, JSON.parse(stored.data), 'members', true)
+                        };
+                    });
+                },
+                writeStore: function (entry) {
+                    return $q.when(DexieService.members.put({ params: key, stamp: entry.stamp, data: JSON.stringify(entry.data) }));
+                },
+                fetchFresh: function () {
+                    return members.getList(params);
+                }
+            });
         }
-
-        // Check for loading promises to prevent duplicate requests
-        var loadingPromises = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, cacheKey);
-        if (loadingPromises) {
-            return loadingPromises;
-        }
-
-
-        // Fetch from API and cache in memory only
-        var promise = members.getList(params).then(function (membersFromDatabase) {
-            // Cache in memory
-            MemoryCacheService.set(CACHE_NAMES.MEMBERS, cacheKey, membersFromDatabase);
-            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
-
-            return membersFromDatabase;
-        }).catch(function (error) {
-            console.error("❌ API call failed:", error);
-            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
-            throw error;
-        });
-
-        MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, promise);
-        return promise;
+        return memberLists[key].get();
     };
 
 

@@ -52,18 +52,18 @@
                 <div class="rd-figure" ng-if="stats.bests.men.length">
                     <div class="rd-figure-value">{{ stats.bests.men[0].time | secondsToTimeString }}</div>
                     <div class="rd-figure-label">fastest man</div>
-                    <div class="rd-figure-detail">{{ stats.bests.men[0].member.firstname }} {{ stats.bests.men[0].member.lastname }}, {{ stats.bests.men[0].date | date:'y':'UTC' }}</div>
+                    <div class="rd-figure-detail"><span ng-class="{'sd-me': isMe(stats.bests.men[0].member)}">{{ stats.bests.men[0].member.firstname }} {{ stats.bests.men[0].member.lastname }}</span>, {{ stats.bests.men[0].date | date:'y':'UTC' }}</div>
                 </div>
                 <div class="rd-figure" ng-if="stats.bests.women.length">
                     <div class="rd-figure-value">{{ stats.bests.women[0].time | secondsToTimeString }}</div>
                     <div class="rd-figure-label">fastest woman</div>
-                    <div class="rd-figure-detail">{{ stats.bests.women[0].member.firstname }} {{ stats.bests.women[0].member.lastname }}, {{ stats.bests.women[0].date | date:'y':'UTC' }}</div>
+                    <div class="rd-figure-detail"><span ng-class="{'sd-me': isMe(stats.bests.women[0].member)}">{{ stats.bests.women[0].member.firstname }} {{ stats.bests.women[0].member.lastname }}</span>, {{ stats.bests.women[0].date | date:'y':'UTC' }}</div>
                 </div>
                 <div class="rd-figure" ng-if="stats.bests.teams.length && !stats.bests.men.length && !stats.bests.women.length"
                     uib-tooltip="{{ names(stats.bests.teams[0].members) }}" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
                     <div class="rd-figure-value">{{ stats.bests.teams[0].time | secondsToTimeString }}</div>
                     <div class="rd-figure-label">fastest team</div>
-                    <div class="rd-figure-detail">{{ stats.bests.teams[0].date | date:'y':'UTC' }}, {{ stats.bests.teams[0].members.length <= 2 ? names(stats.bests.teams[0].members) : stats.bests.teams[0].members.length + ' runners' }}</div>
+                    <div class="rd-figure-detail" ng-class="{'sd-me': includesMe(stats.bests.teams[0].members)}">{{ stats.bests.teams[0].date | date:'y':'UTC' }}, {{ stats.bests.teams[0].members.length <= 2 ? names(stats.bests.teams[0].members) : stats.bests.teams[0].members.length + ' runners' }}</div>
                 </div>
                 <div class="rd-figure" ng-if="stats.summary.genderPodiums">
                     <div class="rd-figure-value">{{ stats.summary.genderPodiums }}</div>
@@ -111,8 +111,8 @@
                                 <td class="text-center">{{ e.results }}</td>
                                 <td>
                                     <span ng-if="e.fastest">{{ e.fastest.time | secondsToTimeString }}
-                                        <span class="text-muted" ng-if="!e.fastest.team">{{ e.fastest.members[0].firstname }} {{ e.fastest.members[0].lastname }}</span>
-                                        <span class="text-muted" ng-if="e.fastest.team">{{ names(e.fastest.members) }}</span></span>
+                                        <span class="text-muted" ng-if="!e.fastest.team" ng-class="{'sd-me': isMe(e.fastest.members[0])}">{{ e.fastest.members[0].firstname }} {{ e.fastest.members[0].lastname }}</span>
+                                        <span class="text-muted" ng-if="e.fastest.team" ng-class="{'sd-me': includesMe(e.fastest.members)}">{{ names(e.fastest.members) }}</span></span>
                                 </td>
                             </tr>
                         </tbody>
@@ -131,7 +131,7 @@
                         <p class="rd-nodata" ng-if="!list.rows.length">No results yet.</p>
                         <table class="table sd-best-table" ng-if="list.rows.length">
                             <tbody>
-                                <tr ng-repeat="b in list.rows">
+                                <tr ng-repeat="b in list.rows" ng-class="{'sd-mine': list.teams ? includesMe(b.members) : isMe(b.member)}">
                                     <td class="sd-rank">{{ $index + 1 }}</td>
                                     <td ng-if="!list.teams"><a ui-sref="/members/member({member: b.member.username})">{{ b.member.firstname }} {{ b.member.lastname }}</a></td>
                                     <td ng-if="list.teams" class="sd-team-names">
@@ -159,7 +159,8 @@
         <!-- Members -->
         <div class="panel panel-default rd-panel">
             <div class="panel-heading rd-chart-heading">
-                <span>Members <small>— {{ stats.members.length }} who ran it</small></span>
+                <span>Members <small>— {{ stats.members.length }} who ran it</small>
+                    <a class="sd-show-me" href="" ng-if="canShowMe()" ng-click="showMe()">Show me</a></span>
                 <input class="form-control input-sm sd-member-search" ng-model="memberFilter.text" placeholder="Find a member">
             </div>
             <div class="panel-body rd-table-body">
@@ -175,8 +176,8 @@
                                 <th ng-if="stats.summary.hasAgeGrades" class="hoverhand sd-sortable text-center" ng-click="sortMembers('ageGrade')">BEST AGE GRADE <i class="fa" ng-class="memberSortIcon('ageGrade')"></i></th>
                             </tr>
                         </thead>
-                        <tbody dir-paginate="m in memberRows | itemsPerPage: 25" current-page="memberPage.current" pagination-id="members">
-                            <tr class="hoverhand" ng-click="toggle(m)">
+                        <tbody dir-paginate="m in memberRows | itemsPerPage: MEMBERS_PER_PAGE" current-page="memberPage.current" pagination-id="members">
+                            <tr class="hoverhand" ng-click="toggle(m)" ng-class="{'sd-mine': isMe(m.member)}">
                                 <td>
                                     <i class="fa fa-fw text-muted" ng-class="open[m.member._id] ? 'fa-caret-down' : 'fa-caret-right'"></i>
                                     <a ui-sref="/members/member({member: m.member.username})" ng-click="$event.stopPropagation()">{{ m.member.firstname }} {{ m.member.lastname }}</a>

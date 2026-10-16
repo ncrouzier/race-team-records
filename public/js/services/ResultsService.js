@@ -1,21 +1,10 @@
-angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q', 'localStorageService', '$state', 'NotificationService', 'DexieService', 'MemoryCacheService', 'Analytics', function (Restangular, SystemService, $uibModal, $q, localStorageService, $state, NotificationService, DexieService, MemoryCacheService, Analytics) {
+angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'SystemService', '$uibModal', '$q', 'localStorageService', '$state', 'NotificationService', 'DexieService', 'DataCacheService', 'Analytics', function (Restangular, SystemService, $uibModal, $q, localStorageService, $state, NotificationService, DexieService, DataCacheService, Analytics) {
 
     var factory = {};
     var results = Restangular.all('results');
     var racetypes = Restangular.all('racetypes');
     var races = Restangular.all('races');
     var systeminfos = Restangular.all('systeminfos');
-
-    // Cache names for MemoryCacheService
-    var CACHE_NAMES = {
-        RACE_RESULTS: 'raceResults'
-    };
-
-    // In-memory cache for race results
-    var raceResultsMemoryCache = {};
-
-    // In-flight request deduplication for getRaceResultsWithCacheSupport
-    var inFlightRequests = {};
 
     function isRestangularized(obj) {
         return obj && typeof obj.getRestangularUrl === 'function';
@@ -71,11 +60,6 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             }
         );
     };
-
-    async function getKey(db, key) {
-        var results = await db.get(key);
-        return results;
-    }
 
     //retrieve results
     factory.getResultsWithCacheSupport = async function (params) {
@@ -372,129 +356,80 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             });
     };
 
-    factory.getRaceResultsWithCacheSupport = function (params) {
-        var dedupeKey = JSON.stringify(params || {});
+    // ---- The race list ----------------------------------------------------
+    // Every race with its results (raceinfos), kept in this browser and
+    // answered from there at once, even when out of date, while a new copy
+    // downloads in the background (DataCacheService). "current" is the full
+    // list every page shares; "last30" and "last60" are the home page's
+    // smaller lists. The IndexedDB records keep their old shape: { instance,
+    // date: the stamp as JSON, data: the list as JSON }.
+    var FULL_LIST_PARAMS = { sort: '-racedate -order racename', preload: false };
+    var raceLists = {};
+    var raceListParams = {};
 
-        // If an identical request is already in flight, return the same promise
-        if (inFlightRequests[dedupeKey]) {
-            return inFlightRequests[dedupeKey];
-        }
-
-        var promise = _getRaceResultsWithCacheSupportImpl(params).finally(function () {
-            delete inFlightRequests[dedupeKey];
+    function raceList(key) {
+        if (raceLists[key]) return raceLists[key];
+        raceLists[key] = DataCacheService.create({
+            name: 'races:' + key,
+            stampFields: DataCacheService.RACE_DATA,
+            readStore: function () {
+                return $q.when(DexieService.open()).then(function () {
+                    return DexieService.races.get(key);
+                }).then(function (stored) {
+                    if (!stored || !stored.data) return null;
+                    return {
+                        stamp: DataCacheService.stampOf(JSON.parse(stored.date)),
+                        data: Restangular.restangularizeCollection(null, JSON.parse(stored.data), 'races', true)
+                    };
+                });
+            },
+            writeStore: function (entry) {
+                return $q.when(DexieService.races.put({
+                    instance: key,
+                    date: JSON.stringify(entry.stamp),
+                    data: JSON.stringify(entry.data)
+                }));
+            },
+            fetchFresh: function () {
+                return Restangular.one('raceinfos').get(raceListParams[key] || FULL_LIST_PARAMS);
+            }
         });
-
-        inFlightRequests[dedupeKey] = promise;
-        return promise;
-    };
-
-    async function _getRaceResultsWithCacheSupportImpl(params) {
-        params = params || {};
-        try {
-            var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
-                return sysinfo;
-            }).catch(function (error) {
-                console.log("error", error);
-                throw error;
-            });
-            var date = new Date(sysinfo.overallUpdate);
-
-            var db = DexieService;
-
-            // console.log("date++", date,sysinfo.overallUpdate);
-            try {
-                await db.open();
-            } catch (error) {
-                throw error;
-            }
-
-            var cache, key;
-            if (params.type === "last30") {
-                key = "last30";
-            } else if (params.type === "last60") {
-                key = "last60";
-            } else {
-                key = "current";
-            }
-            // Use params as part of the memory cache key for more granularity
-            var memKey = key + ':' + JSON.stringify(params || {});
-
-            // Check in-memory cache first using MemoryCacheService
-
-            // console.log("memKey", memKey);
-            var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKey);
-            // console.log("memCacheEntry", memCacheEntry);
-            if (memCacheEntry && memCacheEntry.date && date.getTime() === new Date(memCacheEntry.date).getTime()) {
-                // console.log("using cache");
-                return $q.resolve(memCacheEntry.data);
-            }
-
-            //try to get the data from the database
-            try {
-                cache = await getKey(db.races, key);
-            } catch (error) {
-                // Continue to API call even if IndexedDB fails
-                cache = undefined;
-            }
-
-            // Parse the cache date properly since it's stored as a JSON string
-            let cacheDate;
-            if (cache && cache.date) {
-                try {
-                    // Parse the stringified date back to a Date object
-                    cacheDate = new Date(JSON.parse(cache.date));
-                } catch (e) {
-                    console.error("Error parsing cache date:", e);
-                    cacheDate = null;
-                }
-            }
-            // console.log("cache", cache === undefined,date.getTime(), cacheDate);
-            if (cache === undefined || !cacheDate || date.getTime() > cacheDate.getTime()) {
-                return Restangular.one('raceinfos').get(params).then(function (resultsFromDatabase) {
-                    // console.log("using database");
-                    if (!params.preload) {
-                        try {
-                            // console.log("date--", date);
-                            var jsonDate = JSON.stringify(date);
-                            db.races.put({ instance: key, date: jsonDate, data: JSON.stringify(resultsFromDatabase) }).then(function () {
-                                // IndexedDB saved successfully
-                            }).catch(function (error) {
-                                // Don't throw here, just log the error
-                            });
-                        } catch (error) {
-                            // Don't throw here, just log the error
-                        }
-                    }
-
-                    // Update memory cache via MemoryCacheService
-                    var cacheData = { date: date, data: resultsFromDatabase };
-                    // console.log("setting memcache after database call", memKey, cacheData);
-                    MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
-                    return resultsFromDatabase;
-                }).catch(function (error) {
-                    throw error;
-                });
-            } else {
-                // console.log("using indexedb cache");
-                var res = $q(function (resolve, reject) {
-                    try {
-                        var data = Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'races', true);
-                        // Update memory cache via MemoryCacheService
-                        var cacheData = { date: date, data: data };
-                        // console.log("setting memcache after indexedb call", memKey, cacheData);
-                        MemoryCacheService.set(CACHE_NAMES.RACE_RESULTS, memKey, cacheData);
-                        resolve(data);
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
-                return res;
-            }
-        } catch (error) {
-            throw error;
-        }
+        return raceLists[key];
     }
 
+    // A preview (limit, preload: the first races while the full list loads)
+    // is the full list itself when this browser has one; otherwise just the
+    // preview, from the server, one request at a time per kind
+    var previewsInFlight = {};
+    function racePreview(params) {
+        return raceList('current').cached().then(function (held) {
+            if (held) return held.data;
+            var key = JSON.stringify(params);
+            if (!previewsInFlight[key]) {
+                previewsInFlight[key] = Restangular.one('raceinfos').get(params).finally(function () {
+                    delete previewsInFlight[key];
+                });
+            }
+            return previewsInFlight[key];
+        });
+    }
+
+    factory.getRaceResultsWithCacheSupport = function (params) {
+        params = params || {};
+        if (params.limit || params.preload) return racePreview(params);
+        if (params.type === 'last30' || params.type === 'last60') {
+            raceListParams[params.type] = params;
+            return raceList(params.type).get();
+        }
+        // Whatever sort or options it was asked with: the full list
+        return raceList('current').get();
+    };
+
+    // The full list with the stamp it belongs to: what was computed from it
+    // (StatsService) can be kept against that stamp
+    factory.getRaceListEntry = function () {
+        return raceList('current').entry();
+    };
 
     // Race details used to open in a modal; they are a page of their own now,
     // at /races/:raceId. These three keep their old names because a dozen
@@ -530,106 +465,41 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     };
 
     /**
-     * Look for a race in the already-downloaded raceinfos list, without ever
-     * going to the network. Navigating in from the results list means the
-     * whole list is usually right there; fetching the race again would be a
-     * round trip for data we are holding.
-     * @param {string} raceId
-     * @return {Promise} - resolves with the raceinfo, or null if not cached
-     */
-    /**
-     * The full race list if this browser already holds a current copy, without
-     * ever going to the network: pages that can work from it (result detail,
-     * race series) use it when it is there and ask the server otherwise, rather
-     * than download the whole list for one page. Never a limited preload.
+     * The full race list if this browser already holds a copy, possibly out
+     * of date, without ever downloading it: pages that can work from it
+     * (result detail, race series) use it when it is there and ask the
+     * server otherwise, rather than download the whole list for one page.
      * @return {Promise} - resolves with the list, or null
      */
-    var peekedList = { stamp: null, data: null };
     factory.peekCachedRaceList = function () {
-        return $q.when(SystemService.getSystemInfo('mcrrc')).then(function (sysinfo) {
-            if (!sysinfo || !sysinfo.overallUpdate) return null;
-            var stamp = new Date(sysinfo.overallUpdate).getTime();
-            if (peekedList.data && peekedList.stamp === stamp) return peekedList.data;
-            var keep = function (data) {
-                peekedList = { stamp: stamp, data: data };
-                return data;
-            };
-
-            // In memory: a full list ("current", fetched without a limit)
-            var memKeys = MemoryCacheService.keys(CACHE_NAMES.RACE_RESULTS);
-            for (var i = 0; i < memKeys.length; i++) {
-                if (memKeys[i].indexOf('current:') !== 0) continue;
-                var params;
-                try { params = JSON.parse(memKeys[i].slice('current:'.length)); } catch (e) { continue; }
-                if (params && params.limit) continue;
-                var entry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKeys[i]);
-                if (entry && entry.date && new Date(entry.date).getTime() === stamp && angular.isArray(entry.data)) {
-                    return keep(entry.data);
-                }
-            }
-
-            // Then the IndexedDB copy, which is always the full list
-            return $q.when(DexieService.open()).then(function () {
-                return DexieService.races.get('current');
-            }).then(function (cache) {
-                if (!cache || !cache.date) return null;
-                var cacheDate = new Date(JSON.parse(cache.date)).getTime();
-                if (isNaN(cacheDate) || stamp > cacheDate) return null;
-                return keep(JSON.parse(cache.data));
-            });
+        return raceList('current').cached().then(function (held) {
+            return held && angular.isArray(held.data) ? held.data : null;
         }).catch(function () {
             return null;
         });
     };
 
+    /**
+     * Look for a race in the race list this browser holds, without ever
+     * going to the network. Navigating in from the results list means the
+     * whole list is usually right there; fetching the race again would be a
+     * round trip for data we are holding.
+     * @param {string} raceId
+     * @return {Promise} - resolves with the raceinfo, or null if not held
+     */
     factory.peekCachedRaceInfo = function (raceId) {
-        var findRace = function (races) {
-            if (!angular.isArray(races)) return null;
-            for (var i = 0; i < races.length; i++) {
-                if (races[i] && String(races[i]._id) === String(raceId)) {
-                    return races[i];
-                }
-            }
-            return null;
-        };
-
-        return $q.when(SystemService.getSystemInfo('mcrrc')).then(function (sysinfo) {
-            if (!sysinfo || !sysinfo.overallUpdate) {
-                // With nothing to check freshness against, treat the cache as
-                // unusable rather than risk serving a stale race.
-                return null;
-            }
-            var date = new Date(sysinfo.overallUpdate);
-
-            // In-memory first. Entries are keyed by request params, and some
-            // of them are the limit-100 preload rather than the full list, so
-            // a miss here is normal and just falls through.
-            var memKeys = MemoryCacheService.keys(CACHE_NAMES.RACE_RESULTS);
-            for (var i = 0; i < memKeys.length; i++) {
-                var entry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKeys[i]);
-                if (entry && entry.date && date.getTime() === new Date(entry.date).getTime()) {
-                    var hit = findRace(entry.data);
-                    if (hit) return hit;
-                }
-            }
-
-            // Then the IndexedDB copy, which is always the full list
-            return $q.when(DexieService.open()).then(function () {
-                return DexieService.races.get('current');
-            }).then(function (cache) {
-                if (!cache || !cache.date) return null;
-                var cacheDate = new Date(JSON.parse(cache.date));
-                if (isNaN(cacheDate.getTime()) || date.getTime() > cacheDate.getTime()) {
-                    return null;
-                }
-                // Restangularize only the race we came for — doing the whole
-                // collection costs more than the fetch this is replacing.
-                var hit = findRace(JSON.parse(cache.data));
-                return hit ? Restangular.restangularizeElement(null, hit, 'races') : null;
-            }).catch(function () {
-                return null;
+        return factory.peekCachedRaceList().then(function (races) {
+            var lists = [races];
+            ['last60', 'last30'].forEach(function (key) {
+                var held = raceLists[key] && raceLists[key].peek();
+                if (held) lists.push(held.data);
             });
-        }).catch(function () {
+            for (var l = 0; l < lists.length; l++) {
+                if (!angular.isArray(lists[l])) continue;
+                for (var i = 0; i < lists[l].length; i++) {
+                    if (lists[l][i] && String(lists[l][i]._id) === String(raceId)) return lists[l][i];
+                }
+            }
             return null;
         });
     };

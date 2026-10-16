@@ -1349,14 +1349,22 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get all volunteer jobs
-    app.get('/api/volunteerjobs', service.isCaptainOrAdminLoggedIn, function (req, res) {
+    // What the public volunteer job lists leave out of each job
+    const VOLUNTEER_PUBLIC_FIELDS = '-member.sex -member.dateofbirth';
+
+    // Anyone may read the jobs, like the volunteering stats (the race page
+    // shows who volunteered at it, from this list); adding and editing them
+    // stays with admins
+    app.get('/api/volunteerjobs', function (req, res) {
         res.setHeader("Content-Type", "application/json");
 
         const filters = req.query.filters;
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
 
-        let query = VolunteerJob.find();
+        // The volunteer's sex and birth date stay in the database (the
+        // volunteering stats use them) but are not sent: the list is public
+        let query = VolunteerJob.find().select(VOLUNTEER_PUBLIC_FIELDS);
 
         if (filters) {
             if (filters.memberId) {
@@ -1415,7 +1423,7 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             let query = VolunteerJob.find({
                 'member._id': req.params.member_id
-            });
+            }).select(VOLUNTEER_PUBLIC_FIELDS);
 
             if (sort) {
                 query = query.sort(sort);
@@ -1426,24 +1434,6 @@ module.exports = async function (app, qs, passport, async, _) {
             });
         } catch (err) {
             res.send(err);
-        }
-    });
-
-    // Volunteer jobs linked to one race, for the race page. Logged-in users
-    // only, like the volunteering stats.
-    app.get('/api/races/:race_id/volunteerjobs', service.isLoggedIn, async function (req, res) {
-        try {
-            if (!mongoose.Types.ObjectId.isValid(req.params.race_id)) {
-                return res.status(400).json({ error: 'Invalid race id' });
-            }
-            const jobs = await VolunteerJob.find({ 'race._id': req.params.race_id })
-                .select('member._id member.firstname member.lastname member.username jobDate description')
-                .sort('jobDate member.lastname')
-                .lean();
-            res.json(jobs);
-        } catch (err) {
-            console.log('error fetching race volunteer jobs', err);
-            res.status(500).json({ error: 'Error while fetching volunteer jobs' });
         }
     });
 

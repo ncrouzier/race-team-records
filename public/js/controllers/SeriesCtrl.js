@@ -3,8 +3,8 @@
 // admin side is RaceSeriesCtrl.js. API: app/raceSeriesRoutes.js.
 // The list is laid out like Individual Results (individualResults.html): the same
 // search bar, sortable headings, numbered rows and pager.
-angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope', '$state', 'PageTitleService', 'SeriesService',
-    function ($scope, $state, PageTitleService, SeriesService) {
+angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope', '$state', 'PageTitleService', 'SeriesService', 'Analytics',
+    function ($scope, $state, PageTitleService, SeriesService, Analytics) {
 
     PageTitleService.set($scope, 'Race Series');
     $scope.PAGE_SIZE = 50;
@@ -52,6 +52,20 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
         if (now !== before) refresh();
     });
 
+    $scope.$watch('filters.text', function (now, before) {
+        if (now === before) return;
+        Analytics.eventSoon('search:race_series', 'search', function () {
+            var text = ($scope.filters.text || '').trim();
+            if (text.length < 2) return null;
+            return { list: 'race_series', search_term: text, result_count: $scope.rows.length };
+        });
+    });
+
+    $scope.$watch('filters.clubOnly', function (now, before) {
+        if (now === before) return;
+        Analytics.event(now ? 'filter_apply' : 'filter_clear', { list: 'race_series', filter_type: 'club_race' });
+    });
+
     $scope.sortBy = function (column) {
         var f = $scope.filters;
         if (f.sort === column) {
@@ -60,6 +74,7 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
             f.sort = column;
             f.desc = SORTS[column].desc;
         }
+        Analytics.event('sort_list', { list: 'race_series', column: column, direction: f.desc ? 'desc' : 'asc' });
     };
 
     $scope.sortIcon = function (column) {
@@ -67,7 +82,9 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
         return $scope.filters.desc ? 'fa-sort-desc' : 'fa-sort-asc';
     };
 
+    // A row clicked, or its name (the link: track-event in the template)
     $scope.open = function (s) {
+        Analytics.event('select_content', { content_type: 'series', item_id: s._id, source: 'series_list_row' });
         $state.go('/series-detail', { seriesId: s._id });
     };
 
@@ -80,8 +97,8 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
     };
 }]);
 
-angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$stateParams', '$filter', 'PageTitleService', 'UtilsService', 'AuthService', 'SeriesService',
-    function ($scope, $stateParams, $filter, PageTitleService, UtilsService, AuthService, SeriesService) {
+angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$stateParams', '$filter', 'PageTitleService', 'UtilsService', 'AuthService', 'SeriesService', 'Analytics',
+    function ($scope, $stateParams, $filter, PageTitleService, UtilsService, AuthService, SeriesService, Analytics) {
 
     // For the admin's edit button
     $scope.authService = AuthService;
@@ -133,7 +150,17 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
             $scope.memberSort.key = key;
             $scope.memberSort.desc = MEMBER_SORTS[key].desc;
         }
+        Analytics.event('sort_list', { list: 'series_members', column: key, direction: $scope.memberSort.desc ? 'desc' : 'asc' });
     };
+
+    // What is typed is a runner's name: only that the box was used
+    $scope.$watch('memberFilter.text', function (now, before) {
+        if (now === before) return;
+        Analytics.eventSoon('search:series_members', 'search', function () {
+            if (($scope.memberFilter.text || '').trim().length < 2) return null;
+            return { list: 'series_members' };
+        });
+    });
 
     $scope.memberSortIcon = function (key) {
         if ($scope.memberSort.key !== key) return 'fa-sort sd-sort-idle';
@@ -235,6 +262,7 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
 
     $scope.toggle = function (m) {
         $scope.open[m.member._id] = !$scope.open[m.member._id];
+        if ($scope.open[m.member._id]) Analytics.event('expand_row', { list: 'series_members', runs: m.count });
     };
 }]);
 

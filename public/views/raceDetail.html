@@ -68,12 +68,15 @@
                 <!-- The series, with the editions either side of this one -->
                 <span class="rd-meta-item rd-series-nav" ng-if="raceSeries">
                     <a class="rd-series-step" ng-if="raceSeries.previous" ui-sref="/races({raceId: raceSeries.previous._id})"
+                        track-event="series_nav" track-params="{direction: 'previous', series_id: raceSeries._id}"
                         uib-tooltip="Previous edition: {{raceSeries.previous.racename}}, {{raceSeries.previous.racedate | date:'longDate':'UTC'}}" tooltip-placement="top" tooltip-append-to-body="true">
                         <i class="fa fa-chevron-left"></i> {{editionLabel(raceSeries.previous)}}</a>
                     <a ui-sref="/series-detail({seriesId: raceSeries._id})"
+                        track-event="select_content" track-params="{content_type: 'series', item_id: raceSeries._id, source: 'race_page'}"
                         uib-tooltip="All {{raceSeries.editions}} editions of this race, and how the team did across them" tooltip-placement="top" tooltip-append-to-body="true">
                         <i class="fa fa-calendar-check-o"></i> Part of the {{raceSeries.name}} series</a>
                     <a class="rd-series-step" ng-if="raceSeries.next" ui-sref="/races({raceId: raceSeries.next._id})"
+                        track-event="series_nav" track-params="{direction: 'next', series_id: raceSeries._id}"
                         uib-tooltip="Next edition: {{raceSeries.next.racename}}, {{raceSeries.next.racedate | date:'longDate':'UTC'}}" tooltip-placement="top" tooltip-append-to-body="true">
                         {{editionLabel(raceSeries.next)}} <i class="fa fa-chevron-right"></i></a>
                 </span>

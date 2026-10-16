@@ -157,6 +157,21 @@ function publicRace(race) {
     };
 }
 
+// A public series (two confirmed editions or more) with its editions and every
+// result at them; null for any other id
+async function publicSeries(id) {
+    const series = mongoose.isValidObjectId(id) && await RaceSeries.findById(id).lean();
+    const ids = series ? confirmedRaceIds(series) : [];
+    if (ids.length < MIN_PUBLIC_EDITIONS) return null;
+
+    const races = await Race.find({ _id: { $in: ids } },
+        'racename racedate racetype location distanceName isMultisport clubRace').lean();
+    const offDistance = new Set(series.races.filter(l => l.offDistance).map(l => String(l.race)));
+    const editions = races.map(r => ({ race: publicRace(r), offDistance: offDistance.has(String(r._id)) }));
+    const results = await Result.find({ 'race._id': { $in: ids } }, 'race._id members time agegrade ranking').lean();
+    return { series, ids, races, editions, results };
+}
+
 module.exports = function (app) {
 
     function route(handler) {
@@ -298,15 +313,9 @@ module.exports = function (app) {
     }));
 
     app.get('/api/series/:id', route(async (req, res) => {
-        const series = mongoose.isValidObjectId(req.params.id) && await RaceSeries.findById(req.params.id).lean();
-        const ids = series ? confirmedRaceIds(series) : [];
-        if (ids.length < MIN_PUBLIC_EDITIONS) return res.status(404).json({ error: 'Series not found' });
-
-        const races = await Race.find({ _id: { $in: ids } },
-            'racename racedate racetype location distanceName isMultisport clubRace').lean();
-        const offDistance = new Set(series.races.filter(l => l.offDistance).map(l => String(l.race)));
-        const editions = races.map(r => ({ race: publicRace(r), offDistance: offDistance.has(String(r._id)) }));
-        const results = await Result.find({ 'race._id': { $in: ids } }, 'race._id members time agegrade ranking').lean();
+        const found = await publicSeries(req.params.id);
+        if (!found) return res.status(404).json({ error: 'Series not found' });
+        const { series, ids, races, editions, results } = found;
 
         // Each member's usual age grade, from their solo results elsewhere
         const memberIds = [...new Set(results.flatMap(r => (r.members || []).map(m => String(m._id))))]
@@ -690,4 +699,13 @@ module.exports = function (app) {
         await series.save();
         res.json({ ok: true });
     }));
+};
+
+// What a shared link to a series page previews (routes.js, socialMetaForPath):
+// the same summary and bests as the page, without the course ratings
+module.exports.seriesPreview = async function (id) {
+    const found = await publicSeries(id);
+    if (!found) return null;
+    const stats = seriesStats({ editions: found.editions, results: found.results });
+    return { name: found.series.name, clubRace: allClubRaces(found.races), summary: stats.summary, bests: stats.bests };
 };

@@ -220,6 +220,8 @@ module.exports = async function (app, qs, passport, async, _) {
     // Google Analytics, for every page that renders views/partials/ga.ejs:
     // on in production only, so local and test traffic stays out of the real
     // property. GA_ENABLED=true or false overrides either way.
+    // GA_MEASUREMENT_ID: a test property instead of the real one
+    app.locals.gaMeasurementId = process.env.GA_MEASUREMENT_ID || 'G-2HBYX9M5YQ';
     app.locals.gaEnabled = process.env.GA_ENABLED ?
         process.env.GA_ENABLED === 'true' : process.env.NODE_ENV === 'production';
     // Hits marked debug_mode show in GA4's DebugView, and its "Developer
@@ -4070,25 +4072,33 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // MAIL
+    // The contact page's message to the webmaster. Sent from the site's own
+    // address: Brevo only sends from verified senders, and a visitor's gmail
+    // or yahoo address sent from Brevo's servers fails their DMARC checks.
+    // The visitor goes in reply-to, so answering it reaches them.
     app.post('/sendEmail', function (req, res) {
-        const data = req.body;
+        const data = req.body || {};
+        const name = String(data.name || '').trim().slice(0, 200);
+        const email = String(data.from || '').trim();
+        const body = String(data.body || '').trim();
+        if (!name || !body || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Name, a valid email and a message are required' });
+        }
         transport.sendMail({
-            from: {
-                name: data.name,
-                address: data.from
-            },
+            from: { name: name + ' via MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
             to: {
                 name: "MCRRC RACE TEAM SITE ADMIN",
                 address: process.env.MCRRC_FROM_EMAIL
             },
-            subject: data.subject, // Subject line
-            text: data.body // plaintext body
-        }, function (error, response) {
+            replyTo: { name: name, address: email },
+            subject: 'MCRRC race team contact from ' + name,
+            text: 'From: ' + name + ' <' + email + '>\n\n' + body.slice(0, 20000)
+        }, function (error) {
             if (error) {
-                res.sendStatus(404);
-            } else {
-                res.end('{"success" : "Email sent successfully", "status" : 200}');
+                console.error('Contact email failed:', error);
+                return res.status(502).json({ error: 'Could not send the message' });
             }
+            res.json({ success: 'Email sent successfully', status: 200 });
         });
     });
 
@@ -4917,7 +4927,18 @@ module.exports = async function (app, qs, passport, async, _) {
                 const rt = await RaceType.findOne({ name: form.race.racetype.name, surface: form.race.racetype.surface }).lean();
                 if (rt) form.race.racetype._id = rt._id;
             }
-            res.render('compRaceForm.ejs', { form, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
+            // Captains share this link in group chats: the preview says what it
+            // is for and until when
+            const closed = !form.isOpen || (form.closesAt && new Date(form.closesAt) < new Date());
+            const closes = form.closesAt && new Date(form.closesAt).toLocaleDateString('en-US',
+                { month: 'long', day: 'numeric', timeZone: 'America/New_York' });
+            // The race's name reads better than the form's ("Parks Half Comp Form")
+            const raceName = (form.race && form.race.racename) || form.title;
+            const social = socialFor(req, form.title, closed ?
+                'Sign-ups for ' + raceName + ' with the MCRRC Racing Team are closed.' :
+                'Sign up for ' + raceName + ' with the MCRRC Racing Team.' + (closes ? ' Sign-ups close ' + closes + '.' : ''),
+                form.bannerImageUrl);
+            res.render('compRaceForm.ejs', { form, social, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
         } catch (err) {
             res.status(500).send('Server error');
         }
@@ -5456,6 +5477,11 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // Public application form page
+    function applySocial(req) {
+        return socialFor(req, 'Join the MCRRC Racing Team',
+            'Apply to the MCRRC Racing Team: requirements and the application form.');
+    }
+
     app.get('/apply', async function (req, res) {
         try {
             // Only distances we hold age grading standards for — the two races are
@@ -5470,10 +5496,10 @@ module.exports = async function (app, qs, passport, async, _) {
                 .sort({ meters: 1 })
                 .select('name surface meters miles')
                 .lean();
-            res.render('applyForm.ejs', { racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+            res.render('applyForm.ejs', { social: applySocial(req), racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
         } catch (err) {
             console.error('Error loading apply page:', err);
-            res.render('applyForm.ejs', { racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+            res.render('applyForm.ejs', { social: applySocial(req), racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
         }
     });
 
@@ -6465,6 +6491,66 @@ module.exports = async function (app, qs, passport, async, _) {
         return html.replace(/<\/head>/i, tags + '</head>');
     }
 
+    // ---- Google Analytics on hosted pages ----------------------------------
+    // A trusted page gets the site's own tag (views/partials/ga.ejs). A
+    // sandboxed one cannot run it: without allow-same-origin its scripts may
+    // not touch cookies, and gtag.js then sends nothing at all. Its page view
+    // is sent from here instead, through GA4's Measurement Protocol (needs
+    // GA_API_SECRET: Admin > Data streams > the stream > Measurement Protocol
+    // API secrets). The visitor's own _ga cookies come with the request, so
+    // the view joins their visit to the rest of the site.
+    async function withGaTag(html, user) {
+        if (!app.locals.gaEnabled || /googletagmanager\.com\/gtag\/js/i.test(html)) return html;
+        const tag = await require('ejs').renderFile(path.join(__dirname, '..', 'views', 'partials', 'ga.ejs'), {
+            gaEnabled: true,
+            gaDebug: app.locals.gaDebug,
+            gaMeasurementId: app.locals.gaMeasurementId,
+            gaConfig: { page_template: 'hosted_page' },
+            gaUserRole: user && user.role ? user.role : 'anonymous'
+        });
+        return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (head) { return head + tag; }) : tag + html;
+    }
+
+    function cookieValue(req, name) {
+        const pair = (req.headers.cookie || '').split(/;\s*/).find(function (c) { return c.indexOf(name + '=') === 0; });
+        return pair ? decodeURIComponent(pair.slice(name.length + 1)) : null;
+    }
+
+    function sendHostedPageView(req, page, user) {
+        const secret = process.env.GA_API_SECRET;
+        if (!app.locals.gaEnabled || !secret) return;
+        const id = app.locals.gaMeasurementId;
+        // _ga is "GA1.1.<random>.<first visit>"; the client id is the last two
+        const ga = (cookieValue(req, '_ga') || '').split('.');
+        const clientId = ga.length >= 4 ? ga.slice(-2).join('.') :
+            Math.floor(Math.random() * 2147483647) + '.' + Math.floor(Date.now() / 1000);
+        // _ga_<id> holds the session: "GS1.1.<session id>.…" or "GS2.1.s<session id>$…"
+        const session = cookieValue(req, '_ga_' + id.replace(/^G-/, '')) || '';
+        const sessionMatch = session.match(/^GS1\.\d+\.(\d+)/) || session.match(/^GS2\.\d+\.s(\d+)/);
+        const params = {
+            page_location: siteUrl() + req.originalUrl,
+            page_title: page.title,
+            page_template: 'hosted_page',
+            engagement_time_msec: 1
+        };
+        if (sessionMatch) params.session_id = sessionMatch[1];
+        if (req.get('referer')) params.page_referrer = req.get('referer');
+        if (app.locals.gaDebug) params.debug_mode = true;
+        fetch('https://www.google-analytics.com/mp/collect?measurement_id=' + encodeURIComponent(id) +
+            '&api_secret=' + encodeURIComponent(secret), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                client_id: clientId,
+                user_properties: { user_role: { value: user && user.role ? user.role : 'anonymous' } },
+                events: [{ name: 'page_view', params: params }]
+            }),
+            signal: AbortSignal.timeout(5000)
+        }).catch(function (err) {
+            console.error('Could not send a hosted page view to Google Analytics:', err.message);
+        });
+    }
+
     app.get('/pages/:slug', async function (req, res) {
         const HostedPage = require('./models/hostedpage');
         const slug = String(req.params.slug || '').toLowerCase();
@@ -6490,7 +6576,13 @@ module.exports = async function (app, qs, passport, async, _) {
             // Anything behind a login must not be cached by a shared cache
             res.set('Cache-Control', page.access === 'public' && page.published ? 'no-cache' : 'private, no-store');
             if (!page.trusted) res.set('Content-Security-Policy', HOSTED_PAGE_SANDBOX);
-            res.send(withSiteBar(page, withSocialTags(page, page.html)));
+            let html = withSiteBar(page, withSocialTags(page, page.html));
+            // Visits to drafts are an admin checking their work
+            if (page.published) {
+                if (page.trusted) html = await withGaTag(html, user);
+                else sendHostedPageView(req, page, user);
+            }
+            res.send(html);
         } catch (err) {
             console.error('Error serving hosted page:', err);
             sendHostedPageMessage(res, 500, 'Something went wrong', 'This page could not be loaded.');
@@ -6611,13 +6703,59 @@ module.exports = async function (app, qs, passport, async, _) {
     // title (PageTitleService, client-side), the title/description a shared
     // link shows has to be decided here, before res.render.
     //
-    // Mirrors PageTitleService's per-page titles, for the three kinds of page
-    // worth a specific preview: a race, a result, a member. Every other URL
-    // (lists, stats, tools...) keeps the site's default description below —
-    // one lightweight, indexed lookup per request, and never lets a lookup
-    // failure (bad id, member deleted, DB hiccup) break the page render.
+    // Mirrors PageTitleService's per-page titles. Pages about one thing (a
+    // race, a result, a series, a member) look it up: one lightweight,
+    // indexed lookup per request, and a lookup failure (bad id, member
+    // deleted, DB hiccup) never breaks the page render. The public lists,
+    // stats and tools have a fixed preview (PAGE_PREVIEWS); every other URL
+    // (log in, admin pages...) keeps the site's default description below.
     const DEFAULT_OG_TITLE = 'MCRRC Racing Team';
     const DEFAULT_OG_DESCRIPTION = 'MCRRC Racing Team Site: Members bios, race results and records.';
+
+    // Fixed previews by path. No description: the default one.
+    const PAGE_PREVIEWS = {
+        '/': ['MCRRC Racing Team', 'Montgomery County Road Runners Club Racing Team: member bios, race results, team records and stats.'],
+        '/members': ['Team Members', 'Meet the MCRRC Racing Team — current and past members, their bios and race results.'],
+        '/results': ['Race Results', 'Every race MCRRC Racing Team members have run, searchable by distance, date and location.'],
+        '/individualresults': ['Individual Results', 'Every individual result from the MCRRC Racing Team — filter by runner, distance, age group and more.'],
+        '/series': ['Race Series', 'The races MCRRC Racing Team members come back to year after year — every edition, team turnout and fastest times.'],
+        '/records': ['Team Records', 'MCRRC Racing Team records: the fastest times by team members at every distance.'],
+        '/records/age': ['Records by Age', 'MCRRC Racing Team records by age, for men and women at every distance.'],
+        '/records/year': ['Records by Year', 'The MCRRC Racing Team\'s best performances, year by year.'],
+        '/stats': ['Racing Stats', 'MCRRC Racing Team by the numbers: races, distances, surfaces, age grades and series.'],
+        '/stats/team': ['Racing Stats', 'MCRRC Racing Team by the numbers: races, distances, surfaces, age grades and series.'],
+        '/stats/volunteering': ['Volunteering Stats', 'How the MCRRC Racing Team gives back: volunteer hours and jobs by member.'],
+        '/stats/members': ['Member Stats', 'MCRRC Racing Team members by the numbers.'],
+        '/stats/participation': ['Participation', 'MCRRC Racing Team members\' participation and performance over time.'],
+        '/stats/awards': ['Awards', 'The MCRRC Racing Team\'s ROY and MUTROY award winners, year by year.'],
+        '/stats/us-map': ['US Map', 'Where the MCRRC Racing Team has raced: every state on the map.'],
+        '/stats/world-map': ['World Map', 'Where the MCRRC Racing Team has raced: every country on the map.'],
+        '/stats/progress-map': ['Progress Map', 'How far the MCRRC Racing Team\'s combined race miles would take us along a route.'],
+        '/tools/agegrade': ['Age Grade Calculator', 'Calculate your age-graded score and equivalent times for any race distance.'],
+        '/tools/paceAdjustment': ['Pace Adjustment Calculator', 'Adjust your running pace for temperature and dew point.'],
+        '/about': ['About', null],
+        '/gallery': ['Gallery', 'Photos of MCRRC Racing Team members racing and volunteering.'],
+        '/contact': ['Contact', 'Contact the webmaster of the MCRRC Racing Team site with comments, questions or requests.']
+    };
+
+    function siteUrl() {
+        return (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+    }
+
+    // Link-preview tags for the standalone pages (views/partials/social.ejs)
+    function socialFor(req, title, description, image) {
+        return {
+            title: title,
+            description: truncate(description, 200),
+            url: siteUrl() + req.originalUrl,
+            image: image ? (/^https?:\/\//.test(image) ? image : siteUrl() + '/' + image.replace(/^\//, '')) :
+                siteUrl() + '/images/ogimage.jpg'
+        };
+    }
+
+    function plural(n, word) {
+        return n + ' ' + word + (n === 1 ? '' : 's');
+    }
 
     function truncate(text, max) {
         text = (text || '').trim();
@@ -6680,13 +6818,80 @@ module.exports = async function (app, qs, passport, async, _) {
             };
         }
 
-        // Not /members/head-to-head/... (two runners compared, a different
-        // page shape) — only a single member's own pages
-        if ((m = path.match(/^\/members\/([^\/]+)/)) && m[1] !== 'head-to-head') {
-            const Member = require('./models/member');
-            const member = await Member.findOne({ username: m[1] }).select('firstname lastname bio').lean().catch(function () { return null; });
+        if ((m = path.match(/^\/series\/([0-9a-fA-F]{24})/))) {
+            const preview = await require('./raceSeriesRoutes').seriesPreview(m[1]);
+            if (!preview) return null;
+            const sum = preview.summary;
+            var text = preview.name + ' — ' + plural(sum.editions, 'edition') +
+                (sum.firstYear === sum.lastYear ? ' in ' + sum.firstYear : ' since ' + sum.firstYear) + ', ' +
+                plural(sum.runners, 'team member') + ', ' + plural(sum.results, 'result') + '.';
+            const best = function (list) { return list && list[0] && formatRaceTime(list[0].time); };
+            if (sum.teamSeries) {
+                if (best(preview.bests.teams)) text += ' Fastest team: ' + best(preview.bests.teams) + '.';
+            } else {
+                const bests = [];
+                if (best(preview.bests.men)) bests.push(best(preview.bests.men) + ' (men)');
+                if (best(preview.bests.women)) bests.push(best(preview.bests.women) + ' (women)');
+                if (bests.length) text += ' Team bests: ' + bests.join(', ') + '.';
+            }
+            if (preview.clubRace) text += ' MCRRC club race.';
+            return { ogTitle: preview.name, ogDescription: truncate(text, 200) };
+        }
+
+        const Member = require('./models/member');
+        const findMember = function (username) {
+            return Member.findOne({ username: username }).select('firstname lastname bio').lean().catch(function () { return null; });
+        };
+
+        // Two runners compared: /members/head-to-head/:a/:b and
+        // /members/:a/head-to-head/:b. A race counts when they each have a
+        // result of their own in it, as on the page (not on one relay team).
+        if ((m = path.match(/^\/members\/head-to-head\/([^\/]+)\/([^\/]+)/)) ||
+            (m = path.match(/^\/members\/([^\/]+)\/head-to-head\/([^\/]+)/))) {
+            const [a, b] = await Promise.all([findMember(m[1]), findMember(m[2])]);
+            if (!a || !b) return null;
+            const Result = require('./models/result');
+            const [ra, rb] = await Promise.all([a, b].map(function (x) {
+                return Result.find({ 'members._id': x._id }).select('race._id').lean();
+            }));
+            const together = new Set(ra.map(function (r) { return String(r._id); }).filter(function (id) {
+                return rb.some(function (r) { return String(r._id) === id; });
+            }));
+            const racesB = new Set(rb.filter(function (r) { return !together.has(String(r._id)); }).map(function (r) { return String(r.race._id); }));
+            const shared = new Set(ra.filter(function (r) { return !together.has(String(r._id)) && racesB.has(String(r.race._id)); })
+                .map(function (r) { return String(r.race._id); })).size;
+            const nameA = memberFullName(a).trim(), nameB = memberFullName(b).trim();
+            return {
+                ogTitle: nameA + ' vs ' + nameB,
+                ogDescription: 'Head-to-head: ' + nameA + ' and ' + nameB + ' have raced each other ' +
+                    (shared === 1 ? 'once' : shared + ' times') + '.'
+            };
+        }
+
+        // A single member's own pages
+        if ((m = path.match(/^\/members\/([^\/]+)(?:\/([^\/]+))?/)) && m[1] !== 'head-to-head') {
+            const member = await findMember(m[1]);
             if (!member) return null;
             const name = memberFullName(member).trim();
+            if (m[2] === 'stats') {
+                const races = await require('./models/result').countDocuments({ 'members._id': member._id });
+                return {
+                    ogTitle: name + ' – Stats',
+                    ogDescription: name + '\'s racing stats: ' + plural(races, 'race') + ', with distances, surfaces and personal bests.'
+                };
+            }
+            if (m[2] === 'head-to-head') {
+                return {
+                    ogTitle: name + ' – Head to Head',
+                    ogDescription: 'Compare ' + name + '\'s races with any other MCRRC Racing Team member.'
+                };
+            }
+            if (m[2] === 'volunteer-jobs') {
+                return {
+                    ogTitle: name + ' – Volunteer Jobs',
+                    ogDescription: name + '\'s volunteer jobs for the MCRRC Racing Team.'
+                };
+            }
             const bioText = truncate((member.bio || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '), 160);
             return {
                 ogTitle: name,
@@ -6695,12 +6900,14 @@ module.exports = async function (app, qs, passport, async, _) {
             };
         }
 
+        const fixed = PAGE_PREVIEWS[path.length > 1 ? path.replace(/\/+$/, '') : path];
+        if (fixed) return { ogTitle: fixed[0], ogDescription: fixed[1] };
+
         return null;
     }
 
     app.get('*', async function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
-        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
         // Never let a bad id or a DB hiccup break the page itself — the site's
         // default title/description still render
         const social = await socialMetaForPath(req.path).catch(function () { return null; });
@@ -6712,8 +6919,8 @@ module.exports = async function (app, qs, passport, async, _) {
             buildDate: process.env.BUILD_DATE || '',
             ogTitle: (social && social.ogTitle) || DEFAULT_OG_TITLE,
             ogDescription: (social && social.ogDescription) || DEFAULT_OG_DESCRIPTION,
-            ogUrl: siteUrl + req.originalUrl,
-            ogImage: siteUrl + '/images/ogimage.jpg'
+            ogUrl: siteUrl() + req.originalUrl,
+            ogImage: siteUrl() + '/images/ogimage.jpg'
         });
     });
 

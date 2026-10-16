@@ -18,7 +18,8 @@
                     </h2>
                     <div class="rd-hero-actions" ng-if="user.role === 'admin'">
                         <a class="btn btn-xs btn-default rd-edit-btn"
-                            ui-sref="/race-series-detail({seriesId: series._id})" uib-tooltip="Edit this series" tooltip-placement="top" tooltip-append-to-body="true">
+                            ui-sref="/race-series-detail({seriesId: series._id})" uib-tooltip="Edit this series"
+                            track-event="admin_action" track-params="{action: 'series_edit_open', source: 'series_page'}" tooltip-placement="top" tooltip-append-to-body="true">
                             <i class="fa fa-pencil"></i>
                         </a>
                     </div>
@@ -101,7 +102,7 @@
                             <tr dir-paginate="e in stats.editions | itemsPerPage: 20" pagination-id="editions">
                                 <td>{{ e.race.racedate | date:'MMM d, y':'UTC' }}</td>
                                 <td>
-                                    <a ui-sref="/races({raceId: e.race._id})">{{ e.race.racename }}</a>
+                                    <a ui-sref="/races({raceId: e.race._id})" track-event="select_content" track-params="{content_type: 'race', item_id: e.race._id, source: 'series_editions'}">{{ e.race.racename }}</a>
                                     <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="e.race.clubRace && !series.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
                                     <span class="sd-aside" ng-if="e.offDistance"
                                         uib-tooltip="Run at another distance: not counted for times"
@@ -137,7 +138,8 @@
                                         <span ng-repeat="t in b.members"><a ui-sref="/members/member({member: t.username})">{{ t.firstname }} {{ t.lastname }}</a>{{ $last ? '' : ', ' }}</span>
                                     </td>
                                     <td class="text-right sd-value">
-                                        <a ui-sref="/results/result({resultId: b.resultId})" title="Open this result">
+                                        <a ui-sref="/results/result({resultId: b.resultId})" title="Open this result"
+                                            track-event="select_content" track-params="{content_type: 'result', item_id: b.resultId, source: 'series_bests'}">
                                             <span ng-if="list.show === 'time'">{{ b.time | secondsToTimeString }}</span>
                                             <span ng-if="list.show === 'agegrade'">{{ b.agegrade | number:2 }}%</span>
                                         </a>
@@ -204,7 +206,8 @@
                                             <tr ng-repeat="h in m.history">
                                                 <td class="sd-nowrap">{{ h.date | date:'MMM d, y':'UTC' }}</td>
                                                 <td>
-                                                    <a ui-sref="/results/result({resultId: h.resultId})" title="Open this result">{{ h.racename }}</a>
+                                                    <a ui-sref="/results/result({resultId: h.resultId})" title="Open this result"
+                                                        track-event="select_content" track-params="{content_type: 'result', item_id: h.resultId, source: 'series_member_history'}">{{ h.racename }}</a>
                                                     <!-- In a team series every row is a team's: say who with.
                                                          Elsewhere, flag the odd relay. -->
                                                     <span class="sd-aside" ng-if="h.team && stats.summary.teamSeries && h.teammates.length"

@@ -149,6 +149,7 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         var title = PageTitleService.forTransition(transition);
         $timeout(function() {
             var location = window.location.href;
+            Analytics.setLocation(location);
             title.then(function(text) { Analytics.pageView(stateName, location, text); });
         }, 0, false);
     });
@@ -162,9 +163,17 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         Analytics.event('stats_drilldown', params);
     };
 
-    // Who is browsing, by role only (anonymous, user, captain, admin)
-    $rootScope.$watch(function() { return AuthService.isLoggedIn(); }, function(user) {
-        Analytics.setUser(user);
+    // Who is browsing, by role only (anonymous, user, captain, admin). The
+    // page tag already has the role the server saw (index.ejs); this follows
+    // a log in or out. Not before /api/login has answered: until then a
+    // signed-in visitor looks anonymous, and their first page view would
+    // count as one.
+    $rootScope.$watch(function() {
+        if (!$rootScope.authResolved) return undefined;
+        var user = AuthService.isLoggedIn();
+        return user && user.role ? user.role : 'anonymous';
+    }, function(role) {
+        if (role !== undefined) Analytics.setUser(AuthService.isLoggedIn());
     });
 
     // An admin who stays on one page for a while won't trigger a

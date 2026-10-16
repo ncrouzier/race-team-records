@@ -53,7 +53,8 @@
                 pagination-id="series" ng-click="open(s)" title="Open this series">
                 <span class="ir-num ir-position">{{ (pagination.current - 1) * PAGE_SIZE + $index + 1 }}</span>
                 <span class="sl-name">
-                    <a ui-sref="/series-detail({seriesId: s._id})" ng-click="$event.stopPropagation()">{{ s.name }}</a>
+                    <a ui-sref="/series-detail({seriesId: s._id})" ng-click="$event.stopPropagation()"
+                        track-event="select_content" track-params="{content_type: 'series', item_id: s._id, source: 'series_list_name'}">{{ s.name }}</a>
                     <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="s.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true" ng-click="$event.stopPropagation()">
                 </span>
                 <span class="ir-distance">{{ s.racetype }}</span>

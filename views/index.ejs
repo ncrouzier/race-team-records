@@ -22,12 +22,15 @@
 
 	<!-- Google Analytics. Page views are sent by the app, one per page
 	     (public/js/app.js), hence send_page_view: false; events go through
-	     the Analytics service; user_role is set there too. -->
-	<%- include('partials/ga', { gaConfig: { send_page_view: false } }) %>
+	     the Analytics service. user_role starts as the role the server
+	     sees, so the first page view has it; the app follows a log in or
+	     out from there. -->
+	<%- include('partials/ga', { gaConfig: { send_page_view: false }, gaUserRole: user && user.role ? user.role : 'anonymous' }) %>
 	<!-- Per-page where there is one (a race, a result, a member): set
 	     server-side in app/routes.js's catch-all route, before this renders —
 	     a link-preview crawler (iMessage, Slack, Facebook...) reads these tags
 	     without ever running the client JS that drives the tab title. -->
+	<meta property="og:site_name" content="MCRRC Racing Team" />
 	<meta property="og:title" content="<%= ogTitle %>" />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="<%= ogUrl %>" />

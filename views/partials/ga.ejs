@@ -11,8 +11,15 @@
   window.gaEvent(name, params, done) is always defined, so a page can call it
   whether GA is on or not. With done: called once GA has the hit (at most a
   second later), or at once without GA; for an event followed by a reload.
+
+  window.gaPageLocation(href) is the address GA gets for a page: the secret
+  in a magic-login or password-reset link replaced by ":token". Set before
+  the first hit, so no event from such a page (a login, an error) sends it.
 %>
 <script>
+	window.gaPageLocation = function (href) {
+		return String(href).replace(/(\/(?:magic-login|reset-password)\/)[^\/?#]+/, '$1:token');
+	};
 	window.gaEvent = function (name, params, done) {
 		if (typeof window.gtag !== 'function') {
 			if (done) done();
@@ -30,7 +37,7 @@
 	};
 </script>
 <% if (typeof gaEnabled !== 'undefined' && gaEnabled) { %>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2HBYX9M5YQ"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=<%= gaMeasurementId %>"></script>
 <script>
 	window.dataLayer = window.dataLayer || [];
 	function gtag() { dataLayer.push(arguments); }
@@ -38,6 +45,7 @@
 	<% if (typeof gaUserRole !== 'undefined' && gaUserRole) { %>
 	gtag('set', 'user_properties', { user_role: <%- JSON.stringify(gaUserRole) %> });
 	<% } %>
-	gtag('config', 'G-2HBYX9M5YQ', <%- JSON.stringify(Object.assign({}, typeof gaConfig !== 'undefined' && gaConfig ? gaConfig : {}, typeof gaDebug !== 'undefined' && gaDebug ? { debug_mode: true } : {})) %>);
+	gtag('config', <%- JSON.stringify(gaMeasurementId) %>, Object.assign({ page_location: window.gaPageLocation(location.href) },
+		<%- JSON.stringify(Object.assign({}, typeof gaConfig !== 'undefined' && gaConfig ? gaConfig : {}, typeof gaDebug !== 'undefined' && gaDebug ? { debug_mode: true } : {})) %>));
 </script>
 <% } %>

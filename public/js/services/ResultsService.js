@@ -537,6 +537,51 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
      * @param {string} raceId
      * @return {Promise} - resolves with the raceinfo, or null if not cached
      */
+    /**
+     * The full race list if this browser already holds a current copy, without
+     * ever going to the network: pages that can work from it (result detail,
+     * race series) use it when it is there and ask the server otherwise, rather
+     * than download the whole list for one page. Never a limited preload.
+     * @return {Promise} - resolves with the list, or null
+     */
+    var peekedList = { stamp: null, data: null };
+    factory.peekCachedRaceList = function () {
+        return $q.when(SystemService.getSystemInfo('mcrrc')).then(function (sysinfo) {
+            if (!sysinfo || !sysinfo.overallUpdate) return null;
+            var stamp = new Date(sysinfo.overallUpdate).getTime();
+            if (peekedList.data && peekedList.stamp === stamp) return peekedList.data;
+            var keep = function (data) {
+                peekedList = { stamp: stamp, data: data };
+                return data;
+            };
+
+            // In memory: a full list ("current", fetched without a limit)
+            var memKeys = MemoryCacheService.keys(CACHE_NAMES.RACE_RESULTS);
+            for (var i = 0; i < memKeys.length; i++) {
+                if (memKeys[i].indexOf('current:') !== 0) continue;
+                var params;
+                try { params = JSON.parse(memKeys[i].slice('current:'.length)); } catch (e) { continue; }
+                if (params && params.limit) continue;
+                var entry = MemoryCacheService.get(CACHE_NAMES.RACE_RESULTS, memKeys[i]);
+                if (entry && entry.date && new Date(entry.date).getTime() === stamp && angular.isArray(entry.data)) {
+                    return keep(entry.data);
+                }
+            }
+
+            // Then the IndexedDB copy, which is always the full list
+            return $q.when(DexieService.open()).then(function () {
+                return DexieService.races.get('current');
+            }).then(function (cache) {
+                if (!cache || !cache.date) return null;
+                var cacheDate = new Date(JSON.parse(cache.date)).getTime();
+                if (isNaN(cacheDate) || stamp > cacheDate) return null;
+                return keep(JSON.parse(cache.data));
+            });
+        }).catch(function () {
+            return null;
+        });
+    };
+
     factory.peekCachedRaceInfo = function (raceId) {
         var findRace = function (races) {
             if (!angular.isArray(races)) return null;

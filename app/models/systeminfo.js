@@ -8,6 +8,10 @@ var systeminfoSchema = mongoose.Schema({
     racetypeUpdate        : Date,
     memberUpdate        : Date,
     volunteerJobUpdate  : Date,
+    // Race series links (app/models/raceseries.js). Kept out of the "overall"
+    // update, so a series change does not make browsers fetch the whole race
+    // list again: the series index has a cache of its own.
+    seriesUpdate        : Date,
     createdAt: Date,
     updatedAt: Date
 });

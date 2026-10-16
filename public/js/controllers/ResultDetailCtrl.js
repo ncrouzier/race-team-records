@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'PageTitleService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, PageTitleService) {
+angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'PageTitleService', 'ResultDetailService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, PageTitleService, ResultDetailService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -405,7 +405,8 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
             return;
         }
 
-        ResultsService.getResultDetail(resultId).then(function (detail) {
+        // From the cached race list when there is one, else the detail endpoint
+        ResultDetailService.getDetail(resultId).then(function (detail) {
             $scope.loading = false;
             if (!detail || !detail.result) {
                 $scope.notFound = true;

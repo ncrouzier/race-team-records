@@ -14,6 +14,7 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
                     racetypeUpdate: headers['x-racetype-update'],
                     memberUpdate: headers['x-member-update'],
                     volunteerJobUpdate: headers['x-volunteer-job-update'],
+                    seriesUpdate: headers['x-series-update'],
                     overallUpdate: headers['x-overall-update']
                 };
                 lastApiCallTime = Date.now();
@@ -61,6 +62,7 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
                     racetypeUpdate: headers['x-racetype-update'],
                     memberUpdate: headers['x-member-update'],
                     volunteerJobUpdate: headers['x-volunteer-job-update'],
+                    seriesUpdate: headers['x-series-update'],
                     overallUpdate: headers['x-overall-update']
                 };
                 lastApiCallTime = Date.now();

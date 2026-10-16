@@ -239,3 +239,22 @@ describe('teamSeriesStats (Racing Stats tab)', () => {
         expect(teamSeriesStats({ seriesList: [spring], results }).fastestCourses).toEqual([]);
     });
 });
+
+describe('mainLocation', () => {
+    const { mainLocation } = require('../app/raceSeriesStats');
+    const at = (state, date, country) => ({ racedate: new Date(date), location: { state, country } });
+
+    test('the most common location', () => {
+        expect(mainLocation([at('MD', '2020-01-01'), at('MD', '2021-01-01'), at('VA', '2022-01-01')])).toBe('MD');
+    });
+
+    test('a tie goes to the most recent edition, whatever the order', () => {
+        const fin = at(null, '2023-08-27', 'FIN'), zaf = at(null, '2018-09-02', 'ZAF');
+        expect(mainLocation([fin, zaf])).toBe('FIN');
+        expect(mainLocation([zaf, fin])).toBe('FIN');
+    });
+
+    test('no location at all', () => {
+        expect(mainLocation([{ racedate: new Date() }])).toBe('');
+    });
+});

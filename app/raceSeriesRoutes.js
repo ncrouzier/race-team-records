@@ -10,7 +10,7 @@ const RaceType = require('./models/racetype');
 const RaceSeries = require('./models/raceseries');
 const { seriesKey, parkrunName, isVariableDistance, findPossibleMerges, rankSeriesForRace, similarNames } = require('./raceSeriesMatcher');
 const raceSeriesSync = require('./raceSeriesSync');
-const { seriesStats, teamSeriesStats, distanceKey, surfaceKey } = require('./raceSeriesStats');
+const { seriesStats, teamSeriesStats, mainLocation, distanceKey, surfaceKey } = require('./raceSeriesStats');
 
 function badRequest(res, message) {
     return res.status(400).json({ error: message });
@@ -110,7 +110,7 @@ async function summaries() {
             offDistance: s.races.filter(l => l.offDistance).length,
             firstDate: dates.length ? new Date(Math.min(...dates)) : null,
             lastDate: dates.length ? new Date(Math.max(...dates)) : null,
-            location: mostCommon(linked.map(locationLabel).filter(Boolean)) || ''
+            location: mainLocation(linked)
         };
     }).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -203,10 +203,28 @@ module.exports = function (app) {
                 editions: linked.length,
                 firstYear: years.length ? Math.min(...years) : null,
                 lastYear: years.length ? Math.max(...years) : null,
-                location: mostCommon(linked.map(locationLabel).filter(Boolean)) || '',
+                location: mainLocation(linked),
                 results: linked.reduce((n, r) => n + (resultCount.get(String(r._id)) || 0), 0)
             };
         }).sort((a, b) => a.name.localeCompare(b.name)));
+    }));
+
+    // Every public series as ids only: which races are editions of what. Pages
+    // join it with the cached race list (names, dates, results) and run the same
+    // stats as the endpoints below in the browser. Cached by browsers until
+    // SystemInfo.seriesUpdate moves.
+    app.get('/api/series/index', route(async (req, res) => {
+        const all = await RaceSeries.find({ 'races.status': 'confirmed' }, 'name racetype races').lean();
+        res.json(all
+            .filter(s => confirmedRaceIds(s).length >= MIN_PUBLIC_EDITIONS)
+            .map(s => ({
+                _id: s._id,
+                name: s.name,
+                racetype: s.racetype ? { name: s.racetype.name, surface: s.racetype.surface } : null,
+                parkrun: !!parkrunName(s.name),
+                editions: s.races.filter(l => l.status === 'confirmed')
+                    .map(l => ({ raceId: l.race, offDistance: !!l.offDistance }))
+            })));
     }));
 
     // Loyalty and course ratings across every series, for the Racing Stats tab
@@ -317,7 +335,7 @@ module.exports = function (app) {
             name: series.name,
             clubRace: allClubRaces(races),
             racetype: series.racetype ? { name: series.racetype.name, surface: series.racetype.surface } : null,
-            location: mostCommon(races.map(locationLabel).filter(Boolean)) || '',
+            location: mainLocation(races),
             stats: seriesStats({ editions, results, usualAgeGrades: { byDistance, bySurface } })
         });
     }));

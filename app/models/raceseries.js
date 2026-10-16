@@ -40,6 +40,27 @@ var raceSeriesSchema = mongoose.Schema({
 raceSeriesSchema.index({ 'races.race': 1 });
 raceSeriesSchema.index({ 'races.status': 1 });
 
+// Any change to any series moves SystemInfo.seriesUpdate, which tells browsers
+// their cached series index is stale. On every kind of write, so no route,
+// hook or script can forget it; a burst of writes (the backfill saves hundreds)
+// is one update. unref: a pending update never keeps a script alive, so a
+// script that writes series bumps it itself before it exits.
+let seriesChangePending = null;
+function seriesChanged() {
+    if (seriesChangePending) return;
+    seriesChangePending = setTimeout(function () {
+        seriesChangePending = null;
+        require('../service').updateSystemInfoAndInvalidateSystemInfoCache('seriesUpdate')
+            .catch(err => console.error('Could not record a race series change:', err));
+    }, 200);
+    if (seriesChangePending.unref) seriesChangePending.unref();
+}
+
+raceSeriesSchema.post('save', seriesChanged);
+raceSeriesSchema.post(['updateOne', 'updateMany', 'deleteOne', 'deleteMany', 'findOneAndUpdate', 'findOneAndDelete', 'replaceOne'],
+    seriesChanged);
+raceSeriesSchema.post('deleteOne', { document: true, query: false }, seriesChanged);
+
 raceSeriesSchema.pre('save', function () {
     const date = Date.now();
     if (this.isNew) {

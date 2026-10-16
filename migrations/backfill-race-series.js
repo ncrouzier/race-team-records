@@ -137,6 +137,11 @@ async function main() {
         }
         console.log('\nSaved ' + proposals.length + ' new series and ' + additions.length + ' suggestions for existing ones.');
     }
+    if (WRITE) {
+        // Browsers refresh their cached series index on this. The model would
+        // record it too, but not before this script exits.
+        await require('../app/service').updateSystemInfoAndInvalidateSystemInfoCache('seriesUpdate');
+    }
 
     await mongoose.disconnect();
 }

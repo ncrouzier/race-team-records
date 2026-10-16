@@ -3,8 +3,8 @@
 // admin side is RaceSeriesCtrl.js. API: app/raceSeriesRoutes.js.
 // The list is laid out like Individual Results (individualResults.html): the same
 // search bar, sortable headings, numbered rows and pager.
-angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope', '$http', '$state', 'PageTitleService',
-    function ($scope, $http, $state, PageTitleService) {
+angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope', '$state', 'PageTitleService', 'SeriesService',
+    function ($scope, $state, PageTitleService, SeriesService) {
 
     PageTitleService.set($scope, 'Race Series');
     $scope.PAGE_SIZE = 50;
@@ -38,8 +38,9 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
         $scope.pagination.current = 1;
     }
 
-    $http.get('/api/series').then(function (res) {
-        $scope.series = res.data;
+    // From the cached race list and series index when there are some
+    SeriesService.getList().then(function (list) {
+        $scope.series = list;
         refresh();
     }, function () {
         $scope.loadError = true;
@@ -79,8 +80,8 @@ angular.module('mcrrcApp.results').controller('SeriesListController', ['$scope',
     };
 }]);
 
-angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$http', '$stateParams', '$filter', 'PageTitleService', 'UtilsService', 'AuthService',
-    function ($scope, $http, $stateParams, $filter, PageTitleService, UtilsService, AuthService) {
+angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope', '$stateParams', '$filter', 'PageTitleService', 'UtilsService', 'AuthService', 'SeriesService',
+    function ($scope, $stateParams, $filter, PageTitleService, UtilsService, AuthService, SeriesService) {
 
     // For the admin's edit button
     $scope.authService = AuthService;
@@ -139,10 +140,10 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
         return $scope.memberSort.desc ? 'fa-sort-desc' : 'fa-sort-asc';
     };
 
-    $http.get('/api/series/' + $stateParams.seriesId).then(function (res) {
-        $scope.series = res.data;
-        $scope.stats = res.data.stats;
-        PageTitleService.set($scope, res.data.name);
+    SeriesService.getSeries($stateParams.seriesId).then(function (series) {
+        $scope.series = series;
+        $scope.stats = series.stats;
+        PageTitleService.set($scope, series.name);
         // Built once: a list written in the template is a new array every digest.
         // A distance with no age grading has no age grade list.
         // A relay series has a list of teams, and none of runners on their own
@@ -240,8 +241,8 @@ angular.module('mcrrcApp.results').controller('SeriesDetailController', ['$scope
 // Racing Stats tab: loyalty and course ratings across every race series
 // (app/raceSeriesStats.js teamSeriesStats). Inside StatsController's page, so
 // `user` (for highlighting your own rows) comes from there.
-angular.module('mcrrcApp.results').controller('TeamSeriesStatsController', ['$scope', '$http',
-    function ($scope, $http) {
+angular.module('mcrrcApp.results').controller('TeamSeriesStatsController', ['$scope', 'SeriesService',
+    function ($scope, SeriesService) {
 
     $scope.courseView = 'fastest';
     // Each panel has its own "leave out parkruns"
@@ -261,14 +262,14 @@ angular.module('mcrrcApp.results').controller('TeamSeriesStatsController', ['$sc
         var key = noParkrun ? 'exclude' : 'include';
         if (!loaded[key] && !loading[key]) {
             loading[key] = true;
-            $http.get('/api/series/stats', { params: noParkrun ? { parkrun: 'exclude' } : {} }).then(function (res) {
+            SeriesService.getTeamStats(noParkrun).then(function (stats) {
                 // Each holder's first few races, as one line
                 ['all', 'men', 'women'].forEach(function (list) {
-                    res.data.recordHolders[list].forEach(function (h) {
+                    stats.recordHolders[list].forEach(function (h) {
                         h.preview = h.records.slice(0, 3).map(function (r) { return r.series.name; }).join(', ');
                     });
                 });
-                loaded[key] = res.data;
+                loaded[key] = stats;
             }, function () {
                 $scope.seriesStatsError = true;
             });
@@ -303,9 +304,9 @@ angular.module('mcrrcApp.results').controller('TeamSeriesStatsController', ['$sc
             return;
         }
         $scope.club = null;
-        $http.get('/api/series/club-participation', { params: year === 'All Time' ? {} : { year: year } }).then(function (res) {
-            clubByYear[key] = res.data;
-            if (String($scope.miscStats.year) === key) $scope.club = res.data;
+        SeriesService.getClubParticipation(year).then(function (club) {
+            clubByYear[key] = club;
+            if (String($scope.miscStats.year) === key) $scope.club = club;
         }, function () {
             $scope.clubError = true;
         });

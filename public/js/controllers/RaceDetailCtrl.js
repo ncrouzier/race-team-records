@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', '$http', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics, $http) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', 'SeriesService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics, SeriesService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -561,8 +561,8 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         return sameYear ? $filter('date')(date, 'MMM d', 'UTC') : String(date.getUTCFullYear());
     };
     function loadSeries(raceId) {
-        $http.get('/api/series/by-race/' + raceId).then(function (res) {
-            $scope.raceSeries = res.data || null;
+        SeriesService.getForRace(raceId).then(function (series) {
+            $scope.raceSeries = series || null;
         });
     }
 

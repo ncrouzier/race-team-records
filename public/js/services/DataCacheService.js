@@ -3,12 +3,26 @@
 // once with the copy already here and replaces it in the background.
 //
 // After this browser saves something (app.js, any successful write to /api),
-// every cache checks its stamp again once the saving has gone quiet, and the
-// pages asking meanwhile wait for the new copy: an admin sees their own edit.
+// every cache is out of date: nothing is downloaded then, however many saves
+// follow (a run of results in the add-result modal), but the next page that
+// needs the data waits for it as it is now. Pages that can ask the server for
+// one race or result do that meanwhile (ResultsService.peekCachedRaceList).
+// The time of the last edit is kept in localStorage, so a reload or a cache
+// not created yet starts out of date too.
 angular.module('mcrrcApp').factory('DataCacheService', ['$q', '$timeout', 'SystemService', function ($q, $timeout, SystemService) {
 
     var factory = {};
     var caches = [];
+
+    // When this browser last saved an edit, and when each cache last caught up
+    var EDITED_KEY = 'mcrrcDataEditedAt';
+    var FRESH_KEY = 'mcrrcDataFreshAt:';
+    function readTime(key) {
+        try { return Number(window.localStorage.getItem(key)) || 0; } catch (e) { return 0; }
+    }
+    function writeTime(key, time) {
+        try { window.localStorage.setItem(key, String(time)); } catch (e) { /* private mode */ }
+    }
 
     // An ISO date, comparable as text, for a SystemInfo field
     function stampOf(value) {
@@ -37,7 +51,10 @@ angular.module('mcrrcApp').factory('DataCacheService', ['$q', '$timeout', 'Syste
     // options: as StaleCache.create, with stampFields (the SystemInfo fields
     // its data follows) in place of readStamp
     factory.create = function (options) {
+        var freshKey = FRESH_KEY + (options.name || '');
         var cache = window.StaleCache.create(angular.extend({
+            outOfDate: readTime(EDITED_KEY) > readTime(freshKey),
+            onFresh: function () { writeTime(freshKey, Date.now()); },
             readStamp: function () {
                 return SystemService.getSystemInfo('mcrrc').then(function (info) {
                     return newestStamp(info, options.stampFields);
@@ -53,8 +70,7 @@ angular.module('mcrrcApp').factory('DataCacheService', ['$q', '$timeout', 'Syste
             get: function () { return $q.when(cache.get()); },
             entry: function () { return $q.when(cache.entry()); },
             cached: function () { return $q.when(cache.cached()); },
-            peek: cache.peek,
-            recheck: function (after) { return $q.when(cache.recheck(after)); }
+            peek: cache.peek
         };
     };
 
@@ -63,12 +79,13 @@ angular.module('mcrrcApp').factory('DataCacheService', ['$q', '$timeout', 'Syste
     var QUIET_MS = 400;
     var quiet = null;       // { timer, deferred }: the wait in progress
     factory.localEdit = function () {
+        writeTime(EDITED_KEY, Date.now());
         if (quiet) {
             $timeout.cancel(quiet.timer);
         } else {
             quiet = { deferred: $q.defer() };
             var after = quiet.deferred.promise;
-            caches.forEach(function (cache) { cache.recheck(after); });
+            caches.forEach(function (cache) { cache.invalidate(after); });
         }
         var current = quiet;
         current.timer = $timeout(function () {

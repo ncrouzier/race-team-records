@@ -103,58 +103,6 @@ describe('StaleCache', () => {
         expect(await cache.get()).toBe('new');
     });
 
-    test('after a recheck, callers wait for the new copy instead of getting the old one', async () => {
-        const { world, cache } = setup();
-        await cache.get();
-        world.stamp = 's2';             // this browser just saved an edit
-        world.served = 'v2';
-        cache.recheck();
-        expect(await cache.get()).toBe('v2');
-        expect(world.fetches).toBe(2);
-    });
-
-    test('a recheck that finds the same stamp does not download', async () => {
-        const { world, cache } = setup();
-        await cache.get();
-        await cache.recheck();
-        expect(await cache.get()).toBe('v1');
-        expect(world.fetches).toBe(1);
-    });
-
-    test('a recheck during an older download starts a new one, and the older one cannot overwrite it', async () => {
-        const first = deferred(), second = deferred();
-        const downloads = [first, second];
-        const { world, cache } = setup({ fetchFresh: () => downloads.shift().promise });
-        world.stored = { stamp: 's0', data: 'old' };
-        await cache.get();              // background download #1, for s1
-        await settle();
-        world.stamp = 's2';             // an edit lands while it runs
-        cache.recheck();
-        const answer = cache.get();
-        await settle();
-        second.resolve('after-edit');
-        expect(await answer).toBe('after-edit');
-        first.resolve('before-edit');
-        await settle();
-        expect(await cache.get()).toBe('after-edit');
-        expect(world.stored).toEqual({ stamp: 's2', data: 'after-edit' });
-    });
-
-    test('a recheck can wait for a signal (more edits coming), and callers wait with it', async () => {
-        const quiet = deferred();
-        const { world, cache } = setup();
-        await cache.get();
-        cache.recheck(quiet.promise);
-        world.stamp = 's2';             // a second edit, still inside the wait
-        world.served = 'v2';
-        const answer = cache.get();
-        await settle();
-        expect(world.fetches).toBe(1);  // nothing checked yet
-        quiet.resolve();
-        expect(await answer).toBe('v2');
-        expect(world.fetches).toBe(2);
-    });
-
     test('cached answers with what is held or stored, never downloading', async () => {
         const { world, cache } = setup();
         expect(await cache.cached()).toBeNull();
@@ -224,6 +172,140 @@ describe('StaleCache', () => {
         expect(cache.peek()).toBeNull();
         await cache.get();
         expect(cache.peek()).toEqual({ stamp: 's1', data: 'v1' });
+        expect(world.fetches).toBe(1);
+    });
+});
+
+// After this browser saves an edit: nothing is downloaded until a page asks,
+// and that page waits for the data as it is now
+describe('StaleCache.invalidate', () => {
+    test('downloads nothing until asked', async () => {
+        const { world, cache } = setup();
+        await cache.get();
+        world.stamp = 's2';
+        world.served = 'v2';
+        cache.invalidate();
+        await settle();
+        expect(world.fetches).toBe(1);
+    });
+
+    test('the next caller waits for the new copy', async () => {
+        const { world, cache } = setup();
+        await cache.get();
+        world.stamp = 's2';
+        world.served = 'v2';
+        cache.invalidate();
+        expect(await cache.get()).toBe('v2');
+        expect(world.fetches).toBe(2);
+    });
+
+    test('a stamp that did not move means no download (an edit to other data)', async () => {
+        const { world, cache } = setup();
+        await cache.get();
+        cache.invalidate();
+        expect(await cache.get()).toBe('v1');
+        expect(world.fetches).toBe(1);
+    });
+
+    test('several edits in a row cost one download, on the next use', async () => {
+        const { world, cache } = setup();
+        await cache.get();
+        for (let i = 2; i <= 6; i++) {
+            world.stamp = 's' + i;
+            world.served = 'v' + i;
+            cache.invalidate();
+            await settle();
+        }
+        expect(world.fetches).toBe(1);
+        expect(await cache.get()).toBe('v6');
+        expect(world.fetches).toBe(2);
+    });
+
+    test('meanwhile, nothing is offered as held (pages that can ask the server for less do)', async () => {
+        const { world, cache } = setup();
+        await cache.get();
+        world.stamp = 's2';
+        cache.invalidate();
+        expect(cache.peek()).toBeNull();
+        expect(await cache.cached()).toBeNull();
+        expect(world.fetches).toBe(1);
+        await cache.get();
+        expect(cache.peek().stamp).toBe('s2');
+    });
+
+    test('callers during the wait for more edits wait with it', async () => {
+        const quiet = deferred();
+        const { world, cache } = setup();
+        await cache.get();
+        cache.invalidate(quiet.promise);
+        world.stamp = 's2';
+        world.served = 'v2';
+        const answer = cache.get();
+        await settle();
+        expect(world.fetches).toBe(1);
+        quiet.resolve();
+        expect(await answer).toBe('v2');
+    });
+
+    test('an edit during an older download: the caller gets a new one, and the older cannot overwrite it', async () => {
+        const first = deferred(), second = deferred();
+        const downloads = [first, second];
+        const { world, cache } = setup({ fetchFresh: () => downloads.shift().promise });
+        world.stored = { stamp: 's0', data: 'old' };
+        await cache.get();              // background download #1, for s1
+        await settle();
+        world.stamp = 's2';             // an edit lands while it runs
+        cache.invalidate();
+        const answer = cache.get();
+        await settle();
+        second.resolve('after-edit');
+        expect(await answer).toBe('after-edit');
+        first.resolve('before-edit');
+        await settle();
+        expect(await cache.get()).toBe('after-edit');
+        expect(world.stored).toEqual({ stamp: 's2', data: 'after-edit' });
+    });
+
+    test('an edit while catching up after an earlier one: the next caller still gets the newest', async () => {
+        const first = deferred();
+        let fetches = 0;
+        const { world, cache } = setup({ fetchFresh: () => { fetches++; return fetches === 2 ? first.promise : Promise.resolve(world.served); } });
+        await cache.get();                      // v1
+        world.stamp = 's2'; world.served = 'v2';
+        cache.invalidate();
+        const catching = cache.get();           // catch-up download for s2 starts
+        await settle();
+        world.stamp = 's3'; world.served = 'v3';
+        cache.invalidate();                     // another save while it runs
+        first.resolve('v2');
+        expect(await catching).toBe('v2');
+        expect(await cache.get()).toBe('v3');
+    });
+
+    test('a caller asking while that older catch-up still runs also gets the newest', async () => {
+        const first = deferred();
+        let fetches = 0;
+        const { world, cache } = setup({ fetchFresh: () => { fetches++; return fetches === 2 ? first.promise : Promise.resolve(world.served); } });
+        await cache.get();
+        world.stamp = 's2'; world.served = 'v2';
+        cache.invalidate();
+        cache.get();                            // catch-up for s2 starts
+        await settle();
+        world.stamp = 's3'; world.served = 'v3';
+        cache.invalidate();
+        const later = cache.get();              // asks before the s2 download is done
+        await settle();
+        first.resolve('v2');
+        expect(await later).toBe('v3');
+    });
+
+    test('a cache created out of date (an edit before a reload) behaves the same, and says when it is fresh', async () => {
+        let fresh = 0;
+        const { world, cache } = setup({ outOfDate: true, onFresh: () => { fresh++; } });
+        world.stored = { stamp: 's0', data: 'old' };
+        expect(await cache.cached()).toBeNull();
+        expect(await cache.get()).toBe('v1');
+        expect(fresh).toBe(1);
         expect(world.fetches).toBe(1);
     });
 });

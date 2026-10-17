@@ -11,8 +11,14 @@
 //   fetchFresh()     download the data
 //
 // There is never more than one download, or one stamp check, in flight:
-// callers asking at the same time share it. After this browser saves an edit,
-// recheck() makes callers wait for the new copy instead.
+// callers asking at the same time share it.
+//
+// After this browser saves an edit, invalidate(): nothing is downloaded then,
+// however many edits follow; the next caller checks the stamp and waits for
+// the data as it is now, downloading only if it changed. Until then nothing
+// is offered as held (cached(), peek()), so a page that can ask the server
+// for less does. options.outOfDate starts a cache that way (an edit made
+// before the page reloaded); options.onFresh says when it no longer is.
 //
 // Plain JavaScript (window.StaleCache in the bundle), so tests/staleCache.test.js
 // can run it under Node.
@@ -31,7 +37,12 @@
         var memory = null;          // { stamp, data }: what the cache answers with
         var loading = null;         // the first answer, from the browser or the server
         var checking = null;        // a background stamp check in flight
-        var waiting = null;         // a recheck callers wait for (recheck)
+        var gate = null;            // more edits may follow: callers wait for it
+        var outOfDate = !!options.outOfDate;    // this browser edited the data
+        var refreshing = null;      // the out-of-date catch-up in flight
+        var refreshingFor = 0;      // ...and the invalidation it answers
+        var edits = 0;              // invalidations so far: a catch-up started
+                                    // before the latest one does not clear it
         var fetching = null;        // a download in flight
         var fetchingStamp = null;   // ...and the stamp it was started for
         var generation = 0;         // only the latest download may replace the data
@@ -97,7 +108,7 @@
 
         // In the background, after answering with what is held
         function revalidate() {
-            if (checking || fetching || waiting) return;
+            if (checking || fetching || gate || outOfDate) return;
             checking = currentStamp().then(function (stamp) {
                 checking = null;
                 return catchUp(stamp).catch(report);
@@ -113,9 +124,53 @@
             return memory;
         }
 
-        // Resolves with { stamp, data }: whatever is held, at once
+        // Out of date after an edit: check the stamp now, and download when it
+        // moved (or when nothing is held). Every caller meanwhile shares it.
+        function catchUpNow() {
+            // One started before the latest save is not enough: wait for it,
+            // then catch up again
+            if (refreshing && refreshingFor !== edits) {
+                return refreshing.then(catchUpNow, catchUpNow);
+            }
+            if (refreshing) return refreshing;
+            var edit = refreshingFor = edits;
+            refreshing = (memory ? Promise.resolve(memory) : readStored().then(adopt))
+                .then(currentStamp)
+                .then(function (stamp) {
+                    if (!memory || stamp === null) return download(stamp, !!fetching);
+                    return catchUp(stamp);
+                })
+                .then(function (entry) {
+                    refreshing = null;
+                    if (edit === edits) {
+                        outOfDate = false;
+                        if (options.onFresh) options.onFresh();
+                    }
+                    return entry || memory;
+                }, function (e) {
+                    // Still out of date: the next caller tries again. This one
+                    // gets what is held, if anything, rather than nothing.
+                    refreshing = null;
+                    report(e);
+                    if (memory) return memory;
+                    throw e;
+                });
+            return refreshing;
+        }
+
+        function afterGate(then) {
+            var g = gate;
+            return g.then(function () {
+                if (gate === g) gate = null;
+                return then();
+            });
+        }
+
+        // Resolves with { stamp, data }: whatever is held, at once (or, after
+        // an edit in this browser, the data as it is now)
         function entry() {
-            if (waiting) return waiting.then(function () { return memory || entry(); });
+            if (gate) return afterGate(entry);
+            if (outOfDate) return catchUpNow();
             if (memory) {
                 revalidate();
                 return Promise.resolve(memory);
@@ -128,9 +183,10 @@
             return loading;
         }
 
-        // What is held or kept in the browser, or null; never downloads
+        // What is held or kept in the browser, or null; never downloads.
+        // Null too while out of date after an edit.
         function cached() {
-            if (waiting) return waiting.then(function () { return memory; });
+            if (gate || outOfDate) return Promise.resolve(null);
             if (memory) {
                 revalidate();
                 return Promise.resolve(memory);
@@ -139,25 +195,12 @@
             return readStored().then(adopt);
         }
 
-        // The data may just have changed (this browser saved an edit): check
-        // the stamp now, and have callers wait for the outcome, and for the
-        // new copy when there is one, rather than answer with the old one.
-        // Nothing is downloaded for data this browser does not hold.
-        // after: a promise to wait for first (more edits may be on their way)
-        function recheck(after) {
-            var job = Promise.resolve(after)
-                .then(function () { return memory || readStored().then(adopt); })
-                .then(currentStamp)
-                .then(catchUp)
-                .then(function () { return memory; }, function (e) {
-                    report(e);
-                    return memory;
-                });
-            waiting = job;
-            job.then(function () {
-                if (waiting === job) waiting = null;
-            });
-            return job;
+        // This browser saved an edit. after: a promise to wait for first
+        // (more edits may be on their way); callers asking meanwhile wait too.
+        function invalidate(after) {
+            edits++;
+            outOfDate = true;
+            gate = Promise.resolve(after);
         }
 
         return {
@@ -166,10 +209,11 @@
                 return entry().then(function (e) { return e.data; });
             },
             cached: cached,
-            recheck: recheck,
-            // What is held in memory, without going anywhere for it
+            invalidate: invalidate,
+            // What is held in memory, without going anywhere for it; null
+            // while out of date after an edit
             peek: function () {
-                return memory;
+                return outOfDate ? null : memory;
             }
         };
     }

@@ -1,0 +1,71 @@
+<div class="jumbotron corrections-page">
+    <div class="crq-page-head">
+        <div>
+            <h2>Correction requests</h2>
+            <div class="text-muted">Members' suggested fixes to their own results. Edit the result or the race with the request beside the form; saving closes it.</div>
+        </div>
+        <!-- The same switch as the results views -->
+        <div class="results-view-toggle" role="tablist">
+            <a role="tab" href="" ng-class="{active: tab === 'open'}" aria-selected="{{ tab === 'open' }}" ng-click="showTab('open')">
+                <i class="fa fa-inbox"></i> Open<span class="crq-tab-count" ng-if="tab === 'open' && requests.length"> {{ requests.length }}</span></a>
+            <a role="tab" href="" ng-class="{active: tab === 'done'}" aria-selected="{{ tab === 'done' }}" ng-click="showTab('done')">
+                <i class="fa fa-check"></i> Done</a>
+        </div>
+    </div>
+
+    <div class="text-muted crq-state" ng-if="!requests && !loadError"><i class="fa fa-spinner fa-spin"></i> Loading…</div>
+    <div class="alert alert-danger" ng-if="loadError">The requests could not be loaded.</div>
+    <div class="crq-state crq-empty" ng-if="requests && !requests.length">
+        <i class="fa" ng-class="tab === 'open' ? 'fa-check-circle' : 'fa-inbox'"></i>
+        {{ tab === 'open' ? 'No open requests. All caught up.' : 'Nothing here yet.' }}
+    </div>
+
+    <div class="panel panel-default rd-panel crq-card" ng-repeat="r in requests track by r._id">
+        <div class="crq-card-head">
+            <div class="crq-card-title">
+                <a class="crq-card-race" ui-sref="/results/result({resultId: r.result})">{{ r.race.racename }}</a>
+                <span class="crq-card-date">{{ r.race.racedate | date:'MMM d, y':'UTC' }}</span>
+                <div class="crq-card-meta">
+                    <span><i class="fa fa-user"></i> {{ r.sender.member.firstname }} {{ r.sender.member.lastname }}</span>
+                    <span ng-if="r.runners.length > 1"><i class="fa fa-users"></i> {{ r.runners.length }} runners</span>
+                    <span><i class="fa fa-clock-o"></i> {{ r.createdAt | date:'MMM d' }}</span>
+                </div>
+            </div>
+            <!-- Open: what to do with it -->
+            <div class="crq-card-actions" ng-if="tab === 'open' && dismissing.id !== r._id">
+                <button type="button" class="btn btn-sm" ng-class="kinds(r).result || !kinds(r).race ? 'btn-primary' : 'btn-default'" ng-click="editResult(r)">
+                    <i class="fa fa-pencil"></i> Edit result</button>
+                <button type="button" class="btn btn-sm" ng-class="kinds(r).race && !kinds(r).result ? 'btn-primary' : 'btn-default'" ng-click="editRace(r)">
+                    <i class="fa fa-flag-checkered"></i> Edit race</button>
+                <button type="button" class="btn btn-sm btn-link crq-dismiss-link" ng-click="startDismiss(r)">Dismiss</button>
+            </div>
+            <!-- Done: how it ended -->
+            <div class="crq-card-outcome" ng-if="tab === 'done'">
+                <span class="crq-outcome" ng-class="'crq-outcome-' + r.status">{{ outcome(r) }}</span>
+                <div class="crq-card-meta"><span ng-if="r.closedBy.username">by {{ r.closedBy.username }}, </span>{{ r.closedAt | date:'MMM d, y' }}</div>
+            </div>
+        </div>
+
+        <table class="crq-changes" ng-if="r.changes.length">
+            <tr ng-repeat="c in r.changes">
+                <td class="crq-change-label">{{ c.label }}<span class="crq-race-wide" ng-if="c.raceWide">race-wide</span></td>
+                <td class="crq-change-values">
+                    <span class="crq-old">{{ c | correctionValue:'from' }}</span>
+                    <i class="fa fa-long-arrow-right"></i>
+                    <span class="crq-new">{{ c | correctionValue:'to' }}</span>
+                </td>
+            </tr>
+        </table>
+        <div class="crq-card-note" ng-if="r.note"><i class="fa fa-quote-left"></i> {{ r.note }}</div>
+        <div class="crq-card-note crq-card-reason" ng-if="r.dismissReason"><i class="fa fa-reply"></i> {{ r.dismissReason }}</div>
+        <div class="crq-card-saved" ng-if="tab === 'open' && r.savedKinds.length">
+            <i class="fa fa-check"></i> Saved so far: {{ r.savedKinds.join(' and ') }}
+        </div>
+
+        <form class="crq-dismiss" ng-if="dismissing.id === r._id" ng-submit="confirmDismiss()">
+            <input type="text" class="form-control input-sm" ng-model="dismissing.reason" placeholder="Reason (optional, for your records)" maxlength="500">
+            <button type="submit" class="btn btn-sm btn-danger">Dismiss</button>
+            <button type="button" class="btn btn-sm btn-default" ng-click="cancelDismiss()">Cancel</button>
+        </form>
+    </div>
+</div>

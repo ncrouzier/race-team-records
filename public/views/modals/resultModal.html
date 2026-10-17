@@ -3,6 +3,7 @@
   <h3 ng-show="editmode" class="modal-title">Edit Result <i class="red hoverhand fa fa-trash-o" ng-click="clearForm()" title="Clear form" ></i></h3>
 </div>
 <div class="modal-body" style="overflow: visible;">
+    <div ng-include="'views/templates/correctionReference.html'"></div>
   <form name="formresult">
  
     <div class="row">
@@ -339,9 +340,9 @@
       <div class="modal-result-footer">
         <!-- <span class="modal-title">Exclude from records: -->
         <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
-        <button style="float: right; margin-right: 10px" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers()">Save Result and close</button>      
+        <button style="float: right; margin-right: 10px" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">Save Result and close</button>      
         <button style="float: right; margin-right: 10px;" ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">Save Result and add another</button>
-        <button style="float: right;" ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers()">Edit Result</button>
+        <button style="float: right;" ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">{{ isSaving ? 'Saving…' : 'Edit Result' }}</button>
 
       </div>
   </form>

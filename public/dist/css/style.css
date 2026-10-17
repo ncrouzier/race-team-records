@@ -18088,3 +18088,358 @@ h2 .club-mark {
 .navbar .admin-menu ul > li.active > a {
   background-color: #006687;
 }
+.crq-form .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.crq-form .row::before,
+.crq-form .row::after {
+  display: none;
+}
+.crq-form .crq-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999999;
+  margin-bottom: 4px;
+}
+.crq-form .crq-aside {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.crq-form .crq-readonly {
+  padding: 6px 10px;
+  background: #eeeeee;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.crq-form .crq-section {
+  margin: 18px 0 8px;
+  font-size: 16px;
+}
+.crq-form .crq-section small {
+  margin-left: 6px;
+  font-size: 12px;
+}
+.crq-form .crq-box {
+  border: 1px solid #eeeeee;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 6px;
+}
+.crq-form .crq-table {
+  width: 100%;
+}
+.crq-form .crq-table th {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999999;
+  padding-bottom: 2px;
+}
+.crq-form .crq-table td {
+  padding: 3px 8px 3px 0;
+  vertical-align: top;
+}
+.crq-form .crq-table td:first-child {
+  width: 90px;
+  padding-top: 8px;
+}
+.crq-form .crq-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 280px;
+  border-radius: 4px;
+}
+.crq-form .crq-time input {
+  width: 64px;
+}
+.crq-form .crq-changed,
+.crq-form .crq-changed.form-control,
+.crq-form .crq-changed input.form-control {
+  background-color: #fff8e1;
+  border-color: #f0ad4e;
+}
+.crq-form .crq-changed-select .select2-choice {
+  background: #fff8e1 !important;
+  border-color: #f0ad4e !important;
+  color: #222222 !important;
+}
+.crq-form .crq-changed-select .select2-choice .select2-chosen,
+.crq-form .crq-changed-select .select2-choice abbr {
+  color: #222222 !important;
+}
+.crq-form .crq-was {
+  font-size: 11px;
+  color: #985f0d;
+  margin-top: 2px;
+}
+.crq-form .crq-error {
+  margin: 12px 0 0;
+}
+.result-detail-page .rd-racemeta a.rd-meta-item.crq-suggest,
+.race-detail-page .rd-racemeta a.rd-meta-item.crq-suggest {
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: #008cba;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.result-detail-page .rd-racemeta a.rd-meta-item.crq-suggest i,
+.race-detail-page .rd-racemeta a.rd-meta-item.crq-suggest i {
+  color: #fff;
+}
+.result-detail-page .rd-racemeta a.rd-meta-item.crq-suggest:hover,
+.result-detail-page .rd-racemeta a.rd-meta-item.crq-suggest:focus,
+.race-detail-page .rd-racemeta a.rd-meta-item.crq-suggest:hover,
+.race-detail-page .rd-racemeta a.rd-meta-item.crq-suggest:focus {
+  background: #006d91;
+  color: #fff;
+  text-decoration: none;
+}
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill,
+.race-detail-page .rd-racemeta .rd-meta-item.crq-pill {
+  padding: 1px 9px;
+  border-radius: 10px;
+  background: #fff8e1;
+  border: 1px solid #f9ddb5;
+  color: #985f0d;
+  font-size: 12px;
+}
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill i,
+.race-detail-page .rd-racemeta .rd-meta-item.crq-pill i {
+  color: #ec971f;
+}
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill a,
+.race-detail-page .rd-racemeta .rd-meta-item.crq-pill a {
+  margin-left: 6px;
+  font-weight: 600;
+}
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill-muted,
+.race-detail-page .rd-racemeta .rd-meta-item.crq-pill-muted {
+  background: #eeeeee;
+  border-color: #dfdfdf;
+  color: #6f6f6f;
+}
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill-muted i,
+.race-detail-page .rd-racemeta .rd-meta-item.crq-pill-muted i {
+  color: #999999;
+}
+.crq-reference {
+  background: #fff8e1;
+  border: 1px solid #f0ad4e;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.crq-reference .crq-reference-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.crq-reference .crq-reference-changes {
+  margin: 0 0 4px;
+  padding-left: 18px;
+}
+.crq-reference .crq-race-wide {
+  font-size: 11px;
+  color: #008cba;
+}
+.crq-reference .crq-reference-note {
+  color: #6f6f6f;
+  margin-bottom: 4px;
+}
+.crq-reference .crq-keep-open {
+  font-weight: 400;
+  margin: 4px 0 0;
+}
+.corrections-page .crq-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.corrections-page .crq-page-head h2 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 600;
+}
+.corrections-page .crq-page-head .text-muted {
+  font-size: 13px;
+  max-width: 560px;
+}
+.corrections-page .crq-tab-count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  margin-left: 2px;
+  border-radius: 9px;
+  background: #f0ad4e;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+.corrections-page .crq-state {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 15px;
+}
+.corrections-page .crq-empty i {
+  color: #43ac6a;
+  margin-right: 6px;
+}
+.corrections-page .crq-card {
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+.corrections-page .crq-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.corrections-page .crq-card-race {
+  font-size: 17px;
+  font-weight: 600;
+}
+.corrections-page .crq-card-date {
+  margin-left: 8px;
+  color: #999999;
+  font-size: 13px;
+}
+.corrections-page .crq-card-meta {
+  margin-top: 3px;
+  color: #6f6f6f;
+  font-size: 12px;
+}
+.corrections-page .crq-card-meta span + span {
+  margin-left: 12px;
+}
+.corrections-page .crq-card-meta i {
+  color: #999999;
+  margin-right: 3px;
+}
+.corrections-page .crq-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.corrections-page .crq-dismiss-link {
+  color: #6f6f6f;
+}
+.corrections-page .crq-dismiss-link:hover {
+  color: #F04124;
+}
+.corrections-page .crq-card-outcome {
+  text-align: right;
+}
+.corrections-page .crq-outcome {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #eeeeee;
+  color: #6f6f6f;
+}
+.corrections-page .crq-outcome-handled {
+  background: #e1f3e8;
+  color: #2e7548;
+}
+.corrections-page .crq-outcome-declined {
+  background: #fcded9;
+  color: #d32a0e;
+}
+.corrections-page .crq-changes {
+  margin-top: 12px;
+  width: 100%;
+  font-size: 13px;
+}
+.corrections-page .crq-changes td {
+  padding: 5px 0;
+  border-top: 1px solid #eeeeee;
+  vertical-align: middle;
+}
+.corrections-page .crq-change-label {
+  width: 190px;
+  color: #6f6f6f;
+  padding-right: 12px !important;
+}
+.corrections-page .crq-race-wide {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: #F7FBFC;
+  color: #008cba;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.corrections-page .crq-change-values i {
+  margin: 0 8px;
+  color: #999999;
+}
+.corrections-page .crq-old {
+  color: #999999;
+  text-decoration: line-through;
+}
+.corrections-page .crq-new {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #fff8e1;
+  font-weight: 600;
+}
+.corrections-page .crq-card-note {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-left: 3px solid #eeeeee;
+  color: #6f6f6f;
+  font-size: 13px;
+}
+.corrections-page .crq-card-note i {
+  color: #999999;
+  margin-right: 4px;
+}
+.corrections-page .crq-card-reason {
+  border-left-color: #fabdb3;
+}
+.corrections-page .crq-card-saved {
+  margin-top: 8px;
+  color: #43ac6a;
+  font-size: 12px;
+}
+.corrections-page .crq-dismiss {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 12px;
+}
+.corrections-page .crq-dismiss input {
+  flex: 1;
+  max-width: 420px;
+}
+@media (max-width: 600px) {
+  .corrections-page .crq-change-label {
+    width: auto;
+  }
+}
+.crq-form .crq-count {
+  font-weight: 400;
+  font-size: 11px;
+  color: #999999;
+}

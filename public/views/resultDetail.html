@@ -75,6 +75,19 @@
                         target="_blank" rel="noopener">
                         <i class="fa fa-list-ol"></i> <span class="rd-photo-text">Official results</span>
                     </a>
+                    <!-- A runner's correction request (CorrectionService): a link
+                         like the one above, then where their request stands -->
+                    <a class="rd-meta-item crq-actions crq-suggest" href="" ng-if="correction.role === 'can-send'"
+                        ng-click="suggestCorrection()">
+                        <i class="fa fa-pencil"></i> Suggest a correction
+                    </a>
+                    <span class="rd-meta-item crq-actions crq-pill" ng-if="correction.role === 'own-pending'">
+                        <i class="fa fa-clock-o"></i> Correction pending
+                        <a href="" ng-click="suggestCorrection()">Update</a>
+                    </span>
+                    <span class="rd-meta-item crq-actions crq-pill crq-pill-muted" ng-if="correction.role === 'other-pending'">
+                        <i class="fa fa-clock-o"></i> A teammate's correction is pending
+                    </span>
                 </div>
             </div>
 

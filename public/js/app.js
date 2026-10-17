@@ -70,6 +70,11 @@ app.config(['$httpProvider', function($httpProvider) {
                 if (pending !== null && pending !== undefined) {
                     $rootScope.pendingSeriesCount = parseInt(pending, 10) || 0;
                 }
+                // And members' correction requests waiting for an admin
+                var corrections = response.headers('X-Pending-Corrections-Count');
+                if (corrections !== null && corrections !== undefined) {
+                    $rootScope.pendingCorrectionsCount = parseInt(corrections, 10) || 0;
+                }
                 return response;
             }
         };

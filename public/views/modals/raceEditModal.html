@@ -10,6 +10,7 @@
 </div>
 
 <div class="modal-body modern-modal-body" style="overflow: visible;">
+    <div ng-include="'views/templates/correctionReference.html'"></div>
     <form name="raceEditForm">
         <div class="row">
             <div class="col-md-4">
@@ -687,9 +688,9 @@
             <i class="fa fa-times"></i>
             Cancel
         </button>
-        <button class="btn btn-primary modern-btn" ng-click="save()" ng-disabled="raceEditForm.$invalid">
-            <i class="fa fa-save"></i>
-            Save Changes
+        <button class="btn btn-primary modern-btn" ng-click="save()" ng-disabled="raceEditForm.$invalid || isSaving">
+            <i class="fa" ng-class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+            {{ isSaving ? 'Saving…' : 'Save Changes' }}
         </button>
     </div>
 </div>

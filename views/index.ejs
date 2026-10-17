@@ -144,10 +144,12 @@
 						</li>
 						<!-- Admin tools, in labelled groups (not fly-out submenus, which
 						     need hover and do not work on phones) -->
-						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
-								Admin tools <span class="caret"></span>
+								Admin tools <span ng-if="pendingCorrectionsCount > 0" ng-cloak class="crf-nav-dot"
+									uib-tooltip="{{pendingCorrectionsCount}} correction request{{pendingCorrectionsCount === 1 ? '' : 's'}} waiting"
+									tooltip-placement="bottom" tooltip-append-to-body="true"></span> <span class="caret"></span>
 							</a>
 							<!-- Four groups in a 2x2 grid (styles: .admin-menu in mcrrc.less) -->
 							<ul class="dropdown-menu admin-menu" uib-dropdown-menu>
@@ -159,6 +161,8 @@
 										<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
 										<li ng-class="{active: $state.includes('/race-series') || $state.includes('/race-series-detail')}"><a ui-sref="/race-series">Race Series
 											<span ng-if="pendingSeriesCount > 0" ng-cloak class="crf-unseen-badge" uib-tooltip="Series with suggestions to review">{{pendingSeriesCount}}</span></a></li>
+										<li ng-class="{active: $state.includes('/corrections')}"><a ui-sref="/corrections">Correction Requests
+											<span ng-if="pendingCorrectionsCount > 0" ng-cloak class="crf-unseen-badge" uib-tooltip="Members' correction requests waiting">{{pendingCorrectionsCount}}</span></a></li>
 										<li ng-class="{active: $state.includes('/agegrading-tables')}"><a ui-sref="/agegrading-tables">Age Grading Tables</a></li>
 									</ul>
 								</li>

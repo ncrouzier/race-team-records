@@ -27,7 +27,7 @@ const libFiles = [
     // Shared with the server: pure stats the pages also run on cached data
     'app/raceSeriesStats.js',
     'app/memberRaceCounts.js',
-    'app/resultStanding.js',
+    'app/resultStanding.js', 'app/correctionRequests.js',
 ];
 
 // App files via glob (same patterns as old Gruntfile)

@@ -396,6 +396,13 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             templateUrl: "views/seriesDetail.html",
             controller: 'SeriesDetailController'
         })
+        // Admin: members' correction requests (app/correctionRoutes.js)
+        .state('/corrections', {
+            url: "/corrections?tab",
+            params: { tab: { value: 'open', dynamic: true, squash: true } },
+            templateUrl: "views/corrections.html",
+            controller: 'CorrectionsController'
+        })
         // Admin: the same race across editions (see app/raceSeriesRoutes.js)
         .state('/race-series', {
             url: "/race-series?tab",

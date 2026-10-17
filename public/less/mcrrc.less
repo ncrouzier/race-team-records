@@ -13401,3 +13401,438 @@ h2 .club-mark {
     }
 }
 
+
+// ---- Correction requests: the member's form and the result page notes ----
+// Changed fields in the site's "yours" amber; the old value under them
+.crq-form {
+    // Rows as flex rows: a field that grows a "was ..." line makes its row
+    // taller instead of snagging the floats around it
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+
+        &::before,
+        &::after {
+            display: none;
+        }
+    }
+
+    .crq-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: @gray-light;
+        margin-bottom: 4px;
+    }
+
+    .crq-aside {
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+    }
+
+    .crq-readonly {
+        padding: 6px 10px;
+        background: @gray-lighter;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    .crq-section {
+        margin: 18px 0 8px;
+        font-size: 16px;
+
+        small {
+            margin-left: 6px;
+            font-size: 12px;
+        }
+    }
+
+    .crq-box {
+        border: 1px solid @gray-lighter;
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-top: 6px;
+    }
+
+    .crq-table {
+        width: 100%;
+
+        th {
+            font-size: 11px;
+            font-weight: 400;
+            color: @gray-light;
+            padding-bottom: 2px;
+        }
+
+        td {
+            padding: 3px 8px 3px 0;
+            vertical-align: top;
+        }
+
+        td:first-child {
+            width: 90px;
+            padding-top: 8px;
+        }
+    }
+
+    .crq-time {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        max-width: 280px;
+        border-radius: 4px;
+
+        input {
+            width: 64px;
+        }
+    }
+
+    .crq-changed,
+    .crq-changed.form-control,
+    .crq-changed input.form-control {
+        background-color: #fff8e1;
+        border-color: #f0ad4e;
+    }
+
+    // A changed picker: amber like the other fields, and dark text on it
+    // (the site's pickers are white text on blue)
+    .crq-changed-select .select2-choice {
+        background: #fff8e1 !important;
+        border-color: #f0ad4e !important;
+        color: @text-color !important;
+
+        .select2-chosen,
+        abbr {
+            color: @text-color !important;
+        }
+    }
+
+    .crq-was {
+        font-size: 11px;
+        color: darken(#f0ad4e, 30%);
+        margin-top: 2px;
+    }
+
+    .crq-error {
+        margin: 12px 0 0;
+    }
+}
+
+// The result page's meta row: the runner's way in, a solid pill in the site
+// blue, the one call to action on the page
+.result-detail-page .rd-racemeta a.rd-meta-item.crq-suggest {
+    padding: 3px 12px;
+    border-radius: 12px;
+    background: @brand-primary;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+
+    i {
+        color: #fff;
+    }
+
+    &:hover,
+    &:focus {
+        background: darken(@brand-primary, 8%);
+        color: #fff;
+        text-decoration: none;
+    }
+}
+
+// The result page's meta row: where the runner's request stands, as a small
+// pill (amber: theirs; grey: a teammate's)
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill {
+    padding: 1px 9px;
+    border-radius: 10px;
+    background: #fff8e1;
+    border: 1px solid lighten(#f0ad4e, 22%);
+    color: darken(#f0ad4e, 30%);
+    font-size: 12px;
+
+    i {
+        color: darken(#f0ad4e, 10%);
+    }
+
+    a {
+        margin-left: 6px;
+        font-weight: 600;
+    }
+}
+
+.result-detail-page .rd-racemeta .rd-meta-item.crq-pill-muted {
+    background: @gray-lighter;
+    border-color: darken(@gray-lighter, 6%);
+    color: @gray;
+
+    i {
+        color: @gray-light;
+    }
+}
+
+// The request above an admin's edit form
+.crq-reference {
+    background: #fff8e1;
+    border: 1px solid #f0ad4e;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    font-size: 13px;
+
+    .crq-reference-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .crq-reference-changes {
+        margin: 0 0 4px;
+        padding-left: 18px;
+    }
+
+    .crq-race-wide {
+        font-size: 11px;
+        color: @brand-primary;
+    }
+
+    .crq-reference-note {
+        color: @gray;
+        margin-bottom: 4px;
+    }
+
+    .crq-keep-open {
+        font-weight: 400;
+        margin: 4px 0 0;
+    }
+}
+
+// The admin's correction requests page: one card per request
+.corrections-page {
+    // The page's heading, in a white card like the other pages' headers
+    .crq-page-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 16px 20px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+        h2 {
+            margin: 0 0 4px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .text-muted {
+            font-size: 13px;
+            max-width: 560px;
+        }
+    }
+
+    .crq-tab-count {
+        display: inline-block;
+        min-width: 18px;
+        padding: 0 5px;
+        margin-left: 2px;
+        border-radius: 9px;
+        background: #f0ad4e;
+        color: #fff;
+        font-size: 11px;
+        line-height: 16px;
+        text-align: center;
+    }
+
+    .crq-state {
+        padding: 24px 0;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    .crq-empty i {
+        color: @brand-success;
+        margin-right: 6px;
+    }
+
+    .crq-card {
+        padding: 14px 18px;
+        margin-bottom: 14px;
+    }
+
+    .crq-card-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .crq-card-race {
+        font-size: 17px;
+        font-weight: 600;
+    }
+
+    .crq-card-date {
+        margin-left: 8px;
+        color: @gray-light;
+        font-size: 13px;
+    }
+
+    .crq-card-meta {
+        margin-top: 3px;
+        color: @gray;
+        font-size: 12px;
+
+        span + span {
+            margin-left: 12px;
+        }
+
+        i {
+            color: @gray-light;
+            margin-right: 3px;
+        }
+    }
+
+    .crq-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .crq-dismiss-link {
+        color: @gray;
+
+        &:hover {
+            color: @brand-danger;
+        }
+    }
+
+    .crq-card-outcome {
+        text-align: right;
+    }
+
+    .crq-outcome {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        background: @gray-lighter;
+        color: @gray;
+    }
+
+    .crq-outcome-handled {
+        background: lighten(@brand-success, 45%);
+        color: darken(@brand-success, 15%);
+    }
+
+    .crq-outcome-declined {
+        background: lighten(@brand-danger, 38%);
+        color: darken(@brand-danger, 10%);
+    }
+
+    // Each change: what it was, struck through, and what the member says
+    .crq-changes {
+        margin-top: 12px;
+        width: 100%;
+        font-size: 13px;
+
+        td {
+            padding: 5px 0;
+            border-top: 1px solid @gray-lighter;
+            vertical-align: middle;
+        }
+    }
+
+    .crq-change-label {
+        width: 190px;
+        color: @gray;
+        padding-right: 12px !important;
+    }
+
+    .crq-race-wide {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 0 6px;
+        border-radius: 8px;
+        background: @brand-primary-very-light;
+        color: @brand-primary;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .crq-change-values {
+        i {
+            margin: 0 8px;
+            color: @gray-light;
+        }
+    }
+
+    .crq-old {
+        color: @gray-light;
+        text-decoration: line-through;
+    }
+
+    .crq-new {
+        padding: 1px 6px;
+        border-radius: 3px;
+        background: #fff8e1;
+        font-weight: 600;
+    }
+
+    .crq-card-note {
+        margin-top: 10px;
+        padding: 6px 10px;
+        border-left: 3px solid @gray-lighter;
+        color: @gray;
+        font-size: 13px;
+
+        i {
+            color: @gray-light;
+            margin-right: 4px;
+        }
+    }
+
+    .crq-card-reason {
+        border-left-color: lighten(@brand-danger, 30%);
+    }
+
+    .crq-card-saved {
+        margin-top: 8px;
+        color: @brand-success;
+        font-size: 12px;
+    }
+
+    .crq-dismiss {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 12px;
+
+        input {
+            flex: 1;
+            max-width: 420px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .crq-change-label {
+            width: auto;
+        }
+    }
+}
+
+// How much of a field's 500 characters are used
+.crq-form .crq-count {
+    font-weight: 400;
+    font-size: 11px;
+    color: @gray-light;
+}

@@ -1,0 +1,160 @@
+<div class="modal-header">
+    <h3 class="modal-title">{{ pending ? 'Your correction request' : 'Suggest a correction' }}</h3>
+</div>
+<form name="crqForm" novalidate>
+<div class="modal-body crq-form">
+    <p class="text-muted">Change what is wrong and leave the rest. An admin reviews it before anything changes.</p>
+
+    <div class="crq-label">Runner<span ng-if="runners.length > 1">s</span></div>
+    <div class="crq-readonly">
+        <span ng-repeat="r in runners">{{ r.firstname }} {{ r.lastname }}<span ng-if="!$last">, </span></span>
+    </div>
+
+    <!-- ===== The race ===== -->
+    <h4 class="crq-section">The race</h4>
+    <div class="row">
+        <div class="col-sm-6 form-group">
+            <label>Race name</label>
+            <input type="text" class="form-control input-sm" ng-model="form.racename" maxlength="{{ maxText }}" ng-class="{'crq-changed': changed.racename}">
+            <div class="crq-was" ng-if="changed.racename">{{ was(changed.racename) }}</div>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label>Date</label>
+            <input type="date" class="form-control input-sm" ng-model="form.racedate" ng-class="{'crq-changed': changed.racedate}">
+            <div class="crq-was" ng-if="changed.racedate">{{ was(changed.racedate) }}</div>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label>Country</label>
+            <div ng-class="{'crq-changed-select': changed.country}">
+                <ui-select ng-model="form.country" theme="select2" style="width: 100%;">
+                    <ui-select-match placeholder="Select a country">{{ $select.selected.name }}</ui-select-match>
+                    <ui-select-choices repeat="country.code as country in countries | propsFilter: {name: $select.search, code: $select.search}">
+                        <div ng-bind-html="(country.name + ' (' + country.code + ')') | highlightignorespan: $select.search"></div>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+            <div class="crq-was" ng-if="changed.country">{{ was(changed.country) }}</div>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label>State</label>
+            <div ng-class="{'crq-changed-select': changed.state}">
+                <ui-select ng-model="form.state" ng-disabled="form.country !== 'USA'" theme="select2" style="width: 100%;">
+                    <ui-select-match placeholder="Select a state" allow-clear="true">{{ $select.selected.name }}</ui-select-match>
+                    <ui-select-choices repeat="state.code as state in states | propsFilter: {name: $select.search, code: $select.search}">
+                        <div ng-bind-html="(state.name + ' (' + state.code + ')') | highlightignorespan: $select.search"></div>
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+            <div class="crq-was" ng-if="changed.state">{{ was(changed.state) }}</div>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label>Distance</label>
+            <input type="text" class="form-control input-sm" ng-model="form.distance" maxlength="{{ maxText }}" ng-class="{'crq-changed': changed.distance}"
+                placeholder="5k, 5.2 miles, about 10k...">
+            <div class="crq-was" ng-if="changed.distance">{{ was(changed.distance) }}</div>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label>Surface</label>
+            <select class="form-control input-sm" ng-model="form.surface" ng-options="s for s in surfaces"
+                ng-class="{'crq-changed': changed.surface}">
+                <option value=""></option>
+            </select>
+            <div class="crq-was" ng-if="changed.surface">{{ was(changed.surface) }}</div>
+        </div>
+    </div>
+
+    <!-- ===== Your result ===== -->
+    <h4 class="crq-section">Your result</h4>
+    <div class="row">
+        <div class="col-sm-6 form-group">
+            <label>Time</label>
+            <div class="crq-time" ng-class="{'crq-changed': changed.time}">
+                <input type="number" ng-model-options="{allowInvalid: true}" min="0" class="form-control input-sm" ng-model="time.hours" placeholder="h">
+                <span>:</span>
+                <input type="number" ng-model-options="{allowInvalid: true}" min="0" max="59" class="form-control input-sm" ng-model="time.minutes" placeholder="m">
+                <span>:</span>
+                <input type="number" ng-model-options="{allowInvalid: true}" min="0" max="59" class="form-control input-sm" ng-model="time.seconds" placeholder="s">
+                <span>.</span>
+                <input type="number" ng-model-options="{allowInvalid: true}" min="0" max="99" class="form-control input-sm" ng-model="time.centiseconds" placeholder="cs">
+            </div>
+            <div class="crq-was" ng-if="changed.time">{{ was(changed.time) }}</div>
+        </div>
+        <div class="col-sm-12 form-group">
+            <label>Result link</label>
+            <input type="text" class="form-control input-sm" ng-model="form.resultlink" maxlength="{{ maxText }}" ng-class="{'crq-changed': changed.resultlink}">
+            <div class="crq-was" ng-if="changed.resultlink">{{ was(changed.resultlink) }}</div>
+        </div>
+        <div class="col-sm-12 form-group">
+            <label>Comments <small class="crq-count">{{ (form.comments || '').length }}/{{ maxText }}</small></label>
+            <input type="text" class="form-control input-sm" ng-model="form.comments" maxlength="{{ maxText }}" ng-class="{'crq-changed': changed.comments}">
+            <div class="crq-was" ng-if="changed.comments">{{ was(changed.comments) }}</div>
+        </div>
+    </div>
+
+    <div class="crq-box">
+        <div class="crq-label">Placement</div>
+        <table class="crq-table">
+            <thead><tr><th></th><th>Place</th><th>Out of</th></tr></thead>
+            <tbody>
+                <tr ng-repeat="p in placements track by p.name">
+                    <td>{{ p.name }}</td>
+                    <td>
+                        <input type="number" ng-model-options="{allowInvalid: true}" min="1" class="form-control input-sm" ng-model="form[p.rank]" ng-class="{'crq-changed': changed[p.rank]}">
+                        <div class="crq-was" ng-if="changed[p.rank]">{{ was(changed[p.rank]) }}</div>
+                    </td>
+                    <td>
+                        <input type="number" ng-model-options="{allowInvalid: true}" min="1" class="form-control input-sm" ng-model="form[p.total]" ng-class="{'crq-changed': changed[p.total]}">
+                        <div class="crq-was" ng-if="changed[p.total]">{{ was(changed[p.total]) }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== Legs (multisport only) ===== -->
+    <div class="crq-box" ng-if="isMultisport && form.legs.length">
+        <div class="crq-label">Legs <span class="crq-aside">a multisport race; the legs themselves can't be changed</span></div>
+        <table class="crq-table">
+            <thead><tr><th>Leg</th><th>Distance</th><th>Time</th></tr></thead>
+            <tbody>
+                <tr ng-repeat="leg in form.legs track by leg.order">
+                    <td ng-class="{'text-muted': leg.isTransition}">{{ leg.legName }}</td>
+                    <td>
+                        <span class="text-muted" ng-if="leg.isTransition">—</span>
+                        <input ng-if="!leg.isTransition" type="text" class="form-control input-sm" ng-model="leg.distance" maxlength="{{ maxText }}"
+                            ng-class="{'crq-changed': changed['leg:' + leg.order + ':distance']}">
+                        <div class="crq-was" ng-if="changed['leg:' + leg.order + ':distance']">{{ was(changed['leg:' + leg.order + ':distance']) }}</div>
+                    </td>
+                    <td>
+                        <div class="crq-time" ng-class="{'crq-changed': changed['leg:' + leg.order + ':time']}">
+                            <input type="number" ng-model-options="{allowInvalid: true}" min="0" class="form-control input-sm" ng-model="legTimes[$index].hours" placeholder="h">
+                            <span>:</span>
+                            <input type="number" ng-model-options="{allowInvalid: true}" min="0" max="59" class="form-control input-sm" ng-model="legTimes[$index].minutes" placeholder="m">
+                            <span>:</span>
+                            <input type="number" ng-model-options="{allowInvalid: true}" min="0" max="59" class="form-control input-sm" ng-model="legTimes[$index].seconds" placeholder="s">
+                        </div>
+                        <div class="crq-was" ng-if="changed['leg:' + leg.order + ':time']">{{ was(changed['leg:' + leg.order + ':time']) }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h4 class="crq-section">Anything else? <small class="crq-count">{{ (note || '').length }}/{{ maxText }}</small></h4>
+    <textarea class="form-control" rows="2" ng-model="note" maxlength="{{ maxText }}"
+        placeholder="Anything that helps the admin check it, like a link to the official results"></textarea>
+
+    <div class="alert alert-info crq-error" ng-if="blocked">
+        {{ blocked.by }} sent a correction for this result a moment ago. It's waiting for an admin, so yours can't be sent.
+    </div>
+    <div class="alert alert-danger crq-error" ng-if="error">{{ error }}</div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-link text-danger pull-left" ng-if="pending" ng-click="withdraw()" ng-disabled="sending">Withdraw request</button>
+    <button type="button" class="btn btn-default" ng-click="cancel()">{{ blocked ? 'Close' : 'Cancel' }}</button>
+    <span class="text-danger crq-invalid" ng-if="crqForm.$invalid">Some values are out of range.</span>
+    <button type="button" class="btn btn-primary" ng-click="send()" ng-disabled="!canSend()">
+        {{ pending ? 'Update suggestion' : 'Send suggestion' }}<span ng-if="changes.length"> ({{ changes.length }} change{{ changes.length === 1 ? '' : 's' }})</span>
+    </button>
+</div>
+</form>

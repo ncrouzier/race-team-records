@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'PageTitleService', 'ResultDetailService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, PageTitleService, ResultDetailService) {
+angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'PageTitleService', 'ResultDetailService', 'CorrectionService', 'Analytics', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, PageTitleService, ResultDetailService, CorrectionService, Analytics) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -385,6 +385,42 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
             if (saved) {
                 load();
             }
+        }, angular.noop);
+    };
+
+    // A runner of this result (not an admin) may suggest corrections to it
+    // (CorrectionService): what they may do once both the user and the result
+    // are known, again after the form closes
+    $scope.correction = null;
+    function loadCorrection() {
+        $scope.correction = null;
+        if (!$scope.user || !$scope.result) return;
+        var resultId = $scope.result._id;
+        CorrectionService.forResult(resultId).then(function (status) {
+            if ($scope.result && $scope.result._id === resultId) {
+                status.resultId = resultId;
+                $scope.correction = status;
+            }
+        }, angular.noop);
+    }
+    $scope.$watchGroup(['user._id', 'result._id'], loadCorrection);
+
+    // The form starts from the result as it is now, not as it was when the
+    // page loaded
+    $scope.suggestCorrection = function () {
+        if (!$scope.correction) return;
+        var resultId = $scope.correction.resultId;
+        CorrectionService.forResult(resultId).then(function (status) {
+            status.resultId = resultId;
+            $scope.correction = status;
+            if (status.role !== 'can-send' && status.role !== 'own-pending') return;
+            Analytics.event('correction_form_open', { pending: status.role === 'own-pending' });
+            CorrectionService.openRequestModal(status).then(function (outcome) {
+                // The request was closed meanwhile: the result may have been
+                // corrected too, so the whole page reloads
+                if (outcome === 'stale') load();
+                loadCorrection();
+            }, loadCorrection);
         }, angular.noop);
     };
 

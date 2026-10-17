@@ -253,6 +253,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     windowClass: 'result-modal-class',
                     backdrop: 'static',
                     resolve: {
+                        correctionRequest: null,
                         editmode: false,
                         result: function () {
                             return result;
@@ -271,6 +272,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 windowClass: 'result-modal-class',
                 backdrop: 'static',
                 resolve: {
+                    correctionRequest: null,
                     editmode: false,
                     result: function () {
                         return null;
@@ -284,7 +286,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return modalPromise;
     };
 
-    factory.retrieveResultForEdit = function (resultParam) {
+    // options.request: a member's correction request, shown above the form
+    // for reference (the corrections page)
+    factory.retrieveResultForEdit = function (resultParam, options) {
         return factory.getResultById(resultParam._id).then(
             function (result) {
                 return $uibModal.open({
@@ -293,6 +297,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     windowClass: 'result-modal-class',
                     backdrop: 'static',
                     resolve: {
+                        correctionRequest: function () {
+                            return options && options.request || null;
+                        },
                         editmode: true,
                         result: function () {
                             return result;
@@ -701,7 +708,8 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
     // RACE MODALS =====================
     // =====================================
 
-    factory.showEditRaceModal = function (raceInput) {
+    // options.request: as for retrieveResultForEdit
+    factory.showEditRaceModal = function (raceInput, options) {
         return factory.getRaceById(raceInput._id).then(
             function (race) {
                 var modalInstance = $uibModal.open({
@@ -713,6 +721,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     resolve: {
                         race: function () {
                             return race;
+                        },
+                        correctionRequest: function () {
+                            return options && options.request || null;
                         }
                     }
 

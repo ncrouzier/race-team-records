@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const service = require('./service');
 const raceSeriesSync = require('./raceSeriesSync');
+const { raceMatchFilter } = require('./raceMatch');
 const { resultStanding } = require('./resultStanding');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -1938,16 +1939,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             //does the race exists?
             try {
-                Race.findOne({
-                    'racename': req.body.race.racename,
-                    'isMultisport': req.body.race.isMultisport,
-                    'distanceName': req.body.race.distanceName,
-                    'racedate': req.body.race.racedate,
-                    'location.country': req.body.race.location.country,
-                    'location.state': req.body.race.location.state,
-                    'racetype._id': req.body.race.racetype._id,
-                    'order': req.body.race.order
-                }).then(race => {
+                Race.findOne(raceMatchFilter(req.body.race)).then(race => {
                     if (!race) { //if race does not exists
                         try {
                             Race.create({
@@ -2163,16 +2155,11 @@ module.exports = async function (app, qs, passport, async, _) {
             const oldraceid = result.race._id;
             //does the race exists?
 
-            const race = await Race.findOne({ //by id would be simpler?
-                'racename': req.body.race.racename,
-                'isMultisport': req.body.race.isMultisport,
-                'distanceName': req.body.race.distanceName,
-                'racedate': req.body.race.racedate,
-                'location.country': req.body.race.location.country,
-                'location.state': req.body.race.location.state,
-                'racetype._id': req.body.race.racetype._id,
-                'order': req.body.race.order
-            });
+            // Its own race first when the details still match it (several
+            // races can share them), then any race that matches
+            const raceFilter = raceMatchFilter(req.body.race);
+            const race = await Race.findOne(Object.assign({ _id: oldraceid }, raceFilter)) ||
+                await Race.findOne(raceFilter);
             if (!race) { //if race does not exists                        
                 const r = await Race.create({
                     racename: req.body.race.racename,
@@ -2300,16 +2287,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // No ID?, check if race exists or create it
             if (!existingRace) {
-                existingRace = await Race.findOne({
-                    'racename': race.racename,
-                    'isMultisport': race.isMultisport,
-                    'distanceName': race.distanceName,
-                    'racedate': race.racedate,
-                    'location.country': race.location.country,
-                    'location.state': race.location.state,
-                    'racetype._id': race.racetype._id,
-                    'order': race.order
-                });
+                existingRace = await Race.findOne(raceMatchFilter(race));
             }
 
             let raceToUse = existingRace;
@@ -2427,6 +2405,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     Result.deleteOne({
                         _id: req.params.result_id
                     }).then(async result => {
+                        // A deleted result's open correction requests close
+                        await require('./correctionRoutes').closeForResult(req.params.result_id)
+                            .catch(err => console.error('Could not close correction requests:', err));
                         let cleanQuery = Result.find().where('race._id').equals(oldraceid);
                         try {
                             cleanQuery.exec().then(cleanResults => {
@@ -2988,6 +2969,9 @@ module.exports = async function (app, qs, passport, async, _) {
             // Collect all member IDs first
             const memberIds = new Set();
             await Result.deleteMany({ _id: { $in: results.map(r => r._id) } });
+            // Their open correction requests close with them
+            await require('./correctionRoutes').closeForResults(results.map(r => r._id))
+                .catch(err => console.error('Could not close correction requests:', err));
             results.forEach(res => {
                 res.members.forEach(m => memberIds.add(m._id));
             });

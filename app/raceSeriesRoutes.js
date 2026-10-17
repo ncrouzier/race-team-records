@@ -10,6 +10,7 @@ const RaceType = require('./models/racetype');
 const RaceSeries = require('./models/raceseries');
 const { seriesKey, parkrunName, isVariableDistance, findPossibleMerges, rankSeriesForRace, similarNames } = require('./raceSeriesMatcher');
 const raceSeriesSync = require('./raceSeriesSync');
+const { raceMatchFilter } = require('./raceMatch');
 const { seriesStats, teamSeriesStats, mainLocation, distanceKey, surfaceKey } = require('./raceSeriesStats');
 
 function badRequest(res, message) {
@@ -406,16 +407,8 @@ module.exports = function (app) {
         let existing = null;
         const byId = !!race._id && mongoose.isValidObjectId(race._id);
         if (byId || (race.racetype._id && race.location)) {
-            const found = byId ? await Race.findById(race._id, '_id').lean() : await Race.findOne({
-                'racename': race.racename,
-                'isMultisport': race.isMultisport,
-                'distanceName': race.distanceName,
-                'racedate': race.racedate,
-                'location.country': race.location.country,
-                'location.state': race.location.state,
-                'racetype._id': race.racetype._id,
-                'order': race.order
-            }, '_id').lean();
+            const found = byId ? await Race.findById(race._id, '_id').lean() :
+                await Race.findOne(raceMatchFilter(race), '_id').lean();
             if (found) {
                 const series = await RaceSeries.findOne({ 'races.race': found._id }, 'name races').lean();
                 const link = series && series.races.find(l => l.race.equals(found._id));

@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+const bumpStamp = require('./stamp');
  const resultSchema = require('./result').schema
  const SystemInfo = require('./systeminfo');
 
@@ -68,31 +69,11 @@ memberSchema.pre('save', function() {
         this.createdAt =currentDate;
     }
     this.updatedAt = currentDate;
-    memberSchema.methods.updateSystemInfo('mcrrc',currentDate);
+    return memberSchema.methods.updateSystemInfo('mcrrc', currentDate);
 });
 
-memberSchema.methods.updateSystemInfo = function(name,date) {
-    try{
-        SystemInfo.findOne({
-            name: name
-        }).then(systemInfo =>{
-            if (systemInfo) {
-                systemInfo.memberUpdate = date;
-                systemInfo.save().then(err => {
-                    if (!err) {
-                        console.log("error fetching systemInfo", err);
-                    } else {
-                        // Update the backend cache after saving
-                        // const service = require('../service');
-                        // service.updateSystemInfoCache();
-                    }
-                });
-            }
-    
-        });
-    }catch(SystemInfoFindOneErr){
-        console.log("error fetching systemInfo")
-    }
+memberSchema.methods.updateSystemInfo = function (name, date) {
+    return bumpStamp('memberUpdate', date);
 };
 
 

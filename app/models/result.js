@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bumpStamp = require('./stamp');
 const raceSchema = require('./race').schema
 // const memberSchema = require('./member').schema
 
@@ -67,7 +68,9 @@ resultSchema.pre('save', function() {
     }
     this.updatedAt = date;
     this.updateCategory();
-    this.updateSystemInfo('mcrrc',date);
+    // A result embedded in a member's personal bests is not a change to the results
+    if (this.$isSubdocument) return;
+    return this.updateSystemInfo('mcrrc', date);
 });
 
 //or deleted
@@ -77,7 +80,7 @@ resultSchema.post('deleteOne', function(doc) {
         this.createdAt = date;
     }
     this.updatedAt = date;    
-    resultSchema.methods.updateSystemInfo('mcrrc',date);
+    return resultSchema.methods.updateSystemInfo('mcrrc', date);
 }); 
 
 
@@ -98,28 +101,8 @@ resultSchema.methods.updateCategory = function() {
     }
 };
 
-resultSchema.methods.updateSystemInfo = function(name,date) {
-    try{
-        SystemInfo.findOne({
-            name: name
-        }).then(systemInfo =>{
-            if (systemInfo) {
-                systemInfo.resultUpdate = date;
-                systemInfo.save().then(err => {
-                    if (!err) {
-                        console.log("error fetching systemInfo", err);
-                    } else {
-                        // Update the backend cache after saving
-                        // const service = require('../service');
-                        // service.updateSystemInfoCache();
-                    }
-                });
-            }
-    
-        });
-    }catch(SystemInfoFindOneErr){
-        console.log("error fetching systemInfo")
-    }
+resultSchema.methods.updateSystemInfo = function (name, date) {
+    return bumpStamp('resultUpdate', date);
 };
 
 

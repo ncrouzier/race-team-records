@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+const bumpStamp = require('./stamp');
 const racetype = require('./racetype');
 const racetypeSchema = require('./racetype').schema
 
@@ -48,7 +49,10 @@ raceSchema.pre('save', function() {
     }
     this.updatedAt = date;
 
-    this.updateSystemInfo('mcrrc',date);
+    // A race embedded in a result (or a result in a member's personal bests)
+    // is not a change to the races
+    if (this.$isSubdocument) return;
+    return this.updateSystemInfo('mcrrc', date);
 });
 
 // Race series follow their races (app/raceSeriesSync.js). This schema is also
@@ -75,7 +79,7 @@ raceSchema.post('deleteOne', function(doc) {
         this.createdAt = date;
     }
     this.updatedAt = date;    
-    raceSchema.methods.updateSystemInfo('mcrrc',date);
+    return raceSchema.methods.updateSystemInfo('mcrrc', date);
 }); 
 
 
@@ -93,32 +97,12 @@ raceSchema.pre('deleteOne', { document: true, query: true }, async function () {
     const VolunteerJob = mongoose.model('VolunteerJob');
     const res = await VolunteerJob.updateMany({ 'race._id': id }, { $unset: { race: 1 } });
     if (res.modifiedCount > 0) {
-        VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
+        await VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
     }
 });
 
-raceSchema.methods.updateSystemInfo = function(name,date) {
-    try{
-        SystemInfo.findOne({
-            name: name
-        }).then(systemInfo =>{
-            if (systemInfo) {
-                systemInfo.raceUpdate = date;
-                systemInfo.save().then(err => {
-                    if (!err) {
-                        console.log("error fetching systemInfo", err);
-                    } else {
-                        // Update the backend cache after saving
-                        // const service = require('../service');
-                        // service.updateSystemInfoCache();
-                    }
-                });
-            }
-    
-        });
-    }catch(SystemInfoFindOneErr){
-        console.log("error fetching systemInfo")
-    }
+raceSchema.methods.updateSystemInfo = function (name, date) {
+    return bumpStamp('raceUpdate', date);
 };
 
 

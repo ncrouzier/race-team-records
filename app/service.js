@@ -10,6 +10,22 @@ const Race = require('./models/race');
 const AgeGrading = require('./models/agegrading');
 const VolunteerJob = require('./models/volunteerjob');
 const ActivityLog = require('./models/activitylog');
+const { teamRecordOps, locationOps, getSurfaceText } = require('./achievementUpdates');
+
+// Called when the data changes (onDataChange)
+const dataChangeListeners = [];
+
+// Personal bests compared as stored: field order, the ids Mongoose gives
+// each entry on a write, and values the schema drops do not count
+function personalBestsKey(list) {
+    const sortKeys = v => Array.isArray(v) ? v.map(sortKeys) :
+        (v && typeof v === 'object' ? Object.keys(v).sort().reduce((o, k) => { o[k] = sortKeys(v[k]); return o; }, {}) : v);
+    return JSON.stringify(sortKeys(JSON.parse(JSON.stringify(list.map(pb => {
+        const copy = Object.assign({}, pb);
+        delete copy._id;
+        return copy;
+    })))));
+}
 const { configDotenv } = require('dotenv');
 
 // In-memory age grading cache for performance optimization
@@ -100,10 +116,20 @@ module.exports = {
         await this.initializeAgeGradingCache();
     },
 
+    // fn is called whenever the data changes (the system info cache is
+    // invalidated): app/routes.js rebuilds the race list ahead of time
+    onDataChange: function (fn) {
+        dataChangeListeners.push(fn);
+    },
+
     // Invalidate system info cache
     invalidateSystemInfoCache: async function () {
         systemInfoCache.data = null;
         systemInfoCache.lastUpdated = 0;
+        // Data changed: whatever is derived from it can be rebuilt
+        dataChangeListeners.forEach(function (listener) {
+            try { listener(); } catch (e) { console.error('Data change listener failed:', e); }
+        });
         // console.log('System info cache invalidated');
     },
     updateSystemInfoAndInvalidateSystemInfoCache: async function (type) {
@@ -528,10 +554,10 @@ module.exports = {
 
             // Fetch all results for all members in parallel
             this.incrementGlobalQueryCount();
+            // The race is embedded in each result: nothing to populate
             const allResults = await Result.find({
                 'members._id': { $in: memberIds }
             })
-                .populate('race')
                 .sort('race.racedate race.order')
                 .lean();
 
@@ -767,13 +793,15 @@ module.exports = {
         // OPTIMIZATION: Convert Map back to array for member update
         tmpPersonalBests = Array.from(pbMap.values());
 
-        // Update member's personal bests
-        const memberOp = {
-            updateOne: {
-                filter: { _id: member._id },
-                update: { $set: { personalBests: tmpPersonalBests } }
-            }
-        };
+        // Update member's personal bests, unless they are already exactly
+        // these (each one embeds a whole result: a write worth skipping)
+        const memberOp = personalBestsKey(new Member({ personalBests: tmpPersonalBests }).toObject().personalBests) ===
+            personalBestsKey(member.personalBests || []) ? null : {
+                updateOne: {
+                    filter: { _id: member._id },
+                    update: { $set: { personalBests: tmpPersonalBests } }
+                }
+            };
 
         return { resultOps: resultBulkOperations, memberOp };
     },
@@ -1173,7 +1201,10 @@ module.exports = {
             // OPTIMIZATION: Use aggregation to calculate stats for all members in one query
             const statsAggregation = await Result.aggregate([
                 {
+                    // The members first: that field is indexed, the date is
+                    // not (21 ms → 2 ms for one member, the same counts)
                     $match: {
+                        "members._id": { $in: normalizedMemberIds },
                         "race.racedate": {
                             $gte: new Date(currentYearStart),
                             $lt: new Date(currentYearEnd)
@@ -1370,94 +1401,35 @@ module.exports = {
      * Otherwise, process all locations.
      * Usage: await service.updateAllLocationAchievements(country, state);
      */
+    // The "first team race in ..." achievement of one location (or of every
+    // location, without one): its first race holds it, once; no other race
+    // does. Reads just that race and the current holders. Rules: locationOps
+    // (app/achievementUpdates.js).
     updateAllLocationAchievements: async function (country, state) {
         try {
             let locations;
             if (country) {
-                // Only process the specified location
-                locations = [{ _id: { country, state: state || null } }];
+                locations = [{ country, state: state || null }];
             } else {
-                // Get all unique locations
-                locations = await Race.aggregate([
-                    {
-                        $group: {
-                            _id: {
-                                country: '$location.country',
-                                state: '$location.state'
-                            }
-                        }
-                    }
-                ]);
+                locations = (await Race.aggregate([
+                    { $group: { _id: { country: '$location.country', state: '$location.state' } } }
+                ])).map(l => ({ country: l._id.country, state: l._id.state }));
             }
 
-
-            // OPTIMIZATION: Use bulk operations for location achievements
-            const processedLocations = new Set();
-
             for (const location of locations) {
-                const locationKey = `${location._id.country}-${location._id.state || 'null'}`;
-                if (processedLocations.has(locationKey)) continue;
-                processedLocations.add(locationKey);
-
-                // Find all races at this location, sorted by date (oldest first)
-                const racesAtLocation = await Race.find({
-                    'location.country': location._id.country,
-                    'location.state': location._id.state
-                }).sort('racedate order');
-
-                if (racesAtLocation.length === 0) continue;
-
-                const oldestRace = racesAtLocation[0];
-                const locationName = location._id.state || location._id.country;
-
-                // Prepare bulk operations for this location
-                const bulkOperations = [];
-
-                // Remove achievement from all races at this location
-                for (const race of racesAtLocation) {
-                    if (race.achievements) {
-                        const newLocationIndex = race.achievements.findIndex(a => a.name === "newLocation");
-                        if (newLocationIndex !== -1) {
-                            const updatedAchievements = [...race.achievements];
-                            updatedAchievements.splice(newLocationIndex, 1);
-
-                            bulkOperations.push({
-                                updateOne: {
-                                    filter: { _id: race._id },
-                                    update: { $set: { achievements: updatedAchievements } }
-                                }
-                            });
-                        }
-                    }
-                }
-
-                // Add achievement only to the oldest race
-                const oldestRaceAchievements = oldestRace.achievements || [];
-                const achievement = {
-                    name: "newLocation",
-                    text: `First team race in ${locationName}!`,
-                    value: {
-                        country: oldestRace.location.country,
-                        state: oldestRace.location.state,
-                        locationName: locationName
-                    }
+                const where = {
+                    'location.country': location.country,
+                    'location.state': location.state
                 };
-
-                oldestRaceAchievements.push(achievement);
-
-                bulkOperations.push({
-                    updateOne: {
-                        filter: { _id: oldestRace._id },
-                        update: { $set: { achievements: oldestRaceAchievements } }
-                    }
-                });
-
-                // Execute bulk operations for this location
+                const first = await Race.findOne(where).select('location achievements').sort('racedate order').lean();
+                if (!first) continue;
+                const holders = await Race.find(Object.assign({ 'achievements.name': 'newLocation' }, where))
+                    .select('achievements').lean();
+                const bulkOperations = locationOps(first, holders);
                 if (bulkOperations.length > 0) {
                     await Race.bulkWrite(bulkOperations);
                 }
             }
-
         } catch (err) {
             console.error('Error updating all location achievements:', err);
         }
@@ -1476,7 +1448,11 @@ module.exports = {
      * Excluded: variable-distance racetypes, Swim/Cycling/Multisport racetypes,
      * multisport races, non-record-eligible results, and multi-member results.
      */
-    updateAllTeamRecordAchievements: async function () {
+    // racetypeIds: only the race types a change touched (a result's, and
+    // its old one when an edit moved it); none: every race type. Records are
+    // per race type, so the others cannot change. Rules: teamRecordOps
+    // (app/achievementUpdates.js).
+    updateAllTeamRecordAchievements: async function (racetypeIds) {
         try {
             // Identify excluded racetypes (variable-distance + non-running)
             const excludedRaceTypes = await RaceType.find({
@@ -1489,146 +1465,24 @@ module.exports = {
             }).select('_id').lean();
             const excludedRaceTypeIds = new Set(excludedRaceTypes.map(rt => rt._id.toString()));
 
-            // Fetch all eligible results, sorted chronologically
-            const results = await Result.find({
+            // Eligible results, sorted chronologically, with the fields the
+            // rules read (achievements whole: they are written back)
+            const filter = {
                 isRecordEligible: true,
                 'race.isMultisport': { $ne: true },
                 'members.0': { $exists: true }
-            })
+            };
+            if (racetypeIds) {
+                const ids = racetypeIds.filter(Boolean).map(id => new mongoose.Types.ObjectId(String(id)));
+                if (!ids.length) return;
+                filter['race.racetype._id'] = { $in: ids };
+            }
+            const results = await Result.find(filter)
+                .select('time category members.sex race.racedate race.order race.racetype achievements')
                 .sort('race.racedate race.order')
                 .lean();
 
-            // Group eligible results into record-category buckets.
-            // Each Open-eligible result competes in Open; Master results also
-            // compete in Master (so they can hold a Master record alongside Open).
-            // bucketDateGroups: Map<bucketKey, Map<dateKey, Result[]>>
-            const bucketDateGroups = new Map();
-            const bucketDateOrder = new Map();
-
-            const addToBucket = (result, recordCategory, sex, dateKey) => {
-                const bucketKey = `${result.race.racetype._id.toString()}|${recordCategory}|${sex}`;
-                let dateMap = bucketDateGroups.get(bucketKey);
-                if (!dateMap) {
-                    dateMap = new Map();
-                    bucketDateGroups.set(bucketKey, dateMap);
-                    bucketDateOrder.set(bucketKey, []);
-                }
-                let dateGroup = dateMap.get(dateKey);
-                if (!dateGroup) {
-                    dateGroup = [];
-                    dateMap.set(dateKey, dateGroup);
-                    bucketDateOrder.get(bucketKey).push(dateKey);
-                }
-                dateGroup.push(result);
-            };
-
-            for (const result of results) {
-                if (!result.race || !result.race.racetype || !result.race.racetype._id) continue;
-                if (excludedRaceTypeIds.has(result.race.racetype._id.toString())) continue;
-                if (!result.category) continue;
-                const sex = result.members[0].sex;
-                if (!sex) continue;
-                if (typeof result.time !== 'number' || result.time <= 0) continue;
-                if (!result.race.racedate) continue;
-
-                const dateKey = new Date(result.race.racedate).toISOString().slice(0, 10);
-                addToBucket(result, 'Open', sex, dateKey);
-                if (result.category === 'Master') {
-                    addToBucket(result, 'Master', sex, dateKey);
-                }
-            }
-
-            // Walk each bucket chronologically; tag all results at the new min
-            // when a date-group strictly improves on the previous best. Keyed
-            // by (resultId, recordCategory) so a single result can hold both an
-            // Open and a Master teamRecord achievement.
-            // expectedByResultId: Map<resultId, Map<recordCategory, achievement>>
-            const expectedByResultId = new Map();
-
-            for (const [bucketKey, dateMap] of bucketDateGroups) {
-                const recordCategory = bucketKey.split('|')[1];
-                let previousBest;
-                const dateKeys = bucketDateOrder.get(bucketKey);
-                for (const dateKey of dateKeys) {
-                    const dateGroup = dateMap.get(dateKey);
-                    let minTime = Infinity;
-                    for (const r of dateGroup) {
-                        if (r.time < minTime) minTime = r.time;
-                    }
-                    if (previousBest === undefined || minTime < previousBest) {
-                        previousBest = minTime;
-                        for (const r of dateGroup) {
-                            if (r.time !== minTime) continue;
-                            const idStr = r._id.toString();
-                            const sex = r.members[0].sex;
-                            const achievement = {
-                                name: 'teamRecord',
-                                text: `New team record: ${r.race.racetype.name} (${getSurfaceText(r.race.racetype.surface)}) : ${recordCategory} ${sex}!`,
-                                value: {
-                                    time: r.time,
-                                    racetypeId: r.race.racetype._id,
-                                    racetypeName: r.race.racetype.name,
-                                    surface: r.race.racetype.surface,
-                                    category: recordCategory,
-                                    sex: sex
-                                }
-                            };
-                            let perCategory = expectedByResultId.get(idStr);
-                            if (!perCategory) {
-                                perCategory = new Map();
-                                expectedByResultId.set(idStr, perCategory);
-                            }
-                            perCategory.set(recordCategory, achievement);
-                        }
-                    }
-                }
-            }
-
-            // Build bulk operations: replace teamRecord achievements only when
-            // the set differs from what's already on the result. When a result
-            // sets both the Open and Master record, collapse the two into a
-            // single combined achievement whose text names both — one record
-            // run should count (and show) as one 🔥, not two. category stays
-            // "Open" for existing readers; categories lists both.
-            const bulkOperations = [];
-            for (const result of results) {
-                const idStr = result._id.toString();
-                const existing = result.achievements || [];
-                const existingTeamRecords = existing.filter(a => a.name === 'teamRecord');
-                const expectedMap = expectedByResultId.get(idStr) || new Map();
-                const openAch = expectedMap.get('Open');
-                const masterAch = expectedMap.get('Master');
-                let expectedList;
-                if (openAch && masterAch) {
-                    const sex = openAch.value.sex;
-                    expectedList = [{
-                        name: 'teamRecord',
-                        text: `New team record: ${openAch.value.racetypeName} (${getSurfaceText(openAch.value.surface)}) : Open and Master ${sex}!`,
-                        value: {
-                            time: openAch.value.time,
-                            racetypeId: openAch.value.racetypeId,
-                            racetypeName: openAch.value.racetypeName,
-                            surface: openAch.value.surface,
-                            category: 'Open',
-                            categories: ['Open', 'Master'],
-                            sex: sex
-                        }
-                    }];
-                } else {
-                    expectedList = Array.from(expectedMap.values());
-                }
-
-                if (!teamRecordsEqual(existingTeamRecords, expectedList)) {
-                    const others = existing.filter(a => a.name !== 'teamRecord');
-                    bulkOperations.push({
-                        updateOne: {
-                            filter: { _id: result._id },
-                            update: { $set: { achievements: [...others, ...expectedList] } }
-                        }
-                    });
-                }
-            }
-
+            const bulkOperations = teamRecordOps(results, excludedRaceTypeIds);
             if (bulkOperations.length > 0) {
                 await Result.bulkWrite(bulkOperations);
             }
@@ -1775,29 +1629,6 @@ function addOrdinalSuffix(number) {
     }
 }
 
-function getSurfaceText(surface) {
-    const surfaceMap = new Map([
-        ['road', 'road'],
-        ['track', 'track'],
-        ['trail', 'trail'],
-        ['ultra', 'ultra'],
-        ['multiple', 'multi sport'],
-        ['pool', 'pool'],
-        ['open water', 'openwater']
-    ]);
-    return surfaceMap.get(surface);
-}
-
-function teamRecordsEqual(existing, expected) {
-    if (existing.length !== expected.length) return false;
-    const key = a => `${a.value && a.value.category}|${a.value && a.value.sex}|${a.value && a.value.time}|${a.text}`;
-    const existingKeys = existing.map(key).sort();
-    const expectedKeys = expected.map(key).sort();
-    for (let i = 0; i < existingKeys.length; i++) {
-        if (existingKeys[i] !== expectedKeys[i]) return false;
-    }
-    return true;
-}
 
 
 

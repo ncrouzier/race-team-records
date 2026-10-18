@@ -14,6 +14,17 @@ var express = require('express');
 const compression = require('compression');
 const sslRedirect = require('heroku-ssl-redirect').default
 var app = express();
+
+// Errors in async route handlers answer that request with a 500 instead of
+// stopping the server (app/asyncErrors.js). Before any route is registered.
+require('./app/asyncErrors')(app);
+
+// A promise chain a route does not return can still reject unhandled; Node
+// would stop the server for it. One request failing must not take the site
+// down for everyone: log it and carry on.
+process.on('unhandledRejection', function (reason) {
+    console.error('Unhandled promise rejection:', reason);
+});
 var osipaddress = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 var osport = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 
@@ -105,6 +116,29 @@ if (process.env.MONGODB_URI) {
 //connect to mongodb
 const clientP = mongoose.connect(mongourl).then(m => m.connection.getClient());
 
+// Team records are rebuilt per race type after each result change
+// (service.updateAllTeamRecordAchievements): results by race type, in date
+// order. Created here rather than on the schema, which members embed.
+// Does nothing when it exists.
+// The races: by name and date (finding a result's race when it is saved,
+// app/raceMatch.js) and by location and date (its first race,
+// service.updateAllLocationAchievements). Both on races only, for the same
+// reason: results embed the race schema.
+clientP.then(function () {
+    const db = mongoose.connection;
+    return Promise.all([
+        db.collection('results').createIndex(
+            { 'race.racetype._id': 1, 'race.racedate': 1, 'race.order': 1 },
+            { name: 'racetype_date_order' }),
+        db.collection('races').createIndex({ racename: 1, racedate: 1 }, { name: 'name_date' }),
+        db.collection('races').createIndex(
+            { 'location.country': 1, 'location.state': 1, racedate: 1, order: 1 },
+            { name: 'location_date_order' })
+    ]);
+}).catch(function (err) {
+    console.error('Could not create the race and result indexes:', err.message);
+});
+
 app.use(express.static(__dirname + '/public'));
 
 require('./config/passport')(passport); // pass passport for configuration
@@ -142,18 +176,34 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 // logged-in admin (as a header, not a body change) so the nav badge can stay
 // live from whatever the admin is already doing — heartbeat, page loads,
 // any API call — instead of needing its own dedicated poll.
+//
+// The three counts are remembered for a few seconds per admin: a page load
+// makes many API calls, and each used to count again. Any write (or data
+// change) forgets them, so a badge never lags behind what was just done.
+const ADMIN_COUNTS_MS = 5000;
+const adminCounts = new Map();     // user id → { at, activity, series, corrections }
+service.onDataChange(function () { adminCounts.clear(); });
 app.use(async function (req, res, next) {
     if (req.user && req.user.role === 'admin' && req.path.indexOf('/api/') === 0) {
         try {
-            const service = require('./app/service');
-            const count = await service.getUnseenActivityLogCount(req.user);
-            res.set('X-Unseen-Activity-Count', String(count));
-            const RaceSeries = require('./app/models/raceseries');
-            const pendingSeries = await RaceSeries.countDocuments({ 'races.status': 'suggested' });
-            res.set('X-Pending-Series-Count', String(pendingSeries));
-            // Members' correction requests waiting for an admin
-            const CorrectionRequest = require('./app/models/correctionrequest');
-            res.set('X-Pending-Corrections-Count', String(await CorrectionRequest.countDocuments({ status: 'open' })));
+            if (req.method !== 'GET') adminCounts.clear();
+            const key = String(req.user._id);
+            let counts = adminCounts.get(key);
+            if (!counts || Date.now() - counts.at > ADMIN_COUNTS_MS) {
+                const RaceSeries = require('./app/models/raceseries');
+                // Members' correction requests waiting for an admin
+                const CorrectionRequest = require('./app/models/correctionrequest');
+                const found = await Promise.all([
+                    service.getUnseenActivityLogCount(req.user),
+                    RaceSeries.countDocuments({ 'races.status': 'suggested' }),
+                    CorrectionRequest.countDocuments({ status: 'open' })
+                ]);
+                counts = { at: Date.now(), activity: found[0], series: found[1], corrections: found[2] };
+                adminCounts.set(key, counts);
+            }
+            res.set('X-Unseen-Activity-Count', String(counts.activity));
+            res.set('X-Pending-Series-Count', String(counts.series));
+            res.set('X-Pending-Corrections-Count', String(counts.corrections));
         } catch (err) {
             console.error('Error setting unseen activity count header:', err);
         }

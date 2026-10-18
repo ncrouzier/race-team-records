@@ -1369,10 +1369,16 @@ module.exports = async function (app, qs, passport, async, _) {
 
         if (filters) {
             if (filters.memberId) {
+                if (!mongoose.isValidObjectId(filters.memberId)) {
+                    return res.status(400).json({ error: 'filters.memberId must be a member id' });
+                }
                 query = query.where('member._id').equals(filters.memberId);
             }
             if (filters.eventName) {
-                query = query.regex('eventName', new RegExp(filters.eventName, 'i'));
+                // The search text taken literally: the list is public, and a
+                // pattern from the URL could throw, or take the server minutes
+                const text = String(filters.eventName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                query = query.regex('eventName', new RegExp(text, 'i'));
             }
             if (filters.dateFrom) {
                 query = query.where('jobDate').gte(new Date(filters.dateFrom));
@@ -1390,7 +1396,8 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.lean().exec().then(jobs => {
+            // Returned: a failing query answers 500 (app/asyncErrors.js)
+            return query.lean().exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
@@ -1420,6 +1427,9 @@ module.exports = async function (app, qs, passport, async, _) {
     app.get('/api/members/:member_id/volunteerjobs', function (req, res) {
         res.setHeader("Content-Type", "application/json");
         const sort = req.query.sort || '-jobDate';
+        if (!mongoose.isValidObjectId(req.params.member_id)) {
+            return res.status(400).json({ error: 'Not a member id' });
+        }
 
         try {
             let query = VolunteerJob.find({
@@ -1430,7 +1440,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 query = query.sort(sort);
             }
 
-            query.exec().then(jobs => {
+            // Returned: a failing query answers 500 (app/asyncErrors.js)
+            return query.exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
@@ -1973,19 +1984,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                         achievements: [],
                                         done: false
                                     }).then(async result => {
-                                        //update PBs
-
-                                        for (let m of result.members) {
-                                            let member = await Member.findById(m._id);
-                                            await service.updateMemberStats(member);
-                                        }
-
-                                        // Update location achievements for this location
+                                        // PBs and stats of every runner at once, then this
+                                        // location and this race type's records
+                                        await service.updateMemberStatsBulk(result.members.map(m => m._id));
                                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
-                                        await service.updateAllTeamRecordAchievements();
+                                        await service.updateAllTeamRecordAchievements([r.racetype._id]);
 
                                         resultWithPBsAndAchievements = await Result.findById(result._id);
-                                        await service.invalidateSystemInfoCache();
+                                        // The stamp last, after every change above: a browser that sees it
+                                        // has everything this save did
+                                        await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                                         res.json(resultWithPBsAndAchievements);
                                     });
                                 } catch (resultCreateErr) {
@@ -2015,17 +2023,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                 achievements: [],
                                 done: false
                             }).then(async result => {
-                                //update PBs
-                                for (let m of result.members) {
-                                    let member = await Member.findById(m._id);
-                                    await service.updateMemberStats(member);
-                                }
-                                // Update location achievements for this location
+                                // PBs and stats of every runner at once, then this
+                                // location and this race type's records
+                                await service.updateMemberStatsBulk(result.members.map(m => m._id));
                                 await service.updateAllLocationAchievements(race.location.country, race.location.state);
-                                await service.updateAllTeamRecordAchievements();
+                                await service.updateAllTeamRecordAchievements([race.racetype._id]);
 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                                await service.invalidateSystemInfoCache();
+                                // The stamp last, after every change above: a browser that sees it
+                                // has everything this save did
+                                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                                 res.json(resultWithPBsAndAchievements);
                             });
                         } catch (resultCreateErr) {
@@ -2055,6 +2062,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }
 
             const updatedResults = [];
+            const previousMemberIds = new Set();
 
             // Process each result
             for (const resultData of results) {
@@ -2068,6 +2076,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     if (!existingResult) {
                         throw new Error(`Result with ID ${resultData._id} not found`);
                     }
+                    // Runners taken off a result need their stats updated too
+                    existingResult.members.forEach(m => previousMemberIds.add(String(m._id)));
 
                     // Update the result with new data
                     const updatedResult = await Result.findByIdAndUpdate(
@@ -2096,23 +2106,33 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
             }
 
-            // Update member stats for all affected members
-            const memberIds = new Set();
+            // Every runner's stats at once, the ones taken off a result included
+            const memberIds = new Set(previousMemberIds);
             updatedResults.forEach(result => {
                 result.members.forEach(member => {
                     memberIds.add(member._id.toString());
                 });
             });
-
-            // Update stats for each unique member
-            for (const memberId of memberIds) {
-                try {
-                    let member = await Member.findById(memberId);
-                    await service.updateMemberStats(member);
-                } catch (memberError) {
-                    console.error('Error updating member stats:', memberError);
-                }
+            try {
+                await service.updateMemberStatsBulk([...memberIds]);
+            } catch (memberError) {
+                console.error('Error updating member stats:', memberError);
             }
+
+            // Times and eligibility change records; the race's location
+            // achievement follows its results' race
+            const locations = new Map();
+            const racetypeIds = new Set();
+            updatedResults.forEach(result => {
+                if (result.race && result.race.location) {
+                    locations.set(result.race.location.country + '|' + result.race.location.state, result.race.location);
+                }
+                if (result.race && result.race.racetype) racetypeIds.add(String(result.race.racetype._id));
+            });
+            for (const location of locations.values()) {
+                await service.updateAllLocationAchievements(location.country, location.state);
+            }
+            await service.updateAllTeamRecordAchievements([...racetypeIds]);
 
             // Invalidate cache 
             await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
@@ -2153,6 +2173,22 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             let result = await Result.findById(req.params.result_id);
             const oldraceid = result.race._id;
+            // What the edit may move away from: its runners, race type and
+            // location are recalculated too
+            const before = {
+                memberIds: result.members.map(m => m._id),
+                racetypeId: result.race.racetype && result.race.racetype._id,
+                location: result.race.location || {}
+            };
+            const afterSave = async function (race) {
+                const memberIds = before.memberIds.concat(result.members.map(m => m._id));
+                await service.updateMemberStatsBulk([...new Set(memberIds.map(String))]);
+                await service.updateAllLocationAchievements(race.location.country, race.location.state);
+                if (before.location.country !== race.location.country || before.location.state !== race.location.state) {
+                    await service.updateAllLocationAchievements(before.location.country, before.location.state);
+                }
+                await service.updateAllTeamRecordAchievements([race.racetype._id, before.racetypeId]);
+            };
             //does the race exists?
 
             // Its own race first when the details still match it (several
@@ -2203,17 +2239,12 @@ module.exports = async function (app, qs, passport, async, _) {
                         });
                     }
                 }
-                //update PBs
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);
-                    await service.updateMemberStats(member);
-                }
-                // Update location achievements for this location
-                await service.updateAllLocationAchievements(r.location.country, r.location.state);
-                await service.updateAllTeamRecordAchievements();
+                await afterSave(r);
 
                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                await service.invalidateSystemInfoCache();
+                // The stamp last, after every change above: a browser that sees it
+                // has everything this save did
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                 res.json(resultWithPBsAndAchievements);
 
 
@@ -2247,16 +2278,11 @@ module.exports = async function (app, qs, passport, async, _) {
                         });
                     }
                 }
-                //update PBs
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);
-                    await service.updateMemberStats(member);
-                }
-                // Update location achievements for this location
-                await service.updateAllLocationAchievements(race.location.country, race.location.state);
-                await service.updateAllTeamRecordAchievements();
+                await afterSave(race);
                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                await service.invalidateSystemInfoCache();
+                // The stamp last, after every change above: a browser that sees it
+                // has everything this save did
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                 res.json(resultWithPBsAndAchievements);
             }
 
@@ -2374,7 +2400,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // Update location achievements
             await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
-            await service.updateAllTeamRecordAchievements();
+            await service.updateAllTeamRecordAchievements([raceToUse.racetype._id]);
 
             // Invalidate cache
             await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
@@ -2401,6 +2427,8 @@ module.exports = async function (app, qs, passport, async, _) {
             Result.findById(req.params.result_id).then(result => {
                 const members = result.members;
                 const oldraceid = result.race._id;
+                const oldRacetypeId = result.race.racetype && result.race.racetype._id;
+                const oldLocation = result.race.location || {};
                 try {
                     Result.deleteOne({
                         _id: req.params.result_id
@@ -2408,32 +2436,17 @@ module.exports = async function (app, qs, passport, async, _) {
                         // A deleted result's open correction requests close
                         await require('./correctionRoutes').closeForResult(req.params.result_id)
                             .catch(err => console.error('Could not close correction requests:', err));
-                        let cleanQuery = Result.find().where('race._id').equals(oldraceid);
-                        try {
-                            cleanQuery.exec().then(cleanResults => {
-                                if (cleanResults) {
-                                    if (cleanResults.length === 0) {
-                                        try {
-                                            Race.deleteOne({
-                                                _id: oldraceid
-                                            }).then(raceD => {
-                                                console.log("remove zombie race entry successful");
-                                            });
-                                        } catch (RacedeleteOneErr) {
-                                            res.send(RacedeleteOneErr);
-                                        }
-
-                                    }
-                                }
-                            });
-                        } catch (cleanQueryExecErr) {
-                            res.send(cleanQueryExecErr)
+                        // A race left with no results goes too
+                        const cleanResults = await Result.find().where('race._id').equals(oldraceid);
+                        if (cleanResults.length === 0) {
+                            await Race.deleteOne({ _id: oldraceid });
+                            console.log("remove zombie race entry successful");
                         }
-                        for (let m of members) {
-                            let member = await Member.findById(m._id);
-                            service.updateMemberStats(member);
-                        }
-                        await service.updateAllTeamRecordAchievements();
+                        // Its runners, its location (the race may be gone) and
+                        // its race type's records
+                        await service.updateMemberStatsBulk(members.map(m => m._id));
+                        await service.updateAllLocationAchievements(oldLocation.country, oldLocation.state);
+                        await service.updateAllTeamRecordAchievements([oldRacetypeId]);
                         await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                         res.end('{"success" : "Result deleted successfully", "status" : 200}');
 
@@ -2715,11 +2728,13 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
             }
 
-            // Update location achievements for this location
+            // Its location's first race may have changed (a new date or a
+            // new location), and the old location's too when it moved
+            await service.updateAllLocationAchievements(updatedRace.location.country, updatedRace.location.state);
             if (oldRace.location.country !== updatedRace.location.country || oldRace.location.state !== updatedRace.location.state) {
                 await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
             }
-            await service.updateAllTeamRecordAchievements();
+            await service.updateAllTeamRecordAchievements([oldRace.racetype && oldRace.racetype._id, updatedRace.racetype && updatedRace.racetype._id]);
 
             // Volunteer jobs linked to this race follow it: the new name (and
             // the merged-into race, when the edit merged two races), and the
@@ -2837,31 +2852,16 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     }
 
-    app.get('/api/raceinfos', async function (req, res) {
-        const sort = req.query.sort;
-        const limit = parseInt(req.query.limit);
-        let raceId = req.query.raceId;
-
-        // Build a cache key from the query params
-        const cacheKey = JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: req.query.filters });
-
-        // Check cache freshness against systemInfo.resultUpdate
-        try {
-            const systemInfo = await service.getCachedSystemInfo();
-            if (systemInfo) {
-                const latestUpdate = Math.max(
-                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
-                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
-                );
-                const cached = raceInfosCache[cacheKey];
-                if (cached && cached.timestamp >= latestUpdate) {
-                    return sendRaceInfos(req, res, cached);
-                }
-            }
-        } catch (err) {
-            // If systemInfo check fails, proceed without cache
-        }
-
+    // The race list for one set of parameters, as the route sends it:
+    // { gzip, timestamp }, or { results } when compressing failed. timestamp
+    // is when the build started, so a change landing during the build makes
+    // the entry stale rather than looking fresh.
+    function buildRaceInfos(params) {
+        const sort = params.sort;
+        const limit = params.limit;
+        const raceId = params.raceId;
+        const filters = params.filters;
+        const startedAt = Date.now();
         let query = Race.aggregate([
 
             {
@@ -2911,8 +2911,7 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.match({ '_id': new mongoose.Types.ObjectId(raceId) });
         }
 
-        if (req.query.filters) {
-            const filters = JSON.parse(req.query.filters);
+        if (filters) {
             if (filters.dateFrom) {
                 query = query.match({ 'racedate': { $gte: new Date(filters.dateFrom) } });
             }
@@ -2929,32 +2928,95 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.limit(limit); //no idea why I need to parse
         }
 
-        try {
-            query.exec().then(results => {
-                results.forEach(function (resu) {
-                    resu.results = _.sortBy(resu.results, 'time');
-                });
-
-                // Compress once, on the miss, and cache the bytes. Async
-                // rather than gzipSync: this is several MB, and blocking the
-                // event loop for it would stall every other request on what is
-                // a single-core box.
+        return query.exec().then(results => {
+            results.forEach(function (resu) {
+                resu.results = _.sortBy(resu.results, 'time');
+            });
+            // Async rather than gzipSync: this is several MB, and blocking
+            // the event loop for it would stall every other request on what
+            // is a single-core box.
+            return new Promise(function (resolve) {
                 zlib.gzip(JSON.stringify(results), function (err, buf) {
-                    if (err) {
-                        // Fall back to the ordinary path rather than 500 —
-                        // the response is still perfectly serveable.
-                        return res.json(results);
-                    }
-                    raceInfosCache[cacheKey] = {
-                        gzip: buf,
-                        timestamp: Date.now()
-                    };
-                    sendRaceInfos(req, res, raceInfosCache[cacheKey]);
+                    // The response is still serveable uncompressed
+                    if (err) return resolve({ results: results });
+                    resolve({ gzip: buf, timestamp: startedAt });
                 });
             });
-        } catch (err) {
-            res.send(err);
+        });
+    }
+
+    // The key a set of parameters is cached under (the route's own)
+    function raceInfosKey(sort, limit, raceId, filters) {
+        return JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: filters });
+    }
+
+    // The full list, as the site asks for it (ResultsService), is rebuilt in
+    // the background a moment after data changes: the next page to load it
+    // (an editor's, after a run of saves) gets it from the cache instead of
+    // waiting for the rebuild. Once per run of changes, not once per save.
+    const FULL_LIST = { sort: '-racedate -order racename' };
+    let warmTimer = null;
+    service.onDataChange(function () {
+        clearTimeout(warmTimer);
+        warmTimer = setTimeout(function () {
+            const key = raceInfosKey(FULL_LIST.sort, NaN, undefined, undefined);
+            buildRaceInfos({ sort: FULL_LIST.sort, limit: NaN }).then(function (entry) {
+                if (entry.gzip && (!raceInfosCache[key] || raceInfosCache[key].timestamp < entry.timestamp)) {
+                    raceInfosCache[key] = entry;
+                }
+            }).catch(function (err) {
+                console.error('Could not rebuild the race list in the background:', err.message);
+            });
+        }, 2000);
+        if (warmTimer.unref) warmTimer.unref();
+    });
+
+    app.get('/api/raceinfos', async function (req, res) {
+        const sort = req.query.sort;
+        const limit = parseInt(req.query.limit);
+        let raceId = req.query.raceId;
+
+        // A public URL: anything can arrive here. filters must be a JSON
+        // object and raceId a race id; anything else is the caller's mistake.
+        let filters = null;
+        if (req.query.filters !== undefined) {
+            try {
+                filters = typeof req.query.filters === 'string' ? JSON.parse(req.query.filters) : null;
+            } catch (e) {
+                filters = null;
+            }
+            if (!filters || typeof filters !== 'object' || Array.isArray(filters)) {
+                return res.status(400).json({ error: 'filters must be a JSON object' });
+            }
         }
+        if (raceId !== undefined && !mongoose.isValidObjectId(raceId)) {
+            return res.status(400).json({ error: 'raceId must be a race id' });
+        }
+
+        // Build a cache key from the query params
+        const cacheKey = raceInfosKey(sort, limit, raceId, req.query.filters);
+
+        // Check cache freshness against systemInfo.resultUpdate
+        try {
+            const systemInfo = await service.getCachedSystemInfo();
+            if (systemInfo) {
+                const latestUpdate = Math.max(
+                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
+                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
+                );
+                const cached = raceInfosCache[cacheKey];
+                if (cached && cached.timestamp >= latestUpdate) {
+                    return sendRaceInfos(req, res, cached);
+                }
+            }
+        } catch (err) {
+            // If systemInfo check fails, proceed without cache
+        }
+
+        const entry = await buildRaceInfos({ sort: sort, limit: limit, raceId: raceId, filters: filters });
+        if (!entry.gzip) return res.json(entry.results);
+        raceInfosCache[cacheKey] = entry;
+        sendRaceInfos(req, res, entry);
 
 
     });

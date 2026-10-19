@@ -59,6 +59,8 @@ const teamApplicationSchema = new mongoose.Schema({
     // (a returning runner) rather than creating a fresh one.
     isReturningMember: { type: Boolean, default: false },
 
+    // Sent by itself when the application is submitted
+    confirmationEmail: sentEmailSchema(),
     // Decision emails are sent by hand after the decision, not automatically.
     approvalEmail: sentEmailSchema(),
     rejectionEmail: sentEmailSchema(),

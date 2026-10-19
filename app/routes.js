@@ -5678,6 +5678,7 @@ module.exports = async function (app, qs, passport, async, _) {
             await application.save();
 
             sendApplicationNotification(application);
+            sendApplicationConfirmation(application);
 
             // Submitted from the public form, so there is no logged-in user —
             // logActivity falls back to 'system' for the username.
@@ -5711,6 +5712,34 @@ module.exports = async function (app, qs, passport, async, _) {
             res.status(500).json({ error: 'Something went wrong submitting your application. Please try again.' });
         }
     });
+
+    // Tell the applicant their application arrived (the "confirmation"
+    // template, which the captains can edit). Replies go to the captains; no
+    // copy to them, they have their own notification. Recorded on the
+    // application like the decision emails. A failure is logged and never
+    // affects the submission.
+    async function sendApplicationConfirmation(application) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true' || !application.email) return;
+        try {
+            const template = await buildDecisionTemplate(application, 'confirmation');
+            const body = sanitizeEmailBody(template.body);
+            transport.sendMail({
+                from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+                to: application.email,
+                replyTo: process.env.CAPTAINS_EMAIL || undefined,
+                subject: template.subject,
+                html: body,
+                text: htmlToPlainText(body)
+            }, function (err) {
+                if (err) return console.error('Error sending application confirmation email:', err);
+                TeamApplication.updateOne({ _id: application._id }, {
+                    $set: { confirmationEmail: { subject: template.subject, body: body, sentAt: new Date(), sentByUsername: 'system' } }
+                }).catch(function (e) { console.error('Could not record the confirmation email:', e); });
+            });
+        } catch (err) {
+            console.error('Error building application confirmation email:', err);
+        }
+    }
 
     // Notify the captains that a new application landed
     function sendApplicationNotification(application) {
@@ -5817,9 +5846,21 @@ module.exports = async function (app, qs, passport, async, _) {
     // or per deployment are written as {{placeholders}} rather than being
     // interpolated at definition time, so an edited template keeps working.
     const EMAIL_TEMPLATE_KEYS = {
+        // Sent by itself when someone applies (sendApplicationConfirmation)
+        confirmation: 'application_confirmation',
         approval: 'application_approval',
         rejection: 'application_rejection'
     };
+    const EMAIL_TEMPLATE_LABELS = {
+        confirmation: 'Confirmation email',
+        approval: 'Approval email',
+        rejection: 'Rejection email'
+    };
+
+    // A template type from a request: one of the keys above, else approval
+    function templateType(value) {
+        return Object.prototype.hasOwnProperty.call(EMAIL_TEMPLATE_KEYS, value) ? value : 'approval';
+    }
 
     // Shown in the editor so a captain knows what they can use
     const EMAIL_TEMPLATE_PLACEHOLDERS = [
@@ -5829,7 +5870,9 @@ module.exports = async function (app, qs, passport, async, _) {
         { token: 'siteUrl', description: 'Address of this site' },
         { token: 'captainsEmail', description: "The captains' email address" },
         { token: 'signalUrl', description: 'Invite link for the Signal group chat' },
-        { token: 'raceCommitment', description: 'Races a member must run per year' }
+        { token: 'raceCommitment', description: 'Races a member must run per year' },
+        { token: 'submittedDate', description: 'The day the application was submitted' },
+        { token: 'races', description: 'The races the applicant submitted, as a list' }
     ];
 
     function emailTemplateValues(application) {
@@ -5840,8 +5883,24 @@ module.exports = async function (app, qs, passport, async, _) {
             siteUrl: (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org',
             captainsEmail: process.env.CAPTAINS_EMAIL || '',
             signalUrl: process.env.SIGNAL_URL || '',
-            raceCommitment: String(APPLICATION_RACE_COMMITMENT)
+            raceCommitment: String(APPLICATION_RACE_COMMITMENT),
+            submittedDate: new Date(application.createdAt || Date.now()).toLocaleDateString('en-US',
+                { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }),
+            races: applicationRacesHtml(application.races || [])
         };
+    }
+
+    // The submitted races as an HTML list, for {{races}}. The names come from
+    // the applicant, so they are escaped.
+    function applicationRacesHtml(races) {
+        if (!races.length) return '';
+        return '<ul>' + races.map(function (r) {
+            const date = r.racedate ? new Date(r.racedate).toLocaleDateString('en-US',
+                { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '';
+            return '<li>' + escapeHtmlText(r.racename || '') + (date ? ' (' + date + ')' : '') +
+                (r.racetype && r.racetype.name ? ', ' + escapeHtmlText(r.racetype.name) : '') +
+                (r.timeCentiseconds ? ' in ' + centisToString(r.timeCentiseconds) : '') + '</li>';
+        }).join('') + '</ul>';
     }
 
     // {{token}} -> value. An unknown token is left alone rather than blanked, so
@@ -5866,6 +5925,19 @@ module.exports = async function (app, qs, passport, async, _) {
     }
 
     function defaultDecisionTemplate(type) {
+        if (type === 'confirmation') {
+            return {
+                subject: 'We received your MCRRC Racing Team application',
+                body: [
+                    '<p>Hi {{firstname}},</p>',
+                    '<p>Thank you for applying to the MCRRC Racing Team. We received your application on {{submittedDate}}.</p>',
+                    '<p>The races you submitted:</p>',
+                    '{{races}}',
+                    '<p>The team captains will review your application and get back to you by email. If anything changes in the meantime, just reply to this email.</p>',
+                    '<p>Thanks again,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
         if (type === 'rejection') {
             return {
                 subject: 'Your MCRRC Racing Team application',
@@ -5996,7 +6068,7 @@ module.exports = async function (app, qs, passport, async, _) {
         return Object.assign({
             key: EMAIL_TEMPLATE_KEYS[type],
             type: type,
-            label: type === 'rejection' ? 'Rejection email' : 'Approval email'
+            label: EMAIL_TEMPLATE_LABELS[type]
         }, template);
     }
 
@@ -6004,7 +6076,8 @@ module.exports = async function (app, qs, passport, async, _) {
     app.get('/api/email-templates', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
             const templates = [];
-            for (const type of ['approval', 'rejection']) {
+            // In the order an applicant receives them
+            for (const type of ['confirmation', 'approval', 'rejection']) {
                 templates.push(templateSummary(type, await storedDecisionTemplate(type)));
             }
             res.json({ templates: templates, placeholders: EMAIL_TEMPLATE_PLACEHOLDERS });
@@ -6019,11 +6092,16 @@ module.exports = async function (app, qs, passport, async, _) {
     // the preview cannot drift from what is actually sent.
     app.post('/api/email-templates/:type/preview', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const sample = {
                 firstname: 'Alex',
                 lastname: 'Runner',
-                email: 'alex.runner@example.com'
+                email: 'alex.runner@example.com',
+                createdAt: new Date(),
+                races: [
+                    { racename: 'Country Road 5K', racedate: new Date('2026-09-20T00:00:00Z'), racetype: { name: '5k' }, timeCentiseconds: 115700 },
+                    { racename: 'Parks Half Marathon', racedate: new Date('2026-09-07T00:00:00Z'), racetype: { name: 'Half Marathon' }, timeCentiseconds: 532000 }
+                ]
             };
             const values = emailTemplateValues(sample);
             res.json({
@@ -6043,7 +6121,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: save an edited template
     app.put('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const key = EMAIL_TEMPLATE_KEYS[type];
 
             const subject = (req.body.subject || '').trim();
@@ -6066,7 +6144,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 description: 'Edited the team application ' + type + ' email template',
                 targetType: 'emailtemplate',
                 targetId: key,
-                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                targetName: EMAIL_TEMPLATE_LABELS[type],
                 metadata: {
                     type: type,
                     wasCustom: previous.isCustom,
@@ -6086,7 +6164,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: drop the override and go back to the built-in wording
     app.delete('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const key = EMAIL_TEMPLATE_KEYS[type];
             const previous = await storedDecisionTemplate(type);
             if (!previous.isCustom) {
@@ -6102,7 +6180,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 description: 'Reset the team application ' + type + ' email template to the default',
                 targetType: 'emailtemplate',
                 targetId: key,
-                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                targetName: EMAIL_TEMPLATE_LABELS[type],
                 metadata: {
                     type: type,
                     oldValue: { subject: previous.subject, body: previous.body }

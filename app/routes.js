@@ -5943,11 +5943,11 @@ module.exports = async function (app, qs, passport, async, _) {
                 subject: 'Your MCRRC Racing Team application',
                 body: [
                     '<p>Hi {{firstname}},</p>',
-                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
-                    '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
-                    '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
+                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.',
+                    'After reviewing your application, we\'re not able to offer you a spot on the team at this time.',
+                    'We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
                     'reapply any time at <a href="{{siteUrl}}/apply">{{siteUrl}}/apply</a>.</p>',
-                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
+                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone. Take a look at ',
                     '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
                     '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
                 ].join('\n')

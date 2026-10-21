@@ -5849,13 +5849,28 @@ module.exports = async function (app, qs, passport, async, _) {
         // Sent by itself when someone applies (sendApplicationConfirmation)
         confirmation: 'application_confirmation',
         approval: 'application_approval',
-        rejection: 'application_rejection'
+        rejection: 'application_rejection',
+        // Sent by hand after approval, with the Signal group chat invite link
+        signal: 'application_signal'
     };
     const EMAIL_TEMPLATE_LABELS = {
         confirmation: 'Confirmation email',
         approval: 'Approval email',
-        rejection: 'Rejection email'
+        rejection: 'Rejection email',
+        signal: 'Signal invite email'
     };
+
+    // The emails a captain sends by hand from an application, the field each is
+    // recorded in, and the status the application must be in for it to apply.
+    const SENT_EMAILS = {
+        approval: { field: 'approvalEmail', status: 'approved' },
+        rejection: { field: 'rejectionEmail', status: 'rejected' },
+        signal: { field: 'signalEmail', status: 'approved' }
+    };
+
+    function sentEmailType(value) {
+        return Object.prototype.hasOwnProperty.call(SENT_EMAILS, value) ? value : 'approval';
+    }
 
     // A template type from a request: one of the keys above, else approval
     function templateType(value) {
@@ -5925,6 +5940,17 @@ module.exports = async function (app, qs, passport, async, _) {
     }
 
     function defaultDecisionTemplate(type) {
+        if (type === 'signal') {
+            return {
+                subject: 'Join the MCRRC Racing Team Signal chat',
+                body: [
+                    '<p>Hi {{firstname}},</p>',
+                    '<p>Now that you are officially on the team and have introduced yourself, we also wanted to send along a link to our Signal group chat. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun.</p>',
+                    '<p>If you have the Signal app, you can join the chat with this link: <a href="{{signalUrl}}" target="_blank">{{signalUrl}}</a></p>',
+                    '<p>See you there,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
         if (type === 'confirmation') {
             return {
                 subject: 'We received your MCRRC Racing Team application',
@@ -5964,7 +5990,6 @@ module.exports = async function (app, qs, passport, async, _) {
                 '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
                 '  <li>We require team members to race at least {{raceCommitment}} times a year and to help out at club events.</li>',
                 '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
-                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="{{signalUrl}}" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
                 '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up</strong></li>',
                 '</ul>',
                 '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
@@ -6077,7 +6102,7 @@ module.exports = async function (app, qs, passport, async, _) {
         try {
             const templates = [];
             // In the order an applicant receives them
-            for (const type of ['confirmation', 'approval', 'rejection']) {
+            for (const type of ['confirmation', 'approval', 'signal', 'rejection']) {
                 templates.push(templateSummary(type, await storedDecisionTemplate(type)));
             }
             res.json({ templates: templates, placeholders: EMAIL_TEMPLATE_PLACEHOLDERS });
@@ -6198,13 +6223,13 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: template to prefill the send-email dialog with
     app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.query.type === 'rejection' ? 'rejection' : 'approval';
+            const type = sentEmailType(req.query.type);
             const application = await TeamApplication.findById(req.params.id).lean();
             if (!application) return res.status(404).json({ error: 'Application not found' });
 
-            // An email already sent for this decision comes back as-is, so a resend
-            // starts from what the applicant actually received.
-            const already = type === 'rejection' ? application.rejectionEmail : application.approvalEmail;
+            // An email already sent comes back as-is, so a resend starts from
+            // what the applicant actually received.
+            const already = application[SENT_EMAILS[type].field];
             if (already && already.sentAt) {
                 return res.json({
                     subject: already.subject, body: already.body,
@@ -6219,16 +6244,15 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    // Captain/admin: send the approval or rejection email to the applicant
+    // Captain/admin: send the approval, rejection or Signal invite email to the applicant
     app.post('/api/team-applications/:id/send-email', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.body.type === 'rejection' ? 'rejection' : 'approval';
+            const type = sentEmailType(req.body.type);
             const application = await TeamApplication.findById(req.params.id);
             if (!application) return res.status(404).json({ error: 'Application not found' });
 
-            const expectedStatus = type === 'rejection' ? 'rejected' : 'approved';
-            if (application.status !== expectedStatus) {
-                return res.status(400).json({ error: 'This application is ' + application.status + ' — an ' + type + ' email doesn\'t apply' });
+            if (application.status !== SENT_EMAILS[type].status) {
+                return res.status(400).json({ error: 'This application is ' + application.status + ' — the ' + EMAIL_TEMPLATE_LABELS[type].toLowerCase() + ' doesn\'t apply' });
             }
 
             const subject = (req.body.subject || '').trim();
@@ -6239,9 +6263,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             sendDecisionEmail(application, subject, body);
 
-            const record = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
-            if (type === 'rejection') application.rejectionEmail = record;
-            else application.approvalEmail = record;
+            application[SENT_EMAILS[type].field] = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
             await application.save();
 
             service.logActivity({

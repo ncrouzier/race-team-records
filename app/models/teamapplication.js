@@ -64,6 +64,9 @@ const teamApplicationSchema = new mongoose.Schema({
     // Decision emails are sent by hand after the decision, not automatically.
     approvalEmail: sentEmailSchema(),
     rejectionEmail: sentEmailSchema(),
+    // Invite link to the team's Signal group chat, sent by hand after approval.
+    // Having been sent is what marks the step done.
+    signalEmail: sentEmailSchema(),
 
     // Hand-ticked bookkeeping on an approved application — each records who ticked it
     // and when, and can be switched back off.

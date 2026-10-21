@@ -94,7 +94,7 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
     };
 
     // Sends the approval or rejection letter — always a deliberate, separate step
-    // from the decision itself.
+    // from the decision itself — or, once approved, the Signal group chat invite.
     $scope.sendEmail = function (application, type) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/applicationEmailModal.html',
@@ -108,6 +108,7 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
         modalInstance.result.then(function (updated) {
             application.approvalEmail = updated.approvalEmail;
             application.rejectionEmail = updated.rejectionEmail;
+            application.signalEmail = updated.signalEmail;
         }, function () { });
     };
 
@@ -123,6 +124,10 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
 
     $scope.decisionEmail = function (application) {
         return application.status === 'rejected' ? application.rejectionEmail : application.approvalEmail;
+    };
+
+    $scope.signalSent = function (application) {
+        return !!(application.signalEmail && application.signalEmail.sentAt);
     };
 
     $scope.emailSent = function (application) {
@@ -291,8 +296,8 @@ angular.module('mcrrcApp.admin').controller('ApplicationEmailModalController', [
     $scope.application = application;
     $scope.type = type;
     // Object wrapper for the same reason as the approve dialog — the tabs live inside
-    // an ng-if child scope.
-    $scope.view = { tab: 'edit' };
+    // an ng-if child scope. Opens on the preview: most emails go out as-is.
+    $scope.view = { tab: 'preview' };
     $scope.loading = true;
     $scope.sending = false;
     $scope.error = null;

@@ -102,6 +102,17 @@
                             <span class="hidden-xs"> {{ flag.label }}</span>
                         </button>
 
+                        <!-- Signal group chat invite — an email, done once sent -->
+                        <button class="crf-chip"
+                            ng-if="application.status === 'approved'"
+                            ng-class="signalSent(application) ? 'crf-chip-open' : 'ta-chip-pending'"
+                            ng-click="sendEmail(application, 'signal')"
+                            ng-disabled="!canReview || busy[application._id]"
+                            uib-tooltip="{{ signalSent(application) ? 'Signal invite sent by ' + (application.signalEmail.sentByUsername || 'a captain') + ' — click to review or resend' : 'Email the Signal group chat invite link to the member' }}">
+                            <i class="fa" ng-class="signalSent(application) ? 'fa-check-square-o' : 'fa-square-o'"></i>
+                            <span class="hidden-xs"> Signal</span>
+                        </button>
+
                         <button class="crf-chip crf-chip-primary"
                             ng-if="canReview && application.status !== 'approved'" ng-click="approve(application)"
                             ng-disabled="busy[application._id]" uib-tooltip="Approve and create the member">
@@ -248,6 +259,14 @@
                         <div>
                             Added to Groups.io by {{ application.addedToGroupsIoByUsername || 'a captain' }} on {{
                             application.addedToGroupsIoAt | date:'mediumDate' }}.
+                        </div>
+                    </div>
+
+                    <div ng-if="signalSent(application)" class="ta-notified-note">
+                        <i class="fa fa-check"></i>
+                        <div>
+                            Signal group invite emailed by {{ application.signalEmail.sentByUsername || 'a captain' }} on {{
+                            application.signalEmail.sentAt | date:'mediumDate' }}.
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 <div class="modal-header">
     <h4 class="modal-title">
         <i class="fa fa-envelope"></i>
-        {{ type === 'rejection' ? 'Rejection email' : 'Approval email' }} — {{ application.firstname }} {{
+        {{ type === 'rejection' ? 'Rejection email' : (type === 'signal' ? 'Signal invite email' : 'Approval email') }} — {{ application.firstname }} {{
         application.lastname }}
     </h4>
 </div>

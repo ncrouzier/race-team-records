@@ -100,6 +100,8 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
             templateUrl: 'views/modals/applicationEmailModal.html',
             controller: 'ApplicationEmailModalController',
             size: 'lg',
+            // An edited draft shouldn't vanish on a stray click outside the dialog
+            backdrop: 'static',
             resolve: {
                 application: function () { return application; },
                 type: function () { return type; }
@@ -109,6 +111,9 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
             application.approvalEmail = updated.approvalEmail;
             application.rejectionEmail = updated.rejectionEmail;
             application.signalEmail = updated.signalEmail;
+            application.signalInvited = updated.signalInvited;
+            application.signalInvitedAt = updated.signalInvitedAt;
+            application.signalInvitedByUsername = updated.signalInvitedByUsername;
         }, function () { });
     };
 
@@ -118,7 +123,9 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
         $uibModal.open({
             templateUrl: 'views/modals/emailTemplateModal.html',
             controller: 'EmailTemplateModalController',
-            size: 'lg'
+            size: 'lg',
+            // An edited draft shouldn't vanish on a stray click outside the dialog
+            backdrop: 'static'
         });
     };
 
@@ -126,7 +133,12 @@ angular.module('mcrrcApp.admin').controller('TeamApplicationsController', ['$sco
         return application.status === 'rejected' ? application.rejectionEmail : application.approvalEmail;
     };
 
-    $scope.signalSent = function (application) {
+    // Ticked either by sending the invite email or by hand from its dialog
+    $scope.signalDone = function (application) {
+        return !!application.signalInvited;
+    };
+
+    $scope.signalEmailed = function (application) {
         return !!(application.signalEmail && application.signalEmail.sentAt);
     };
 
@@ -331,6 +343,20 @@ angular.module('mcrrcApp.admin').controller('ApplicationEmailModalController', [
             $uibModalInstance.close(res.data.application);
         }, function (res) {
             $scope.error = (res.data && res.data.error) || 'Failed to send the email.';
+        }).finally(function () {
+            $scope.sending = false;
+        });
+    };
+
+    // Signal only: tick (or untick) the step without sending anything, for when
+    // the invite went out some other way.
+    $scope.setSignalDone = function (value) {
+        $scope.error = null;
+        $scope.sending = true;
+        $http.put('/api/team-applications/' + application._id + '/flags/signal', { value: value }).then(function (res) {
+            $uibModalInstance.close(res.data.application);
+        }, function (res) {
+            $scope.error = (res.data && res.data.error) || 'Failed to update the application.';
         }).finally(function () {
             $scope.sending = false;
         });

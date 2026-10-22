@@ -6263,7 +6263,13 @@ module.exports = async function (app, qs, passport, async, _) {
 
             sendDecisionEmail(application, subject, body);
 
-            application[SENT_EMAILS[type].field] = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
+            const sentAt = new Date();
+            application[SENT_EMAILS[type].field] = { subject: subject, body: body, sentAt: sentAt, sentByUsername: req.user.username };
+            if (type === 'signal') {
+                application.signalInvited = true;
+                application.signalInvitedAt = sentAt;
+                application.signalInvitedByUsername = req.user.username;
+            }
             await application.save();
 
             service.logActivity({
@@ -6483,6 +6489,14 @@ module.exports = async function (app, qs, passport, async, _) {
             atField: 'addedToGroupsIoAt',
             byField: 'addedToGroupsIoByUsername',
             description: 'added to Groups.io'
+        },
+        // Normally ticked by sending the Signal invite email; set directly when
+        // the invite went out some other way.
+        'signal': {
+            field: 'signalInvited',
+            atField: 'signalInvitedAt',
+            byField: 'signalInvitedByUsername',
+            description: 'invited to Signal'
         }
     };
 

@@ -105,11 +105,11 @@
                         <!-- Signal group chat invite — an email, done once sent -->
                         <button class="crf-chip"
                             ng-if="application.status === 'approved'"
-                            ng-class="signalSent(application) ? 'crf-chip-open' : 'ta-chip-pending'"
+                            ng-class="signalDone(application) ? 'crf-chip-open' : 'ta-chip-pending'"
                             ng-click="sendEmail(application, 'signal')"
                             ng-disabled="!canReview || busy[application._id]"
-                            uib-tooltip="{{ signalSent(application) ? 'Signal invite sent by ' + (application.signalEmail.sentByUsername || 'a captain') + ' — click to review or resend' : 'Email the Signal group chat invite link to the member' }}">
-                            <i class="fa" ng-class="signalSent(application) ? 'fa-check-square-o' : 'fa-square-o'"></i>
+                            uib-tooltip="{{ signalDone(application) ? 'Invited to Signal by ' + (application.signalInvitedByUsername || 'a captain') + ' — click to review, resend or untick' : 'Email the Signal group chat invite link to the member' }}">
+                            <i class="fa" ng-class="signalDone(application) ? 'fa-check-square-o' : 'fa-square-o'"></i>
                             <span class="hidden-xs"> Signal</span>
                         </button>
 
@@ -262,11 +262,13 @@
                         </div>
                     </div>
 
-                    <div ng-if="signalSent(application)" class="ta-notified-note">
+                    <div ng-if="signalDone(application)" class="ta-notified-note">
                         <i class="fa fa-check"></i>
                         <div>
-                            Signal group invite emailed by {{ application.signalEmail.sentByUsername || 'a captain' }} on {{
-                            application.signalEmail.sentAt | date:'mediumDate' }}.
+                            {{ signalEmailed(application) ? 'Signal group invite emailed' : 'Marked as invited to Signal' }}
+                            by {{ application.signalInvitedByUsername || 'a captain' }} on {{
+                            application.signalInvitedAt | date:'mediumDate' }}{{ signalEmailed(application) ? '' : ' (no
+                            email sent from here)' }}.
                         </div>
                     </div>
 

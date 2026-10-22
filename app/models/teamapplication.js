@@ -65,7 +65,7 @@ const teamApplicationSchema = new mongoose.Schema({
     approvalEmail: sentEmailSchema(),
     rejectionEmail: sentEmailSchema(),
     // Invite link to the team's Signal group chat, sent by hand after approval.
-    // Having been sent is what marks the step done.
+    // Sending it also ticks signalInvited below.
     signalEmail: sentEmailSchema(),
 
     // Hand-ticked bookkeeping on an approved application — each records who ticked it
@@ -78,6 +78,11 @@ const teamApplicationSchema = new mongoose.Schema({
     addedToGroupsIo: { type: Boolean, default: false },
     addedToGroupsIoAt: { type: Date, default: null },
     addedToGroupsIoByUsername: String,
+    // Invited to the team's Signal group chat — ticked by sending signalEmail,
+    // or by hand when the invite went out some other way:
+    signalInvited: { type: Boolean, default: false },
+    signalInvitedAt: { type: Date, default: null },
+    signalInvitedByUsername: String,
 
     ipAddress: String
 }, { timestamps: true });

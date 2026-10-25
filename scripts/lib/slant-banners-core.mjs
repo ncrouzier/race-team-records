@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -196,6 +197,12 @@ async function analyse(file) {
     };
 }
 
+// A photo's contents, as a short hash: says whether it changed. (Not the
+// file's date, which every fresh checkout resets.)
+async function contentHash(file) {
+    return createHash('sha1').update(await fs.readFile(file)).digest('hex').slice(0, 16);
+}
+
 // Analyse new and changed photos (all of them with reanalyze), forget
 // deleted ones, and save. Returns the detected settings for every photo.
 export async function updateDetected({ reanalyze = false, log = () => {} } = {}) {
@@ -207,13 +214,20 @@ export async function updateDetected({ reanalyze = false, log = () => {} } = {})
     let analysed = 0;
     for (const name of sources) {
         const file = path.join(sourceDir, name);
-        const mtime = (await fs.stat(file)).mtimeMs;
-        if (!reanalyze && detected[name] && detected[name].srcMtime === mtime) continue;
+        const hash = await contentHash(file);
+        const known = detected[name];
+        // Entries from before hashes, analysed from the file as it is now
+        // (same date): take the hash, keep the analysis
+        if (known && !known.srcHash && known.srcMtime === (await fs.stat(file)).mtimeMs) {
+            const { srcMtime, ...rest } = known;
+            detected[name] = Object.assign({ srcHash: hash }, rest);
+        }
+        if (!reanalyze && detected[name] && detected[name].srcHash === hash) continue;
         if (!analysed) {
             log('Loading face detector...');
             await initFaceDetector();
         }
-        detected[name] = Object.assign({ srcMtime: mtime }, await analyse(file));
+        detected[name] = Object.assign({ srcHash: hash }, await analyse(file));
         log(`  analysed ${name}: ${detected[name].kind}, ${detected[name].faceCount} face(s)`);
         analysed++;
     }

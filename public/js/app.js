@@ -214,25 +214,15 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$htt
     $scope.$state = $state;
 
     $scope.bannerStyle = {};
-    $scope.bannerTitleStyle = {};
-    $scope.bannerTitleTopStyle = {};
-    $scope.bannerTitleBottomStyle = {};
+    // Which side of the photo the title sits on: away from the runner
+    $scope.bannerTitlePosition = 'right';
     $scope.bannerTitleHidden = false;
     $scope.toggleBannerTitle = function() {
         $scope.bannerTitleHidden = !$scope.bannerTitleHidden;
     };
     function applyBanner(pick) {
         $scope.bannerStyle = { 'background-image': 'url("' + pick.url + '")' };
-        if (pick.titleTheme) {
-            var t = pick.titleTheme;
-            $scope.bannerTitleStyle = {
-                'background':              t.background     !== undefined ? t.background     : '',
-                'backdrop-filter':         t.backdropFilter !== undefined ? t.backdropFilter : '',
-                '-webkit-backdrop-filter': t.backdropFilter !== undefined ? t.backdropFilter : '',
-            };
-            $scope.bannerTitleTopStyle    = { 'color': t.topColor    || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
-            $scope.bannerTitleBottomStyle = { 'color': t.bottomColor || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
-        }
+        $scope.bannerTitlePosition = pick.titlePosition || 'right';
         $scope.bannerCopyright      = pick.copyright || null;
         $scope.bannerCopyrightStyle = (pick.copyright && pick.copyright.color) ? { color: pick.copyright.color } : {};
     }

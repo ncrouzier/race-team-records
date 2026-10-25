@@ -202,12 +202,19 @@
         // ---- Editions ----------------------------------------------------------
         const editionRows = editions.map(e => {
             const rs = resultsByRace.get(String(e.race._id)) || [];
-            const fastest = entries.filter(x => String(x.raceId) === String(e.race._id) && hasTime(x)).sort(fastestFirst)[0];
+            const timed = entries.filter(x => String(x.raceId) === String(e.race._id) && hasTime(x)).sort(fastestFirst);
+            const fastest = timed[0];
+            // Runners on their own: a team (relay) can be mixed, so has no sex
+            const fastestOf = sex => timed.find(x => !x.team && x.members[0] && x.members[0].sex === sex);
+            const fastestMan = fastestOf('Male');
+            const fastestWoman = fastestOf('Female');
             return {
                 race: e.race,
                 offDistance: !!e.offDistance,
                 results: rs.length,
-                fastest: fastest ? { members: fastest.members, time: fastest.time, team: fastest.team } : null
+                fastest: fastest ? { members: fastest.members, time: fastest.time, team: fastest.team } : null,
+                fastestMan: fastestMan ? { member: fastestMan.members[0], time: fastestMan.time } : null,
+                fastestWoman: fastestWoman ? { member: fastestWoman.members[0], time: fastestWoman.time } : null
             };
         }).sort((a, b) => new Date(b.race.racedate) - new Date(a.race.racedate) ||
             String(a.race._id).localeCompare(String(b.race._id)));

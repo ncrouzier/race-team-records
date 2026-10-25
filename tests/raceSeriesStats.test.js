@@ -81,6 +81,17 @@ describe('seriesStats', () => {
         expect(JSON.stringify(stats)).not.toMatch(/dateofbirth/);
     });
 
+    test('each edition names its fastest man and fastest woman', () => {
+        const r22 = stats.editions.find(e => e.race._id === 'r22');
+        expect(r22.fastest.members[0].firstname).toBe('Bob');
+        expect(r22.fastestMan).toMatchObject({ time: 280000, member: { firstname: 'Bob' } });
+        expect(r22.fastestWoman).toMatchObject({ time: 300000, member: { firstname: 'Ann' } });
+        // No man ran r24: a woman was fastest overall, and there's no fastest man
+        const r24 = stats.editions.find(e => e.race._id === 'r24');
+        expect(r24.fastestMan).toBeNull();
+        expect(r24.fastestWoman.member.firstname).toBe('Ann');
+    });
+
     test('each edition names its fastest entry', () => {
         expect(stats.editions[0]).toMatchObject({ results: 2, fastest: { time: 290000, team: false } });
         expect(stats.editions[0].fastest.members[0].firstname).toBe('Ann');
@@ -132,6 +143,8 @@ describe('seriesStats', () => {
 
         test('each edition names its fastest entry', () => {
             expect(team.editions[0].fastest).toMatchObject({ time: 24000, team: true });
+            expect(team.editions[0].fastestMan).toBeNull();
+            expect(team.editions[0].fastestWoman).toBeNull();
         });
     });
 

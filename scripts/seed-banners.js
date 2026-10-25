@@ -1,13 +1,14 @@
 // Usage: node scripts/seed-banners.js
-// Creates missing banners and fills in any fields not yet set on existing ones.
-// Never overwrites fields that are already defined (members, pinned, admin-edited titleTheme, etc).
+// Creates a banner entry for every image in public/images/banners that lacks
+// one, and sets the title side where it's missing — the same as the Banners
+// admin page's "Add" (app/bannerDefaults.js). Banners made by
+// scripts/slant-banners.mjs always get the title on the right, since their
+// fade is drawn for it. Members, photo credit, pinned and disabled are set on
+// the Banners page only; this never touches them.
 require('dotenv').config();
 const mongoose = require('mongoose');
-const path = require('path');
-const fs = require('fs');
 const Banner = require('../app/models/banner');
-
-const configPath = path.join(__dirname, '..', 'public', 'images', 'banners', 'source', 'banners.config.json');
+const { bannerDefaults, bannerImageFiles, loadSources } = require('../app/bannerDefaults');
 
 function isBlank(val) {
     if (val === null || val === undefined) return true;
@@ -20,14 +21,10 @@ async function main() {
     await mongoose.connect(process.env.MONGO_DEV_URL);
     console.log('Connected to', process.env.MONGO_DEV_URL);
 
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const entries = Object.entries(config);
-
+    const sources = loadSources();
     let created = 0, updated = 0, skipped = 0;
-    for (const [filename, data] of entries) {
-        const copyright = data.copyright || (data.userOverrides && data.userOverrides.copyright) || {};
-        const titleTheme = data.titleTheme || {};
-
+    for (const filename of bannerImageFiles()) {
+        const defaults = bannerDefaults(filename, sources);
         const existing = await Banner.findOne({ filename });
 
         if (!existing) {
@@ -35,28 +32,16 @@ async function main() {
                 filename,
                 members: [],
                 pinned: false,
-                titleTheme,
-                copyright: typeof copyright === 'object' ? copyright : {},
+                titlePosition: defaults.titlePosition,
             });
             console.log(`  + ${filename} (created)`);
             created++;
             continue;
         }
 
-        // Fill in only fields that are blank/missing on the existing document.
         const patch = {};
-        for (const field of ['name', 'url', 'color']) {
-            if (isBlank(existing.copyright[field]) && !isBlank(copyright[field])) {
-                patch[`copyright.${field}`] = copyright[field];
-            }
-        }
-        if (isBlank(existing.titleTheme)) patch.titleTheme = titleTheme;
-        else {
-            for (const field of ['topColor', 'bottomColor', 'background', 'backdropFilter', 'textShadow']) {
-                if (isBlank(existing.titleTheme[field]) && !isBlank(titleTheme[field])) {
-                    patch[`titleTheme.${field}`] = titleTheme[field];
-                }
-            }
+        if (isBlank(existing.titlePosition) || (defaults.slant && existing.titlePosition !== 'right')) {
+            patch.titlePosition = defaults.titlePosition;
         }
 
         if (Object.keys(patch).length) {

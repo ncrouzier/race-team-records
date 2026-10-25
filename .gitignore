@@ -30,8 +30,3 @@ public/dist/js/app.js
 
 # Brainstorming mockups (superpowers visual companion)
 .superpowers/
-
-# Banner images from before scripts/slant-banners.mjs, kept locally for reference,
-# and its test output folder
-public/images/banners/old/
-public/images/banners/slant-preview/

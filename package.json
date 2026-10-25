@@ -8,6 +8,10 @@
     "build:js:prod": "node scripts/build-js.mjs prod",
     "build:js": "npm run build:js:dev && npm run build:js:prod",
     "build:css": "node scripts/build-css.mjs",
+<<<<<<< HEAD
+=======
+    "banners:crop": "node scripts/crop-banners.mjs",
+>>>>>>> 58865795a923d90c9c0683b2c6463eb3e4abf1ed
     "banners": "node scripts/slant-banners.mjs",
     "banners:seed": "node scripts/seed-banners.js",
     "banners:edit": "node scripts/banner-editor.mjs",

@@ -10,8 +10,16 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     $scope.activeBannerId = null;
     $scope.dirty = false;
 
+    // memberStatus by member id, from the banners' own tagged members (the
+    // server includes it) — for members picked from the full list, their
+    // own memberStatus is used
+    var memberStatusById = {};
+
     function load() {
         $http.get('/api/admin/banners').then(function (resp) {
+            resp.data.forEach(function (b) {
+                (b.members || []).forEach(function (m) { memberStatusById[m._id] = m.memberStatus; });
+            });
             $scope.banners = resp.data.map(function (b) {
                 var memberObjs = (b.members || []).map(function (m) {
                     return $scope.allMembers.find(function (a) { return a._id === m._id; }) || m;
@@ -27,6 +35,37 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         load();
     });
 
+    // Images deployed to public/images/banners that have no entry yet, and
+    // entries whose image is gone
+    $scope.newImages = [];
+    $scope.missingFiles = [];
+    $scope.addingImages = false;
+
+    function loadUnregistered() {
+        $http.get('/api/admin/banners/unregistered', { params: { _: Date.now() } }).then(function (resp) {
+            $scope.newImages = resp.data.images || [];
+            $scope.missingFiles = resp.data.missingFiles || [];
+        });
+    }
+    loadUnregistered();
+
+    $scope.addNewImages = function () {
+        $scope.addingImages = true;
+        var filenames = $scope.newImages.map(function (img) { return img.filename; });
+        $http.post('/api/admin/banners/register', { filenames: filenames }).then(function (resp) {
+            var count = (resp.data.created || []).length;
+            NotificationService.showNotifiction(true, 'Added ' + count + ' banner' + (count === 1 ? '' : 's'));
+            // Unsaved edits on the other cards would be lost by a reload
+            if (!$scope.dirty) load();
+            else NotificationService.showNotifiction(true, 'Save or reset your changes to see the new banners');
+            loadUnregistered();
+        }, function () {
+            NotificationService.showNotifiction(false, 'Failed to add the new banners');
+        }).finally(function () {
+            $scope.addingImages = false;
+        });
+    };
+
     $scope.$watch('banners', function (newVal, oldVal) {
         if (oldVal.length && newVal !== oldVal) $scope.dirty = true;
     }, true);
@@ -34,8 +73,9 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     function buildPayload(banner) {
         return {
             pinned:     banner.pinned,
+            disabled:   !!banner.disabled,
             members:    (banner._members || []).map(function (m) { return m._id; }),
-            titleTheme: banner.titleTheme,
+            titlePosition: banner.titlePosition || 'right',
             copyright:  banner.copyright,
         };
     }
@@ -72,6 +112,77 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         load();
     };
 
+    // Where the title sits: away from the runner, or centred over a group shot
+    $scope.titlePositions = [
+        { value: 'left', label: 'Left', icon: 'fa-align-left' },
+        { value: 'center', label: 'Center', icon: 'fa-align-center' },
+        { value: 'right', label: 'Right', icon: 'fa-align-right' }
+    ];
+
+    $scope.setTitlePosition = function (banner, value) {
+        banner.titlePosition = value;
+        if ($scope.activeBannerId === banner._id) $scope.setActive(banner);
+    };
+
+    // Tagged members who aren't current team members — the banner probably
+    // needs retiring or retagging
+    $scope.formerMembers = function (banner) {
+        return (banner._members || []).filter(function (m) {
+            var status = m.memberStatus || memberStatusById[m._id];
+            return status && status !== 'current';
+        });
+    };
+    $scope.formerNames = function (banner) {
+        return $scope.formerMembers(banner).map(function (m) { return m.firstname + ' ' + m.lastname; }).join(', ');
+    };
+    $scope.formerCount = function () {
+        return $scope.banners.filter(function (b) { return $scope.formerMembers(b).length; }).length;
+    };
+
+    // Current team members with no banner on the homepage: tagged in none, or
+    // only in disabled ones. Worked out from the cards as they stand, so
+    // tagging someone takes them off the list straight away.
+    $scope.withoutBanner = { open: false };
+    $scope.membersWithoutBanner = function () {
+        var shown = {}, disabledOnly = {};
+        $scope.banners.forEach(function (b) {
+            (b._members || []).forEach(function (m) {
+                if (b.disabled) disabledOnly[m._id] = true;
+                else shown[m._id] = true;
+            });
+        });
+        return ($scope.allMembers || [])
+            .filter(function (m) { return m.memberStatus === 'current' && !shown[m._id]; })
+            .map(function (m) { return { member: m, disabledOnly: !!disabledOnly[m._id] }; })
+            .sort(function (a, b) {
+                return (a.member.lastname || '').localeCompare(b.member.lastname || '') ||
+                    (a.member.firstname || '').localeCompare(b.member.firstname || '');
+            });
+    };
+
+    // No photographer named in the credit (a missing link is fine)
+    $scope.missingCredit = function (banner) {
+        return !(banner.copyright && banner.copyright.name && String(banner.copyright.name).trim());
+    };
+    $scope.missingCreditCount = function () {
+        return $scope.banners.filter($scope.missingCredit).length;
+    };
+
+    // Search box: matches the image's filename or a tagged member's name.
+    // An object, as the box sits inside an ng-if. formerOnly / noCreditOnly
+    // narrow to the banners flagged for those.
+    $scope.bannerFilter = { text: '', formerOnly: false, noCreditOnly: false };
+    $scope.bannerMatches = function (banner) {
+        if ($scope.bannerFilter.formerOnly && !$scope.formerMembers(banner).length) return false;
+        if ($scope.bannerFilter.noCreditOnly && !$scope.missingCredit(banner)) return false;
+        var q = ($scope.bannerFilter.text || '').toLowerCase().trim();
+        if (!q) return true;
+        if (banner.filename.toLowerCase().indexOf(q) !== -1) return true;
+        return (banner._members || []).some(function (m) {
+            return ((m.firstname || '') + ' ' + (m.lastname || '')).toLowerCase().indexOf(q) !== -1;
+        });
+    };
+
     $scope.memberSearch = function (search) {
         return function (m) {
             if (!search) return true;
@@ -81,11 +192,14 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     };
 
     $scope.deleteBanner = function (banner) {
-        var dlg = dialogs.confirm('Delete banner', 'Delete "' + banner.filename + '"? This only removes it from the database — the image file is not deleted.');
+        var dlg = dialogs.confirm('Remove banner', 'Remove "' + banner.filename + '"? Its members, credit and settings are ' +
+            'deleted. The image file stays, so it will be listed as a new image that can be added again. ' +
+            'To stop showing it but keep the entry, tick Disabled instead.');
         dlg.result.then(function () {
             $http.delete('/api/admin/banners/' + banner._id).then(function () {
                 $scope.banners = $scope.banners.filter(function (b) { return b._id !== banner._id; });
                 if ($scope.activeBannerId === banner._id) $scope.activeBannerId = null;
+                loadUnregistered();
             }, function () {
                 NotificationService.showNotifiction(false, 'Failed to delete banner');
             });
@@ -96,7 +210,7 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         $scope.activeBannerId = banner._id;
         $rootScope.$broadcast('banner:preview', {
             url:        '/images/banners/' + banner.filename,
-            titleTheme: banner.titleTheme,
+            titlePosition: banner.titlePosition || 'right',
             copyright:  banner.copyright,
         });
     };

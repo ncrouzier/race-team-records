@@ -24,6 +24,8 @@ tests
 doc
 migrations
 scripts/seed-*.js
+# The banner source photos (~100MB) are only for making the banners, which
+# are committed. (Their settings, which the server reads, are in config/banners/.)
 public/images/banners/source
 
 *.log

@@ -9,6 +9,13 @@
 .banner-card:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.10);
 }
+.banner-card.is-disabled .banner-preview img {
+    opacity: 0.35;
+    filter: grayscale(1);
+}
+.banner-card.is-disabled .banner-filename::after {
+    content: ' — disabled';
+}
 .banner-card.is-active {
     border-color: #008cba;
     box-shadow: 0 0 0 2px #008cba33;
@@ -94,11 +101,175 @@
 }
 .banner-card-footer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
+    /* A row that doesn't fit wraps (delete and save stay right-aligned)
+       rather than running past the card's edge */
+    gap: 6px;
+    padding: 8px 10px;
     border-top: 1px solid #f0f0f0;
     background: #fafafa;
+}
+.banner-new-images {
+    border: 1px solid #b6dcea;
+    background: #eef7fb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+.banner-new-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+.banner-new-item {
+    font-size: 11px;
+    color: #555;
+}
+.banner-new-item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 1;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 3px;
+}
+.banner-card.has-former {
+    border-color: #f0c36d;
+    box-shadow: 0 0 0 2px #f0c36d55;
+}
+.banner-former-note {
+    margin-top: 6px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: #fff8e1;
+    color: #8a6100;
+    font-size: 12px;
+}
+.banner-credit-note {
+    margin: 0 0 6px;
+}
+.crf-chip.banner-chip-on {
+    font-style: normal;
+    box-shadow: 0 0 0 2px #ffe08288;
+}
+.banner-missing {
+    margin-bottom: 14px;
+}
+.banner-missing-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+.banner-missing-name {
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 12px;
+    background: #f1f5f8;
+}
+.banner-missing-name.is-disabled-only {
+    background: #fff8e1;
+    color: #8a6100;
+}
+.banner-search {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.banner-search-field {
+    position: relative;
+    flex: 0 1 340px;
+    min-width: 220px;
+}
+.banner-search-field .fa-search {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+.banner-search-field input {
+    padding-left: 30px;
+    padding-right: 30px;
+    border-radius: 20px;
+}
+/* Our own clear button, the same in every browser: hide the native one */
+.banner-search-field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+}
+.banner-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 50%;
+    background: #e3e9ee;
+    color: #556;
+    font-size: 11px;
+    line-height: 22px;
+    padding: 0;
+    cursor: pointer;
+}
+.banner-search-clear:hover {
+    background: #cfd8df;
+    color: #222;
+}
+.banner-search-count {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+}
+.banner-segment {
+    display: flex;
+    gap: 4px;
+}
+.banner-segment .crf-chip {
+    flex: 1;
+    justify-content: center;
+}
+.banner-chip-row {
+    display: flex;
+    gap: 5px;
+}
+.banner-chip-row + .banner-chip-row {
+    margin-left: auto;
+}
+.banner-card-footer .crf-chip {
+    padding: 4px 8px;
+}
+/* The page header is teal: chips there are light on dark */
+.crf-chip.banner-chip-on-dark {
+    background: transparent;
+    border-color: rgba(255,255,255,0.5);
+    color: #fff;
+}
+.crf-chip.banner-chip-on-dark:hover:not([disabled]) {
+    background: rgba(255,255,255,0.15);
+}
+.crf-chip.banner-chip-light {
+    background: #fff;
+    border-color: #fff;
+    color: #006687;
+}
+.crf-chip.banner-chip-light:hover:not([disabled]) {
+    background: #eef6fa;
+}
+.crf-chip[disabled] {
+    opacity: 0.5;
+    cursor: default;
 }
 .banner-pin-label {
     display: flex;
@@ -119,19 +290,94 @@
                 <div style="font-size: 12px; opacity: 0.85;">{{banners.length}} banners &mdash; click a preview to display it on the homepage</div>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="btn btn-default" ng-click="reset()" ng-disabled="savingAll || !dirty" style="background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); color: white;">
+                <button class="crf-chip banner-chip-on-dark" ng-click="reset()" ng-disabled="savingAll || !dirty">
                     <i class="fa fa-undo"></i> Reset
                 </button>
-                <button class="btn btn-default" ng-click="saveAll()" ng-disabled="savingAll" style="background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); color: white; font-weight: 600;">
+                <button class="crf-chip banner-chip-light" ng-click="saveAll()" ng-disabled="savingAll">
                     <i class="fa" ng-class="savingAll ? 'fa-spinner fa-spin' : 'fa-save'"></i>
                     {{savingAll ? 'Saving…' : 'Save all'}}
                 </button>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;">
-            <div class="banner-card" ng-repeat="banner in banners track by banner._id"
-                 ng-class="{'is-active': activeBannerId === banner._id}">
+        <!-- New images on disk with no banner entry yet -->
+        <div class="banner-new-images" ng-if="newImages.length">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div>
+                    <strong><i class="fa fa-picture-o"></i>
+                        {{newImages.length}} new banner image{{newImages.length === 1 ? '' : 's'}} found</strong>
+                    <div style="font-size: 12px; color: #555;">In public/images/banners but not on the site yet. Adding
+                        them puts them in the homepage rotation; then tag members and add the photo credit on their
+                        cards.</div>
+                </div>
+                <button class="crf-chip crf-chip-primary" ng-click="addNewImages()" ng-disabled="addingImages">
+                    <i class="fa" ng-class="addingImages ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
+                    Add {{newImages.length === 1 ? 'it' : 'them'}}
+                </button>
+            </div>
+            <div class="banner-new-list">
+                <div class="banner-new-item" ng-repeat="img in newImages track by img.filename">
+                    <img ng-src="{{img.url}}">
+                    <div>{{img.filename}} &middot; title {{img.titlePosition}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entries whose image file is gone -->
+        <div class="alert alert-warning" ng-if="missingFiles.length" style="font-size: 13px;">
+            <i class="fa fa-exclamation-triangle"></i>
+            No image file for: <strong>{{missingFiles.join(', ')}}</strong>. Those cards show a broken image; delete
+            them, or put the file back in public/images/banners.
+        </div>
+
+        <div class="banner-search">
+            <div class="banner-search-field">
+                <i class="fa fa-search"></i>
+                <input type="search" class="form-control input-sm" ng-model="bannerFilter.text"
+                    placeholder="Search by image name or member"
+                    ng-keydown="$event.keyCode === 27 && (bannerFilter.text = '')">
+                <button type="button" class="banner-search-clear" ng-if="bannerFilter.text"
+                    ng-click="bannerFilter.text = ''" title="Clear search" aria-label="Clear search">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <button type="button" class="crf-chip" ng-if="formerCount()"
+                ng-class="bannerFilter.formerOnly ? 'crf-chip-editing banner-chip-on' : 'crf-chip-editing'"
+                ng-click="bannerFilter.formerOnly = !bannerFilter.formerOnly"
+                title="Banners tagging someone who isn't a current team member">
+                <i class="fa fa-user-times"></i> Former members ({{formerCount()}})
+            </button>
+            <button type="button" class="crf-chip" ng-if="missingCreditCount()"
+                ng-class="bannerFilter.noCreditOnly ? 'crf-chip-editing banner-chip-on' : 'crf-chip-editing'"
+                ng-click="bannerFilter.noCreditOnly = !bannerFilter.noCreditOnly"
+                title="Banners with no photographer named in the credit">
+                <i class="fa fa-camera"></i> No photo credit ({{missingCreditCount()}})
+            </button>
+            <span class="banner-search-count" ng-if="bannerFilter.text || bannerFilter.formerOnly || bannerFilter.noCreditOnly">{{filteredBanners.length}} of {{banners.length}}</span>
+        </div>
+
+        <!-- Current members the homepage never shows -->
+        <div class="banner-missing" ng-if="allMembers.length">
+            <button type="button" class="crf-chip crf-chip-ghost" ng-click="withoutBanner.open = !withoutBanner.open">
+                <i class="fa" ng-class="withoutBanner.open ? 'fa-caret-down' : 'fa-caret-right'"></i>
+                <i class="fa fa-user-o"></i> Current members without a banner ({{membersWithoutBanner().length}})
+            </button>
+            <div class="banner-missing-list" ng-if="withoutBanner.open">
+                <span class="banner-missing-name" ng-repeat="row in membersWithoutBanner() track by row.member._id"
+                    ng-class="{'is-disabled-only': row.disabledOnly}"
+                    title="{{row.disabledOnly ? 'Only tagged in a disabled banner' : 'Not tagged in any banner'}}">
+                    <a ui-sref="/members/member({ member: row.member.username })" target="_blank">{{row.member.firstname}} {{row.member.lastname}}</a><span ng-if="row.disabledOnly"> (disabled banner only)</span>
+                </span>
+                <div class="text-muted" ng-if="!membersWithoutBanner().length">Every current member has a banner.</div>
+            </div>
+        </div>
+        <div class="text-muted" ng-if="(bannerFilter.text || bannerFilter.formerOnly || bannerFilter.noCreditOnly) && !filteredBanners.length" style="padding: 8px 2px;">
+            No banners match{{bannerFilter.text ? ' "' + bannerFilter.text + '"' : ''}}.
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+            <div class="banner-card" ng-repeat="banner in (filteredBanners = (banners | filter: bannerMatches)) track by banner._id"
+                 ng-class="{'is-active': activeBannerId === banner._id, 'is-disabled': banner.disabled, 'has-former': formerMembers(banner).length || missingCredit(banner)}">
 
                 <!-- Preview -->
                 <div class="banner-preview" ng-click="setActive(banner)" title="Click to preview on homepage">
@@ -152,35 +398,24 @@
                             {{m.firstname}} {{m.lastname}}
                         </ui-select-choices>
                     </ui-select>
-
-                    <div class="banner-field-label">Title colors</div>
-                    <div style="display: flex; gap: 6px;">
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px; color: #aaa; margin-bottom: 2px;">Top</div>
-                            <div class="banner-color-row">
-                                <input type="color" ng-model="banner.titleTheme.topColor">
-                                <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.topColor">
-                            </div>
-                        </div>
-                        <div style="flex: 1;">
-                            <div style="font-size: 10px; color: #aaa; margin-bottom: 2px;">Bottom</div>
-                            <div class="banner-color-row">
-                                <input type="color" ng-model="banner.titleTheme.bottomColor">
-                                <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.bottomColor">
-                            </div>
-                        </div>
+                    <div class="banner-former-note" ng-if="formerMembers(banner).length">
+                        <i class="fa fa-user-times"></i>
+                        Not a current member: <strong>{{formerNames(banner)}}</strong>
                     </div>
 
-                    <div class="banner-field-label">Title background</div>
-                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.background" placeholder="e.g. transparent">
-
-                    <div class="banner-field-label">Backdrop filter</div>
-                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.backdropFilter" placeholder="e.g. none or blur(2px)">
-
-                    <div class="banner-field-label">Text shadow</div>
-                    <input type="text" class="form-control input-sm" ng-model="banner.titleTheme.textShadow" placeholder="e.g. none">
+                    <div class="banner-field-label">Title position</div>
+                    <div class="banner-segment" role="group">
+                        <button type="button" class="crf-chip" ng-repeat="p in titlePositions"
+                            ng-class="(banner.titlePosition || 'right') === p.value ? 'crf-chip-primary' : 'crf-chip-ghost'"
+                            ng-click="setTitlePosition(banner, p.value)">
+                            <i class="fa {{p.icon}}"></i> {{p.label}}
+                        </button>
+                    </div>
 
                     <div class="banner-field-label">Copyright</div>
+                    <div class="banner-former-note banner-credit-note" ng-if="missingCredit(banner)">
+                        <i class="fa fa-camera"></i> No photo credit: add the photographer's name (a link is optional)
+                    </div>
                     <input type="text" class="form-control input-sm" ng-model="banner.copyright.name" placeholder="Name">
                     <input type="text" class="form-control input-sm" ng-model="banner.copyright.url" placeholder="URL" style="margin-top: 4px;">
                     <div class="banner-color-row" style="margin-top: 4px;">
@@ -192,17 +427,26 @@
 
                 <!-- Footer -->
                 <div class="banner-card-footer">
-                    <label class="banner-pin-label">
-                        <input type="checkbox" ng-model="banner.pinned">
-                        Pinned
-                    </label>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn btn-sm btn-danger" ng-click="deleteBanner(banner)" title="Delete banner">
+                    <div class="banner-chip-row">
+                        <button type="button" class="crf-chip" ng-click="banner.pinned = !banner.pinned"
+                            ng-class="banner.pinned ? 'crf-chip-primary' : 'crf-chip-ghost'"
+                            title="Shown in preference to unpinned banners">
+                            <i class="fa fa-thumb-tack"></i> {{banner.pinned ? 'Pinned' : 'Pin'}}
+                        </button>
+                        <button type="button" class="crf-chip" ng-click="banner.disabled = !banner.disabled"
+                            ng-class="banner.disabled ? 'ta-chip-rejected' : 'crf-chip-ghost'"
+                            title="Never shown on the homepage, not even on a birthday">
+                            <i class="fa" ng-class="banner.disabled ? 'fa-eye-slash' : 'fa-eye'"></i>
+                            {{banner.disabled ? 'Disabled' : 'Shown'}}
+                        </button>
+                    </div>
+                    <div class="banner-chip-row">
+                        <button type="button" class="crf-chip crf-chip-danger" ng-click="deleteBanner(banner)" title="Remove banner entry">
                             <i class="fa fa-trash"></i>
                         </button>
-                        <button class="btn btn-sm" ng-click="save(banner)" ng-disabled="saving[banner._id]"
-                            ng-class="saveError[banner._id] ? 'btn-danger' : (saved[banner._id] ? 'btn-success' : 'btn-primary')">
-                            <i class="fa" ng-class="saving[banner._id] ? 'fa-spinner fa-spin' : (saveError[banner._id] ? 'fa-times' : 'fa-save')"></i>
+                        <button type="button" class="crf-chip" ng-click="save(banner)" ng-disabled="saving[banner._id]"
+                            ng-class="saveError[banner._id] ? 'ta-chip-rejected' : (saved[banner._id] ? 'crf-chip-open' : 'crf-chip-primary')">
+                            <i class="fa" ng-class="saving[banner._id] ? 'fa-spinner fa-spin' : (saveError[banner._id] ? 'fa-times' : (saved[banner._id] ? 'fa-check' : 'fa-save'))"></i>
                             {{saving[banner._id] ? 'Saving…' : (saveError[banner._id] ? 'Error' : (saved[banner._id] ? 'Saved' : 'Save'))}}
                         </button>
                     </div>

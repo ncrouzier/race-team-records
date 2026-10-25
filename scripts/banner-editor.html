@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Banner editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Barlow+Semi+Condensed:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+    --teal: #008cba;
+    --teal-dark: #006687;
+    --orange: #ef6b0c;
+    --navy: #1f2c6e;
+    --line: #dde3e8;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font: 14px/1.4 Inter, "Helvetica Neue", Arial, sans-serif;
+    color: #222;
+    background: #eef2f5;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Photo list */
+.sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+}
+.sidebar h1 {
+    margin: 0;
+    padding: 14px 16px;
+    font-size: 16px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+}
+.sidebar input {
+    margin: 10px 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    font: inherit;
+}
+.photo-list { overflow-y: auto; flex: 1; padding: 0 8px 12px; }
+.upload { padding: 10px 12px 0; }
+.upload .chip { width: 100%; justify-content: center; }
+.sidebar h1 a { color: inherit; text-decoration: none; }
+.sidebar h1 a:hover { text-decoration: underline; }
+.home { max-width: 760px; }
+.home h2 { margin: 0 0 4px; font-size: 20px; }
+.home code { font-size: 12px; background: #e3e9ee; padding: 1px 5px; border-radius: 3px; }
+.dropzone {
+    border: 2px dashed #9fc6d6;
+    border-radius: 12px;
+    background: #fff;
+    padding: 36px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.dropzone-icon { font-size: 34px; color: var(--teal); line-height: 1; }
+.dropzone-title { font-size: 18px; font-weight: 600; color: var(--teal-dark); }
+.dropzone-sub { font-size: 12.5px; color: #667; }
+.dropzone .chip { margin: 6px 0; }
+.upload-status { font-size: 13px; color: #556; margin-top: 12px; }
+.upload-status.error { color: #b3261e; font-weight: 600; }
+.added { list-style: none; padding: 0; margin: 8px 0 0; }
+.added li { padding: 3px 0; font-size: 13px; }
+.added a { color: var(--teal-dark); font-weight: 600; }
+.photo-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.photo-item:hover { background: #f2f7fa; }
+.photo-item.active { background: #e2f1f7; box-shadow: inset 3px 0 0 var(--teal); }
+.photo-item img { width: 46px; height: 46px; object-fit: cover; border-radius: 4px; background: #ddd; }
+.photo-item .name { font-weight: 600; font-size: 13px; }
+.tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 0 7px;
+    border-radius: 10px;
+    border: 1px solid;
+}
+.tag-hand { color: var(--teal-dark); border-color: #9fd0e2; background: #eef8fc; }
+.tag-auto { color: #666; border-color: #d5d9dd; background: #f6f7f8; }
+.tag-none { color: #a05a00; border-color: #f0c36d; background: #fff8e1; }
+
+/* Editor */
+.main { flex: 1; overflow-y: auto; padding: 18px 24px 40px; }
+.main h2 { margin: 0; font-size: 20px; }
+.title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.title-row h2 { margin-right: 6px; }
+.chip-danger { color: #b3261e; border-color: #f5c6c0; }
+.chip-danger:hover:not([disabled]) { background: #fdf0ee; border-color: #b3261e; }
+body.drop-target::after {
+    content: 'Drop the photo to add it';
+    position: fixed;
+    inset: 12px;
+    border: 3px dashed var(--teal);
+    border-radius: 12px;
+    background: rgba(238, 248, 252, 0.88);
+    color: var(--teal-dark);
+    font: 600 22px Inter, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+}
+.hint { color: #667; font-size: 12.5px; margin: 0 0 12px; }
+.empty { color: #889; margin-top: 80px; text-align: center; }
+
+/* The stage shows the whole photo, dimmed outside the banner's window */
+.stage {
+    position: relative;
+    background: #2b3036;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.stage.dragging { cursor: grabbing; }
+.stage .photo { position: absolute; max-width: none; pointer-events: none; }
+.window {
+    position: absolute;
+    background: transparent;
+    pointer-events: none;
+    container-type: inline-size;
+    overflow: hidden;
+}
+.window-mask {
+    position: absolute;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(20, 24, 28, 0.62);
+    outline: 2px solid #fff;
+}
+.window .fade { position: absolute; left: 0; top: 0; width: 100%; }
+.preview-mode { display: inline-flex; gap: 4px; align-items: center; }
+.wide .wide-line { display: none; }
+.window .white-past-photo { position: absolute; top: 0; bottom: 0; right: 0; background: #fff; }
+.wide-line {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+}
+.wide-line span {
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 0 5px;
+    border-radius: 3px;
+}
+
+/* The title badge, as on the site (public/less/mcrrc.less, .banner-title):
+   sized in units of the banner's width, so it scales with the window */
+.window .banner-title {
+    --bpx: calc(100cqw / 1140);
+    position: absolute;
+    top: 50%;
+    right: 6%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    white-space: nowrap;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+.window .banner-title > div { transform: skewX(-12deg); text-transform: uppercase; color: #fff; }
+.window .banner-title-top {
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-weight: 600;
+    font-size: calc(18 * var(--bpx));
+    line-height: 1;
+    letter-spacing: 0.22em;
+    background: var(--navy);
+    padding: calc(8 * var(--bpx)) calc(18 * var(--bpx)) calc(8 * var(--bpx)) calc(20 * var(--bpx));
+    margin-right: calc(30 * var(--bpx));
+}
+.window .banner-title-bottom {
+    position: relative;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: calc(100 * var(--bpx));
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    background: var(--orange);
+    padding: calc(8 * var(--bpx)) calc(30 * var(--bpx)) calc(10 * var(--bpx)) calc(28 * var(--bpx));
+    box-shadow: inset 0 calc(4 * var(--bpx)) 0 rgba(255, 255, 255, 0.18);
+}
+.window .banner-title-bottom::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; right: 100%;
+    margin-right: calc(10 * var(--bpx));
+    width: calc(46 * var(--bpx));
+    background: linear-gradient(90deg, transparent 0 8.7%, rgba(239, 107, 12, 0.35) 8.7% 21.7%,
+        transparent 21.7% 39.1%, rgba(239, 107, 12, 0.6) 39.1% 56.5%, transparent 56.5% 73.9%, var(--orange) 73.9% 100%);
+}
+.badge-hidden .banner-title { display: none; }
+
+/* Controls */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin: 12px 0;
+}
+.zoom { display: flex; align-items: center; gap: 8px; }
+.zoom input { width: 220px; }
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font: 600 12.5px Inter, sans-serif;
+    border: 1.5px solid #c8dde6;
+    background: #fff;
+    color: var(--teal-dark);
+    cursor: pointer;
+}
+.chip:hover:not([disabled]) { background: #eef6fa; border-color: var(--teal); }
+.chip-primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+.chip-primary:hover:not([disabled]) { background: var(--teal-dark); border-color: var(--teal-dark); }
+.chip[disabled] { opacity: 0.45; cursor: default; }
+.status { font-size: 12.5px; color: #556; }
+.status.dirty { color: #a05a00; font-weight: 600; }
+.status.error { color: #b3261e; font-weight: 600; }
+.notice {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #fff8e1;
+    color: #8a6100;
+    font-size: 12.5px;
+    margin: 0 0 12px;
+}
+.saved h3 { font-size: 13px; margin: 18px 0 6px; color: #445; }
+.saved img { display: block; width: 100%; max-width: 1100px; border: 1px solid var(--line); background: #fff; }
+kbd {
+    font: 11px Menlo, monospace;
+    padding: 0 4px;
+    border: 1px solid #ccd;
+    border-radius: 3px;
+    background: #fff;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <h1><a href="#" id="homeLink" title="Home: add photos">Banner editor</a></h1>
+    <div class="upload">
+        <button class="chip chip-primary" id="addPhoto" title="Add photos to public/images/banners/source">+ Add photo</button>
+    </div>
+    <input id="search" type="search" placeholder="Find a photo">
+    <div class="photo-list" id="list"></div>
+</aside>
+
+<main class="main" id="main">
+    <div class="home" id="home">
+        <h2>Add photos</h2>
+        <p class="hint">New photos are saved in <code>public/images/banners/source/</code>. The runner is found and an
+            automatic banner made; then frame it and save. To work on a photo already there, pick it on the left.</p>
+        <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">⬆</div>
+            <div class="dropzone-title">Drop photos here</div>
+            <div class="dropzone-sub">or paste a picture (⌘V) anywhere on the page</div>
+            <button class="chip chip-primary" id="uploadButton">Choose photos…</button>
+            <input type="file" id="uploadInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple hidden>
+            <div class="dropzone-sub">JPEG, PNG or WebP, at least 400px on each side. Landscape photos frame best.</div>
+        </div>
+        <div class="upload-status" id="uploadStatus"></div>
+        <ul class="added" id="added"></ul>
+    </div>
+
+    <div id="editor" hidden>
+        <div class="title-row">
+            <h2 id="title"></h2>
+            <button class="chip" id="rename" title="Rename the source photo (and its banner)">Rename</button>
+            <button class="chip chip-danger" id="delete" title="Delete the source photo and its banner">Delete photo</button>
+        </div>
+        <p class="hint">
+            Drag the photo to move it, scroll or use the slider to zoom, arrow keys to nudge.
+            The bright window is the banner; the dashed line is where it ends on wide screens.
+        </p>
+        <div class="notice" id="notice" hidden></div>
+
+        <div class="stage" id="stage">
+            <img class="photo" id="photo" alt="">
+            <div class="window-mask" id="mask"></div>
+            <div class="window" id="window">
+                <div class="white-past-photo" id="pastPhoto"></div>
+                <img class="fade" id="fade" src="/api/fade.svg" alt="">
+                <div class="banner-title">
+                    <div class="banner-title-top">Montgomery County Road Runners</div>
+                    <div class="banner-title-bottom">Racing Team</div>
+                </div>
+                <div class="wide-line" id="wideLine"><span>wide screens end here</span></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label class="zoom">Zoom
+                <input type="range" id="zoom" min="0" max="1000" value="0">
+                <span id="zoomValue"></span>
+            </label>
+            <span class="preview-mode" title="How the banner looks on the narrowest (962px) and widest (1140px) screens">Preview
+                <button class="chip" data-mode="narrow">Narrow screen</button>
+                <button class="chip" data-mode="wide">Wide screen</button>
+            </span>
+            <label><input type="checkbox" id="showBadge" checked> Show title</label>
+            <button class="chip chip-primary" id="save">Save banner</button>
+            <button class="chip" id="undo" title="Back to the last saved framing">Undo changes</button>
+            <button class="chip" id="auto" title="Remove the hand-set crop: framed on the face, as before">Use automatic framing</button>
+            <span class="status" id="status"></span>
+        </div>
+
+        <div class="saved">
+            <h3>Saved banner <span class="status">(the file the site shows; refreshed after each save)</span></h3>
+            <img id="saved" alt="">
+        </div>
+    </div>
+</main>
+
+<script>
+(function () {
+    var OUT = null;          // { width, height, wideVisible }
+    var photos = [];
+    var current = null;      // the photo being edited
+    var crop = null;         // { x, y, width } in source pixels: what the banner shows
+    var savedCrop = null;
+    var PAD = 0.18;          // dimmed context around the window, as a share of its width
+
+    var $ = function (id) { return document.getElementById(id); };
+    var stage = $('stage'), photoImg = $('photo'), win = $('window'), mask = $('mask');
+
+    function api(method, url, body) {
+        return fetch(url, {
+            method: method,
+            headers: body ? { 'Content-Type': 'application/json' } : {},
+            body: body ? JSON.stringify(body) : undefined
+        }).then(function (r) {
+            return r.text().then(function (text) {
+                var data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    // Not one of the editor's answers: usually an editor server
+                    // started before the page was updated, without this action
+                    throw new Error(r.status === 404
+                        ? 'the editor server doesn\'t know this action — it may be running older code. Restart it: Ctrl+C, then npm run banners:edit'
+                        : 'unexpected reply from the editor server (' + r.status + ')');
+                }
+                if (!r.ok) throw new Error(data.error || r.statusText);
+                return data;
+            });
+        });
+    }
+
+    // ---- Photo list ---------------------------------------------------------
+    function tagFor(p) {
+        if (p.handCrop) return '<span class="tag tag-hand">your crop</span>';
+        if (p.makes) return '<span class="tag tag-auto">automatic</span>';
+        return '<span class="tag tag-none">' + (p.skip ? 'skipped' : p.kind) + '</span>';
+    }
+
+    function renderList() {
+        var q = $('search').value.toLowerCase();
+        $('list').innerHTML = photos.filter(function (p) { return p.name.toLowerCase().indexOf(q) !== -1; })
+            .map(function (p) {
+                return '<div class="photo-item' + (current && current.name === p.name ? ' active' : '') + '" data-name="' + p.name + '">' +
+                    '<img loading="lazy" src="/photo/' + encodeURIComponent(p.name) + '?w=200">' +
+                    '<div><div class="name">' + p.name + '</div>' + tagFor(p) + '</div></div>';
+            }).join('');
+    }
+
+    $('list').addEventListener('click', function (e) {
+        var item = e.target.closest('.photo-item');
+        if (!item) return;
+        if (isDirty() && !window.confirm('Discard your changes to ' + current.name + '?')) return;
+        select(item.getAttribute('data-name'));
+    });
+    $('search').addEventListener('input', renderList);
+
+    function select(name) {
+        current = photos.find(function (p) { return p.name === name; });
+        crop = Object.assign({}, current.crop);
+        savedCrop = Object.assign({}, current.crop);
+        $('home').hidden = true;
+        $('editor').hidden = false;
+        if (location.hash.slice(1) !== encodeURIComponent(name)) history.replaceState(null, '', '#' + encodeURIComponent(name));
+        $('title').textContent = current.name;
+        var notice = '';
+        if (!current.makes) notice = 'No banner is made from this photo yet (' + (current.skip ? 'skip is set in the config' : 'it was taken for: ' + current.kind) + '). Saving a crop makes one.';
+        else if (!current.handCrop) notice = 'Framed automatically, on the face. Saving makes this framing yours.';
+        if (current.replaces.length) {
+            notice += (notice ? ' ' : '') + 'Saving replaces this photo\'s other settings in the config (' + current.replaces.join(', ') + ').';
+        }
+        $('notice').textContent = notice;
+        $('notice').hidden = !notice;
+        photoImg.src = '/photo/' + encodeURIComponent(name);
+        showSaved();
+        renderList();
+        layout();
+        setStatus('');
+    }
+
+    function showSaved() {
+        $('saved').src = current.makes ? current.banner + '?v=' + Date.now() : '';
+        $('saved').alt = current.makes ? '' : 'No banner yet';
+    }
+
+    // ---- Limits: the same as the server's (clampCrop) --------------------------
+    function clamp(c) {
+        var L = current.limits;
+        var width = Math.min(L.maxWidth, Math.max(L.minWidth, c.width));
+        var x = Math.min(Math.max(0, current.width - L.reachShare * width), Math.max(0, c.x));
+        var y = Math.min(Math.max(0, current.height - width * OUT.height / OUT.width), Math.max(0, c.y));
+        return { x: x, y: y, width: width };
+    }
+
+    // ---- Drawing --------------------------------------------------------------
+    var winW, winH, pad;
+
+    // Which screen the window shows the banner on. The banner is always 250px
+    // tall: on the narrowest screen (962px) that's the whole image; on the
+    // widest (1140px) the image is scaled to the wider banner and its bottom
+    // is cut off. The badge sits in the middle of the banner either way.
+    var previewMode = 'narrow';
+    try { previewMode = localStorage.getItem('bannerEditorPreview') === 'wide' ? 'wide' : 'narrow'; } catch (e) { /* no storage */ }
+
+    function setPreviewMode(mode) {
+        previewMode = mode;
+        try { localStorage.setItem('bannerEditorPreview', mode); } catch (e) { /* no storage */ }
+        document.querySelectorAll('.preview-mode .chip').forEach(function (b) {
+            b.classList.toggle('chip-primary', b.getAttribute('data-mode') === mode);
+        });
+        win.classList.toggle('wide', mode === 'wide');
+        layout();
+    }
+    document.querySelectorAll('.preview-mode .chip').forEach(function (b) {
+        b.addEventListener('click', function () { setPreviewMode(b.getAttribute('data-mode')); });
+    });
+
+    function layout() {
+        if (!current) return;
+        var avail = Math.min(1100, $('main').clientWidth - 48);
+        winW = Math.round(avail / (1 + 2 * PAD));
+        // The image's full height at this width; the window shows all of it
+        // (narrow screen) or the top 250/1140 of the width (wide screen)
+        var imageH = Math.round(winW * OUT.height / OUT.width);
+        winH = previewMode === 'wide' ? Math.round(imageH * OUT.wideVisible) : imageH;
+        $('fade').style.height = imageH + 'px';
+        pad = Math.round(winW * PAD);
+        stage.style.width = (winW + 2 * pad) + 'px';
+        stage.style.height = (winH + 2 * pad) + 'px';
+        [win, mask].forEach(function (el) {
+            el.style.left = pad + 'px';
+            el.style.top = pad + 'px';
+            el.style.width = winW + 'px';
+            el.style.height = winH + 'px';
+        });
+        $('wideLine').style.top = Math.round(winH * OUT.wideVisible) + 'px';
+        draw();
+    }
+
+    function draw() {
+        var s = winW / crop.width; // screen px per source px
+        photoImg.style.width = (current.width * s) + 'px';
+        photoImg.style.height = (current.height * s) + 'px';
+        photoImg.style.left = (pad - crop.x * s) + 'px';
+        photoImg.style.top = (pad - crop.y * s) + 'px';
+        // The banner is white where the photo ends (past the fade)
+        var photoRight = (current.width - crop.x) * s;
+        $('pastPhoto').style.width = Math.max(0, winW - photoRight) + 'px';
+
+        var L = current.limits;
+        var t = (L.maxWidth - crop.width) / Math.max(1, L.maxWidth - L.minWidth);
+        $('zoom').value = Math.round(Math.sqrt(Math.max(0, t)) * 1000);
+        $('zoomValue').textContent = '×' + (L.maxWidth / crop.width).toFixed(2);
+        var dirty = isDirty();
+        $('save').disabled = !dirty && current.handCrop;
+        $('undo').disabled = !dirty;
+        $('auto').disabled = !current.handCrop;
+        if (dirty) setStatus('Unsaved changes', 'dirty');
+    }
+
+    function isDirty() {
+        return current && savedCrop && ['x', 'y', 'width'].some(function (k) { return Math.abs(crop[k] - savedCrop[k]) > 0.5; });
+    }
+
+    function setStatus(text, cls) {
+        $('status').textContent = text;
+        $('status').className = 'status' + (cls ? ' ' + cls : '');
+    }
+
+    // ---- Moving and zooming -----------------------------------------------------
+    // Zoom keeping the source point under (wx, wy) — window px — where it is
+    function zoomTo(width, wx, wy) {
+        var s = winW / crop.width;
+        var sx = crop.x + wx / s, sy = crop.y + wy / s;
+        var L = current.limits;
+        width = Math.min(L.maxWidth, Math.max(L.minWidth, width));
+        var s2 = winW / width;
+        crop = clamp({ x: sx - wx / s2, y: sy - wy / s2, width: width });
+        draw();
+    }
+
+    var drag = null;
+    stage.addEventListener('pointerdown', function (e) {
+        if (!current) return;
+        drag = { x: e.clientX, y: e.clientY, crop: Object.assign({}, crop) };
+        stage.classList.add('dragging');
+        stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener('pointermove', function (e) {
+        if (!drag) return;
+        var s = winW / crop.width;
+        crop = clamp({ x: drag.crop.x - (e.clientX - drag.x) / s, y: drag.crop.y - (e.clientY - drag.y) / s, width: crop.width });
+        draw();
+    });
+    ['pointerup', 'pointercancel'].forEach(function (type) {
+        stage.addEventListener(type, function () { drag = null; stage.classList.remove('dragging'); });
+    });
+    stage.addEventListener('wheel', function (e) {
+        if (!current) return;
+        e.preventDefault();
+        var rect = win.getBoundingClientRect();
+        zoomTo(crop.width * Math.exp(e.deltaY * 0.0015), e.clientX - rect.left, e.clientY - rect.top);
+    }, { passive: false });
+    $('zoom').addEventListener('input', function () {
+        var L = current.limits;
+        var t = Math.pow($('zoom').value / 1000, 2);
+        zoomTo(L.maxWidth - t * (L.maxWidth - L.minWidth), winW / 2, winH / 2);
+    });
+    document.addEventListener('keydown', function (e) {
+        if (!current || e.target.tagName === 'INPUT') return;
+        var step = (e.shiftKey ? 40 : 8) * crop.width / winW;
+        var moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+        if (!moves[e.key]) return;
+        e.preventDefault();
+        crop = clamp({ x: crop.x + moves[e.key][0], y: crop.y + moves[e.key][1], width: crop.width });
+        draw();
+    });
+    $('showBadge').addEventListener('change', function () {
+        win.classList.toggle('badge-hidden', !$('showBadge').checked);
+    });
+    window.addEventListener('resize', layout);
+
+    // ---- Saving -------------------------------------------------------------------
+    function applySaved(info) {
+        var i = photos.findIndex(function (p) { return p.name === info.name; });
+        photos[i] = info;
+        current = info;
+        crop = Object.assign({}, info.crop);
+        savedCrop = Object.assign({}, info.crop);
+        showSaved();
+        renderList();
+        draw();
+    }
+
+    $('save').addEventListener('click', function () {
+        setStatus('Saving…');
+        api('POST', '/api/photos/' + encodeURIComponent(current.name) + '/crop', {
+            x: Math.round(crop.x), y: Math.round(crop.y), width: Math.round(crop.width)
+        }).then(function (info) {
+            applySaved(info);
+            $('notice').hidden = true;
+            setStatus('Saved: crop written to config/banners/slant-banners.config.json and the banner regenerated');
+        }, function (err) { setStatus('Save failed: ' + err.message, 'error'); });
+    });
+
+    $('undo').addEventListener('click', function () {
+        crop = Object.assign({}, savedCrop);
+        draw();
+        setStatus('');
+    });
+
+    $('auto').addEventListener('click', function () {
+        if (!window.confirm('Remove your crop for ' + current.name + ' and frame it automatically again?')) return;
+        setStatus('Saving…');
+        api('DELETE', '/api/photos/' + encodeURIComponent(current.name) + '/crop').then(function (info) {
+            applySaved(info);
+            setStatus(info.makes ? 'Back to automatic framing; banner regenerated' : 'Crop removed; this photo no longer makes a banner');
+        }, function (err) { setStatus('Failed: ' + err.message, 'error'); });
+    });
+
+    // ---- Adding a photo -------------------------------------------------------------
+    function uploadStatus(text, isError) {
+        $('uploadStatus').textContent = text;
+        $('uploadStatus').className = 'upload-status' + (isError ? ' error' : '');
+    }
+
+    // One file: resolves with the photo's info, or null when not added
+    function uploadOne(file, replace) {
+        return fetch('/api/upload?name=' + encodeURIComponent(file.name) + (replace ? '&replace=1' : ''), {
+            method: 'POST',
+            headers: { 'Content-Type': file.type || 'application/octet-stream' },
+            body: file
+        }).then(function (r) {
+            return r.text().then(function (text) {
+                var data;
+                try { data = JSON.parse(text); } catch (e) {
+                    throw new Error('unexpected reply from the editor server (' + r.status + '); restart it if it was started before the page was updated');
+                }
+                if (r.status === 409) {
+                    return window.confirm(data.name + ' is already in the source folder. Replace it?') ? uploadOne(file, true) : null;
+                }
+                if (!r.ok) throw new Error(file.name + ': ' + (data.error || 'upload failed'));
+                var i = photos.findIndex(function (p) { return p.name === data.name; });
+                if (i === -1) photos.push(data); else photos[i] = data;
+                photos.sort(function (a, b) { return a.name.localeCompare(b.name); });
+                return data;
+            });
+        });
+    }
+
+    // Any number of files, one after the other. One added: open it. Several:
+    // stay on the home view, listing them.
+    function upload(files) {
+        files = Array.prototype.slice.call(files);
+        if (!files.length) return;
+        if (!goHome(true)) return;
+        $('uploadButton').disabled = true;
+        $('added').innerHTML = '';
+        var added = [], errors = [];
+        var chain = Promise.resolve();
+        files.forEach(function (file, n) {
+            chain = chain.then(function () {
+                uploadStatus('Adding ' + file.name + (files.length > 1 ? ' (' + (n + 1) + ' of ' + files.length + ')' : '') +
+                    '… finding the runner takes a few seconds');
+                return uploadOne(file).then(function (info) { if (info) added.push(info); },
+                    function (err) { errors.push(err.message); });
+            });
+        });
+        chain.then(function () {
+            $('uploadButton').disabled = false;
+            renderList();
+            if (added.length === 1 && !errors.length) {
+                select(added[0].name);
+                setStatus('Added ' + added[0].name + (added[0].makes ? '' : ' (taken for: ' + added[0].kind + ')') + '. Frame it, then Save banner.');
+                return;
+            }
+            uploadStatus(added.length ? 'Added ' + added.length + ' photo' + (added.length === 1 ? '' : 's') + '. Pick one to frame it.' : '',
+                false);
+            $('added').innerHTML = added.map(function (p) {
+                return '<li><a href="#' + encodeURIComponent(p.name) + '" data-name="' + p.name + '">' + p.name + '</a>' +
+                    (p.makes ? '' : ' — taken for: ' + p.kind) + '</li>';
+            }).join('') + errors.map(function (m) { return '<li class="upload-status error">' + m + '</li>'; }).join('');
+        });
+    }
+
+    $('added').addEventListener('click', function (e) {
+        var a = e.target.closest('a[data-name]');
+        if (!a) return;
+        e.preventDefault();
+        select(a.getAttribute('data-name'));
+    });
+
+    // The home view: adding photos. keep: leave the upload messages as they are.
+    function goHome(keep) {
+        if (current && isDirty() && !window.confirm('Discard your changes to ' + current.name + '?')) return false;
+        current = null;
+        savedCrop = null;
+        $('editor').hidden = true;
+        $('home').hidden = false;
+        if (!keep) { uploadStatus(''); $('added').innerHTML = ''; }
+        history.replaceState(null, '', location.pathname);
+        renderList();
+        return true;
+    }
+
+    $('homeLink').addEventListener('click', function (e) { e.preventDefault(); goHome(); });
+    $('addPhoto').addEventListener('click', function () { goHome(); });
+    $('uploadButton').addEventListener('click', function () { $('uploadInput').click(); });
+    $('uploadInput').addEventListener('change', function () {
+        upload(this.files);
+        this.value = '';
+    });
+    // Drop a file anywhere on the page
+    var dragDepth = 0;
+    function hasFiles(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types, 'Files') !== -1; }
+    document.addEventListener('dragenter', function (e) {
+        if (!hasFiles(e)) return;
+        dragDepth++;
+        document.body.classList.add('drop-target');
+    });
+    document.addEventListener('dragleave', function (e) {
+        if (!hasFiles(e)) return;
+        if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('drop-target'); }
+    });
+    document.addEventListener('dragover', function (e) { if (hasFiles(e)) e.preventDefault(); });
+    document.addEventListener('drop', function (e) {
+        if (!hasFiles(e)) return;
+        e.preventDefault();
+        dragDepth = 0;
+        document.body.classList.remove('drop-target');
+        upload(e.dataTransfer.files);
+    });
+
+    // Paste a picture (a copied image, or a screenshot) anywhere on the page:
+    // it has no filename, so ask for one
+    var PASTE_EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
+    document.addEventListener('paste', function (e) {
+        var items = (e.clipboardData && e.clipboardData.items) || [];
+        var file = null;
+        for (var i = 0; i < items.length && !file; i++) {
+            if (items[i].kind === 'file' && PASTE_EXT[items[i].type]) file = items[i].getAsFile();
+        }
+        if (!file) return;
+        e.preventDefault();
+        var d = new Date();
+        var stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') +
+            '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
+        var name = window.prompt('Name for the pasted photo (e.g. the runner, like janeD):', 'pasted-' + stamp);
+        if (name === null) return;
+        name = name.trim().replace(/\.(jpe?g|png|webp)$/i, '') || 'pasted-' + stamp;
+        upload([new File([file], name + PASTE_EXT[file.type], { type: file.type })]);
+    });
+
+    // ---- Renaming and deleting a source photo --------------------------------------
+    $('rename').addEventListener('click', function () {
+        var ext = current.name.slice(current.name.lastIndexOf('.'));
+        var base = current.name.slice(0, -ext.length);
+        var wanted = window.prompt('New name for ' + current.name + ' (the ' + ext + ' stays; letters, digits, - and _):', base);
+        if (wanted === null || !wanted.trim() || wanted.trim() === base) return;
+        if (!window.confirm('Rename to ' + wanted.trim() + ext + '? Its settings and banner are renamed too. ' +
+            'If the banner is already on the site, the Banners page will list it as a new image to add, and ' +
+            'the old entry (members, credit) as missing its file.')) return;
+        if (isDirty() && !window.confirm('Your unsaved framing changes will be lost. Continue?')) return;
+        var oldName = current.name;
+        setStatus('Renaming…');
+        api('POST', '/api/photos/' + encodeURIComponent(oldName) + '/rename', { name: wanted.trim() }).then(function (info) {
+            photos = photos.filter(function (p) { return p.name !== oldName; });
+            photos.push(info);
+            photos.sort(function (a, b) { return a.name.localeCompare(b.name); });
+            select(info.name);
+            setStatus('Renamed ' + oldName + ' to ' + info.name);
+        }, function (err) { setStatus('Rename failed: ' + err.message, 'error'); });
+    });
+
+    $('delete').addEventListener('click', function () {
+        if (!window.confirm('Delete ' + current.name + ' from the source folder, with its settings and its generated banner? ' +
+            'This can\'t be undone here (git can restore it if it was committed).')) return;
+        var name = current.name;
+        api('DELETE', '/api/photos/' + encodeURIComponent(name)).then(function () {
+            photos = photos.filter(function (p) { return p.name !== name; });
+            goHome();
+            uploadStatus('Deleted ' + name + '. If its banner was on the site, remove its entry on the Banners page.');
+        }, function (err) { setStatus('Delete failed: ' + err.message, 'error'); });
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (isDirty()) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    api('GET', '/api/photos').then(function (data) {
+        OUT = data.out;
+        setPreviewMode(previewMode);
+        photos = data.photos;
+        renderList();
+        var wanted = decodeURIComponent(location.hash.slice(1));
+        if (wanted && photos.some(function (p) { return p.name === wanted; })) select(wanted);
+    }, function (err) {
+        $('empty').textContent = 'Could not load the photos: ' + err.message;
+    });
+})();
+</script>
+</body>
+</html>

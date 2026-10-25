@@ -13,6 +13,7 @@ const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const Banner = require('./models/banner');
+const { bannerDefaults, bannerImageFiles, loadSources: loadBannerSources } = require('./bannerDefaults');
 
 // Locating the results on a scraped page is its own problem — layout tables,
 // several result tables per page, fixed-width <pre> blocks — so it lives in its
@@ -808,9 +809,10 @@ module.exports = async function (app, qs, passport, async, _) {
 
     // Banner images for the homepage top banner.
     // Selection priority: birthday banners > pinned banners > all banners (random pick from pool).
+    // Disabled banners are never picked.
     app.get('/api/banners', async function (req, res) {
         try {
-            const banners = await Banner.find().populate('members', 'dateofbirth').lean();
+            const banners = await Banner.find({ disabled: { $ne: true } }).populate('members', 'dateofbirth').lean();
             if (!banners.length) return res.json([]);
 
             const now = req.query.date ? new Date(req.query.date) : new Date();
@@ -826,7 +828,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             const toResponse = (b) => ({
                 url: '/images/banners/' + b.filename,
-                titleTheme: b.titleTheme || null,
+                titlePosition: b.titlePosition || 'right',
                 pinned: !!b.pinned,
                 copyright: b.copyright || null,
             });
@@ -849,7 +851,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Banner admin endpoints (admin/captain only)
     app.get('/api/admin/banners', service.isAdminLoggedIn, async function (req, res) {
         try {
-            const banners = await Banner.find().populate('members', 'firstname lastname').sort('filename').lean();
+            const banners = await Banner.find().populate('members', 'firstname lastname memberStatus').sort('filename').lean();
             res.json(banners);
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -858,14 +860,65 @@ module.exports = async function (app, qs, passport, async, _) {
 
     app.put('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
         try {
-            const { members, pinned, titleTheme, copyright } = req.body;
+            const { members, pinned, disabled, titlePosition, copyright } = req.body;
             const updated = await Banner.findByIdAndUpdate(
                 req.params.id,
-                { members, pinned, titleTheme, copyright },
+                { members, pinned, disabled: !!disabled, titlePosition, copyright },
                 { returnDocument: 'after', runValidators: true }
-            ).populate('members', 'firstname lastname');
+            ).populate('members', 'firstname lastname memberStatus');
             if (!updated) return res.status(404).json({ error: 'Banner not found' });
             res.json(updated);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Image files in public/images/banners with no banner entry yet (new
+    // images deployed since), and entries whose image file is gone
+    app.get('/api/admin/banners/unregistered', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const files = bannerImageFiles();
+            const known = new Set((await Banner.find().select('filename').lean()).map((b) => b.filename));
+            const sources = loadBannerSources();
+            res.json({
+                images: files.filter((f) => !known.has(f)).map((filename) => Object.assign(
+                    { filename, url: '/images/banners/' + filename }, bannerDefaults(filename, sources))),
+                missingFiles: [...known].filter((f) => !files.includes(f)).sort()
+            });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Create entries for new images, with the same title side as
+    // scripts/seed-banners.js. Only files that exist and have no entry yet.
+    app.post('/api/admin/banners/register', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const requested = Array.isArray(req.body.filenames) ? req.body.filenames.map(String) : [];
+            const files = new Set(bannerImageFiles());
+            const known = new Set((await Banner.find().select('filename').lean()).map((b) => b.filename));
+            const sources = loadBannerSources();
+            const toAdd = [...new Set(requested)].filter((f) => files.has(f) && !known.has(f));
+
+            const created = [];
+            for (const filename of toAdd) {
+                const defaults = bannerDefaults(filename, sources);
+                created.push(await Banner.create({
+                    filename, members: [], pinned: false, titlePosition: defaults.titlePosition
+                }));
+            }
+            if (created.length) {
+                service.logActivity({
+                    userId: req.user._id,
+                    username: req.user.username,
+                    action: 'banners_added',
+                    description: 'Added ' + created.length + ' banner image' + (created.length === 1 ? '' : 's'),
+                    targetType: 'banner',
+                    metadata: { filenames: toAdd },
+                    ipAddress: req.ip
+                });
+            }
+            res.json({ created });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

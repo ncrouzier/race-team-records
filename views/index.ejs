@@ -10,6 +10,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Barlow+Semi+Condensed:wght@600&display=swap" rel="stylesheet">
 	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 	<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -48,9 +49,9 @@
 	<div class="container">
 
 		<div ng-style="bannerStyle" class="row navimg">
-			<div class="banner-title" ng-class="{'banner-title-hidden': bannerTitleHidden}" ng-click="toggleBannerTitle()" ng-style="bannerTitleStyle">
-				<div class="banner-title-top" ng-style="bannerTitleTopStyle">Montgomery County Road Runners</div>
-				<div class="banner-title-bottom" ng-style="bannerTitleBottomStyle">RACING TEAM</div>
+			<div class="banner-title banner-title-{{bannerTitlePosition}}">
+				<div class="banner-title-top">Montgomery County Road Runners</div>
+				<div class="banner-title-bottom">Racing Team</div>
 			</div>
 			<a ng-if="bannerCopyright" class="banner-copyright" ng-href="{{bannerCopyright.url}}" ng-style="bannerCopyrightStyle" target="_blank" rel="noopener noreferrer">&#169; {{bannerCopyright.name}}</a>
 			<div class="">

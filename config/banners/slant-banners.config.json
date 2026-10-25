@@ -1,0 +1,97 @@
+{
+  "_guide": {
+    "how": "Edit, then run `npm run banners` (or `npm run banners -- name.jpg`) and reload the site. Each run prints the zoom and position it actually used.",
+    "framing": "How every banner is framed, in % of the banner. The face is what's positioned: the runner's body follows.",
+    "framing.faceSize": "The smallest the face may be, in % of the banner's height: stops a big photo zooming out too far. Most photos can't go that wide and are framed as wide as they allow.",
+    "framing.faceFromTop": "Gap above the top of the face, in % of the banner's height. Bigger = runner lower.",
+    "framing.faceFromLeft": "Where the centre of the face sits, in % of the banner's width from the left.",
+    "framing.maxFaceFromLeft": "How far right the runner may be moved when a photo doesn't reach far enough right to fill the banner.",
+    "fade": "The fade to white behind the title: startBeforeStripes and endAfterNavyStrip are px on a 1140px-wide banner; stops are [position %, white %] along it.",
+    "images": "Adjustments for one photo, under its source filename. All optional; anything left out uses the framing above.",
+    "images.crop": "Set by the visual editor (`npm run banners:edit`): the area of the photo the banner shows, { x, y, width } in source pixels. Wins over zoom, moves and face. Remove it (or use the editor's \"Use automatic framing\") to go back to automatic framing.",
+    "images.zoom": "1 = as wide as this photo allows (the default). 1.3 = 30% closer, 2 = twice as close. Below 1 isn't possible.",
+    "images.moveRight": "Move the runner right by this % of the banner's width (negative = left). The photo's edges can stop it short; the run says so.",
+    "images.moveDown": "Move the runner down by this % of the banner's height (negative = up). Same limit.",
+    "images.cropLeft": "Cut this % off the left of the source photo (e.g. to remove someone at the edge). cropRight: the same on the right.",
+    "images.face": "When the wrong person was picked: the right face's box, in pixels of the source photo { x, y, width, height }. slant-banners.detected.json (next to this file) lists other faces it found (otherFaces).",
+    "images.skip": "true = no banner from this photo.",
+    "images.kind": "\"runner-left\" to make a banner from a photo the script took for a group shot or a runner on the right.",
+    "images.note": "Free text, for yourself; ignored."
+  },
+  "outDir": "public/images/banners",
+  "quality": 90,
+  "framing": {
+    "faceSize": 9,
+    "faceFromTop": 12,
+    "faceFromLeft": 20,
+    "maxFaceFromLeft": 27
+  },
+  "fade": {
+    "startBeforeStripes": 70,
+    "endAfterNavyStrip": 0,
+    "stops": [[0, 0], [20, 8], [45, 32], [70, 66], [88, 90], [100, 100]]
+  },
+  "images": {
+    "evanHirsche.png": {
+      "note": "Detection picked the runner in the background",
+      "crop": { "x": 12, "y": 27, "width": 2274 }
+    },
+    "adrianS.jpg": {
+      "crop": { "x": 749, "y": 1025, "width": 9538 }
+    },
+    "adrianS_sweat.jpg": {
+      "crop": { "x": 0, "y": 118, "width": 1709 }
+    },
+    "billM2.jpg": {
+      "crop": { "x": 582, "y": 173, "width": 4339 }
+    },
+    "kristenErin.jpg": {
+      "crop": { "x": 505, "y": 304, "width": 4532 }
+    },
+    "memorial.jpg": {
+      "crop": { "x": 199, "y": 482, "width": 5392 }
+    },
+    "verenaM.jpg": {
+      "crop": { "x": 0, "y": 378, "width": 2480 }
+    },
+    "monikaS.jpg": {
+      "crop": { "x": 183, "y": 451, "width": 2148 }
+    },
+    "michelleM.jpg": {
+      "crop": { "x": 0, "y": 236, "width": 3101 }
+    },
+    "martyH2.jpg": {
+      "crop": { "x": 348, "y": 302, "width": 3204 }
+    },
+    "kristenK.jpg": {
+      "crop": { "x": 0, "y": 539, "width": 3101 }
+    },
+    "jimD.jpg": {
+      "crop": { "x": 0, "y": 180, "width": 1695 }
+    },
+    "jamesJ.jpg": {
+      "crop": { "x": 0, "y": 202, "width": 2480 }
+    },
+    "jamesA.jpg": {
+      "crop": { "x": 30, "y": 31, "width": 2011 }
+    },
+    "ianM.jpg": {
+      "crop": { "x": 175, "y": 558, "width": 3517 }
+    },
+    "hassanH.png": {
+      "crop": { "x": 226, "y": 200, "width": 2133 }
+    },
+    "hasanH.png": {
+      "crop": { "x": 245, "y": 199, "width": 2098 }
+    },
+    "alexB.jpg": {
+      "crop": { "x": 128, "y": 748, "width": 2869 }
+    },
+    "charlieS.jpg": {
+      "crop": { "x": 238, "y": 285, "width": 3155 }
+    },
+    "davidS.jpg": {
+      "crop": { "x": 28, "y": 342, "width": 3043 }
+    }
+  }
+}

@@ -95,7 +95,9 @@
                                 <th>DATE</th>
                                 <th>RACE</th>
                                 <th class="text-center">TEAM RESULTS</th>
-                                <th>FASTEST</th>
+                                <th ng-if="stats.summary.teamSeries">FASTEST</th>
+                                <th ng-if="!stats.summary.teamSeries">FASTEST MEN</th>
+                                <th ng-if="!stats.summary.teamSeries">FASTEST WOMEN</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -109,10 +111,18 @@
                                         tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ e.race.racetype.isVariable && e.race.distanceName ? e.race.distanceName : e.race.racetype.name }})</span>
                                 </td>
                                 <td class="text-center">{{ e.results }}</td>
-                                <td>
+                                <td ng-if="stats.summary.teamSeries">
                                     <span ng-if="e.fastest">{{ e.fastest.time | secondsToTimeString }}
                                         <span class="text-muted" ng-if="!e.fastest.team" ng-class="{'sd-me': isMe(e.fastest.members[0])}">{{ e.fastest.members[0].firstname }} {{ e.fastest.members[0].lastname }}</span>
                                         <span class="text-muted" ng-if="e.fastest.team" ng-class="{'sd-me': includesMe(e.fastest.members)}">{{ names(e.fastest.members) }}</span></span>
+                                </td>
+                                <td ng-if="!stats.summary.teamSeries">
+                                    <span ng-if="e.fastestMan">{{ e.fastestMan.time | secondsToTimeString }}
+                                        <span class="text-muted" ng-class="{'sd-me': isMe(e.fastestMan.member)}">{{ e.fastestMan.member.firstname }} {{ e.fastestMan.member.lastname }}</span></span>
+                                </td>
+                                <td ng-if="!stats.summary.teamSeries">
+                                    <span ng-if="e.fastestWoman">{{ e.fastestWoman.time | secondsToTimeString }}
+                                        <span class="text-muted" ng-class="{'sd-me': isMe(e.fastestWoman.member)}">{{ e.fastestWoman.member.firstname }} {{ e.fastestWoman.member.lastname }}</span></span>
                                 </td>
                             </tr>
                         </tbody>

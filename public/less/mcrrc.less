@@ -215,54 +215,101 @@ footer {
         }
     }
 
+    // The banner wordmark: a slanted badge — a navy strip over a solid orange
+    // block, trailed by speed stripes. It carries its own background, so it
+    // reads the same on every photo, and sits on the side of the photo away
+    // from the runner (the banner's titlePosition: right, the default, or
+    // left), or centred over group shots.
+    //
+    // Sized in container units (@bpx = one pixel of a 1140px-wide banner), so
+    // it scales with the banner exactly as the photo does: the slanted fade
+    // in banners made by scripts/slant-banners.mjs stays lined up with the
+    // stripes at every width.
+    @bpx: (100cqw / 1140);
+    container-type: inline-size;
+
     .banner-title {
         position: absolute;
         top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
         z-index: 1;
-        pointer-events: auto;
-        cursor: pointer;
-        // font-family: 'Playfair Display', Georgia, serif;
-        letter-spacing: 0.01em;
-        background: rgba(225, 233, 244, 0);
-
-        backdrop-filter: blur(1px);
-        -webkit-backdrop-filter: blur(1px);
-        border-radius: 6px;
-        padding: 8px 24px 10px;
+        display: flex;
+        flex-direction: column;
         white-space: nowrap;
-        transition: opacity 0.3s ease;
+        filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
 
-        &.banner-title-hidden {
-            opacity: 0;
+        &.banner-title-right {
+            right: 6%;
+            transform: translateY(-50%);
+            align-items: flex-end;
         }
 
+        &.banner-title-left {
+            // Clear of the left edge, with room for the speed stripes
+            @stripes-room: (56 * @bpx);
+            left: calc(~"6% + @{stripes-room}");
+            transform: translateY(-50%);
+            align-items: flex-start;
+        }
+
+        &.banner-title-center {
+            left: 50%;
+            transform: translate(-50%, -50%);
+            align-items: center;
+        }
+
+        // The slant comes from skewing the blocks; the letters are upright
+        // inside them, so they lean with the block rather than twice over.
+        .banner-title-top,
+        .banner-title-bottom {
+            transform: skewX(-12deg);
+            text-transform: uppercase;
+            color: #fff;
+        }
 
         .banner-title-top {
-            font-size: 15px;
-            font-weight: 900;
+            font-family: 'Barlow Semi Condensed', @font-family-sans-serif;
+            font-weight: 600;
+            font-size: (18 * @bpx);
             line-height: 1;
-            color: #354082;
-            letter-spacing: 0.01em;
+            letter-spacing: 0.22em;
+            background: @team-navy;
+            padding: (8 * @bpx) (18 * @bpx) (8 * @bpx) (20 * @bpx);
+            margin-right: (30 * @bpx);
+        }
 
-            @media (min-width: @screen-md-min) {
-                font-size: 24px;
-            }
+        &.banner-title-left .banner-title-top {
+            margin-right: 0;
+            margin-left: (30 * @bpx);
         }
 
         .banner-title-bottom {
-            font-size: 46px;
-            font-weight: 900;
-            line-height: 1;
-            color: #F47920;
+            position: relative;
+            font-family: 'Barlow Condensed', @font-family-sans-serif;
+            font-weight: 800;
+            font-size: (100 * @bpx);
+            line-height: 0.92;
+            letter-spacing: 0.01em;
+            background: @team-orange-cta;
+            padding: (8 * @bpx) (30 * @bpx) (10 * @bpx) (28 * @bpx);
+            // A lighter edge along the top, like a jersey stripe
+            box-shadow: inset 0 (4 * @bpx) 0 rgba(255, 255, 255, 0.18);
 
-            @media (min-width: @screen-md-min) {
-                font-size: 72px;
+            // Speed stripes trailing the block, thickening towards it
+            &::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                right: 100%;
+                margin-right: (10 * @bpx);
+                width: (46 * @bpx);
+                background: linear-gradient(90deg,
+                    transparent 0 8.7%,
+                    fade(@team-orange-cta, 35%) 8.7% 21.7%,
+                    transparent 21.7% 39.1%,
+                    fade(@team-orange-cta, 60%) 39.1% 56.5%,
+                    transparent 56.5% 73.9%,
+                    @team-orange-cta 73.9% 100%);
             }
         }
     }

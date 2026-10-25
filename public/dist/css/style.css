@@ -7536,6 +7536,7 @@ footer {
   margin-right: 0px;
   width: 100%;
   height: 200px;
+  container-type: inline-size;
 }
 .navimg::before {
   content: '';
@@ -7573,49 +7574,67 @@ footer {
 .navimg .banner-title {
   position: absolute;
   top: 50%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+.navimg .banner-title.banner-title-right {
+  right: 6%;
+  transform: translateY(-50%);
+  align-items: flex-end;
+}
+.navimg .banner-title.banner-title-left {
+  left: calc(6% + 4.912280701754385cqw);
+  transform: translateY(-50%);
+  align-items: flex-start;
+}
+.navimg .banner-title.banner-title-center {
   left: 50%;
   transform: translate(-50%, -50%);
-  display: inline-flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  z-index: 1;
-  pointer-events: auto;
-  cursor: pointer;
-  letter-spacing: 0.01em;
-  background: rgba(225, 233, 244, 0);
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
-  border-radius: 6px;
-  padding: 8px 24px 10px;
-  white-space: nowrap;
-  transition: opacity 0.3s ease;
 }
-.navimg .banner-title.banner-title-hidden {
-  opacity: 0;
+.navimg .banner-title .banner-title-top,
+.navimg .banner-title .banner-title-bottom {
+  transform: skewX(-12deg);
+  text-transform: uppercase;
+  color: #fff;
 }
 .navimg .banner-title .banner-title-top {
-  font-size: 15px;
-  font-weight: 900;
+  font-family: 'Barlow Semi Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  font-size: 1.57894737cqw;
   line-height: 1;
-  color: #354082;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.22em;
+  background: #1F2C6E;
+  padding: 0.70175439cqw 1.57894737cqw 0.70175439cqw 1.75438596cqw;
+  margin-right: 2.63157895cqw;
 }
-@media (min-width: 992px) {
-  .navimg .banner-title .banner-title-top {
-    font-size: 24px;
-  }
+.navimg .banner-title.banner-title-left .banner-title-top {
+  margin-right: 0;
+  margin-left: 2.63157895cqw;
 }
 .navimg .banner-title .banner-title-bottom {
-  font-size: 46px;
-  font-weight: 900;
-  line-height: 1;
-  color: #F47920;
+  position: relative;
+  font-family: 'Barlow Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 800;
+  font-size: 8.77192982cqw;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  background: #ef6b0c;
+  padding: 0.70175439cqw 2.63157895cqw 0.87719298cqw 2.45614035cqw;
+  box-shadow: inset 0 0.35087719cqw 0 rgba(255, 255, 255, 0.18);
 }
-@media (min-width: 992px) {
-  .navimg .banner-title .banner-title-bottom {
-    font-size: 72px;
-  }
+.navimg .banner-title .banner-title-bottom::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  margin-right: 0.87719298cqw;
+  width: 4.03508772cqw;
+  background: linear-gradient(90deg, transparent 0 8.7%, rgba(239, 107, 12, 0.35) 8.7% 21.7%, transparent 21.7% 39.1%, rgba(239, 107, 12, 0.6) 39.1% 56.5%, transparent 56.5% 73.9%, #ef6b0c 73.9% 100%);
 }
 .navimg .logo-stats {
   padding-top: 8px;

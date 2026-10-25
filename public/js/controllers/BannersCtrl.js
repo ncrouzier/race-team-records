@@ -15,6 +15,48 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     // own memberStatus is used
     var memberStatusById = {};
 
+    // Each card as last loaded or saved: what it's compared against to know
+    // whether it has unsaved changes, and what the filters and search use —
+    // so a card doesn't vanish from a filtered list mid-edit, only once saved
+    var savedState = {};
+
+    // The fields a card edits, as plain values
+    function snapshot(b) {
+        var c = b.copyright || {};
+        return {
+            pinned: !!b.pinned,
+            disabled: !!b.disabled,
+            titlePosition: b.titlePosition || 'right',
+            copyright: { name: c.name || '', url: c.url || '', color: c.color || '' },
+            members: (b._members || []).map(function (m) { return m._id; }).sort()
+        };
+    }
+
+    function remember(b) {
+        savedState[b._id] = { values: snapshot(b), members: (b._members || []).slice(), copyright: angular.copy(b.copyright || {}) };
+    }
+
+    // Whether a card differs from what's saved
+    $scope.changed = function (b) {
+        var saved = savedState[b._id];
+        return !saved || !angular.equals(snapshot(b), saved.values);
+    };
+
+    // The card's Save button: 'saving', 'saved' (and not edited since),
+    // 'error' (the last attempt failed, and not edited since) or 'save'
+    $scope.saveState = function (b) {
+        if ($scope.saving[b._id]) return 'saving';
+        if ($scope.saveError[b._id] && angular.equals(snapshot(b), $scope.saveError[b._id])) return 'error';
+        if ($scope.saved[b._id] && !$scope.changed(b)) return 'saved';
+        return 'save';
+    };
+
+    // A card as saved, in the shape the flags below take
+    function asSaved(b) {
+        var saved = savedState[b._id];
+        return saved ? { _members: saved.members, copyright: saved.copyright } : b;
+    }
+
     function load() {
         $http.get('/api/admin/banners').then(function (resp) {
             resp.data.forEach(function (b) {
@@ -26,7 +68,10 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
                 });
                 return angular.extend({}, b, { _members: memberObjs });
             });
-            $scope.dirty = false;
+            savedState = {};
+            $scope.banners.forEach(remember);
+            $scope.saved = {};
+            $scope.saveError = {};
         });
     }
 
@@ -66,9 +111,12 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         });
     };
 
-    $scope.$watch('banners', function (newVal, oldVal) {
-        if (oldVal.length && newVal !== oldVal) $scope.dirty = true;
-    }, true);
+    // Unsaved changes: any card differing from what's saved
+    $scope.$watch(function () {
+        return $scope.banners.some($scope.changed);
+    }, function (any) {
+        $scope.dirty = any;
+    });
 
     function buildPayload(banner) {
         return {
@@ -82,13 +130,19 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
 
     $scope.save = function (banner) {
         $scope.saving[banner._id] = true;
+        var attempt = snapshot(banner);
         return $http.put('/api/admin/banners/' + banner._id, buildPayload(banner)).then(function (resp) {
             var idx = $scope.banners.findIndex(function (b) { return b._id === banner._id; });
-            if (idx !== -1) $scope.banners[idx] = angular.extend({}, resp.data, { _members: banner._members });
+            if (idx !== -1) {
+                $scope.banners[idx] = angular.extend({}, resp.data, { _members: banner._members });
+                remember($scope.banners[idx]);
+            }
             $scope.saved[banner._id] = true;
             $scope.saveError[banner._id] = false;
         }, function () {
-            $scope.saveError[banner._id] = true;
+            // What failed to save: the button says Error until the card is edited
+            $scope.saveError[banner._id] = attempt;
+            $scope.saved[banner._id] = false;
         }).finally(function () {
             $scope.saving[banner._id] = false;
         });
@@ -98,7 +152,6 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         $scope.savingAll = true;
         var promises = $scope.banners.map(function (b) { return $scope.save(b); });
         $q.all(promises).then(function () {
-            $scope.dirty = false;
             NotificationService.showNotifiction(true, 'All banners saved');
         }, function () {
             NotificationService.showNotifiction(false, 'Some banners failed to save');
@@ -108,7 +161,6 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     };
 
     $scope.reset = function () {
-        $scope.dirty = false;
         load();
     };
 
@@ -135,8 +187,9 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
     $scope.formerNames = function (banner) {
         return $scope.formerMembers(banner).map(function (m) { return m.firstname + ' ' + m.lastname; }).join(', ');
     };
+    // Counted on the cards as saved, like the filter
     $scope.formerCount = function () {
-        return $scope.banners.filter(function (b) { return $scope.formerMembers(b).length; }).length;
+        return $scope.banners.filter(function (b) { return $scope.formerMembers(asSaved(b)).length; }).length;
     };
 
     // Current team members with no banner on the homepage: tagged in none, or
@@ -165,20 +218,22 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         return !(banner.copyright && banner.copyright.name && String(banner.copyright.name).trim());
     };
     $scope.missingCreditCount = function () {
-        return $scope.banners.filter($scope.missingCredit).length;
+        return $scope.banners.filter(function (b) { return $scope.missingCredit(asSaved(b)); }).length;
     };
 
     // Search box: matches the image's filename or a tagged member's name.
     // An object, as the box sits inside an ng-if. formerOnly / noCreditOnly
-    // narrow to the banners flagged for those.
+    // narrow to the banners flagged for those. All on the cards as saved: a
+    // card being edited stays in the list until it's saved.
     $scope.bannerFilter = { text: '', formerOnly: false, noCreditOnly: false };
     $scope.bannerMatches = function (banner) {
-        if ($scope.bannerFilter.formerOnly && !$scope.formerMembers(banner).length) return false;
-        if ($scope.bannerFilter.noCreditOnly && !$scope.missingCredit(banner)) return false;
+        var saved = asSaved(banner);
+        if ($scope.bannerFilter.formerOnly && !$scope.formerMembers(saved).length) return false;
+        if ($scope.bannerFilter.noCreditOnly && !$scope.missingCredit(saved)) return false;
         var q = ($scope.bannerFilter.text || '').toLowerCase().trim();
         if (!q) return true;
         if (banner.filename.toLowerCase().indexOf(q) !== -1) return true;
-        return (banner._members || []).some(function (m) {
+        return (saved._members || []).some(function (m) {
             return ((m.firstname || '') + ' ' + (m.lastname || '')).toLowerCase().indexOf(q) !== -1;
         });
     };
@@ -198,6 +253,7 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         dlg.result.then(function () {
             $http.delete('/api/admin/banners/' + banner._id).then(function () {
                 $scope.banners = $scope.banners.filter(function (b) { return b._id !== banner._id; });
+                delete savedState[banner._id];
                 if ($scope.activeBannerId === banner._id) $scope.activeBannerId = null;
                 loadUnregistered();
             }, function () {
@@ -219,6 +275,7 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
         if (!$scope.dirty) return;
         var dlg = dialogs.confirm('Unsaved changes', 'You have unsaved changes. Leave without saving?');
         dlg.result.then(function () {
+            $scope.banners.forEach(remember);
             $scope.dirty = false;
             transition.router.stateService.go(transition.to().name, transition.params('to'));
         });

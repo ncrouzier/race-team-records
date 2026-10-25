@@ -445,9 +445,9 @@
                             <i class="fa fa-trash"></i>
                         </button>
                         <button type="button" class="crf-chip" ng-click="save(banner)" ng-disabled="saving[banner._id]"
-                            ng-class="saveError[banner._id] ? 'ta-chip-rejected' : (saved[banner._id] ? 'crf-chip-open' : 'crf-chip-primary')">
-                            <i class="fa" ng-class="saving[banner._id] ? 'fa-spinner fa-spin' : (saveError[banner._id] ? 'fa-times' : (saved[banner._id] ? 'fa-check' : 'fa-save'))"></i>
-                            {{saving[banner._id] ? 'Saving…' : (saveError[banner._id] ? 'Error' : (saved[banner._id] ? 'Saved' : 'Save'))}}
+                            ng-class="{error: 'ta-chip-rejected', saved: 'crf-chip-open'}[saveState(banner)] || 'crf-chip-primary'">
+                            <i class="fa" ng-class="{saving: 'fa-spinner fa-spin', error: 'fa-times', saved: 'fa-check', save: 'fa-save'}[saveState(banner)]"></i>
+                            {{ {saving: 'Saving…', error: 'Error', saved: 'Saved', save: 'Save'}[saveState(banner)] }}
                         </button>
                     </div>
                 </div>

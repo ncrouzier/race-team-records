@@ -6038,16 +6038,15 @@ module.exports = async function (app, qs, passport, async, _) {
             body: [
                 '<p>Hi {{firstname}},</p>',
                 '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
-                '<p>A few things to get you started:</p>',
+                '<p><strong>A few things to get you started:</strong></p>',
                 '<ul>',
-                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
-                '  <li>We require team members to race at least {{raceCommitment}} times a year and to help out at club events.</li>',
-                '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
-                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up</strong></li>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank" rel="noopener noreferrer">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank" rel="noopener noreferrer">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. As a reminder, we require team members to race at least {{raceCommitment}} times a year and to help out at club events. You can submit both your race results and volunteer positions using the site. </li>',
+                '  <li>We\'ll be adding you to our team\'s message board/communication group (MCRRCRacingTeam@groups.io at Groups.io). This is where you will receive all official communication from the team.</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up.</strong></li>',
                 '</ul>',
-                '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
+                '<p><strong>Your bio and photo.</strong> The site carries a bio for each of our',
                 'members. Please take a little time and send yours back with the info below. Everything is optional,',
-                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank" rel="noopener noreferrer">one of our runners</a>',
                 'for inspiration:</p>',
                 '<ul>',
                 '  <li><strong>A photo</strong></li>',
@@ -6063,8 +6062,9 @@ module.exports = async function (app, qs, passport, async, _) {
                 '  <li>Fun fact about yourself:</li>',
                 '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
                 '</ul>',
-                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
-                '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
+                '<p><strong>One last thing- letting the team know about our newest member! </strong> We would love it if you could send out a brief email to the team letting everyone know a little more about you. You can format it however you like. If you are looking for inspiration, grabbing a few facts from your bio above will do the trick. Please try to do this at your earliest convenience so we can keep everyone informed of the latest roster update. You can email the team at MCRRCRacingTeam@groups.io. We will also be announcing your addition to the team through the club\'s weekly Ins &amp; Outs newsletter.</p>',
+                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}" target="_blank" rel="noopener noreferrer">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
+                '<p>See you at the races,<br />The MCRRC Racing Team captains</p>'
             ].join('\n')
         };
     }

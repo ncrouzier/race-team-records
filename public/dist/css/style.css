@@ -14642,7 +14642,7 @@ footer {
 }
 .ta-detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px 20px;
 }
 .ta-label {
@@ -14653,9 +14653,65 @@ footer {
   color: #868e96;
   margin-bottom: 2px;
 }
+.ta-card {
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 12px 16px 14px;
+  margin-bottom: 12px;
+  color: #222;
+}
+.ta-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2328;
+  margin-bottom: 10px;
+}
+.ta-card-aside {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #868e96;
+}
+.ta-value {
+  font-size: 14px;
+  color: #222;
+  word-break: break-word;
+}
+.ta-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.ta-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  border: 1px solid;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ta-check-ok {
+  background: #edf7f1;
+  border-color: #a3d6b8;
+  color: #2a7a4b;
+}
+.ta-check-no {
+  background: #fff4e5;
+  border-color: #f2c27d;
+  color: #8a5216;
+}
 .ta-races {
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 0;
+  color: #222;
 }
 .ta-races th {
   font-size: 11px;
@@ -14663,7 +14719,20 @@ footer {
   letter-spacing: 0.04em;
   color: #868e96;
   font-weight: 600;
-  border-top: none;
+  border-top: none !important;
+  border-bottom: 1px solid #e3e7eb !important;
+  padding: 4px 8px !important;
+}
+.ta-races td {
+  border-top: 1px solid #f0f2f4 !important;
+  padding: 7px 8px !important;
+  vertical-align: middle !important;
+}
+.ta-races .ta-race-name {
+  font-weight: 600;
+}
+.ta-races .ta-race-time {
+  font-variant-numeric: tabular-nums;
 }
 .ta-races .ta-result-link {
   margin-left: 5px;
@@ -14673,20 +14742,48 @@ footer {
 .ta-races .ta-result-link:hover {
   opacity: 1;
 }
+.ta-races .ta-ag {
+  display: inline-block;
+  min-width: 56px;
+  text-align: center;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .ta-races .ta-ag-good {
+  background: #edf7f1;
   color: #2a7a4b;
-  font-weight: 600;
 }
 .ta-races .ta-ag-low {
+  background: #fff4e5;
   color: #8a5216;
-  font-weight: 600;
 }
-.ta-motivation {
-  background: #f8fafc;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 10px 12px;
+.ta-letter-body {
+  max-width: 720px;
   white-space: pre-wrap;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #222;
+}
+.ta-letter-sign {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #57606a;
+  font-style: italic;
+}
+.ta-review-notes {
+  background: #fff8e1;
+  border: 1px solid #f5d98a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.ta-review-notes-body {
+  white-space: pre-wrap;
+  color: #3d3423;
+  font-size: 13.5px;
   line-height: 1.5;
 }
 .ta-notified-note {
@@ -14886,14 +14983,72 @@ footer {
   font-size: 11.5px;
   margin: 0 4px 4px 0;
 }
+.ta-email-sent {
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.ta-email-head {
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid #eceff2;
+  background: #fafbfc;
+}
+.ta-email-subject {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2328;
+  margin-bottom: 4px;
+}
+.ta-email-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  font-size: 12px;
+  color: #57606a;
+}
+.ta-email-meta-label {
+  font-weight: 600;
+  color: #8c959f;
+  margin-right: 3px;
+}
 .ta-email-preview-inline {
-  margin-top: 6px;
-  font-size: 12.5px;
+  padding: 16px 18px 18px;
+  max-width: 720px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #222;
+  white-space: normal;
+}
+.ta-email-preview-inline p,
+.ta-email-preview-inline li {
+  font-size: inherit;
+  font-weight: normal;
+  line-height: inherit;
+  color: inherit;
+}
+.ta-email-preview-inline strong,
+.ta-email-preview-inline b {
+  color: #000;
 }
 .ta-email-preview-inline p {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 }
-.ta-email-preview-inline p:last-child {
+.ta-email-preview-inline ul,
+.ta-email-preview-inline ol {
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+.ta-email-preview-inline li {
+  margin-bottom: 3px;
+}
+.ta-email-preview-inline a {
+  color: #1a0dab;
+  text-decoration: underline;
+}
+.ta-email-preview-inline > :last-child {
   margin-bottom: 0;
 }
 @media (max-width: 767px) {

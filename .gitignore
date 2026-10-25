@@ -30,3 +30,6 @@ public/dist/js/app.js
 
 # Brainstorming mockups (superpowers visual companion)
 .superpowers/
+
+# Safety dumps taken by scripts/restore-local.sh before it replaces the local database
+backups-local/

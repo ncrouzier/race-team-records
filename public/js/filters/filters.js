@@ -1364,3 +1364,12 @@ app.filter('etDate', function () {
         }).format(d);
     };
 });
+
+// The year an achievement was earned, from its text
+// ("Runner of the Year Open Female 2017" -> "2017"); '' when there is none.
+app.filter('achievementYear', function () {
+    return function (text) {
+        var years = String(text || '').match(/\b(19|20)\d{2}\b/g);
+        return years ? years[years.length - 1] : '';
+    };
+});

@@ -1,21 +1,312 @@
-<div class="jumbotron" >
+<div class="jumbotron about-ag-page">
+    <div class="racetypes-content">
 
-    
+        <!-- ============ How it works ============ -->
+        <div class="member-card about-ag-eli5">
+            <div class="member-card-header">
+                <h3><i class="fa fa-lightbulb-o"></i> How age grading works</h3>
+            </div>
 
-    <div class="row">
-        <div class="col-md-12" >
-            <h3 style="font-weight: bold;">Information about age grading on this site</h3>
-                
-                Age grading for road and track races relies on data collected by <a style="font-weight: bold;text-decoration: underline;" href="mailto:tlbernhard2@gmail.com">Tom Bernhard</a> and ARRS, then compiled by <a style="font-weight: bold;text-decoration: underline;" href="mailto: alan@runscore.com">Alan Jones</a>. Since race records constantly evolve, the accuracy of age grading depends on how recent the data is.
-                <br><br>
-                It's important to note that data releases may not always include all previously covered distances. For instance, the 2-mile track factor was present in the 2005 data but missing from the 2023 version. As a consequence, races held in 2023 and beyond won't have an age-graded score for that distance.
-                <br><br>
-                Current files used: Roads: 2025, Track 2023
-                <br><br>
-                Files used to compute the age grading are available <a style="font-weight: bold;text-decoration: underline;" href="https://github.com/ncrouzier/race-team-records/tree/master/doc">here</a>.                
-                
+            <!-- 1. The big idea -->
+            <h4 class="about-ag-step"><span class="about-ag-step-num">1</span> The big idea</h4>
+            <p>
+                Picture the fastest runner in the world <em>at your exact age and gender</em>. The tables hold the
+                time that runner could run at each distance: the <strong>standard</strong>. Your age grade is how
+                close you came to it.
+            </p>
+            <div class="about-ag-formula">
+                age grade = <span class="about-ag-frac"><span>standard for your age</span><span>your time</span></span> &times; 100
+            </div>
+            <p>
+                <strong>100%</strong> means you matched the best time ever run at your age.
+                <strong>50%</strong> means you took twice as long. Because each age has its own standard, a
+                30-year-old and a 60-year-old can be compared fairly.
+            </p>
+
+            <div class="about-ag-examples">
+                <div class="about-ag-example">
+                    <div class="about-ag-example-label">Example</div>
+                    <p>A <strong>50-year-old man</strong> runs an <strong>8K in 30:00</strong> (1800 s).
+                        His standard is <strong>23:38</strong> (1418 s).</p>
+                    <div class="about-ag-calc">1418 &divide; 1800 &times; 100 = <strong>78.8%</strong></div>
+                </div>
+                <div class="about-ag-example">
+                    <div class="about-ag-example-label">Same grade, different runners</div>
+                    <p>Each of these 5K times is worth about <strong>80%</strong>:</p>
+                    <ul class="about-ag-same">
+                        <li><span>Man, 30</span><strong>16:00</strong></li>
+                        <li><span>Man, 60</span><strong>19:49</strong></li>
+                        <li><span>Woman, 60</span><strong>22:46</strong></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="about-ag-calc-link">
+                <a ui-sref="/tools/agegrade"><i class="fa fa-calculator"></i> Work out your own age grade in the calculator</a>
+            </p>
+
+            <!-- 2. The standards: a curve through the records -->
+            <h4 class="about-ag-step"><span class="about-ag-step-num">2</span> Where each age's standard comes from</h4>
+            <p>
+                For every age, the best time ever run is collected: the <em>single-age bests</em>, gathered by
+                <a href="mailto:tlbernhard2@gmail.com">Tom Bernhard</a> and, before him, the ARRS (Association of Road
+                Racing Statisticians). <a href="mailto:alan@runscore.com">Alan Jones</a> then turns them into the
+                tables. Those records are bumpy, so a smooth curve is drawn that is never slower than any of them. Dividing the
+                fastest standard by your age's standard gives your <strong>age factor</strong>: 1.0 in the prime
+                years, lower on either side. A 60-year-old man's 5K factor is 0.81, so a 5K about 19% slower
+                than the open world record is world class at 60.
+            </p>
+
+            <figure class="about-ag-chart">
+                <figcaption>Age factor by age, 5K (2025 road tables) <span class="agx-hint">hover or touch to read a value</span></figcaption>
+                <div class="about-ag-chart-scroll">
+                    <div class="agx-plot">
+                        <svg viewBox="0 0 640 286" agx-pointer="lifetimeAt($point)" role="img"
+                            aria-label="Age factor by age for the 5K: 1.0 from the late teens to about 30, rising steeply through childhood and falling slowly, then faster, with age">
+                            <rect class="agx-zone-prime" ng-attr-x="{{lifetime.prime.x}}" ng-attr-y="{{lifetime.top}}"
+                                ng-attr-width="{{lifetime.prime.width}}" ng-attr-height="{{lifetime.bottom - lifetime.top}}" />
+                            <rect class="agx-zone-edge" ng-attr-x="{{lifetime.edge.x}}" ng-attr-y="{{lifetime.top}}"
+                                ng-attr-width="{{lifetime.edge.width}}" ng-attr-height="{{lifetime.bottom - lifetime.top}}" />
+                            <g ng-repeat="t in lifetime.yTicks">
+                                <line class="agx-grid" ng-attr-x1="{{lifetime.left}}" ng-attr-x2="{{lifetime.right}}" ng-attr-y1="{{t.y}}" ng-attr-y2="{{t.y}}" />
+                                <text class="agx-tick" ng-attr-x="{{lifetime.left - 8}}" ng-attr-y="{{t.y + 4}}" text-anchor="end">{{t.label}}</text>
+                            </g>
+                            <text class="agx-tick" ng-repeat="t in lifetime.xTicks" ng-attr-x="{{t.x}}" ng-attr-y="{{lifetime.bottom + 18}}" text-anchor="middle">{{t.label}}</text>
+                            <text class="agx-axis" ng-attr-x="{{(lifetime.left + lifetime.right) / 2}}" ng-attr-y="{{lifetime.height - 2}}" text-anchor="middle">Age</text>
+                            <text class="agx-zone-label" ng-attr-x="{{lifetime.prime.x + lifetime.prime.width / 2}}" ng-attr-y="{{lifetime.top + 14}}" text-anchor="middle">prime years</text>
+                            <text class="agx-zone-label agx-zone-label-edge" ng-attr-x="{{lifetime.edge.x + lifetime.edge.width / 2}}" ng-attr-y="{{lifetime.top + 14}}" text-anchor="middle">few records</text>
+                            <path class="agx-line agx-women" ng-attr-d="{{lifetime.women}}" />
+                            <path class="agx-line agx-men" ng-attr-d="{{lifetime.men}}" />
+                            <g ng-if="!lifetime.hover">
+                                <circle class="agx-example" ng-attr-cx="{{lifetime.example.x}}" ng-attr-cy="{{lifetime.example.y}}" r="5" />
+                                <text class="agx-example-label" ng-attr-x="{{lifetime.example.x + 9}}" ng-attr-y="{{lifetime.example.y - 9}}">Man, 60: 0.81</text>
+                            </g>
+                            <g ng-if="lifetime.hover" class="agx-cursor">
+                                <line ng-attr-x1="{{lifetime.hover.x}}" ng-attr-x2="{{lifetime.hover.x}}" ng-attr-y1="{{lifetime.top}}" ng-attr-y2="{{lifetime.bottom}}" />
+                                <circle class="agx-cursor-women" ng-attr-cx="{{lifetime.hover.x}}" ng-attr-cy="{{lifetime.hover.womenY}}" r="5" />
+                                <circle class="agx-cursor-men" ng-attr-cx="{{lifetime.hover.x}}" ng-attr-cy="{{lifetime.hover.menY}}" r="5" />
+                            </g>
+                            <!-- catches the pointer over the whole plot, gaps between lines included -->
+                            <rect class="agx-hit" ng-attr-x="{{lifetime.left}}" ng-attr-y="{{lifetime.top}}"
+                                ng-attr-width="{{lifetime.right - lifetime.left}}" ng-attr-height="{{lifetime.bottom - lifetime.top}}" />
+                        </svg>
+                        <div class="agx-readout" ng-if="lifetime.hover" ng-class="{'is-flipped': lifetime.hover.flip}"
+                            ng-style="{left: (lifetime.hover.x / lifetime.width * 100) + '%', top: (lifetime.top / lifetime.height * 100) + '%'}">
+                            <div class="agx-readout-title">Age {{lifetime.hover.age}}</div>
+                            <div><i class="agx-key agx-key-men"></i> Men <strong>{{lifetime.hover.men}}</strong> <span>{{lifetime.hover.menTime}}</span></div>
+                            <div><i class="agx-key agx-key-women"></i> Women <strong>{{lifetime.hover.women}}</strong> <span>{{lifetime.hover.womenTime}}</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-ag-legend">
+                    <span><i class="agx-key agx-key-men"></i> Men</span>
+                    <span><i class="agx-key agx-key-women"></i> Women</span>
+                    <span><i class="agx-key agx-key-prime"></i> Factor 1.0: the open world record</span>
+                    <span><i class="agx-key agx-key-edge"></i> Few or no records: the curve is extended</span>
+                </div>
+            </figure>
+
+            <p>
+                The curve is built from simple pieces joined smoothly: a steep climb through childhood, a flat top
+                around the world record, a slow steady decline through the masters years, then a decline that
+                speeds up in the 70s and beyond.
+            </p>
+
+            <!-- 3. In-between distances: interpolation -->
+            <h4 class="about-ag-step"><span class="about-ag-step-num">3</span> Distances in between: interpolation</h4>
+            <p>
+                Only four distances are raced often enough at every age to fit a curve on their own:
+                <strong>5K, 10K, the half marathon and the marathon</strong>. Every distance in between is
+                <em>interpolated</em>: its age factor is a blend of the two key distances on either side.
+                How much of each depends on where it sits between them on a <em>log</em> scale (distances are
+                compared by ratio, so 5K to 10K is the same step as 10K to 20K). That position is called
+                <strong>u</strong>, from 0 at the shorter distance to 1 at the longer one.
+            </p>
+
+            <!-- Try it: one runner drives the u-scale, the blend and the graph -->
+            <div class="about-ag-tryit">
+                <div class="about-ag-tryit-head">
+                    <div class="about-ag-example-label">Try it</div>
+                    <div class="about-ag-tryit-controls">
+                        <div class="about-ag-control">
+                            <label>Gender</label>
+                            <div class="about-ag-btn-row">
+                                <button type="button" class="mcrrc-btn" ng-class="{'is-on': explore.sex === 'male'}" ng-click="setExplore('sex', 'male')">Men</button>
+                                <button type="button" class="mcrrc-btn" ng-class="{'is-on': explore.sex === 'female'}" ng-click="setExplore('sex', 'female')">Women</button>
+                            </div>
+                        </div>
+                        <div class="about-ag-control about-ag-control-age">
+                            <label for="agxAge">Age <strong>{{tryIt.age}}</strong></label>
+                            <input id="agxAge" type="range" ng-model="explore.age" min="{{EXPLORE_MIN_AGE}}" max="{{EXPLORE_MAX_AGE}}" step="1">
+                        </div>
+                        <div class="about-ag-control">
+                            <label for="agxDistance">Distance</label>
+                            <select id="agxDistance" class="form-control input-sm" ng-model="explore.distance"
+                                ng-options="d.key as d.label for d in betweenDistances"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <figure class="about-ag-chart about-ag-chart-flat">
+                    <figcaption>Where {{tryIt.distance.label}} sits between {{tryIt.lo.label}} and {{tryIt.hi.label}}: its u <span class="agx-hint">click a distance to pick it</span></figcaption>
+                    <div class="about-ag-chart-scroll">
+                        <div class="agx-plot">
+                            <svg viewBox="0 0 640 84" role="img"
+                                aria-label="A scale from {{tryIt.lo.label}} (u = 0) to {{tryIt.hi.label}} (u = 1); {{tryIt.distance.label}} sits at u = {{tryIt.u}}">
+                                <line class="agx-ruler" ng-attr-x1="{{ruler.left}}" ng-attr-x2="{{ruler.right}}" y1="48" y2="48" />
+                                <g ng-repeat="m in ruler.marks track by m.key" class="agx-ruler-mark"
+                                    ng-class="{'is-fitted': m.fitted, 'is-selected': m.selected, 'is-pickable': !m.fitted}"
+                                    ng-click="pickDistance(m.key)">
+                                    <rect class="agx-hit" ng-attr-x="{{m.x - 16}}" y="8" width="32" height="72" />
+                                    <line class="agx-ruler-tick" ng-attr-x1="{{m.x}}" ng-attr-x2="{{m.x}}" ng-attr-y1="{{m.fitted || m.selected ? 36 : 41}}" ng-attr-y2="{{m.fitted || m.selected ? 60 : 55}}" />
+                                    <text class="agx-ruler-label" ng-attr-x="{{m.labelX}}" y="28" ng-attr-text-anchor="{{m.anchor}}">{{m.label}}</text>
+                                    <text class="agx-ruler-u" ng-attr-x="{{m.labelX}}" y="78" ng-attr-text-anchor="{{m.anchor}}">{{m.u}}</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                </figure>
+
+                <ol class="about-ag-steps">
+                    <li>{{tryIt.article}} {{tryIt.age}}-year-old {{tryIt.who}}'s {{tryIt.lo.label}} factor is <strong>{{tryIt.fLo}}</strong>
+                        and {{tryIt.hi.label}} factor is <strong>{{tryIt.fHi}}</strong>.</li>
+                    <li>{{tryIt.distance.label}} sits at <strong>u = {{tryIt.u}}</strong> between them.</li>
+                    <li>Blend: {{tryIt.fLo}} &times; {{tryIt.oneMinusU}} + {{tryIt.fHi}} &times; {{tryIt.u}} = <strong>{{tryIt.blend}}</strong></li>
+                    <li>Open {{tryIt.distance.label}} standard &divide; factor: {{tryIt.openClock}} ({{tryIt.open}} s) &divide; {{tryIt.blend}}
+                        = <strong>{{tryIt.predicted}} s, or {{tryIt.predictedClock}}</strong>.</li>
+                </ol>
+                <div class="about-ag-check is-off" ng-if="tryIt.diff > 2">
+                    <i class="fa fa-info-circle"></i>
+                    <span>The published table says <strong>{{tryIt.publishedClock}}</strong> ({{tryIt.published}} s),
+                        {{tryIt.diff}} s from the blend: the published table differs here.</span>
+                </div>
+
+                <figure class="about-ag-chart about-ag-chart-flat">
+                    <figcaption>Age factor by distance, {{tryIt.who === 'man' ? 'men' : 'women'}} aged {{tryIt.age}} (2025 road tables) <span class="agx-hint">hover a point to read it</span></figcaption>
+                    <div class="about-ag-chart-scroll">
+                        <div class="agx-plot">
+                            <svg viewBox="0 0 640 236" agx-pointer="distanceAt($point)" role="img"
+                                aria-label="Age factor from 5K to the marathon for a {{tryIt.age}}-year-old {{tryIt.who}}: the in-between distances lie on straight segments between the four key distances">
+                                <g ng-repeat="t in distanceChart.yTicks">
+                                    <line class="agx-grid" ng-attr-x1="{{distanceChart.left}}" ng-attr-x2="{{distanceChart.right}}" ng-attr-y1="{{t.y}}" ng-attr-y2="{{t.y}}" />
+                                    <text class="agx-tick" ng-attr-x="{{distanceChart.left - 8}}" ng-attr-y="{{t.y + 4}}" text-anchor="end">{{t.label}}</text>
+                                </g>
+                                <g ng-repeat="t in distanceChart.xTicks">
+                                    <line class="agx-grid agx-grid-key" ng-attr-x1="{{t.x}}" ng-attr-x2="{{t.x}}" ng-attr-y1="{{distanceChart.top}}" ng-attr-y2="{{distanceChart.bottom}}" />
+                                    <text class="agx-tick" ng-attr-x="{{t.x}}" ng-attr-y="{{distanceChart.bottom + 18}}"
+                                        ng-attr-text-anchor="{{$first ? 'start' : ($last ? 'end' : 'middle')}}">{{t.label}}</text>
+                                </g>
+                                <line ng-if="distanceChart.hover" class="agx-cursor-line" ng-attr-x1="{{distanceChart.hover.x}}" ng-attr-x2="{{distanceChart.hover.x}}"
+                                    ng-attr-y1="{{distanceChart.top}}" ng-attr-y2="{{distanceChart.bottom}}" />
+                                <g ng-class="explore.sex === 'male' ? 'agx-series-men' : 'agx-series-women'">
+                                    <path class="agx-line" ng-attr-d="{{distanceChart.path}}" />
+                                    <circle ng-repeat="p in distanceChart.points track by p.key" ng-attr-cx="{{p.x}}" ng-attr-cy="{{p.y}}"
+                                        ng-attr-r="{{p.selected ? 7 : (p.fitted ? 5 : 3.5)}}"
+                                        ng-class="[p.fitted ? 'agx-dot-key' : 'agx-dot-between', p.selected ? 'is-selected' : '', distanceChart.hover.key === p.key ? 'is-hover' : '']" />
+                                </g>
+                                <rect class="agx-hit" ng-attr-x="{{distanceChart.left}}" ng-attr-y="{{distanceChart.top}}"
+                                    ng-attr-width="{{distanceChart.right - distanceChart.left}}" ng-attr-height="{{distanceChart.bottom - distanceChart.top}}"
+                                    ng-click="distanceChart.hover && pickDistance(distanceChart.hover.key)" />
+                            </svg>
+                            <div class="agx-readout" ng-if="distanceChart.hover" ng-class="{'is-flipped': distanceChart.hover.x > distanceChart.width * 0.6}"
+                                ng-style="{left: (distanceChart.hover.x / distanceChart.width * 100) + '%', top: (distanceChart.top / distanceChart.height * 100) + '%'}">
+                                <div class="agx-readout-title">{{distanceChart.hover.label}}</div>
+                                <div>Factor <strong>{{distanceChart.hover.factor}}</strong></div>
+                                <div>Standard <strong>{{distanceChart.hover.time}}</strong></div>
+                                <div class="agx-readout-note">{{distanceChart.hover.fitted ? 'Key distance: fitted to the records' : 'Interpolated: click to try it'}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-ag-legend">
+                        <span><i class="agx-key agx-key-dot"></i> Key distance: fitted to the records</span>
+                        <span><i class="agx-key agx-key-dot-small"></i> In-between distance: interpolated</span>
+                        <span><i class="agx-key agx-key-dot-selected"></i> The distance being worked out</span>
+                    </div>
+                </figure>
+            </div>
+
+            <!-- 4. At the edges: extrapolation -->
+            <h4 class="about-ag-step"><span class="about-ag-step-num">4</span> At the edges: extrapolation</h4>
+            <p>Sometimes there is nothing on the far side to blend with, so the tables carry on past the data:</p>
+            <ul class="about-ag-edges">
+                <li>
+                    <strong>Very old and very young ages.</strong> Records thin out past about 90, and some
+                    ages have none at all. The curve simply keeps its shape past the last record (the grey band
+                    in the first graph), so those standards are a best estimate. Children's ages are handled
+                    slightly differently too, and are the least certain part of the tables.
+                </li>
+                <li>
+                    <strong>Beyond the marathon.</strong> For 50K and longer, the age factor is kept at the
+                    marathon's value: a 60-year-old man's factor is 0.814 at the marathon and 0.814 at 50K.
+                    Only the open standard changes with the distance.
+                </li>
+            </ul>
+
+            <!-- 5. This site -->
+            <h4 class="about-ag-step"><span class="about-ag-step-num">5</span> What this site does</h4>
+            <ul class="about-ag-site">
+                <li>Your age on race day and your gender pick the row; the race distance picks the column.</li>
+                <li>Records keep improving, so the tables are revised every few years. The version used follows
+                    the race date, so older results keep the grade they had (table below).</li>
+                <li>A result is graded only when its distance is one of the table's distances. The site does no
+                    interpolation of its own, so an unusual distance has no age grade.</li>
+                <li>Results with more than one runner, multisport races and results that are not record
+                    eligible have no age grade.</li>
+            </ul>
+
+            <div class="table-responsive about-ag-table-wrap">
+                <table class="table member-table about-ag-table">
+                    <thead>
+                        <tr>
+                            <th>Surface</th>
+                            <th>Version</th>
+                            <th>Used for races</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="about-ag-surface" rowspan="3"><i class="fa fa-road"></i> Road</td>
+                            <td><span class="site-tag site-tag-info">2025</span> <span class="about-ag-current">current</span></td>
+                            <td>from 2025</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><span class="site-tag site-tag-muted">2020</span></td>
+                            <td>2020&ndash;2024</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><span class="site-tag site-tag-muted">2015</span></td>
+                            <td>before 2020</td>
+                            <td></td>
+                        </tr>
+                        <tr class="about-ag-surface-start">
+                            <td class="about-ag-surface" rowspan="2"><i class="fa fa-circle-o-notch"></i> Track</td>
+                            <td><span class="site-tag site-tag-info">2023</span> <span class="about-ag-current">current</span></td>
+                            <td>from 2023</td>
+                            <td>No 2-mile: track 2-mile races from 2023 on have no age grade.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="site-tag site-tag-muted">2005</span></td>
+                            <td>before 2023</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="about-ag-sources">
+                <div class="about-ag-example-label">Sources</div>
+                <ul>
+                    <li><i class="fa fa-file-pdf-o"></i> How the tables are made, by Alan Jones:
+                        <a href="https://github.com/AlanLyttonJones/Age-Grade-Tables/tree/master/Docs" target="_blank" rel="noopener noreferrer">Age-Grade Tables docs <i class="fa fa-external-link"></i></a></li>
+                    <li><i class="fa fa-calculator"></i> Howard Grubb's age grading calculators, the original online calculators built on these tables:
+                        <a href="https://howardgrubb.co.uk/athletics/" target="_blank" rel="noopener noreferrer">howardgrubb.co.uk/athletics <i class="fa fa-external-link"></i></a></li>
+                    <li><i class="fa fa-github"></i> The table files this site uses:
+                        <a href="https://github.com/ncrouzier/race-team-records/tree/master/doc" target="_blank" rel="noopener noreferrer">race-team-records/doc on GitHub <i class="fa fa-external-link"></i></a></li>
+                </ul>
+            </div>
         </div>
+
     </div>
-
-
 </div>

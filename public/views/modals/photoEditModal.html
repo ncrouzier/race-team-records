@@ -1,32 +1,72 @@
-<div class="modal-header">
-    <h3 class="modal-title">Edit Photo — {{memberName}}</h3>
-</div>
-<div class="modal-body">
-    <form name="formphoto">
-        <div class="form-group"
-            ng-class="{'has-error': formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid}">
-            <label class="text-left">Photo URL:</label>
-            <input type="url" name="pictureLink" class="form-control" ng-model="formData.pictureLink"
-                ng-pattern="/^https?:\/\//" placeholder="https://example.com/photo.jpg">
-            <span class="help-block" ng-show="formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid">
-                Please enter a valid URL starting with http:// or https://
-            </span>
-        </div>
-        <div class="alert alert-info" style="font-size: 12px; margin-top: 10px;">
-            <strong>Tip:</strong> Please keep image file size small for faster page loading. The photo display is limited to 500px wide, so there is no need for very large images.
-        </div>
-
-        <div class="form-group" ng-show="formData.pictureLink && !formphoto.pictureLink.$invalid">
-            <label class="text-left">Preview:</label>
-            <div
-                style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; text-align: center;">
-                <img ng-src="{{formData.pictureLink}}" style="max-width: 100%; max-height: 300px;" alt="Photo preview">
+<div class="photo-edit-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">Edit photo</h3>
+        <p class="bio-edit-subtitle">{{memberName}}</p>
+    </div>
+    <div class="modal-body">
+        <form name="formphoto">
+            <div class="bio-field"
+                ng-class="{'has-error': formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid}">
+                <label>Photo URL</label>
+                <input type="url" name="pictureLink" class="form-control" ng-model="formData.pictureLink"
+                    ng-pattern="/^https?:\/\//" placeholder="https://example.com/photo.jpg">
+                <span class="help-block" ng-show="formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid">
+                    Please enter a valid URL starting with http:// or https://
+                </span>
             </div>
-        </div>
-    </form>
-</div>
-<div class="modal-footer">
-    <button type="submit" class="btn btn-primary" ng-click="savePhoto()"
-        ng-disabled="formphoto.pictureLink.$invalid">Save</button>
-    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+
+            <div class="form-group" ng-show="formData.pictureLink && !formphoto.pictureLink.$invalid">
+                <label class="photo-preview-label">Preview</label>
+                <div class="photo-preview-box">
+                    <img ng-src="{{formData.pictureLink}}" alt="Photo preview">
+                </div>
+            </div>
+
+            <div class="photo-tip-card">
+                <strong><i class="fa fa-info-circle"></i> Please keep the file size small</strong> — the photo
+                display is limited to 500px wide, so there's no need for very large images.
+            </div>
+
+            <!-- Collapsed by default; toggled with plain scope state, no controller change needed -->
+            <button type="button" class="mcrrc-btn photo-help-toggle" ng-click="showPhotoHelp = !showPhotoHelp">
+                <i class="fa" ng-class="showPhotoHelp ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                How do I get a photo link?
+            </button>
+
+            <div class="photo-help" ng-show="showPhotoHelp">
+                <div class="photo-help-item">
+                    <h5><i class="fa fa-globe"></i> From any website</h5>
+                    <p>Right-click (or press and hold on a phone) the photo itself, then choose
+                        <strong>Copy image address</strong> (or <em>Copy image link</em>). Paste that into the box
+                        above. A link to the page the photo is on won't work — it has to point at the image
+                        file itself, and usually ends in <code>.jpg</code>, <code>.png</code> or similar.</p>
+                </div>
+                <div class="photo-help-item">
+                    <h5><i class="fa fa-picture-o"></i> From Google Photos</h5>
+                    <p>Open the photo so it fills the screen, right-click it and choose <strong>Open image in new
+                            tab</strong>. On the new tab, right-click the photo again and choose
+                        <strong>Copy image address</strong> — that link (it will contain
+                        <code>googleusercontent.com</code>) can be pasted above. The "Share &gt; Create link" option
+                        gives a link to a shared album page instead, which won't display as a photo here.</p>
+                </div>
+                <div class="photo-help-item">
+                    <h5><i class="fa fa-folder-open-o"></i> From Google Drive</h5>
+                    <p>Right-click the file in Drive, choose <strong>Share</strong>, and set access to
+                        <em>Anyone with the link</em>. Copy the share link — it looks like
+                        <code>https://drive.google.com/file/d/<strong>FILE_ID</strong>/view?usp=sharing</code>.
+                        That link opens Drive's viewer, not the photo, so copy just the <strong>FILE_ID</strong> part
+                        (the long string of letters and numbers between <code>/d/</code> and <code>/view</code>) and
+                        paste it into this address instead:</p>
+                    <code class="photo-help-template">https://drive.google.com/thumbnail?id=FILE_ID&amp;sz=w1000</code>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="mcrrc-btn" ng-click="cancel()">Cancel</button>
+        <button type="submit" class="mcrrc-btn member-primary-btn" ng-click="savePhoto()"
+            ng-disabled="formphoto.pictureLink.$invalid">
+            <i class="fa fa-check"></i> Save
+        </button>
+    </div>
 </div>

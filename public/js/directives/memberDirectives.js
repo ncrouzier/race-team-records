@@ -92,3 +92,50 @@ app.directive('teamRequirements', ['TeamRequirementsConfig', function (TeamRequi
 
 
 
+
+// Collapses a tall block to `show-more` pixels with a fade and a
+// "Show more" / "Show less" toggle. Blocks only slightly taller than the
+// limit are left open, so the toggle never hides just a line or two.
+// `show-more-watch` names the expression whose change means new content
+// (e.g. another member's bio), which re-measures and collapses again.
+app.directive('showMore', ['$timeout', function ($timeout) {
+    var SLACK = 80;
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            var limit = parseInt(attrs.showMore, 10) || 500;
+            var expanded = false;
+            var toggle = angular.element('<button type="button" class="btn btn-link show-more-toggle ng-hide"></button>');
+            element.addClass('show-more').after(toggle);
+
+            function update() {
+                var tall = element[0].scrollHeight > limit + SLACK;
+                var collapsed = tall && !expanded;
+                toggle.toggleClass('ng-hide', !tall);
+                element.toggleClass('show-more-collapsed', collapsed);
+                element.css('max-height', collapsed ? limit + 'px' : '');
+                toggle.html(expanded
+                    ? 'Show less <i class="fa fa-chevron-up"></i>'
+                    : 'Show more <i class="fa fa-chevron-down"></i>');
+            }
+
+            toggle.on('click', function () {
+                expanded = !expanded;
+                update();
+                if (!expanded) {
+                    element[0].scrollIntoView({ block: 'nearest' });
+                }
+            });
+
+            scope.$watch(attrs.showMoreWatch, function () {
+                expanded = false;
+                element.css('max-height', '');
+                $timeout(update, 0, false);
+            });
+
+            scope.$on('$destroy', function () {
+                toggle.off('click').remove();
+            });
+        }
+    };
+}]);

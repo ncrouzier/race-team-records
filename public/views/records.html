@@ -1,9 +1,9 @@
-<div class="jumbotron">
-    <div class="row">
+<div class="jumbotron records-page">
+    <div class="row member-card records-filter-card">
         <div class="col-sm-4 col-md-4 col-lg-3 recordsoptionbutton-1" >
             <span>Race type:</span>
             <br>
-            <ui-select ng-model="paramModel.racetype" ng-change="getResults()" theme="select2" style="min-width: 200px;">
+            <ui-select ng-model="paramModel.racetype" ng-change="getResults()" theme="select2" class="stats-year-select records-racetype-select">
                 <ui-select-match placeholder="Select a race type">{{$select.selected.name}} ({{$select.selected.surface}})</ui-select-match>
                 <ui-select-choices repeat="racetype in racetypesList | propsFilter: {name: $select.search, surface: $select.search}">
                     <div ng-bind-html="(racetype.name +' <span class=\''+getRaceTypeClass(racetype.surface)+'\'>(' + racetype.surface +')</span>') | highlightignorespan: $select.search"></div>
@@ -46,7 +46,7 @@
         <div class="col-sm-4 col-md-4 col-md-1 recordsoptionbutton-2">
             <span>Size:</span>
             <br>
-            <ui-select ng-model="paramModel.limit" ng-change="getResults()" theme="select2" style="min-width: 60px;">
+            <ui-select ng-model="paramModel.limit" ng-change="getResults()" theme="select2" class="stats-year-select records-size-select">
                 <ui-select-match placeholder="Select a result size type">{{$select.selected}}</ui-select-match>
                 <ui-select-choices repeat="size in resultSize">
                     <div ng-bind="size"></div>
@@ -54,9 +54,8 @@
             </ui-select>
         </div>
     </div>
-    <div class="row">
-        <br>
-        <div class="col-md-12">
+    <div class="member-card records-list-card" ng-show="resultsList.length > 0">
+        <div>
             <ul class="results-list records-list list-group">
                 <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
                     <div class="row">
@@ -113,8 +112,9 @@
                         <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style=" text-align: left;">
                             <span class= "resultTime">{{::result.time | secondsToTimeString}}</span> <span class="timediff" ng-show="::!!result.gap">+{{::result.gap | secondsToTimeDiff}}</span> <a ng-show="::!!result.resultlink" ng-href="{{::result.resultlink}}" target="_blank" ng-click="$event.stopPropagation()"><i class="fa fa-link" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="$root.tapTooltipTrigger" ng-click="$event.stopPropagation()" ng-show="::(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{::result.ranking | rankTooltip}}</span>'"></i>
                         </div>
-                        <div class="col-sm-1" ng-show="user.role == 'admin'">
-                            <i class="hoverhand fa fa-pencil-square-o" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)" title="edit result"></i><i class="hoverhand fa fa-times" ng-click="$event.stopPropagation(); removeResult(result)" title="remove result"></i>
+                        <div class="col-sm-1 site-admin-actions" ng-show="user.role == 'admin'">
+                            <button type="button" class="mcrrc-btn site-icon-btn is-compact" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)" title="Edit result"><i class="fa fa-pencil"></i></button>
+                            <button type="button" class="mcrrc-btn site-icon-btn is-compact is-danger" ng-click="$event.stopPropagation(); removeResult(result)" title="Remove result"><i class="fa fa-trash"></i></button>
                         </div>
                     </div>
 

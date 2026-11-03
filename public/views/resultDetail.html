@@ -14,7 +14,22 @@
 
         <!-- Who, where, and how fast: one block, titled by the run itself -->
         <div class="rd-hero">
-            <div class="rd-hero-head">
+            <div class="rd-hero-head rd-hero-with-photos">
+
+                <!-- The runner's photo; for a team result, the team's faces
+                     overlapping, the first six then a count -->
+                <div class="rd-photos" ng-class="result.members.length > 1 ? 'rd-photos-team' : 'rd-photos-one'">
+                    <a ng-repeat="member in result.members | limitTo: 6 track by member._id"
+                        ui-sref="/members/member({ member: member.username })"
+                        uib-tooltip="{{member.firstname}} {{member.lastname}}" tooltip-append-to-body="true"
+                        tooltip-enable="result.members.length > 1">
+                        <member-avatar member="member" size="{{result.members.length > 1 ? 50 : 76}}"></member-avatar>
+                    </a>
+                    <span class="rd-photos-more" ng-if="result.members.length > 6"
+                        uib-tooltip="{{result.members.length - 6}} more team members" tooltip-append-to-body="true">+{{result.members.length - 6}}</span>
+                </div>
+
+                <div class="rd-hero-text">
 
                 <!-- Who ran it, as a byline over the race as the title: the same
                      title as the race page, the runner set apart by colour and
@@ -88,6 +103,7 @@
                     <span class="rd-meta-item crq-actions crq-pill crq-pill-muted" ng-if="correction.role === 'other-pending'">
                         <i class="fa fa-clock-o"></i> A teammate's correction is pending
                     </span>
+                </div>
                 </div>
             </div>
 
@@ -371,7 +387,7 @@
                 <span class="btn-group btn-group-xs rd-scope-toggle" ng-if="showsDistributionToggle()">
                     <button type="button" class="btn btn-default" ng-repeat="option in distributionOptions"
                         ng-class="{active: distributionScope === option.key}"
-                        ng-click="setDistributionScope(option.key)">{{option.label | uppercase}}</button>
+                        ng-click="setDistributionScope(option.key)">{{option.label}}</button>
                 </span>
             </div>
             <div class="panel-body">

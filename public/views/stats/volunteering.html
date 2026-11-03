@@ -1,4 +1,4 @@
-<div class="jumbotron volunteer-stats-page">
+<div class="jumbotron volunteer-stats-page racing-stats-page">
     <!-- Navigation -->
     <ul class="nav nav-tabs">
         <li role="presentation" ui-sref-active="active">
@@ -35,7 +35,7 @@
             <div class="col-sm-3">
                 <div style="float:right;">
                     <ui-select ng-model="filter.year" on-select="changeYear()" theme="select2" search-enabled="false"
-                        style="min-width: 110px;">
+                        class="stats-year-select">
                         <ui-select-match placeholder="Select a year">{{$select.selected}}</ui-select-match>
                         <ui-select-choices repeat="year in yearsList">
                             <div ng-bind="year"></div>
@@ -90,7 +90,7 @@
                             <h4><i class="fa fa-heart"></i> Volunteers</h4>
                         </div>
                         <div class="panel-body vs-flush">
-                            <table class="table vs-table">
+                            <table class="table vs-table member-table">
                                 <thead>
                                     <tr>
                                         <th class="vs-rank">#</th>
@@ -158,7 +158,7 @@
                             <h4><i class="fa fa-flag-checkered"></i> Events helped</h4>
                         </div>
                         <div class="panel-body vs-flush">
-                            <table class="table vs-table">
+                            <table class="table vs-table member-table">
                                 <tbody>
                                     <tr ng-repeat="event in stats.events | limitTo: (showAll.events ? stats.events.length : LIST_LIMIT)">
                                         <td>

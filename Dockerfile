@@ -29,9 +29,13 @@ COPY . .
 
 RUN npm run build
 
-# The runtime needs neither the build tooling nor the image/ML tooling. sharp
-# and the TensorFlow packages are devDependencies and are by far the largest
-# things in node_modules; dropping them here keeps the final image small.
+# The runtime needs neither the build tooling nor the full @tensorflow/tfjs
+# meta-package (devDependency; used only by the offline banner scripts).
+# That one stays huge and gets dropped here. sharp and the minimal face
+# detection slice — @tensorflow/tfjs-core, @tensorflow/tfjs-backend-wasm,
+# @vladmandic/face-api — are real dependencies: they crop member profile
+# photo thumbnails at runtime (app/profileThumbnails.js) and have to
+# survive this prune.
 RUN npm prune --omit=dev
 
 

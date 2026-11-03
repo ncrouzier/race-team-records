@@ -1,0 +1,31 @@
+<div class="tcrop">
+    <div class="tcrop-stage">
+        <!-- Sized by the photo itself, so the square's position is always
+             relative to the picture, never to empty margins around it -->
+        <div class="tcrop-frame">
+            <img class="tcrop-img" ng-src="{{src}}" alt="" draggable="false">
+            <span class="tcrop-shade" ng-if="state === 'ready'" ng-repeat="side in ['top', 'bottom', 'left', 'right']" ng-style="shade[side]"></span>
+            <div class="tcrop-box" ng-if="state === 'ready'" ng-style="box" title="Drag to move">
+                <span class="tcrop-handle" title="Drag to resize"></span>
+            </div>
+        </div>
+        <div class="tcrop-message" ng-if="state === 'loading'"><i class="fa fa-spinner fa-spin"></i> Loading the photo…</div>
+        <div class="tcrop-message tcrop-error" ng-if="state === 'error'"><i class="fa fa-exclamation-triangle"></i> The photo could not be loaded.</div>
+    </div>
+
+    <div class="tcrop-side" ng-if="state === 'ready'">
+        <div class="tcrop-label">Preview</div>
+        <div class="tcrop-previews">
+            <span class="tcrop-preview" ng-style="preview(112)"></span>
+            <span class="tcrop-preview" ng-style="preview(52)"></span>
+            <span class="tcrop-preview" ng-style="preview(30)"></span>
+        </div>
+
+        <label class="tcrop-label" for="tcropSize">Size</label>
+        <input id="tcropSize" type="range" min="{{MIN_SIZE}}" max="1" step="0.01"
+            ng-model="crop.size" ng-change="onSize()">
+
+        <p class="tcrop-hint">Drag the square to move it, and its corner (or the slider) to resize it.
+            Keep the face in the middle with a little room around it.</p>
+    </div>
+</div>

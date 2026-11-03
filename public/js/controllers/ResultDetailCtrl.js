@@ -161,10 +161,10 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
         // A man's times and the team's are nearly the same set, so the gender
         // split is only worth a button for women.
         if ($scope.distributions.gender && $scope.stats && $scope.stats.sex === 'Female') {
-            options.push({ key: 'gender', label: 'women' });
+            options.push({ key: 'gender', label: 'Women' });
         }
         if ($scope.distributions.all) {
-            options.push({ key: 'all', label: 'all members' });
+            options.push({ key: 'all', label: 'All members' });
         }
         return options;
     }

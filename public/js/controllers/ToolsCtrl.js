@@ -3,7 +3,46 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+        loadMyBests(user && user.member && user.member._id);
     });
+
+    // A logged-in member's best age grade at each distance, from the race
+    // list the site already caches. Keyed "surface|race type name", which is
+    // how a result is graded (its race type picks the table's column).
+    var myBests = null;
+    var myBestsFor = null;
+    function loadMyBests(memberId) {
+        if (!memberId) {
+            myBests = null;
+            myBestsFor = null;
+            recalculate();
+            return;
+        }
+        if (myBestsFor === memberId) return;
+        myBestsFor = memberId;
+        ResultsService.getRaceResultsWithCacheSupport({ sort: '-racedate -order racename', preload: false }).then(function (races) {
+            if (myBestsFor !== memberId) return;
+            var bests = {};
+            (races || []).forEach(function (race) {
+                var type = race.racetype || {};
+                var key = String(type.surface || '').toLowerCase() + '|' + String(type.name || '').toLowerCase();
+                (race.results || []).forEach(function (result) {
+                    var grade = Number(result.agegrade);
+                    if (!grade || !(result.members || []).some(function (m) { return m._id === memberId; })) return;
+                    if (!bests[key] || grade > bests[key].percent) {
+                        bests[key] = { percent: grade, time: result.time, racename: race.racename, racedate: race.racedate, resultId: result._id };
+                    }
+                });
+            });
+            myBests = bests;
+            recalculate();
+        });
+    }
+
+    function myBestAt(distance) {
+        if (!myBests || !distance) return null;
+        return myBests[String($scope.currentType || '').toLowerCase() + '|' + distance.key] || null;
+    }
 
     // The standard age-grading bands.
     const LEVELS = [
@@ -217,11 +256,57 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
     $scope.targetPercents = TARGET_PERCENTS;
     $scope.teamKitPercent = TEAM_KIT_PERCENT;
 
+    // Each classification threshold for a distance: the time and pace it
+    // takes, and — once the runner has a time — how far off it they are.
+    function targetsFor(distance, seconds) {
+        var sprint = distance.standard < 60;
+        return TARGET_PERCENTS.map(function (pct) {
+            var targetSeconds = distance.standard / (pct / 100);
+            var target = {
+                percent: pct,
+                timeText: StopwatchTime.formatSeconds(roundSeconds(targetSeconds)),
+                pace: paceFor(targetSeconds, distance.miles)
+            };
+            if (seconds) {
+                var delta = Math.abs(seconds - targetSeconds);
+                target.reached = seconds <= targetSeconds;
+                target.deltaText = StopwatchTime.formatSeconds(sprint ? roundSeconds(delta) : Math.round(delta));
+            }
+            return target;
+        });
+    }
+
+    // The table under the podium: the standards, plus the logged-in
+    // member's own best at this distance, slotted in by its percentage
+    function buildTableRows(distance, targets) {
+        var rows = (targets || []).slice();
+        var best = myBestAt(distance);
+        $scope.myBest = best;
+        if (best) {
+            var seconds = best.time / 100;
+            rows.push({
+                mine: true,
+                percent: best.percent,
+                timeText: StopwatchTime.formatSeconds(roundSeconds(seconds)),
+                pace: paceFor(seconds, distance.miles),
+                racename: best.racename,
+                racedate: best.racedate,
+                resultId: best.resultId
+            });
+            rows.sort(function (a, b) { return a.percent - b.percent; });
+        }
+        $scope.tableRows = rows;
+    }
+
     function recalculate() {
+        if (!$scope.distances) return;
         $scope.result = null;
         $scope.timeError = null;
 
         var distance = $scope.distances.find(function (d) { return d.key === $scope.calc.selectedDistance; });
+        // The standards for the chosen distance, shown before a time is in
+        $scope.standardsPreview = distance ? { distance: distance, targets: targetsFor(distance, null) } : null;
+        buildTableRows(distance, $scope.standardsPreview && $scope.standardsPreview.targets);
         if (!distance || !$scope.calc.timeInput) return;
 
         var seconds = StopwatchTime.parseSeconds($scope.calc.timeInput);
@@ -235,29 +320,18 @@ angular.module('mcrrcApp.tools').controller('AgeGradeController', ['$scope', '$l
         }
 
         var percent = distance.standard / seconds * 100;
-        var level = levelFor(percent);
 
         $scope.result = {
             distance: distance,
             seconds: seconds,
             timeText: StopwatchTime.formatSeconds(seconds),
             percent: percent,
-            level: level,
+            level: levelFor(percent),
             pace: paceFor(seconds, distance.miles),
             // How much faster (or slower) than each classification threshold.
-            targets: TARGET_PERCENTS.map(function (pct) {
-                var targetSeconds = distance.standard / (pct / 100);
-                var delta = Math.abs(seconds - targetSeconds);
-                var sprint = distance.standard < 60;
-                return {
-                    percent: pct,
-                    timeText: StopwatchTime.formatSeconds(roundSeconds(targetSeconds)),
-                    pace: paceFor(targetSeconds, distance.miles),
-                    reached: seconds <= targetSeconds,
-                    deltaText: StopwatchTime.formatSeconds(sprint ? roundSeconds(delta) : Math.round(delta))
-                };
-            })
+            targets: targetsFor(distance, seconds)
         };
+        buildTableRows(distance, $scope.result.targets);
     }
 
     // Rebuild the distance list only when its inputs actually change, then

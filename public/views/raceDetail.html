@@ -109,22 +109,25 @@
                 <div class="rd-figure" ng-if="fastestMaleResult">
                     <div class="rd-figure-value">{{fastestMaleResult.time | secondsToTimeString}}</div>
                     <div class="rd-figure-label">fastest man</div>
-                    <div class="rd-figure-detail">
-                        {{fastestMaleResult.members[0].firstname}} {{fastestMaleResult.members[0].lastname}}
+                    <div class="rd-figure-detail rd-figure-who">
+                        <member-avatar member="fastestMaleResult.members[0]" size="24"></member-avatar>
+                        <span>{{fastestMaleResult.members[0].firstname}} {{fastestMaleResult.members[0].lastname}}</span>
                     </div>
                 </div>
                 <div class="rd-figure" ng-if="fastestFemaleResult">
                     <div class="rd-figure-value">{{fastestFemaleResult.time | secondsToTimeString}}</div>
                     <div class="rd-figure-label">fastest woman</div>
-                    <div class="rd-figure-detail">
-                        {{fastestFemaleResult.members[0].firstname}} {{fastestFemaleResult.members[0].lastname}}
+                    <div class="rd-figure-detail rd-figure-who">
+                        <member-avatar member="fastestFemaleResult.members[0]" size="24"></member-avatar>
+                        <span>{{fastestFemaleResult.members[0].firstname}} {{fastestFemaleResult.members[0].lastname}}</span>
                     </div>
                 </div>
                 <div class="rd-figure" ng-if="bestAgeGradeResult">
                     <div class="rd-figure-value">{{bestAgeGradeResult.agegrade | number:1}}%</div>
                     <div class="rd-figure-label">best age grade</div>
-                    <div class="rd-figure-detail">
-                        {{bestAgeGradeResult.members[0].firstname}} {{bestAgeGradeResult.members[0].lastname}}
+                    <div class="rd-figure-detail rd-figure-who">
+                        <member-avatar member="bestAgeGradeResult.members[0]" size="24"></member-avatar>
+                        <span>{{bestAgeGradeResult.members[0].firstname}} {{bestAgeGradeResult.members[0].lastname}}</span>
                     </div>
                 </div>
                 <div class="rd-figure" ng-if="avg">
@@ -172,12 +175,12 @@
                 <span class="btn-group btn-group-xs rd-scope-toggle">
                     <button type="button" class="btn btn-default" ng-class="{active: !genderFilter}"
                         ng-click="setGenderFilter(null)">
-                        <i class="fa fa-users"></i> ALL MEMBERS
+                        <i class="fa fa-users"></i> All members
                     </button>
                     <button type="button" class="btn btn-default" ng-class="{active: genderFilter === 'Female'}"
                         ng-click="setGenderFilter('Female')" uib-tooltip="Here for the women's race"
                         tooltip-placement="top" tooltip-append-to-body="true">
-                        <i class="fa fa-venus"></i> WOMEN ONLY
+                        <i class="fa fa-venus"></i> Women only
                     </button>
                 </span>
             </div>
@@ -256,11 +259,11 @@
                                     </a>
                                 </td>
                                 <td ng-if="user.role === 'admin'" class="text-right rd-admin-cell">
-                                    <button type="button" class="btn btn-xs btn-default"
+                                    <button type="button" class="mcrrc-btn site-icon-btn"
                                         ng-click="$event.stopPropagation(); editResult(result)" title="Edit result">
                                         <i class="fa fa-pencil"></i>
                                     </button>
-                                    <button type="button" class="btn btn-xs btn-default rd-delete-btn"
+                                    <button type="button" class="mcrrc-btn site-icon-btn is-danger"
                                         ng-click="$event.stopPropagation(); deleteResult(result)" title="Delete result">
                                         <i class="fa fa-trash"></i>
                                     </button>

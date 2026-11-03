@@ -4,10 +4,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
-        // If columns are already built, move logged-in user's member to top
-        if (user && user.member && user.member._id && $scope.memberListcolumns) {
-            moveLoggedInMemberToTop();
-        }
     });
 
     $scope.$watch('paramModel', function (user) {
@@ -109,10 +105,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         $scope.paramModel = localStorageService.get('members.options');
     } else {
         $scope.paramModel = {};
-        $scope.paramModel.sex = '.*';
-        $scope.paramModel.category = '.*';
-        // $scope.paramModel.limit = '';
         $scope.paramModel.memberStatus = 'current';
+    }
+    // The list always loads both sexes and categories; the group buttons
+    // filter in the page. (Older saved options may still carry narrower ones.)
+    $scope.paramModel.sex = '.*';
+    $scope.paramModel.category = '.*';
+    $scope.paramModel.view = $scope.paramModel.view || 'sections';
+    if ($scope.paramModel.group === undefined) {
+        $scope.paramModel.group = 'all';
     }
 
     // =====================================
@@ -153,6 +154,10 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
 
     $scope.editMyPhoto = function (member) {
         MembersService.showEditPhotoModal(member);
+    };
+
+    $scope.adjustThumbnail = function (member) {
+        MembersService.showThumbnailCropModal(member);
     };
 
     $scope.removeMember = function (member) {
@@ -356,47 +361,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
-    function moveLoggedInMemberToTop() {
-        if ($scope.user && $scope.user.member && $scope.user.member._id && $scope.memberListcolumns) {
-            $scope.memberListcolumns.forEach(function (column) {
-                var myIndex = -1;
-                for (var i = 0; i < column.length; i++) {
-                    if (column[i]._id === $scope.user.member._id) {
-                        myIndex = i;
-                        break;
-                    }
-                }
-                if (myIndex > 0) {
-                    var myMember = column.splice(myIndex, 1)[0];
-                    column.unshift(myMember);
-                }
-            });
-        }
-    }
-
+    // The site's one cached list of all members, thumbnails embedded (the
+    // Cards view's photos, and every avatar elsewhere), filtered here by
+    // status rather than asked of the server per filter
     $scope.getMembers = async function (params_) {
-        var params;
-        if (params_ === undefined) {
-            params = {
-                "filters[sex]": $scope.paramModel.sex,
-                "filters[category]": $scope.paramModel.category,
-                "filters[memberStatus]": $scope.paramModel.memberStatus,
-                select: '-bio -personalBests',
-                sort: 'firstname'
-                // limit: $scope.paramModel.limit
-            };
-        } else {
-            params = {
-                "filters[sex]": params_.sex,
-                "filters[category]": params_.category,
-                "filters[memberStatus]": params_.memberStatus,
-                select: '-bio -personalBests',
-                sort: 'firstname'
-            };
-        }
+        var status = (params_ || $scope.paramModel).memberStatus || 'current';
 
-        await MembersService.getMembersWithCacheSupport(params).then(function (members) {
-            $scope.membersList = members;
+        await MembersService.getAllMembersWithThumbs().then(function (members) {
+            $scope.membersList = (members || []).filter(function (m) {
+                return status === 'all' || m.memberStatus === status;
+            });
             $scope.memberListcolumns = [];
             for (var i = 0; i < 4; i++) {
                 $scope.memberListcolumns.push([]);
@@ -412,11 +386,103 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 $scope.memberListcolumns[columnIndex].push(person);
             });
 
-            // Move logged-in user's member to the top of their column
-            moveLoggedInMemberToTop();
         });
 
 
+    };
+
+    // =====================================
+    // MEMBER LIST VIEWS ===================
+    // =====================================
+    // Three ways to show the same list: by group (sections), as photo cards,
+    // or A–Z. All filtered here by the group buttons and the search box.
+
+    $scope.memberGroups = [
+        // compact: the filter button's label when the window is too narrow
+        // for the full one (the filter row never wraps)
+        { index: 1, label: 'Open Women', short: 'OW', compact: 'Open W' },
+        { index: 0, label: 'Open Men', short: 'OM', compact: 'Open M' },
+        { index: 3, label: 'Masters Women', short: 'MW', compact: 'Masters W' },
+        { index: 2, label: 'Masters Men', short: 'MM', compact: 'Masters M' }
+    ];
+    $scope.memberSearch = { text: '' };
+    $scope.memberView = { sections: [], cards: [], letters: [], count: 0 };
+
+    function lastName(member) {
+        var parts = (member.lastname || '').trim().split(/\s+/);
+        return (parts[parts.length - 1] || member.firstname || '').toLowerCase();
+    }
+
+    function byLastName(a, b) {
+        return lastName(a).localeCompare(lastName(b)) ||
+            (a.firstname || '').localeCompare(b.firstname || '');
+    }
+
+    function matchesSearch(member, text) {
+        if (!text) return true;
+        return ((member.firstname || '') + ' ' + (member.lastname || '')).toLowerCase().indexOf(text) !== -1;
+    }
+
+    // Rebuilt only when the members, the group or the search change, so the
+    // templates repeat over stable arrays.
+    function rebuildMemberView() {
+        var text = ($scope.memberSearch.text || '').trim().toLowerCase();
+        var group = $scope.paramModel.group;
+        var sections = [];
+        var all = [];
+        $scope.memberGroups.forEach(function (g) {
+            if (group !== 'all' && group !== g.index) return;
+            var members = ($scope.memberListcolumns[g.index] || []).filter(function (m) {
+                m.$group = g;
+                return matchesSearch(m, text);
+            }).sort(byLastName);
+            sections.push({ group: g, members: members, column: $scope.memberListcolumns[g.index] || [] });
+            all = all.concat(members);
+        });
+        all.sort(byLastName);
+
+        var letters = [];
+        var byLetter = {};
+        all.forEach(function (m) {
+            var letter = (lastName(m).charAt(0) || '#').toUpperCase();
+            if (!byLetter[letter]) {
+                byLetter[letter] = { letter: letter, members: [] };
+                letters.push(byLetter[letter]);
+            }
+            byLetter[letter].members.push(m);
+        });
+
+        $scope.memberView = {
+            sections: sections.filter(function (s) { return s.members.length > 0; }),
+            cards: all,
+            letters: letters,
+            count: all.length
+        };
+    }
+
+    $scope.$watchGroup(['memberListcolumns', 'paramModel.group', 'memberSearch.text'], rebuildMemberView);
+
+    $scope.setMemberView = function (view) {
+        $scope.paramModel.view = view;
+    };
+
+    $scope.setMemberGroup = function (group) {
+        $scope.paramModel.group = group;
+    };
+
+    $scope.scrollToLetter = function (letter) {
+        var el = document.getElementById('members-letter-' + letter);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    $scope.memberInitials = function (member) {
+        return ((member.firstname || '').charAt(0) + (member.lastname || '').charAt(0)).toUpperCase();
+    };
+
+    $scope.isMyMember = function (member) {
+        return !!($scope.user && $scope.user.member && $scope.user.member._id && member._id === $scope.user.member._id);
     };
 
     $scope.getMaxColumnSize = function () {
@@ -930,6 +996,40 @@ angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', 
 
     $scope.saveBio = function () {
         $uibModalInstance.close(assembleBio());
+    };
+
+    $scope.cancel = function () {
+        $uibModalInstance.dismiss('cancel');
+    };
+}]);
+
+angular.module('mcrrcApp.members').controller('ThumbnailCropModalInstanceController', ['$scope', '$uibModalInstance', 'member', 'MembersService', function ($scope, $uibModalInstance, member, MembersService) {
+    var saved = member.profileThumbCrop;
+    $scope.memberName = member.firstname + ' ' + member.lastname;
+    $scope.firstname = member.firstname;
+    $scope.pictureLink = member.pictureLink;
+    $scope.hadCrop = !!(saved && isFinite(saved.size));
+    $scope.draft = { crop: $scope.hadCrop ? { left: saved.left, top: saved.top, size: saved.size } : null };
+
+    function send(crop) {
+        $scope.saving = true;
+        $scope.error = null;
+        MembersService.setThumbnailCrop(member._id, crop).then(function (res) {
+            member.profileThumbCrop = res.crop || undefined;
+            $uibModalInstance.close(res.thumbUrl);
+        }, function (res) {
+            $scope.saving = false;
+            $scope.error = (res && res.data && res.data.error) || 'The thumbnail could not be saved.';
+        });
+    }
+
+    $scope.save = function () {
+        var c = $scope.draft.crop;
+        send({ left: Number(c.left), top: Number(c.top), size: Number(c.size) });
+    };
+
+    $scope.reset = function () {
+        send(null);
     };
 
     $scope.cancel = function () {

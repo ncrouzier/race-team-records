@@ -18,6 +18,15 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
     // (DataCacheService). One copy per query: pages ask for different
     // fields, filters and orders, which only the server applies.
     var memberLists = {};
+    // Every member (past ones too), without the heavy bio / personal bests,
+    // with each one's profile thumbnail embedded (profileThumbUrl). One
+    // cached list shared by the members page (which filters it by status
+    // itself) and by every avatar on the site (MemberThumbsService).
+    var ALL_MEMBERS_WITH_THUMBS = { select: '-bio -personalBests +profileThumb' };
+    factory.getAllMembersWithThumbs = function () {
+        return factory.getMembersWithCacheSupport(ALL_MEMBERS_WITH_THUMBS);
+    };
+
     factory.getMembersWithCacheSupport = function (params) {
         var key = JSON.stringify(params || {});
         if (!memberLists[key]) {
@@ -120,10 +129,36 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
 
         return modalInstance.result.then(function (pictureLink) {
             return factory.editMemberPhoto(member._id, pictureLink).then(function () {
+                if ((member.pictureLink || '') !== (pictureLink || '')) {
+                    // The server drops a crop chosen on the old photo too
+                    member.profileThumbCrop = undefined;
+                }
                 member.pictureLink = pictureLink;
                 return pictureLink;
             });
         }, function () {
+            return null;
+        });
+    };
+
+    // Admin: which square of the photo makes the thumbnail ({ left, top,
+    // size } fractions), or null to go back to automatic face detection
+    factory.setThumbnailCrop = function (memberId, crop) {
+        return Restangular.one('members', memberId).customPUT({ crop: crop }, 'thumbnail-crop');
+    };
+
+    factory.showThumbnailCropModal = function (member) {
+        return $uibModal.open({
+            templateUrl: 'views/modals/thumbnailCropModal.html',
+            controller: 'ThumbnailCropModalInstanceController',
+            size: 'lg',
+            backdrop: 'static',
+            resolve: {
+                member: function () {
+                    return member;
+                }
+            }
+        }).result.catch(function () {
             return null;
         });
     };

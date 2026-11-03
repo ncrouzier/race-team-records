@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron crf-list-page race-series-page">
 
     <div class="feed-card race-series">
         <div class="feed-card-header">
@@ -17,18 +17,18 @@
             <!-- Name, distance -->
             <div class="feed-card-body rs-details">
                 <form class="row" ng-submit="saveDetails()">
-                    <div class="col-sm-8 form-group">
+                    <div class="col-sm-8 form-group rs-field">
                         <label>Name</label>
                         <input class="form-control" ng-model="form.name" maxlength="200" required>
                     </div>
-                    <div class="col-sm-3 form-group">
+                    <div class="col-sm-3 form-group rs-field">
                         <label>Usual distance</label>
                         <select class="form-control" ng-model="form.racetypeId"
                             ng-options="rt._id as rt.name + ' (' + rt.surface + ')' for rt in racetypes"></select>
                     </div>
-                    <div class="col-sm-1 form-group">
+                    <div class="col-sm-1 form-group rs-field">
                         <label>&nbsp;</label>
-                        <button type="submit" class="btn btn-primary btn-block" uib-tooltip="Save" tooltip-append-to-body="true">
+                        <button type="submit" class="member-primary-btn rs-save-btn" uib-tooltip="Save" tooltip-append-to-body="true">
                             <i class="fa" ng-class="saved ? 'fa-check' : 'fa-save'"></i>
                         </button>
                     </div>
@@ -50,7 +50,7 @@
                         <a href ng-if="!allClub()" ng-click="setClub(true)">Mark every edition as a club race</a>
                         <a href ng-if="allClub()" ng-click="setClub(false)">Unmark all</a>
                     </span>
-                    <button class="btn btn-sm btn-success rs-toolbar-end" ng-if="counts().pending"
+                    <button class="member-primary-btn rs-toolbar-end" ng-if="counts().pending"
                         ng-click="selectAll('suggested'); confirm(selectedIds())">
                         <i class="fa fa-check"></i> Confirm all {{ counts().pending }}
                     </button>
@@ -59,29 +59,29 @@
                 <div class="rs-selection" ng-if="selectedIds().length">
                     <strong>{{ selectedIds().length }} selected</strong>
                     <div class="rs-selection-row">
-                        <button class="btn btn-sm btn-success" ng-click="confirm(selectedIds())"><i class="fa fa-check"></i> Confirm</button>
-                        <button class="btn btn-sm btn-default" ng-click="reject(selectedIds())"
+                        <button class="member-primary-btn" ng-click="confirm(selectedIds())"><i class="fa fa-check"></i> Confirm</button>
+                        <button class="mcrrc-btn" ng-click="reject(selectedIds())"
                             uib-tooltip="Not this race: out of the series, and never suggested for it again" tooltip-append-to-body="true">
                             <i class="fa fa-times"></i> Remove from series</button>
                     </div>
                     <div class="rs-selection-row">
-                        <ui-select ng-model="move.target" theme="select2" class="rs-picker">
+                        <ui-select ng-model="move.target" theme="select2" class="stats-year-select rs-picker">
                             <ui-select-match placeholder="Move to another series…">{{ $select.selected.name }}</ui-select-match>
                             <ui-select-choices repeat="s in otherSeries | filter: {name: $select.search} | limitTo: 50">
                                 {{ s.name }} <small class="text-muted">{{ s.racetype.name }} · {{ s.total }} races</small>
                             </ui-select-choices>
                         </ui-select>
-                        <button class="btn btn-sm btn-default" ng-click="moveSelected(false)" ng-disabled="!move.target">Move</button>
+                        <button class="mcrrc-btn" ng-click="moveSelected(false)" ng-disabled="!move.target">Move</button>
                     </div>
                     <div class="rs-selection-row">
                         <input class="form-control input-sm" ng-model="move.newName" placeholder="…or split into a new series named">
-                        <button class="btn btn-sm btn-default" ng-click="moveSelected(true)" ng-disabled="!move.newName">Split off</button>
+                        <button class="mcrrc-btn" ng-click="moveSelected(true)" ng-disabled="!move.newName">Split off</button>
                     </div>
                 </div>
 
                 <!-- Editions -->
                 <div class="table-responsive">
-                    <table class="table table-condensed rs-table">
+                    <table class="table member-table rs-table">
                         <thead>
                             <tr>
                                 <th></th>
@@ -103,10 +103,10 @@
                                 <td><a ui-sref="/races({raceId: link.race._id})" target="_blank">{{ link.race.racename }}</a></td>
                                 <td>
                                     {{ link.race.racetype.name }}
-                                    <a href class="label rs-offdistance" ng-click="toggleOffDistance(link)"
-                                        ng-class="link.offDistance ? 'label-warning' : 'label-ghost'"
+                                    <button type="button" class="site-tag site-tag-toggle rs-offdistance" ng-click="toggleOffDistance(link)"
+                                        ng-class="link.offDistance ? 'site-tag-warning' : 'site-tag-muted'"
                                         uib-tooltip="{{ link.offDistance ? 'Left out of time comparisons. Click to count it.' : 'Click to mark as run at another distance' }}" tooltip-append-to-body="true">
-                                        {{ link.offDistance ? 'off-distance' : 'same distance' }}</a>
+                                        {{ link.offDistance ? 'off-distance' : 'same distance' }}</button>
                                 </td>
                                 <td>{{ link.race.location }}</td>
                                 <td>{{ link.results }}</td>
@@ -115,15 +115,15 @@
                                         ng-click="setClub(!link.race.clubRace, [link.race._id])" aria-label="MCRRC club race">
                                 </td>
                                 <td>
-                                    <span class="label" ng-class="link.status === 'confirmed' ? 'label-success' : 'label-default'">
+                                    <span class="site-tag" ng-class="link.status === 'confirmed' ? 'site-tag-success' : 'site-tag-warning'">
                                         {{ link.status === 'confirmed' ? 'Confirmed' : 'To review' }}</span>
                                     <div class="text-muted rs-meta" ng-if="link.status === 'suggested'">{{ link.reason }}</div>
                                     <div class="text-muted rs-meta" ng-if="link.status === 'confirmed' && link.confirmedBy">by {{ link.confirmedBy }}</div>
                                 </td>
                                 <td class="text-right rs-actions">
-                                    <button class="btn btn-xs btn-success" ng-if="link.status === 'suggested'"
+                                    <button class="mcrrc-btn site-icon-btn" ng-if="link.status === 'suggested'"
                                         ng-click="confirm([link.race._id])" uib-tooltip="Confirm" tooltip-append-to-body="true"><i class="fa fa-check"></i></button>
-                                    <button class="btn btn-xs btn-default" ng-click="reject([link.race._id])"
+                                    <button class="mcrrc-btn site-icon-btn is-danger" ng-click="reject([link.race._id])"
                                         uib-tooltip="Remove from series" tooltip-append-to-body="true"><i class="fa fa-times"></i></button>
                                 </td>
                             </tr>
@@ -134,7 +134,7 @@
 
             <!-- Add races -->
             <div class="feed-card-body rs-section">
-                <h5>Add races</h5>
+                <h4 class="rs-section-title">Add races</h4>
                 <input class="form-control input-sm rs-search" ng-model="add.text" ng-change="searchUngrouped()"
                     ng-model-options="{debounce: 300}" placeholder="Search races that are in no series">
                 <table class="table table-condensed rs-table" ng-if="add.results.races.length">
@@ -149,23 +149,23 @@
                     </tbody>
                 </table>
                 <p class="text-muted" ng-if="add.results && !add.results.races.length">No ungrouped race matches.</p>
-                <button class="btn btn-sm btn-primary" ng-if="add.results.races.length" ng-click="addSelected()">Add selected</button>
+                <button class="member-primary-btn" ng-if="add.results.races.length" ng-click="addSelected()">Add selected</button>
             </div>
 
             <!-- Merge, delete -->
             <div class="feed-card-body rs-section">
-                <h5>Merge another series into this one</h5>
+                <h4 class="rs-section-title">Merge another series into this one</h4>
                 <div class="rs-selection-row">
-                    <ui-select ng-model="merge.source" theme="select2" class="rs-picker">
+                    <ui-select ng-model="merge.source" theme="select2" class="stats-year-select rs-picker">
                         <ui-select-match placeholder="Pick a series">{{ $select.selected.name }}</ui-select-match>
                         <ui-select-choices repeat="s in otherSeries | filter: {name: $select.search} | limitTo: 50">
                             {{ s.name }} <small class="text-muted">{{ s.racetype.name }} · {{ s.total }} races</small>
                         </ui-select-choices>
                     </ui-select>
-                    <button class="btn btn-sm btn-default" ng-click="mergeIn()" ng-disabled="!merge.source">Merge</button>
+                    <button class="mcrrc-btn" ng-click="mergeIn()" ng-disabled="!merge.source">Merge</button>
                 </div>
 
-                <button class="btn btn-sm btn-default rs-delete" ng-click="deleteSeries()">
+                <button class="mcrrc-btn is-danger rs-delete" ng-click="deleteSeries()">
                     <i class="fa fa-trash"></i> Delete series
                 </button>
             </div>

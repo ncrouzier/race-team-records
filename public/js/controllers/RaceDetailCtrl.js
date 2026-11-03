@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', 'SeriesService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics, SeriesService) {
+angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope', '$state', '$stateParams', '$timeout', '$filter', 'AuthService', 'ResultsService', 'UtilsService', 'PageTitleService', 'VolunteerJobsService', 'dialogs', 'Analytics', 'SeriesService', 'MemberThumbsService', function ($scope, $state, $stateParams, $timeout, $filter, AuthService, ResultsService, UtilsService, PageTitleService, VolunteerJobsService, dialogs, Analytics, SeriesService, MemberThumbsService) {
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -202,9 +202,32 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         return (first + last).toUpperCase();
     }
 
-    // Draws each racer's initials centered on their own dot. A Chart.js
-    // plugin local to this chart instance, rather than a registered global
-    // one, so it has no effect on the other charts on the page.
+    // Each runner's profile thumbnail, from MemberThumbsService's one cached
+    // map of every member's thumbnail (no request per dot), decoded once per
+    // member and shared by every redraw. No thumbnail: the dot keeps its
+    // initials.
+    var dotPhotos = {};
+    function dotPhotoFor(result) {
+        var member = result.members && result.members[0];
+        if (!member || !member._id) return null;
+        var entry = dotPhotos[member._id];
+        if (!entry) {
+            var uri = MemberThumbsService.peek(member._id);
+            if (!uri) return null;
+            entry = dotPhotos[member._id] = { img: new Image(), ready: false };
+            entry.img.onload = function () {
+                entry.ready = true;
+                if (timesChart) timesChart.draw();
+            };
+            entry.img.src = uri;
+        }
+        return entry.ready ? entry.img : null;
+    }
+
+    // Draws each racer's photo in their own dot, ringed in the dot's colour
+    // so the men / women key still reads, or their initials when there is no
+    // photo. A Chart.js plugin local to this chart instance, rather than a
+    // registered global one, so it has no effect on the other charts on the page.
     var pointInitialsPlugin = {
         id: 'pointInitials',
         afterDatasetsDraw: function (chart) {
@@ -213,7 +236,27 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
                 var meta = chart.getDatasetMeta(datasetIndex);
                 if (meta.hidden) return;
                 meta.data.forEach(function (element, index) {
-                    var text = initialsOf(dataset.data[index].result);
+                    var result = dataset.data[index].result;
+                    var photo = dotPhotoFor(result);
+                    if (photo) {
+                        var r = (element.options && element.options.radius) || 10;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(element.x, element.y, r, 0, Math.PI * 2);
+                        ctx.closePath();
+                        ctx.clip();
+                        ctx.drawImage(photo, element.x - r, element.y - r, r * 2, r * 2);
+                        ctx.restore();
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(element.x, element.y, r, 0, Math.PI * 2);
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeStyle = dataset.backgroundColor;
+                        ctx.stroke();
+                        ctx.restore();
+                        return;
+                    }
+                    var text = initialsOf(result);
                     if (!text) return;
                     ctx.save();
                     ctx.font = 'bold 9px sans-serif';
@@ -280,6 +323,12 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
                 pointHoverRadius: 12
             };
         }).filter(Boolean);
+
+        // Dots drawn before the thumbnail map arrived show initials; redraw
+        // once it is in so they pick up their photos
+        MemberThumbsService.all().then(function () {
+            if (timesChart) timesChart.draw();
+        });
 
         timesChart = new Chart(canvas.getContext('2d'), {
             type: 'scatter',

@@ -19,6 +19,32 @@ var memberSchema = mongoose.Schema({
         end: Date
     }],
     pictureLink: String,
+    // A small (160x160) JPEG cropped from pictureLink, generated server-side
+    // by app/profileThumbnails.js and kept here rather than on disk — the
+    // app container has no persistent volume, so anything written to the
+    // filesystem at runtime is gone on the next deploy. `select: false` so
+    // the ~5-15KB of image bytes never ride along on list/bio queries;
+    // callers that need it ask for it explicitly (`.select('+profileThumb')`).
+    profileThumb: {
+        type: {
+            data: Buffer,
+            contentType: String,
+            sourceHash: String, // sha1 of pictureLink when this was generated
+            generatedAt: Date,
+            error: String // set instead of data when the fetch/resize failed
+        },
+        select: false
+    },
+    // An admin's choice of which square of the photo makes the thumbnail,
+    // instead of face detection. Fractions of the (upright) photo: left and
+    // top of its width and height, size of its shorter side. Only applies to
+    // the photo it was chosen on (sourceHash), so a new photo starts automatic.
+    profileThumbCrop: {
+        left: Number,
+        top: Number,
+        size: Number,
+        sourceHash: String
+    },
     achievements: [{
         name: String,
         text: String,

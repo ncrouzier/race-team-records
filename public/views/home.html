@@ -136,7 +136,7 @@
                     <li class="feed-item" ng-repeat="ach in recentAchievements">
                         <div ng-if="ach.achievements.length === 1" ng-switch="ach.achievements[0].name.toLowerCase()">
                             <div ng-switch-when="pb" class="feed-row">
-                                <span class="feed-icon feed-icon-pb hoverhand" uib-tooltip="Personal Best">🧨</span>
+                                <span class="feed-photo"><member-avatar member="ach.result.members[0]" size="44"></member-avatar><span class="feed-icon feed-icon-pb hoverhand" tooltip-append-to-body="true" uib-tooltip="Personal Best">🧨</span></span>
                                 <div class="feed-body">
                                     <div class="feed-text">
                                         <b><a
@@ -152,9 +152,9 @@
                                 </div>
                             </div>
                             <div ng-switch-when="racecount" class="feed-row">
-                                <span class="feed-icon feed-icon-racecount raceCountBox hoverhand"
+                                <span class="feed-photo"><member-avatar member="ach.result.members[0]" size="44"></member-avatar><span class="feed-icon feed-icon-racecount raceCountBox hoverhand"
                                     ng-class="{'feed-icon-racecount-long': ach.achievements[0].value.raceCount > 99}"
-                                    uib-tooltip="Race Count">{{::ach.achievements[0].value.raceCount}}</span>
+                                    tooltip-append-to-body="true" uib-tooltip="Race Count">{{::ach.achievements[0].value.raceCount}}</span></span>
                                 <div class="feed-body">
                                     <div class="feed-text">
                                         <b><a
@@ -168,7 +168,7 @@
                                 </div>
                             </div>
                             <div ng-switch-when="agegrade" class="feed-row">
-                                <span class="feed-icon feed-icon-agegrade hoverhand" uib-tooltip="Age Grade">🎖️</span>
+                                <span class="feed-photo"><member-avatar member="ach.result.members[0]" size="44"></member-avatar><span class="feed-icon feed-icon-agegrade hoverhand" tooltip-append-to-body="true" uib-tooltip="Age Grade">🎖️</span></span>
                                 <div class="feed-body">
                                     <div class="feed-text">
                                         <b><a
@@ -182,8 +182,8 @@
                                 </div>
                             </div>
                             <div ng-switch-when="teamrecord" class="feed-row">
-                                <span class="feed-icon feed-icon-teamrecord hoverhand"
-                                    uib-tooltip="Team Record">🔥</span>
+                                <span class="feed-photo"><member-avatar member="ach.result.members[0]" size="44"></member-avatar><span class="feed-icon feed-icon-teamrecord hoverhand"
+                                    tooltip-append-to-body="true" uib-tooltip="Team Record">🔥</span></span>
                                 <div class="feed-body">
                                     <div class="feed-text">
                                         <b><a
@@ -201,8 +201,8 @@
                             </div>
                         </div>
                         <div ng-if="ach.achievements.length > 1" class="feed-row">
-                            <span class="feed-icon feed-icon-multi hoverhand"
-                                uib-tooltip="Multiple Achievements">🌟</span>
+                            <span class="feed-photo"><member-avatar member="ach.result.members[0]" size="44"></member-avatar><span class="feed-icon feed-icon-multi hoverhand"
+                                tooltip-append-to-body="true" uib-tooltip="Multiple Achievements">🌟</span></span>
                             <div class="feed-body">
                                 <div class="feed-text">
                                     <b><a
@@ -264,11 +264,11 @@
                 <ul class="feed-list" ng-if="recentStatusChanges.length > 0">
                     <li class="feed-item" ng-repeat="change in recentStatusChanges">
                         <div class="feed-row">
-                            <span class="feed-icon"
+                            <span class="feed-photo"><member-avatar member="change.member" size="44"></member-avatar><span class="feed-icon"
                                 ng-class="change.type === 'entry' ? 'feed-icon-entry' : 'feed-icon-exit'">
                                 <i class="fa"
                                     ng-class="change.type === 'exit' ? 'fa-sign-out' : (change.isRejoin ? 'fa-repeat' : 'fa-sign-in')"></i>
-                            </span>
+                            </span></span>
                             <div class="feed-body">
                                 <div class="feed-text">
                                     <b><a

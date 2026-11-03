@@ -27,129 +27,45 @@ app.directive('imageonload', function () {
   };
 });
 
-app.directive('usaMap', ['$timeout', '$window', 'UtilsService', '$state', function ($timeout, $window, UtilsService, $state) {
-  return {
-    restrict: 'EA',
-    link: function ($scope, element, $attr) {
+// US and world race maps (Datamaps). By default they show the whole team's
+// races per state / country (the locations API). With map-counts — an array
+// of [code, count] — they show those instead (one member's races), redrawn
+// whenever it changes; map-runner is then that member's username, so a click
+// opens their races there rather than everyone's.
+function raceMapDirective(kind) {
+  return ['$timeout', '$window', 'UtilsService', '$state', function ($timeout, $window, UtilsService, $state) {
+    return {
+      restrict: 'EA',
+      scope: {
+        mapCounts: '<?',
+        mapRunner: '<?'
+      },
+      link: function (scope, element) {
+        var map = null;
 
-      UtilsService.getLocationInfo({
-        "type": 'state'
-      }).then(function (results) {
-        $timeout(function () {
-
-          // color scale map with help from http://jsbin.com/sotenonese/edit?html,output
+        function draw(results) {
+          element.empty();
+          map = null;
           var dataset = {};
-          var onlyValues = results.map(function (obj) { return obj[1]; });
-          var minValue = Math.min.apply(null, onlyValues),
-            maxValue = Math.max.apply(null, onlyValues);
-
-          var paletteScale = d3.scale.log()
-            .domain([minValue, maxValue])
-            .range(["#007196", "red"]);
-
-          results.forEach(function (item) { //
-            var iso = item[0], value = item[1];
-            dataset[iso] = { count: value, fillColor: paletteScale(value) };
-          });
-
-          var map = new Datamap({
-            element: element[0],
-            scope: 'usa',
-            responsive: true,
-            fills: {
-              defaultFill: '#afafaf'
-            },
-            data: dataset,
-            geographyConfig: {
-              highlightBorderWidth: 2,
-              highlightFillColor: function (geo) {
-                return geo.fillColor || '#afafaf';
-              },
-              highlightBorderColor: 'red',
-              popupTemplate: function (geo, data) {
-                if (data.count > 1) {
-                  return ['<div class="hoverinfo"><strong>',
-                    data.count + ' races ran in ' + geo.properties.name,
-                    '',
-                    '</strong></div>'
-                  ].join('');
-                } else {
-                  return ['<div class="hoverinfo"><strong>',
-                    data.count + ' race ran in ' + geo.properties.name,
-                    '',
-                    '</strong></div>'
-                  ].join('');
-                }
-              }
-            },
-            done: function (datamap) {
-              datamap.svg.call(d3.behavior.zoom().on("zoom", redraw));
-
-              function redraw() {
-                datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-              }
-              datamap.svg.selectAll('.datamaps-subunit').each(function (d) {
-                if (dataset[d.id] && dataset[d.id].count > 0) {
-                  d3.select(this).style('cursor', 'pointer');
-                  d3.select(this).on('click', function (ele) {
-                    $state.go("/results", { state: ele.id }, { inherit: false });
-                  });
-                }
-              });
-
-
-            }
-          });
-
-          onResize = function () {
-            map.resize();
-          };
-          cleanUp = function () {
-            angular.element($window).off('resize', onResize);
-          };
-          angular.element($window).bind('resize', onResize);
-          $scope.$on('$destroy', cleanUp);
-
-        }, 10);
-      });
-    }
-  };
-}]);
-
-
-app.directive('worldMap', ['$timeout', '$window', 'UtilsService', '$state', function ($timeout, $window, UtilsService, $state) {
-  return {
-    restrict: 'EA',
-    link: function ($scope, element, $attr) {
-
-      UtilsService.getLocationInfo({
-        "type": 'country'
-      }).then(function (results) {
-        $timeout(function () {
-
-          var dataset = {};
-          var onlyValues = results.map(function (obj) { return obj[1]; });
-          var minValue = Math.min.apply(null, onlyValues),
-            maxValue = Math.max.apply(null, onlyValues);
-
-          var paletteScale = d3.scale.log()
-            .domain([minValue, maxValue])
-            .range(["#007196", "red"]);
+          var values = results.map(function (obj) { return obj[1]; });
+          var minValue = Math.min.apply(null, values);
+          var maxValue = Math.max.apply(null, values);
+          // A log scale needs two different ends: one count (or one place)
+          // just gets the low end's colour
+          var paletteScale = minValue < maxValue
+            ? d3.scale.log().domain([minValue, maxValue]).range(['#007196', 'red'])
+            : function () { return '#007196'; };
 
           results.forEach(function (item) {
-            var iso = item[0],
-              value = item[1];
-            dataset[iso] = { count: value, fillColor: paletteScale(value) };
+            dataset[item[0]] = { count: item[1], fillColor: paletteScale(item[1]) };
           });
 
-          var map = new Datamap({
+          map = new Datamap({
             element: element[0],
-            projection: 'mercator',
-            scope: 'world',
+            scope: kind === 'state' ? 'usa' : 'world',
+            projection: kind === 'state' ? 'albersUsa' : 'mercator',
             responsive: true,
-            fills: {
-              defaultFill: '#afafaf'
-            },
+            fills: { defaultFill: '#afafaf' },
             data: dataset,
             geographyConfig: {
               highlightBorderWidth: 2,
@@ -158,53 +74,56 @@ app.directive('worldMap', ['$timeout', '$window', 'UtilsService', '$state', func
               },
               highlightBorderColor: 'red',
               popupTemplate: function (geo, data) {
-                if (data.count > 1) {
-                  return ['<div class="hoverinfo"><strong>',
-                    data.count + ' races ran in ' + geo.properties.name,
-                    '',
-                    '</strong></div>'
-                  ].join('');
-                } else {
-                  return ['<div class="hoverinfo"><strong>',
-                    data.count + ' race ran in ' + geo.properties.name,
-                    '',
-                    '</strong></div>'
-                  ].join('');
-                }
+                var count = data ? data.count : 0;
+                return '<div class="hoverinfo"><strong>' + count + (count === 1 ? ' race' : ' races') +
+                  ' ran in ' + geo.properties.name + '</strong></div>';
               }
             },
             done: function (datamap) {
-              datamap.svg.call(d3.behavior.zoom().on("zoom", redraw));
-
-              function redraw() {
-                datamap.svg.selectAll("g").attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-              }
-
+              datamap.svg.call(d3.behavior.zoom().on('zoom', function () {
+                datamap.svg.selectAll('g').attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')');
+              }));
               datamap.svg.selectAll('.datamaps-subunit').each(function (d) {
                 if (dataset[d.id] && dataset[d.id].count > 0) {
                   d3.select(this).style('cursor', 'pointer');
                   d3.select(this).on('click', function (ele) {
-                    $state.go("/results", { country: ele.id }, { inherit: false });
+                    var params = kind === 'state' ? { state: ele.id } : { country: ele.id };
+                    if (scope.mapRunner) params.runner = scope.mapRunner;
+                    $state.go('/results', params, { inherit: false });
                   });
                 }
               });
             }
           });
+        }
 
-          onResize = function () {
-            map.resize();
-          };
-          cleanUp = function () {
-            angular.element($window).off('resize', onResize);
-          };
-          angular.element($window).bind('resize', onResize);
-          $scope.$on('$destroy', cleanUp);
+        function render() {
+          if (scope.mapCounts) {
+            $timeout(function () { draw(scope.mapCounts); }, 10);
+          } else {
+            UtilsService.getLocationInfo({ type: kind }).then(function (results) {
+              // a member picked while the team's counts were loading wins
+              if (!scope.mapCounts) $timeout(function () { draw(results); }, 10);
+            });
+          }
+        }
 
-        }, 10);
-      });
-    }
-  };
-}]);
+        scope.$watch('mapCounts', render);
+
+        function onResize() {
+          if (map) map.resize();
+        }
+        angular.element($window).on('resize', onResize);
+        scope.$on('$destroy', function () {
+          angular.element($window).off('resize', onResize);
+        });
+      }
+    };
+  }];
+}
+
+app.directive('usaMap', raceMapDirective('state'));
+app.directive('worldMap', raceMapDirective('country'));
 
 // Race Achievements Directive
 // tap-tooltip: for a tooltip on something inside a clickable row (an icon in a

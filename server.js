@@ -263,6 +263,19 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 
 //update at startup and every day
 service.startUpUpdate();
+
+// Backfill member profile thumbnails at boot — covers members whose
+// pictureLink has no matching thumbnail yet (new members, or ones who had a
+// photo before this existed). Explicitly caught: unlike service.startUpUpdate
+// above, a thumbnail failure should never take the whole server down.
+require('./app/profileThumbnails').ensureAllGenerated()
+    .then(({ checked, generated }) => {
+        if (generated > 0) {
+            console.log(`Generated ${generated} profile thumbnail(s) (${checked} member photo(s) checked)`);
+        }
+    })
+    .catch(err => console.error('Error generating profile thumbnails at startup:', err));
+
 const rule = new schedule.RecurrenceRule();
 rule.hour = 0;
 rule.minute = 1;

@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron race-results-page">
     <!-- Laid out like Individual Results (directives/individualResults.html) -->
     <div class="individual-results series-list">
 
@@ -9,7 +9,7 @@
                     ng-model-options="{debounce: 150}" placeholder="Race series..." autofocus>
                 <span class="searchclear fa fa-times-circle" ng-show="filters.text" ng-click="filters.text = ''"></span>
             </div>
-            <button type="button" class="btn btn-sm" ng-class="filters.clubOnly ? 'btn-primary' : 'btn-default'"
+            <button type="button" class="mcrrc-btn" ng-class="{'is-on': filters.clubOnly}"
                 ng-click="filters.clubOnly = !filters.clubOnly" aria-pressed="{{ filters.clubOnly }}">
                 <i class="fa" ng-class="filters.clubOnly ? 'fa-check-square-o' : 'fa-square-o'"></i>
                 <img class="club-mark" src="/images/mcrrc_logo_256.png" alt=""> MCRRC club races only
@@ -24,6 +24,7 @@
             </div>
         </div>
 
+        <div class="member-card race-results-card">
         <div ng-if="loading" class="text-center ir-message">
             <i class="fa fa-spinner fa-spin fa-2x"></i>
             <p>Loading race series...</p>
@@ -71,6 +72,7 @@
             </span>
             <span class="records-pager-count" ng-if="rows.length <= PAGE_SIZE">{{ rows.length | number }} series</span>
             <dir-pagination-controls pagination-id="series"></dir-pagination-controls>
+        </div>
         </div>
     </div>
 </div>

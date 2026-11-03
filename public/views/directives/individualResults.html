@@ -58,6 +58,7 @@
         </div>
     </div>
 
+    <div class="member-card race-results-card">
     <div ng-if="loading" class="text-center ir-message">
         <i class="fa fa-spinner fa-spin fa-2x"></i>
         <p>Loading results...</p>
@@ -151,6 +152,7 @@
             {{rows.length | number}} result<span ng-if="rows.length !== 1">s</span>
         </span>
         <dir-pagination-controls pagination-id="individual" on-page-change="pageChanged()"></dir-pagination-controls>
+    </div>
     </div>
 
     <!-- One tooltip for the whole list, moved over what it describes: a cell

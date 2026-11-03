@@ -1,12 +1,6 @@
-<div class="modal-header modern-modal-header">
-    <div class="race-edit-header-content">
-        <div class="race-edit-title-section">
-            <h3 class="race-edit-title">
-                <i class="fa fa-pencil"></i>
-                Edit Race: {{race.racename}}
-            </h3>
-        </div>
-    </div>
+<div class="site-modal race-edit-modal">
+<div class="modal-header site-modal-header">
+    <h3 class="modal-title">Edit race <span class="site-modal-title-name">{{race.racename}}</span></h3>
 </div>
 
 <div class="modal-body modern-modal-body" style="overflow: visible;">
@@ -16,7 +10,7 @@
             <div class="col-md-4">
                 <div class="form-group"
                     ng-class="{ 'has-error' : raceEditForm.racename.$invalid && !raceEditForm.racename.$pristine}">
-                    <label class="text-left">Race name: *</label>
+                    <label class="text-left">Race name *</label>
                     <input type="text" name="racename" class="form-control text-left" ng-model="race.racename"
                         ng-required="true" required auto-focus>
                 </div>
@@ -24,7 +18,7 @@
             <div class="col-md-3">
                 <div class="form-group"
                     ng-class="{ 'has-error' : raceEditForm.racedate.$invalid && !raceEditForm.racedate.$pristine}">
-                    <label class="text-left">Race date: *</label>
+                    <label class="text-left">Race date *</label>
                     <p class="input-group">
                         <input type="text" name="racedate" class="form-control input-md"
                             uib-datepicker-popup="yyyy-MM-dd" ng-model="race.racedate"
@@ -38,13 +32,13 @@
                 </div>
             </div>
             <div class="col-md-1">
-                <label class="text-left">Order:</label>
+                <label class="text-left">Order</label>
                 <input type="text" ng-model="race.order" only-digits class="form-control input-md text-left"
                     placeholder="0">
             </div>
             <div class="col-md-4">
                 <div class="form-group" ng-class="{ 'has-error' : raceEditForm.racetype.$invalid }">
-                    <label class="text-left">Race Type: *</label>
+                    <label class="text-left">Race Type *</label>
                     <br>
                     <ui-select name="racetype" ng-required="true" ng-disabled="race.isMultisport"
                         ng-model="race.racetype" theme="select2" style="min-width: 280px;">
@@ -80,7 +74,7 @@
             <div class="col-md-3">
                 <div class="form-group"
                     ng-class="{ 'has-error' : raceEditForm.distanceName.$invalid && !raceEditForm.distanceName.$pristine}">
-                    <label class="text-left">Distance Display Name:</label>
+                    <label class="text-left">Distance Display Name</label>
                     <input type="text" name="distanceName" ng-model="race.distanceName"
                         class="form-control input-md text-left"
                         ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
@@ -89,7 +83,7 @@
             <div class="col-md-4">
                 <div class="form-group"
                     ng-class="{ 'has-error' : raceEditForm.racetype.meters.$invalid && !raceEditForm.racetype.meters.$pristine}">
-                    <label class="text-left">Distance in meters:</label>
+                    <label class="text-left">Distance in meters</label>
                     <input type="text" ng-change="onMetersChange()" name="meters" ng-model="race.racetype.meters"
                         class="form-control input-md text-left"
                         ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
@@ -102,7 +96,7 @@
             <div class="col-md-4">
                 <div class="form-group"
                     ng-class="{ 'has-error' : raceEditForm.racetype.miles.$invalid && !raceEditForm.racetype.miles.$pristine}">
-                    <label class="text-left">Distance in miles:</label>
+                    <label class="text-left">Distance in miles</label>
                     <input type="text" ng-change="onMilesChange()" name="miles" ng-model="race.racetype.miles"
                         class="form-control input-md text-left"
                         ng-required="race.racetype.isVariable && race.racetype.surface !== 'multiple'">
@@ -113,7 +107,7 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="control-label text-left">Country:</label>
+                    <label class="control-label text-left">Country</label>
                     <br>
                     <ui-select name="country" ng-model="race.location.country" required theme="select2"
                         style="min-width: 250px;">
@@ -133,7 +127,7 @@
             </div>
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="control-label text-left">State:</label>
+                    <label class="control-label text-left">State</label>
                     <br>
                     <ui-select ng-disabled="race.location.country !== 'USA'" name="state" ng-model="race.location.state"
                         ng-required="race.location.country === 'USA'" theme="select2" style="min-width: 250px;">
@@ -154,7 +148,7 @@
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="control-label text-left">Shortcuts:</label>
+                    <label class="control-label text-left">Shortcuts</label>
                     <br>
                     <button class="btn btn-primary"
                         ng-click="race.location.country='USA'; race.location.state='MD'">MD</button>
@@ -682,15 +676,12 @@
     </form>
 </div>
 
-<div class="modal-footer modern-modal-footer">
-    <div class="footer-actions">
-        <button class="btn btn-secondary modern-btn" ng-click="cancel()">
-            <i class="fa fa-times"></i>
-            Cancel
-        </button>
-        <button class="btn btn-primary modern-btn" ng-click="save()" ng-disabled="raceEditForm.$invalid || isSaving">
-            <i class="fa" ng-class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-            {{ isSaving ? 'Saving…' : 'Save Changes' }}
-        </button>
-    </div>
+<div class="modal-footer site-modal-footer">
+    <button type="button" class="mcrrc-btn" ng-click="cancel()">Cancel</button>
+    <span class="site-modal-footer-spacer"></span>
+    <button type="button" class="member-primary-btn" ng-click="save()" ng-disabled="raceEditForm.$invalid || isSaving">
+        <i class="fa" ng-class="isSaving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+        {{ isSaving ? 'Saving…' : 'Save changes' }}
+    </button>
+</div>
 </div>

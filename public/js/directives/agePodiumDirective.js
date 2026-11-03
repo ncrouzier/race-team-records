@@ -169,8 +169,8 @@ angular.module('mcrrcApp').directive('agePodium', ['RunnerFigure', '$uibModal', 
             sex: '='
         },
         template:
-            '<div class="ag-podium">' +
-            '  <button type="button" class="mcrrc-btn ag-podium-shuffle" ng-click="openStylePicker()"' +
+            '<div class="ag-podium" ng-class="{\'is-empty\': !activeKey}">' +
+            '  <button type="button" class="mcrrc-btn ag-podium-shuffle" ng-if="activeKey" ng-click="openStylePicker()"' +
             '          title="Change the runner\'s look" aria-label="Change the runner\'s look">' +
             '    <i class="fa fa-paint-brush"></i> Style' +
             '  </button>' +
@@ -200,7 +200,7 @@ angular.module('mcrrcApp').directive('agePodium', ['RunnerFigure', '$uibModal', 
             '    <text x="201" y="208" class="ag-podium-label" ng-class="{\'is-active\': activeKey === \'world\'}">World</text>' +
             '    <text x="286" y="208" class="ag-podium-label" ng-class="{\'is-active\': activeKey === \'regional\'}">Regional</text>' +
 
-            '    <g class="ag-podium-runner"' +
+            '    <g class="ag-podium-runner" ng-if="activeKey"' +
             '       ng-class="[\'ag-runner-\' + activeKey, teamKit ? \'ag-kit-team\' : \'\']"' +
             '       ng-style="runnerStyle">' +
             '      <g class="ag-fx" ng-if="activeKey === \'world\'">' + FX_FLAMES + '</g>' +
@@ -216,8 +216,15 @@ angular.module('mcrrcApp').directive('agePodium', ['RunnerFigure', '$uibModal', 
 
         link: function (scope) {
             function update() {
+                // No time yet: the bare podium, nobody on it
+                if (scope.percent === null || scope.percent === undefined || !isFinite(Number(scope.percent))) {
+                    scope.activeKey = null;
+                    scope.teamKit = false;
+                    scope.ariaLabel = 'Age grade podium';
+                    return;
+                }
                 var percent = Number(scope.percent);
-                var key = isFinite(percent) ? levelKeyFor(percent) : 'local';
+                var key = levelKeyFor(percent);
                 var spot = SPOTS[key];
 
                 scope.activeKey = key;
@@ -225,7 +232,7 @@ angular.module('mcrrcApp').directive('agePodium', ['RunnerFigure', '$uibModal', 
                 // the runner animates between steps.
                 scope.runnerStyle = { transform: 'translate(' + spot.x + 'px, ' + spot.y + 'px)' };
 
-                scope.teamKit = isFinite(percent) && percent >= TEAM_KIT_PERCENT;
+                scope.teamKit = percent >= TEAM_KIT_PERCENT;
                 // Powering-up stance is reserved for the top step.
                 scope.powerPose = key === 'world';
 
@@ -233,9 +240,7 @@ angular.module('mcrrcApp').directive('agePodium', ['RunnerFigure', '$uibModal', 
                 scope.showFemale = sex === 'female' || sex === 'f';
                 scope.look = lookFor(scope.showFemale ? 'female' : 'male');
 
-                scope.ariaLabel = isFinite(percent)
-                    ? 'Podium showing ' + percent.toFixed(1) + '%, ' + key + ' class'
-                    : 'Age grade podium';
+                scope.ariaLabel = 'Podium showing ' + percent.toFixed(1) + '%, ' + key + ' class';
             }
 
             scope.openStylePicker = function () {

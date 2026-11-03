@@ -1,24 +1,22 @@
-<div class="text-center">
-    <div class="col-sm-6 col-sm-offset-3">
-
-        <h1>Log In</h1>
+<div class="jumbotron auth-page">
+    <div class="member-card auth-card">
+        <h2 class="auth-title">Log in</h2>
 
         <div ng-show="failed" class="alert alert-danger">
             {{message}}
-            <div style="margin-top: 8px;">
+            <div class="auth-alert-link">
                 <a ng-href="/email-login{{returnTo ? '?returnTo=' + returnTo : ''}}">Request a new link</a>
             </div>
         </div>
 
         <div ng-hide="failed">
-            <p>Click below to finish logging in.</p>
-            <button class="btn btn-warning btn-lg" ng-click="completeLogin()" ng-disabled="working">
+            <p class="auth-subtitle">Click below to finish logging in.</p>
+            <button class="member-primary-btn auth-submit" ng-click="completeLogin()" ng-disabled="working">
                 <span ng-show="working"><i class="fa fa-spinner fa-spin"></i> Logging in…</span>
-                <span ng-hide="working">Log In</span>
+                <span ng-hide="working">Log in</span>
             </button>
         </div>
 
-        <hr>
-        <p><a ui-sref="/login">Back to Login</a></p>
+        <p class="auth-footer"><a ui-sref="/login"><i class="fa fa-arrow-left"></i> Back to log in</a></p>
     </div>
 </div>

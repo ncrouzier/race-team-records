@@ -1,11 +1,10 @@
-<div class="jumbotron">
+<div class="jumbotron crf-list-page ta-list-page">
 
     <div class="feed-card">
         <div class="feed-card-header">
             <h4>
                 <i class="fa fa-user-plus"></i> Team Applications
-                <button class="crf-chip crf-chip-ghost" ng-click="editEmailTemplates()"
-                    style="margin-left: auto;"
+                <button class="crf-chip crf-chip-ghost ta-header-first" ng-click="editEmailTemplates()"
                     uib-tooltip="Edit the wording of the approval and rejection emails">
                     <i class="fa fa-file-code-o"></i>
                     <span class="hidden-xs"> Email templates</span>
@@ -18,26 +17,25 @@
             </h4>
         </div>
 
-        <div class="feed-card-body ta-filters">
-            <button class="crf-chip" ng-repeat="tab in statusTabs" ng-click="setFilter(tab.key)"
-                ng-class="statusFilter === tab.key ? 'crf-chip-primary' : 'crf-chip-ghost'">
+        <div class="ta-tabs" role="tablist">
+            <button type="button" class="ta-tab" ng-repeat="tab in statusTabs" ng-click="setFilter(tab.key)"
+                ng-class="{'is-on': statusFilter === tab.key}" role="tab">
                 <i class="fa" ng-class="tab.icon"></i> {{ tab.label }}
-                <span ng-if="tab.key !== 'all'">({{ statusCounts[tab.key] || 0 }})</span>
+                <span class="ta-tab-count" ng-if="tab.key !== 'all'">{{ statusCounts[tab.key] || 0 }}</span>
             </button>
         </div>
 
-        <div class="feed-card-body" ng-if="loading" style="text-align: center; padding: 40px;">
-            <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
-            <p style="margin-top: 12px; color: #666;">Loading applications…</p>
+        <div class="feed-card-body ta-state" ng-if="loading">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
+            <p>Loading applications…</p>
         </div>
 
         <div class="feed-card-body" ng-if="error">
             <div class="alert alert-danger">{{ error }}</div>
         </div>
 
-        <div class="feed-card-body" ng-if="!loading && !error && applications.length === 0"
-            style="text-align:center; padding: 40px; color: #999;">
-            <i class="fa fa-inbox fa-3x" style="margin-bottom: 12px; display:block;"></i>
+        <div class="feed-card-body ta-state" ng-if="!loading && !error && applications.length === 0">
+            <i class="fa fa-inbox fa-3x"></i>
             <p ng-if="statusFilter === 'pending'">No applications waiting for review.</p>
             <p ng-if="statusFilter !== 'pending'">Nothing here yet.</p>
         </div>
@@ -46,26 +44,24 @@
             <li class="feed-item" ng-repeat="application in applications">
                 <div class="feed-row">
 
-                    <div class="feed-body" style="flex:1; min-width:0; cursor:pointer;"
-                        ng-click="toggleExpand(application)">
+                    <div class="feed-body ta-row-main" ng-click="toggleExpand(application)">
                         <div class="feed-text">
-                            <i class="fa" ng-class="expanded[application._id] ? 'fa-caret-down' : 'fa-caret-right'"
-                                style="width:10px; color:#999;"></i>
+                            <i class="fa ta-caret" ng-class="expanded[application._id] ? 'fa-caret-down' : 'fa-caret-right'"></i>
                             <strong>{{ fullname(application) }}</strong>
-                            <span class="text-muted" style="font-weight:400;">
+                            <span class="ta-who">
                                 &nbsp;{{ application.sex }}<span ng-if="ageOf(application) !== null">, {{
                                     ageOf(application) }}</span>
                             </span>
                             <!-- Status is information, not an action, so it sits with the name -->
-                            <span class="crf-chip ta-status-chip" ng-class="{
-                                    'ta-chip-pending': application.status === 'pending',
-                                    'crf-chip-open': application.status === 'approved',
-                                    'ta-chip-rejected ': application.status === 'rejected'
+                            <span class="site-tag ta-status-tag" ng-class="{
+                                    'site-tag-warning': application.status === 'pending',
+                                    'site-tag-success': application.status === 'approved',
+                                    'site-tag-danger': application.status === 'rejected'
                                 }">
                                 {{ application.status }}
                             </span>
                         </div>
-                        <div class="feed-meta" style="margin-top: 3px;">
+                        <div class="feed-meta ta-meta">
                             Applied {{ application.createdAt | date:'mediumDate' }}
                             <span ng-if="application.reviewedAt">
                                 &mdash; {{ application.status }} by {{ application.reviewedByUsername || 'admin' }} on
@@ -158,7 +154,7 @@
                             </div>
                             <div>
                                 <div class="ta-label">Gender</div>
-                                <div class="ta-value" style="text-transform: capitalize;">{{ application.sex }}</div>
+                                <div class="ta-value ta-capitalize">{{ application.sex }}</div>
                             </div>
                             <div ng-if="application.member">
                                 <div class="ta-label">Member</div>
@@ -243,7 +239,7 @@
                     </div>
 
                     <div ng-if="emailSent(application)">
-                        <div class="ta-label" style="margin-top: 14px;">
+                        <div class="ta-label ta-label-spaced">
                             {{ application.status === 'rejected' ? 'Rejection' : 'Approval' }} email sent
                         </div>
                         <!-- Shown as the applicant got it: a message with its header -->

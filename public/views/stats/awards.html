@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron racing-stats-page awards-stats-page">
     <!-- Navigation -->
     <ul class="nav nav-tabs">
         <li role="presentation" ui-sref-active="active">
@@ -28,9 +28,8 @@
     </ul>
 
     <!-- Awards Content -->
-    <div style="margin-top: 20px;">
-        <h2><i class="fa fa-trophy"></i> ROY & MUTROY Awards</h2>
-        <p class="text-muted"></p>
+    <div class="awards-content">
+        <h2 class="awards-title"><i class="fa fa-trophy"></i> ROY &amp; MUTROY Awards</h2>
 
         <div ng-if="loadingStates.awards" class="text-center" style="padding: 40px;">
             <i class="fa fa-spinner fa-spin fa-2x"></i>
@@ -41,27 +40,26 @@
             No awards found.
         </div>
 
-        <div ng-repeat="yearGroup in awardsByYear" style="margin-bottom: 25px;">
-            <h5 style="border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-bottom: 10px;">
-                {{yearGroup.year}}
-            </h5>
-            <div class="row">
-                <div class="col-sm-6 col-md-4" ng-repeat="award in yearGroup.awards" style="margin-bottom: 12px;">
-                    <div
-                        style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
-                        <img ng-if="award.img" ng-src="{{award.img}}" style="width: 32px; height: 32px;">
-                        <div>
-                            <a ui-sref="/members/member({ member: award.member.username })" style="font-weight: 600;">
-                                {{award.member.firstname}} {{award.member.lastname}}
-                            </a>
-                            <br>
-                            <small class="text-muted">
-                                {{award.type}}
-                                <span ng-if="award.category"> - {{award.category}}</span>
-                            </small>
-                        </div>
-                    </div>
-                </div>
+        <div class="member-card awards-year" ng-repeat="yearGroup in awardsByYear">
+            <div class="member-card-header">
+                <h3>{{yearGroup.year}}</h3>
+                <span class="member-results-count">{{yearGroup.awards.length}}
+                    award<span ng-if="yearGroup.awards.length !== 1">s</span></span>
+            </div>
+            <div class="awards-grid">
+                <a class="award-tile" ng-repeat="award in yearGroup.awards"
+                    ng-class="{'award-tile-mutroy': award.type === 'MUTROY'}"
+                    ui-sref="/members/member({ member: award.member.username })">
+                    <span class="award-tile-photo">
+                        <member-avatar member="award.member" size="52"></member-avatar>
+                        <span class="award-tile-badge" ng-if="award.img"><img ng-src="{{award.img}}" alt=""></span>
+                    </span>
+                    <span class="award-tile-text">
+                        <span class="award-tile-name">{{award.member.firstname}} {{award.member.lastname}}</span>
+                        <span class="award-tile-type">{{award.type}}<span ng-if="award.category"> &middot;
+                                {{award.category}}</span></span>
+                    </span>
+                </a>
             </div>
         </div>
     </div>

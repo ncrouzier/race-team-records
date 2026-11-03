@@ -1,0 +1,28 @@
+<div class="thumb-crop-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">Adjust thumbnail</h3>
+        <p class="bio-edit-subtitle">{{memberName}}</p>
+    </div>
+    <div class="modal-body">
+        <p class="thumb-crop-intro">
+            Choose the part of the photo used for {{firstname}}'s round profile picture across the site
+            (member cards, awards, results, head-to-head).
+            <span ng-if="!hadCrop">It is currently picked automatically.</span>
+        </p>
+
+        <thumb-cropper src="{{pictureLink}}" crop="draft.crop"></thumb-cropper>
+
+        <div class="alert alert-danger thumb-crop-error" ng-if="error">{{error}}</div>
+    </div>
+    <div class="modal-footer thumb-crop-footer">
+        <button type="button" class="mcrrc-btn" ng-if="hadCrop" ng-click="reset()" ng-disabled="saving"
+            uib-tooltip="Let the site pick the face automatically again" tooltip-append-to-body="true">
+            <i class="fa fa-magic"></i> Back to automatic
+        </button>
+        <span class="thumb-crop-spacer"></span>
+        <button type="button" class="mcrrc-btn" ng-click="cancel()" ng-disabled="saving">Cancel</button>
+        <button type="button" class="member-primary-btn" ng-click="save()" ng-disabled="saving || !draft.crop">
+            <i class="fa" ng-class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i> Save
+        </button>
+    </div>
+</div>

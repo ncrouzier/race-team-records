@@ -145,7 +145,7 @@
 						</li>
 						<!-- Admin tools, in labelled groups (not fly-out submenus, which
 						     need hover and do not work on phones) -->
-						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/bulk') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span ng-if="pendingCorrectionsCount > 0" ng-cloak class="crf-nav-dot"
@@ -158,7 +158,6 @@
 									<div class="admin-menu-heading"><i class="fa fa-flag-checkered fa-fw"></i> Results &amp; Races</div>
 									<ul>
 										<li ng-class="{active: $state.includes('/tools/resultExtractor')}"><a ui-sref="/tools/resultExtractor">Result Extractor</a></li>
-										<li ng-class="{active: $state.includes('/bulk')}"><a ui-sref="/bulk">Bulk Operations</a></li>
 										<li ng-class="{active: $state.includes('/racetypes')}"><a ui-sref="/racetypes">Race Types</a></li>
 										<li ng-class="{active: $state.includes('/race-series') || $state.includes('/race-series-detail')}"><a ui-sref="/race-series">Race Series
 											<span ng-if="pendingSeriesCount > 0" ng-cloak class="crf-unseen-badge" uib-tooltip="Series with suggestions to review">{{pendingSeriesCount}}</span></a></li>
@@ -204,20 +203,20 @@
 						<li ng-class="{active: ($state.includes('/profile'))}" class="uib-dropdown" uib-dropdown
 							on-toggle="toggled(open)">
 							<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle" uib-dropdown-toggle>
-								<%= user.username %>
+								<%- include('partials/navAvatar') %><span class="nav-username"><%= user.username %></span>
 								<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-nav-dot" title="New activity log entries"></span>
 								<span class="caret"></span>
 							</a>
 							<ul class="dropdown-menu" uib-dropdown-menu>
+								<% if (user.member) { %>
+									<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
+											Page</a></li>
+									<% } %>
 								<li><a ui-sref="/profile">My Account</a></li>
 								<li ng-if="unseenActivityCount > 0" ng-cloak><a ui-sref="/activitylogs">
 										<i class="fa fa-list-alt"></i> New activity log entries
 										<span class="crf-unseen-badge">{{unseenActivityCount}}</span>
 									</a></li>
-								<% if (user.member) { %>
-									<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
-											Page</a></li>
-									<% } %>
 										<li><a href="/logout">Logout</a></li>
 							</ul>
 						</li>
@@ -294,14 +293,14 @@
 								on-toggle="toggled(open)">
 								<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
 									uib-dropdown-toggle>
-									<%= user.username %> <span class="caret"></span>
+									<%- include('partials/navAvatar') %><span class="nav-username"><%= user.username %></span> <span class="caret"></span>
 								</a>
 								<ul class="dropdown-menu" uib-dropdown-menu>
-									<li><a ui-sref="/profile">My Account</a></li>
 									<% if (user.member) { %>
 										<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 												Page</a></li>
 										<% } %>
+									<li><a ui-sref="/profile">My Account</a></li>
 											<li><a ng-click="logout()">Logout</a></li>
 								</ul>
 							</li>
@@ -364,14 +363,14 @@
 									on-toggle="toggled(open)">
 									<a href style="padding:12px 5px 12px 5px;" class="uib-dropdown-toggle"
 										uib-dropdown-toggle>
-										<%= user.username %> <span class="caret"></span>
+										<%- include('partials/navAvatar') %><span class="nav-username"><%= user.username %></span> <span class="caret"></span>
 									</a>
 									<ul class="dropdown-menu" uib-dropdown-menu>
-										<li><a ui-sref="/profile">My Account</a></li>
 										<% if (user.member) { %>
 											<li><a ui-sref="/members/member({member: '<%= user.member.username %>'})">My
 													Page</a></li>
 											<% } %>
+										<li><a ui-sref="/profile">My Account</a></li>
 												<li><a ng-click="logout()">Logout</a></li>
 									</ul>
 								</li>
@@ -452,7 +451,7 @@
 							href="https://www.paypal.com/donate/?business=KN2D558FKKYQQ&no_recurring=1&item_name=Support+the+maintenance+of+the+team+result+site+by+buying+me+a+coffee+or+helping+me+pay+Strava+premium+membership!+Thank+you!&currency_code=USD">Buy
 							me a coffee!</a></span></div>
 				<div class="col-sm-2 text-center"><a class="transparent" ui-sref="/login">login</a></div>
-				<div class="col-sm-5 text-right"><a ui-sref="/about">About Age Grading</a> --- <a
+				<div class="col-sm-5 text-right"><a ui-sref="/about-agegrading">About Age Grading</a> --- <a
 						title="Montgomery County Road Runners Club" href="https://www.mcrrc.org"
 						target="_blank">MCRRC</a></div>
 			</div>

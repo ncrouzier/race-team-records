@@ -1,312 +1,30 @@
-<style>
-.banner-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: box-shadow 0.15s;
-}
-.banner-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-}
-.banner-card.is-disabled .banner-preview img {
-    opacity: 0.35;
-    filter: grayscale(1);
-}
-.banner-card.is-disabled .banner-filename::after {
-    content: ' — disabled';
-}
-.banner-card.is-active {
-    border-color: #008cba;
-    box-shadow: 0 0 0 2px #008cba33;
-}
-.banner-preview {
-    position: relative;
-    height: 80px;
-    cursor: pointer;
-    background: #222;
-    overflow: hidden;
-}
-.banner-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: opacity 0.15s;
-}
-.banner-preview:hover img {
-    opacity: 0.85;
-}
-.banner-preview-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.15s;
-    background: rgba(0,140,186,0.25);
-}
-.banner-preview:hover .banner-preview-overlay {
-    opacity: 1;
-}
-.banner-preview-overlay i {
-    color: #fff;
-    font-size: 22px;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
-}
-.banner-filename {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.55);
-    color: #fff;
-    font-size: 10px;
-    padding: 2px 6px;
-    font-family: monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.banner-card-body {
-    padding: 10px 12px 12px;
-}
-.banner-field-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 3px;
-    margin-top: 8px;
-}
-.banner-field-label:first-child {
-    margin-top: 0;
-}
-.banner-color-row {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-.banner-color-row input[type="color"] {
-    width: 28px;
-    height: 24px;
-    padding: 1px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    flex-shrink: 0;
-    cursor: pointer;
-}
-.banner-color-row input[type="text"] {
-    flex: 1;
-}
-.banner-card-footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    /* A row that doesn't fit wraps (delete and save stay right-aligned)
-       rather than running past the card's edge */
-    gap: 6px;
-    padding: 8px 10px;
-    border-top: 1px solid #f0f0f0;
-    background: #fafafa;
-}
-.banner-new-images {
-    border: 1px solid #b6dcea;
-    background: #eef7fb;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-}
-.banner-new-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-}
-.banner-new-item {
-    font-size: 11px;
-    color: #555;
-}
-.banner-new-item img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 4 / 1;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-bottom: 3px;
-}
-.banner-card.has-former {
-    border-color: #f0c36d;
-    box-shadow: 0 0 0 2px #f0c36d55;
-}
-.banner-former-note {
-    margin-top: 6px;
-    padding: 5px 8px;
-    border-radius: 4px;
-    background: #fff8e1;
-    color: #8a6100;
-    font-size: 12px;
-}
-.banner-credit-note {
-    margin: 0 0 6px;
-}
-.crf-chip.banner-chip-on {
-    font-style: normal;
-    box-shadow: 0 0 0 2px #ffe08288;
-}
-.banner-missing {
-    margin-bottom: 14px;
-}
-.banner-missing-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 10px 12px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-}
-.banner-missing-name {
-    font-size: 12px;
-    padding: 2px 9px;
-    border-radius: 12px;
-    background: #f1f5f8;
-}
-.banner-missing-name.is-disabled-only {
-    background: #fff8e1;
-    color: #8a6100;
-}
-.banner-search {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-.banner-search-field {
-    position: relative;
-    flex: 0 1 340px;
-    min-width: 220px;
-}
-.banner-search-field .fa-search {
-    position: absolute;
-    left: 11px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #999;
-}
-.banner-search-field input {
-    padding-left: 30px;
-    padding-right: 30px;
-    border-radius: 20px;
-}
-/* Our own clear button, the same in every browser: hide the native one */
-.banner-search-field input::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-}
-.banner-search-clear {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
-    border: 0;
-    border-radius: 50%;
-    background: #e3e9ee;
-    color: #556;
-    font-size: 11px;
-    line-height: 22px;
-    padding: 0;
-    cursor: pointer;
-}
-.banner-search-clear:hover {
-    background: #cfd8df;
-    color: #222;
-}
-.banner-search-count {
-    font-size: 12px;
-    color: #666;
-    white-space: nowrap;
-}
-.banner-segment {
-    display: flex;
-    gap: 4px;
-}
-.banner-segment .crf-chip {
-    flex: 1;
-    justify-content: center;
-}
-.banner-chip-row {
-    display: flex;
-    gap: 5px;
-}
-.banner-chip-row + .banner-chip-row {
-    margin-left: auto;
-}
-.banner-card-footer .crf-chip {
-    padding: 4px 8px;
-}
-/* The page header is teal: chips there are light on dark */
-.crf-chip.banner-chip-on-dark {
-    background: transparent;
-    border-color: rgba(255,255,255,0.5);
-    color: #fff;
-}
-.crf-chip.banner-chip-on-dark:hover:not([disabled]) {
-    background: rgba(255,255,255,0.15);
-}
-.crf-chip.banner-chip-light {
-    background: #fff;
-    border-color: #fff;
-    color: #006687;
-}
-.crf-chip.banner-chip-light:hover:not([disabled]) {
-    background: #eef6fa;
-}
-.crf-chip[disabled] {
-    opacity: 0.5;
-    cursor: default;
-}
-.banner-pin-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #555;
-    cursor: pointer;
-    margin: 0;
-}
-</style>
-
-<div class="jumbotron">
+<div class="jumbotron banners-page">
     <div class="racetypes-content">
-        <div style="background: linear-gradient(135deg, #008cba 0%, #006687 100%); color: white; padding: 16px 24px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <h2 style="margin: 0 0 3px; font-weight: 600; font-size: 22px;">Banner Management</h2>
-                <div style="font-size: 12px; opacity: 0.85;">{{banners.length}} banners &mdash; click a preview to display it on the homepage</div>
+        <div class="member-card banner-header-card">
+            <div class="member-card-header">
+                <h3><i class="fa fa-picture-o"></i> Banner Management</h3>
+                <span class="banner-chip-row">
+                    <button class="mcrrc-btn" ng-click="reset()" ng-disabled="savingAll || !dirty">
+                        <i class="fa fa-undo"></i> Reset
+                    </button>
+                    <button class="member-primary-btn" ng-click="saveAll()" ng-disabled="savingAll">
+                        <i class="fa" ng-class="savingAll ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                        {{savingAll ? 'Saving…' : 'Save all'}}
+                    </button>
+                </span>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="crf-chip banner-chip-on-dark" ng-click="reset()" ng-disabled="savingAll || !dirty">
-                    <i class="fa fa-undo"></i> Reset
-                </button>
-                <button class="crf-chip banner-chip-light" ng-click="saveAll()" ng-disabled="savingAll">
-                    <i class="fa" ng-class="savingAll ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                    {{savingAll ? 'Saving…' : 'Save all'}}
-                </button>
-            </div>
-        </div>
+            <p class="banner-subtitle">
+                <span class="member-results-count">{{banners.length}} banners</span>
+                Click a preview to display it on the homepage.
+            </p>
 
         <!-- New images on disk with no banner entry yet -->
         <div class="banner-new-images" ng-if="newImages.length">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div class="banner-new-head">
                 <div>
                     <strong><i class="fa fa-picture-o"></i>
                         {{newImages.length}} new banner image{{newImages.length === 1 ? '' : 's'}} found</strong>
-                    <div style="font-size: 12px; color: #555;">In public/images/banners but not on the site yet. Adding
+                    <div class="banner-new-help">In public/images/banners but not on the site yet. Adding
                         them puts them in the homepage rotation; then tag members and add the photo credit on their
                         cards.</div>
                 </div>
@@ -324,7 +42,7 @@
         </div>
 
         <!-- Entries whose image file is gone -->
-        <div class="alert alert-warning" ng-if="missingFiles.length" style="font-size: 13px;">
+        <div class="alert alert-warning banner-missing-files" ng-if="missingFiles.length">
             <i class="fa fa-exclamation-triangle"></i>
             No image file for: <strong>{{missingFiles.join(', ')}}</strong>. Those cards show a broken image; delete
             them, or put the file back in public/images/banners.
@@ -371,11 +89,13 @@
                 <div class="text-muted" ng-if="!membersWithoutBanner().length">Every current member has a banner.</div>
             </div>
         </div>
-        <div class="text-muted" ng-if="(bannerFilter.text || bannerFilter.formerOnly || bannerFilter.noCreditOnly) && !filteredBanners.length" style="padding: 8px 2px;">
+        <div class="text-muted banner-no-match" ng-if="(bannerFilter.text || bannerFilter.formerOnly || bannerFilter.noCreditOnly) && !filteredBanners.length">
             No banners match{{bannerFilter.text ? ' "' + bannerFilter.text + '"' : ''}}.
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+        </div>
+
+        <div class="banner-grid">
             <div class="banner-card" ng-repeat="banner in (filteredBanners = (banners | filter: bannerMatches)) track by banner._id"
                  ng-class="{'is-active': activeBannerId === banner._id, 'is-disabled': banner.disabled, 'has-former': formerMembers(banner).length || missingCredit(banner)}">
 
@@ -392,7 +112,7 @@
                 <div class="banner-card-body">
 
                     <div class="banner-field-label">Members</div>
-                    <ui-select multiple ng-model="banner._members" theme="select2" style="width: 100%">
+                    <ui-select multiple ng-model="banner._members" theme="select2" class="banner-members-select">
                         <ui-select-match placeholder="Tag members...">{{$item.firstname}} {{$item.lastname}}</ui-select-match>
                         <ui-select-choices repeat="m in allMembers | filter: memberSearch($select.search) track by m._id">
                             {{m.firstname}} {{m.lastname}}
@@ -417,8 +137,8 @@
                         <i class="fa fa-camera"></i> No photo credit: add the photographer's name (a link is optional)
                     </div>
                     <input type="text" class="form-control input-sm" ng-model="banner.copyright.name" placeholder="Name">
-                    <input type="text" class="form-control input-sm" ng-model="banner.copyright.url" placeholder="URL" style="margin-top: 4px;">
-                    <div class="banner-color-row" style="margin-top: 4px;">
+                    <input type="text" class="form-control input-sm" ng-model="banner.copyright.url" placeholder="URL">
+                    <div class="banner-color-row">
                         <input type="color" ng-model="banner.copyright.color">
                         <input type="text" class="form-control input-sm" ng-model="banner.copyright.color" placeholder="Color">
                     </div>

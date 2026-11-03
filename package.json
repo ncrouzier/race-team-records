@@ -55,12 +55,14 @@
     "passport-local": "~1.0.0",
     "sanitize-html": "^2.17.2",
     "serve-favicon": "^2.5.0",
-    "underscore": "^1.9.1"
+    "sharp": "^0.32.6",
+    "underscore": "^1.9.1",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15"
   },
   "devDependencies": {
     "@tensorflow/tfjs": "^4.22.0",
-    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
-    "@vladmandic/face-api": "^1.7.15",
     "bower": "^1.8.14",
     "chokidar-cli": "^3.0.0",
     "clean-css-cli": "^5.6.3",
@@ -70,7 +72,6 @@
     "less": "^4.6.4",
     "nodemon": "^3.1.14",
     "npm-run-all2": "^8.0.4",
-    "sharp": "^0.32.6",
     "terser": "^5.16.1"
   },
   "jest": {

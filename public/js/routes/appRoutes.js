@@ -7,6 +7,8 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
     });
     // For any unmatched url, redirect to /state1
     $urlRouterProvider.otherwise("/");
+    // Renamed page: old links and bookmarks still land on it
+    $urlRouterProvider.when('/about', '/about-agegrading');
     //
     // Now set up the states
     $stateProvider
@@ -179,9 +181,10 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 dir: { value: null, squash: true, dynamic: true },
                 page: { value: null, squash: true, dynamic: true }
             }
-        }).state('/about', {
-            url: '/about',
+        }).state('/about-agegrading', {
+            url: '/about-agegrading',
             templateUrl: 'views/about.html',
+            controller: 'AboutAgeGradingController'
         })
         .state('/races', {
             url: '/races/:raceId',
@@ -333,10 +336,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/contact",
             templateUrl: "views/contact.html",
             controller: 'ContactController'
-        }).state('/bulk', {
-            url: "/bulk",
-            templateUrl: "views/bulkOperations.html",
-            controller: 'BulkOperationsController'
         }).state('/mcrrcreport', {
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",

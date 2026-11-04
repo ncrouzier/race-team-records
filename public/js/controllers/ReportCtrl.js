@@ -29,8 +29,15 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
         $scope[opened] = true;
     };
 
+    // The datepicker gives a local date-time (the defaults carry the time the
+    // page opened): its local calendar day is the day picked. Formatting it in
+    // UTC would turn an evening into the next day.
+    function pickedDay(d) {
+        return $filter('date')(d, 'yyyy-MM-dd');
+    }
+    // Race dates are stored at UTC midnight: the picked day at UTC midnight
     function utcDay(d) {
-        return new Date($filter('date')(d, 'yyyy-MM-dd', 'UTC')).getTime();
+        return new Date(pickedDay(d)).getTime();
     }
     function ymd(d) {
         return $filter('date')(d, 'yyyy-MM-dd', 'UTC');
@@ -59,9 +66,12 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
         if (!rank) return null;
         return { rank: rank, total: total || null };
     }
+    function round2(n) {
+        return Math.round(n * 100) / 100;
+    }
     function miles(race, result) {
         var mi = result.miles || (race.racetype && race.racetype.miles);
-        return mi ? Math.round(mi * 100) / 100 : null;
+        return mi ? round2(mi) : null;
     }
 
     $scope.getReports = function() {
@@ -91,8 +101,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
             raceCountMilestones: [],
             birthdayRaces: [],
             firstTeamRaceInLocation: [],
-            topAgeGrades: [],
-            mostActiveMembers: []
+            topAgeGrades: []
         };
         var totalMiles = 0;
         var gradedResults = [];
@@ -114,7 +123,8 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                 var names = runnerNames(result);
                 var mi = miles(race, result);
                 var seconds = result.time / 100;
-                if (mi) totalMiles += mi * result.members.length;
+                // A shared (relay) result covers its distance once, between its runners
+                if (mi) totalMiles += mi;
                 var r = result.ranking || {};
                 var entry = {
                     runners: result.members.map(function(m) {
@@ -131,6 +141,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     timeSeconds: Math.round(seconds * 100) / 100,
                     pacePerMile: mi && !race.isMultisport ? $filter('resultToPace')(result, race) : null,
                     miles: mi,
+                    milesPerRunner: mi && result.members.length > 1 ? round2(mi / result.members.length) : undefined,
                     placing: {
                         overall: place(r.overallrank, r.overalltotal),
                         gender: place(r.genderrank, r.gendertotal),
@@ -150,7 +161,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     var k = m._id;
                     if (!runners[k]) runners[k] = { name: fullName(m), races: 0, miles: 0 };
                     runners[k].races++;
-                    if (mi) runners[k].miles += mi;
+                    if (mi) runners[k].miles += mi / result.members.length;
                 });
 
                 var where = { runner: names, race: race.racename, date: ymd(race.racedate), time: entry.time, resultUrl: entry.resultUrl };
@@ -174,7 +185,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                 date: ymd(race.racedate),
                 location: locName,
                 distance: race.distanceName || (race.racetype && race.racetype.name) || null,
-                miles: race.racetype && race.racetype.miles ? Math.round(race.racetype.miles * 100) / 100 : null,
+                miles: race.racetype && race.racetype.miles ? round2(race.racetype.miles) : null,
                 surface: race.racetype && race.racetype.surface,
                 isMultisport: !!race.isMultisport,
                 isClubRace: !!race.clubRace,
@@ -188,24 +199,30 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
 
         gradedResults.sort(function(a, b) { return b.ageGradePercent - a.ageGradePercent; });
         highlights.topAgeGrades = gradedResults.slice(0, 10);
-        highlights.mostActiveMembers = Object.keys(runners).map(function(k) {
+        // Every runner, so their races and miles add up to the totals
+        var runnersInPeriod = Object.keys(runners).map(function(k) {
             var r = runners[k];
-            return { name: r.name, races: r.races, miles: Math.round(r.miles * 10) / 10 };
-        }).filter(function(r) { return r.races > 1; })
-          .sort(function(a, b) { return b.races - a.races || b.miles - a.miles; })
-          .slice(0, 10);
+            return { name: r.name, races: r.races, miles: round2(r.miles) };
+        }).sort(function(a, b) { return b.races - a.races || b.miles - a.miles || a.name.localeCompare(b.name); });
+        var resultCount = races.reduce(function(n, r) { return n + r.results.length; }, 0);
+        var podiumResults = {};
+        highlights.podiums.forEach(function(p) { podiumResults[p.resultUrl] = true; });
 
         return {
             about: 'Race results of the MCRRC Racing Team (Montgomery County Road Runners Club, Maryland, USA) for the period below, exported from the team records site to write a team highlights summary. Races are newest first. Use only what is here; do not invent times, placings or names.',
             team: 'MCRRC Racing Team',
             site: SITE_URL,
-            period: { from: ymd($scope.datefrom), to: ymd($scope.dateto) },
+            period: { from: pickedDay($scope.datefrom), to: pickedDay($scope.dateto) },
             generatedAt: new Date().toISOString(),
             totals: {
                 races: races.length,
-                results: races.reduce(function(n, r) { return n + r.results.length; }, 0),
-                distinctRunners: Object.keys(runners).length,
-                totalMilesRaced: Math.round(totalMiles * 10) / 10,
+                results: resultCount,
+                runnerResults: runnersInPeriod.reduce(function(n, r) { return n + r.races; }, 0),
+                distinctRunners: runnersInPeriod.length,
+                totalMilesRaced: round2(totalMiles),
+                resultsWithAPodium: Object.keys(podiumResults).length,
+                personalBests: highlights.personalBests.length,
+                teamRecords: highlights.teamRecords.length,
                 locations: Object.keys(locations)
             },
             definitions: {
@@ -223,9 +240,12 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     birthday: 'Raced on their birthday.',
                     newLocation: 'First team race ever in that state or country.'
                 },
-                isTeamOrRelayResult: 'One result shared by several runners (relay or team event).'
+                isTeamOrRelayResult: 'One result shared by several runners (relay or team event). Its miles is the whole relay distance; milesPerRunner is an equal share of it.',
+                totals: 'results = sum of races[].teamResultCount. runnerResults counts each runner of a shared result once (= sum of runnersInPeriod[].races). totalMilesRaced = sum of results[].miles, each result once: a relay or team result covers its distance once, however many runners shared it. runnersInPeriod[].miles credits each runner of a shared result an equal share (milesPerRunner), so it sums to totalMilesRaced give or take 0.01 of rounding. Miles are rounded to 2 decimals.',
+                highlightLists: 'podiums has one entry per podium placing, so a result can appear up to three times (overall, gender, age group); resultsWithAPodium counts each result once. topAgeGrades is only the 10 best. Every other highlight list is complete.'
             },
             highlights: highlights,
+            runnersInPeriod: runnersInPeriod,
             races: races
         };
     }

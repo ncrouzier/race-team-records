@@ -7,6 +7,10 @@ var systeminfoSchema = mongoose.Schema({
     raceUpdate        : Date,
     racetypeUpdate        : Date,
     memberUpdate        : Date,
+    // A member's bio, photo or profile thumbnail: what member lists show,
+    // never what the race list embeds (name, sex, date of birth), so it
+    // does not make every browser fetch the race list again
+    memberProfileUpdate : Date,
     volunteerJobUpdate  : Date,
     // Race series links (app/models/raceseries.js). Kept out of the "overall"
     // update, so a series change does not make browsers fetch the whole race

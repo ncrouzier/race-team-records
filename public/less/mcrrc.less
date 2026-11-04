@@ -18822,3 +18822,130 @@ h2 .club-mark {
         border-top: 1px solid #edf1f3;
     }
 }
+
+// Create Report (admin): period picker, then one card per export, each with
+// its own copy button
+.jumbotron.report-tool {
+    .report-card .member-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        h3 .fa {
+            color: @brand-primary;
+            font-size: 0.85em;
+            margin-right: 4px;
+        }
+    }
+
+    .report-subtitle {
+        margin: 10px 0 16px;
+        color: #6b7f88;
+        font-size: 14px;
+    }
+
+    .report-period {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px;
+
+        .report-field {
+            margin-bottom: 0;
+        }
+    }
+
+    .report-field {
+        margin-bottom: 16px;
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            .site-label();
+        }
+    }
+
+    .report-field-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+
+        label {
+            margin-bottom: 0;
+        }
+    }
+
+    .form-control {
+        border-radius: 8px;
+    }
+
+    // flex, so the calendar button stretches to the input's height
+    .report-date {
+        display: flex;
+        align-items: stretch;
+        width: 190px;
+
+        .form-control {
+            flex: 1;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .input-group-btn {
+            display: flex;
+            width: auto;
+        }
+
+        .input-group-btn .btn {
+            height: auto;
+            border-radius: 0 8px 8px 0;
+            border-color: #c8dbe4;
+            color: @brand-primary;
+            background: #fff;
+
+            &:hover,
+            &:focus {
+                background: @brand-primary;
+                border-color: @brand-primary;
+                color: #fff;
+            }
+        }
+    }
+
+    .report-code {
+        font-family: Menlo, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.45;
+        background: #fbfcfd;
+        resize: vertical;
+    }
+
+    .report-box {
+        height: 260px;
+    }
+
+    .row > .report-field {
+        margin-bottom: 0;
+    }
+
+    .report-rendered {
+        overflow: auto;
+        padding: 10px;
+        border: 1px solid #c8dbe4;
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    .report-empty {
+        padding: 24px;
+        text-align: center;
+        color: #6b7f88;
+        .site-card-surface();
+    }
+}

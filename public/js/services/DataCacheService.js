@@ -37,6 +37,11 @@ angular.module('mcrrcApp').factory('DataCacheService', ['$q', '$timeout', 'Syste
     // volunteer edit does not send everyone the whole race list again
     factory.RACE_DATA = ['resultUpdate', 'raceUpdate', 'racetypeUpdate', 'memberUpdate'];
 
+    // What member lists follow: the race data, plus a member's bio, photo or
+    // thumbnail (memberProfileUpdate), which the race list does not embed and
+    // so does not refresh for
+    factory.MEMBER_DATA = factory.RACE_DATA.concat(['memberProfileUpdate']);
+
     // The newest of some SystemInfo fields, as a stamp
     function newestStamp(info, fields) {
         var newest = null;

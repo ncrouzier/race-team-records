@@ -95,12 +95,20 @@ memberSchema.pre('save', function() {
         this.createdAt =currentDate;
     }
     this.updatedAt = currentDate;
-    return memberSchema.methods.updateSystemInfo('mcrrc', currentDate);
+    // The race list embeds each runner's name, username, sex and date of
+    // birth: only a change to one of those is a race-data change. Anything
+    // else (bio, photo, dates, achievements, a new member) only changes
+    // member lists, so it stamps memberProfileUpdate and leaves the race
+    // list, and every browser's copy of it, alone.
+    var raceDataChanged = !this.isNew && RACE_LIST_FIELDS.some(function (field) {
+        return this.isModified(field);
+    }, this);
+    return raceDataChanged
+        ? bumpStamp('memberUpdate', currentDate)
+        : bumpStamp('memberProfileUpdate', currentDate, { quiet: true });
 });
 
-memberSchema.methods.updateSystemInfo = function (name, date) {
-    return bumpStamp('memberUpdate', date);
-};
+var RACE_LIST_FIELDS = ['firstname', 'lastname', 'username', 'sex', 'dateofbirth'];
 
 
 // create the model for users and expose it to our app

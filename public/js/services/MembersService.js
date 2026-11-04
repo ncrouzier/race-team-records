@@ -32,7 +32,7 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         if (!memberLists[key]) {
             memberLists[key] = DataCacheService.create({
                 name: 'members:' + key,
-                stampFields: DataCacheService.RACE_DATA,
+                stampFields: DataCacheService.MEMBER_DATA,
                 readStore: function () {
                     return $q.when(DexieService.open()).then(function () {
                         return DexieService.members.get(key);

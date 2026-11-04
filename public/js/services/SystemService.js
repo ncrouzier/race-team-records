@@ -15,6 +15,7 @@ angular.module('mcrrcApp').service('SystemService', ['Restangular', function(Res
                     memberUpdate: headers['x-member-update'],
                     volunteerJobUpdate: headers['x-volunteer-job-update'],
                     seriesUpdate: headers['x-series-update'],
+                    memberProfileUpdate: headers['x-member-profile-update'],
                     overallUpdate: headers['x-overall-update']
                 };
                 lastApiCallTime = Date.now();

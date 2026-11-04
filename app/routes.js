@@ -250,6 +250,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     this.set('X-Volunteer-Job-Update', systemInfo.volunteerJobUpdate ? systemInfo.volunteerJobUpdate.toISOString() : '');
                     // Not part of the overall update below: see SystemInfo.seriesUpdate
                     this.set('X-Series-Update', systemInfo.seriesUpdate ? systemInfo.seriesUpdate.toISOString() : '');
+                    // Nor this: a bio / photo / thumbnail change (SystemInfo.memberProfileUpdate)
+                    this.set('X-Member-Profile-Update', systemInfo.memberProfileUpdate ? systemInfo.memberProfileUpdate.toISOString() : '');
                     // Calculate overall update
                     const dates = [
                         systemInfo.resultUpdate,
@@ -1167,7 +1169,7 @@ module.exports = async function (app, qs, passport, async, _) {
             });
             //will be 0 but initialize the fields
             await service.updateTeamRequirementStats(member);
-            profileThumbnails.regenerateInBackground(member, () => service.updateSystemInfoAndInvalidateSystemInfoCache('memberUpdate'));
+            profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
         } catch (err) {
             res.send(err);
         }
@@ -1267,7 +1269,7 @@ module.exports = async function (app, qs, passport, async, _) {
             await member.save();
 
             if (member.pictureLink !== oldPictureLink) {
-                profileThumbnails.regenerateInBackground(member, () => service.updateSystemInfoAndInvalidateSystemInfoCache('memberUpdate'));
+                profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
             }
 
             // Log the photo edit
@@ -1325,7 +1327,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             const fresh = await Member.findById(member._id).select('+profileThumb').lean();
             // Cached member lists embed thumbnails: tell browsers they changed
-            await service.updateSystemInfoAndInvalidateSystemInfoCache('memberUpdate');
+            await service.markMemberProfileChanged();
 
             service.logActivity({
                 userId: req.user._id,
@@ -1384,7 +1386,7 @@ module.exports = async function (app, qs, passport, async, _) {
             await member.save();
 
             if ((member.pictureLink || '') !== oldPictureLink) {
-                profileThumbnails.regenerateInBackground(member, () => service.updateSystemInfoAndInvalidateSystemInfoCache('memberUpdate'));
+                profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
             }
 
             // Check if age grade recalculation is needed
@@ -1504,7 +1506,12 @@ module.exports = async function (app, qs, passport, async, _) {
             // Update member stats using bulk operations
             await service.updateMemberStatsBulk([member._id]);
 
-            await service.updateSystemInfoAndInvalidateSystemInfoCache("results");
+            // The member's own save stamped memberUpdate or memberProfileUpdate
+            // (Member's save hook); volunteer jobs embedding their name were
+            // rewritten with bulkWrite, which no hook sees
+            if (volunteerJobBulkOperations.length > 0) {
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('volunteerJobUpdate');
+            }
 
             res.json({
                 success: "Member updated successfully, results updated: " + resultBulkOperations.length + ", volunteer jobs updated: " + volunteerJobBulkOperations.length,
@@ -1526,6 +1533,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }).then(async deleteResult => {
                 if (deleteResult.deletedCount === 1) {
                     await service.invalidateSystemInfoCache();
+                    await service.markMemberProfileChanged();
                     res.send('{"success" : "Member deleted successfully", "status" : 200}');
                 } else {
                     res.send('{"error" : "Member not deleted", "status" : 200}');

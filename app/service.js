@@ -161,6 +161,19 @@ module.exports = {
             throw error;
         }
     },
+    // Only the server's cached copy of the stamps, without the data-change
+    // listeners: for a change the race list does not contain
+    forgetSystemInfoCache: function () {
+        systemInfoCache.data = null;
+        systemInfoCache.lastUpdated = 0;
+    },
+
+    // A member's profile thumbnail or crop changed, or a member was deleted:
+    // writes that bypass the Member save hook (which stamps everything else)
+    markMemberProfileChanged: function () {
+        return require('./models/stamp')('memberProfileUpdate', Date.now(), { quiet: true });
+    },
+
     // Get cached system info or fetch from database if needed
     getCachedSystemInfo: async function () {
         return await getCachedSystemInfo();

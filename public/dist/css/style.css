@@ -22984,3 +22984,110 @@ h2 .club-mark {
   padding: 14px 24px;
   border-top: 1px solid #edf1f3;
 }
+.jumbotron.report-tool .report-card .member-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.jumbotron.report-tool .report-card .member-card-header::before,
+.jumbotron.report-tool .report-card .member-card-header::after {
+  display: none;
+}
+.jumbotron.report-tool .report-card .member-card-header h3 .fa {
+  color: #008cba;
+  font-size: 0.85em;
+  margin-right: 4px;
+}
+.jumbotron.report-tool .report-subtitle {
+  margin: 10px 0 16px;
+  color: #6b7f88;
+  font-size: 14px;
+}
+.jumbotron.report-tool .report-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+.jumbotron.report-tool .report-period .report-field {
+  margin-bottom: 0;
+}
+.jumbotron.report-tool .report-field {
+  margin-bottom: 16px;
+}
+.jumbotron.report-tool .report-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+}
+.jumbotron.report-tool .report-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.jumbotron.report-tool .report-field-head label {
+  margin-bottom: 0;
+}
+.jumbotron.report-tool .form-control {
+  border-radius: 8px;
+}
+.jumbotron.report-tool .report-date {
+  display: flex;
+  align-items: stretch;
+  width: 190px;
+}
+.jumbotron.report-tool .report-date .form-control {
+  flex: 1;
+  border-radius: 8px 0 0 8px;
+}
+.jumbotron.report-tool .report-date .input-group-btn {
+  display: flex;
+  width: auto;
+}
+.jumbotron.report-tool .report-date .input-group-btn .btn {
+  height: auto;
+  border-radius: 0 8px 8px 0;
+  border-color: #c8dbe4;
+  color: #008cba;
+  background: #fff;
+}
+.jumbotron.report-tool .report-date .input-group-btn .btn:hover,
+.jumbotron.report-tool .report-date .input-group-btn .btn:focus {
+  background: #008cba;
+  border-color: #008cba;
+  color: #fff;
+}
+.jumbotron.report-tool .report-code {
+  font-family: Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  background: #fbfcfd;
+  resize: vertical;
+}
+.jumbotron.report-tool .report-box {
+  height: 260px;
+}
+.jumbotron.report-tool .row > .report-field {
+  margin-bottom: 0;
+}
+.jumbotron.report-tool .report-rendered {
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #c8dbe4;
+  border-radius: 8px;
+  background: #fff;
+}
+.jumbotron.report-tool .report-empty {
+  padding: 24px;
+  text-align: center;
+  color: #6b7f88;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}

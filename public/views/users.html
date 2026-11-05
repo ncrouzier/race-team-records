@@ -103,12 +103,11 @@
                                 <span ng-if="!u.member" class="text-muted">-</span>
                             </td>
                             <td>
-                                <button type="button" class="site-tag site-tag-toggle"
-                                    ng-class="u.enabled ? 'site-tag-success' : 'site-tag-muted'"
-                                    ng-click="toggleEnabled(u)" title="Click to {{u.enabled ? 'disable' : 'enable'}}">
+                                <!-- Changed in the edit modal, which can also email the user -->
+                                <span class="site-tag" ng-class="u.enabled ? 'site-tag-success' : 'site-tag-muted'">
                                     <i class="fa" ng-class="u.enabled ? 'fa-check' : 'fa-ban'"></i>
                                     {{u.enabled ? 'enabled' : 'disabled'}}
-                                </button>
+                                </span>
                             </td>
                             <td class="member-table-date">{{u.createdAt | date:'yyyy-MM-dd'}}</td>
                             <td class="member-table-date">

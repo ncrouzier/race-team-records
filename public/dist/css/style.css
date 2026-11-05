@@ -23561,3 +23561,49 @@ banner-stage {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
+.modal.user-modal-window .modal-dialog {
+  width: 720px !important;
+  max-width: calc(100vw - 24px) !important;
+}
+.modal .site-modal.user-modal .user-status-toggle {
+  display: flex;
+  gap: 6px;
+}
+.modal .site-modal.user-modal .user-status-toggle .mcrrc-btn {
+  flex: 1;
+}
+.modal .site-modal.user-modal .user-status-toggle .mcrrc-btn.is-on.is-off-state {
+  background: #eef2f4;
+  border-color: #b7c4ca;
+  color: #5b707a;
+}
+.modal .site-modal.user-modal .user-status-hint {
+  margin: 8px 0 0;
+  color: #a05a00;
+  font-size: 12.5px;
+}
+.modal .site-modal.user-modal .user-notify-option {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid #cfe6c8;
+  border-radius: 10px;
+  background: #f1f9ee;
+}
+.modal .site-modal.user-modal .user-notify-option .checkbox {
+  margin: 0;
+}
+.modal .site-modal.user-modal .user-notify-option small {
+  display: block;
+  margin-top: 2px;
+  padding-left: 20px;
+  color: #6b7f88;
+}
+.modal .site-modal.user-modal .user-optional {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: #8aa0aa;
+}
+.modal .site-modal.user-modal .user-member-select {
+  width: 100%;
+}

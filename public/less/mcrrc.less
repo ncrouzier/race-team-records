@@ -19424,3 +19424,64 @@ banner-stage {
     font-size: 13px;
     font-variant-numeric: tabular-nums;
 }
+
+// ---- Add / edit user pop-ups (Users page) ----
+.modal.user-modal-window .modal-dialog {
+    width: 720px !important;
+    max-width: calc(~"100vw - 24px") !important;
+}
+
+.modal .site-modal.user-modal {
+    .user-status-toggle {
+        display: flex;
+        gap: 6px;
+
+        .mcrrc-btn {
+            flex: 1;
+        }
+
+        // "Disabled" when chosen: grey, not the blue of a positive choice
+        .mcrrc-btn.is-on.is-off-state {
+            background: #eef2f4;
+            border-color: #b7c4ca;
+            color: #5b707a;
+        }
+    }
+
+    .user-status-hint {
+        margin: 8px 0 0;
+        color: #a05a00;
+        font-size: 12.5px;
+    }
+
+    // Approving an account: the email option, in a light callout
+    .user-notify-option {
+        margin: 0 0 16px;
+        padding: 10px 14px;
+        border: 1px solid #cfe6c8;
+        border-radius: 10px;
+        background: #f1f9ee;
+
+        .checkbox {
+            margin: 0;
+        }
+
+        small {
+            display: block;
+            margin-top: 2px;
+            padding-left: 20px;
+            color: #6b7f88;
+        }
+    }
+
+    .user-optional {
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 400;
+        color: #8aa0aa;
+    }
+
+    .user-member-select {
+        width: 100%;
+    }
+}

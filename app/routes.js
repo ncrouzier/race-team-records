@@ -441,7 +441,20 @@ module.exports = async function (app, qs, passport, async, _) {
             if (!user) {
                 res.status(401).send(req.flash('signupMessage'));
             } else {
-                // Don't auto-login — account is disabled until admin approves
+                // Don't auto-login — account is disabled until admin approves.
+                // In the activity log too, so it shows in the admins' unseen
+                // count, not only in their email.
+                service.logActivity({
+                    userId: user._id,
+                    username: user.username,
+                    action: 'user_signup',
+                    description: 'New account awaiting approval: ' + user.username + ' (' + user.email + ')',
+                    targetType: 'user',
+                    targetId: String(user._id),
+                    targetName: user.username,
+                    metadata: { email: user.email },
+                    ipAddress: req.ip
+                });
                 // Send confirmation email to the user
                 transport.sendMail({
                     from: {

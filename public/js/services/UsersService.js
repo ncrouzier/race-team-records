@@ -24,8 +24,11 @@ angular.module('mcrrcApp.results').factory('UsersService', ['Restangular', '$uib
 
     // Edit user
     factory.editUser = function(user, options) {
+        // Set afresh each save: never left over from an earlier one
         if (options && options.notifyUser) {
             user.notifyUser = true;
+        } else {
+            delete user.notifyUser;
         }
         return user.save().then(function(response) {
             delete user.notifyUser;
@@ -48,7 +51,8 @@ angular.module('mcrrcApp.results').factory('UsersService', ['Restangular', '$uib
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/userAddModal.html',
             controller: 'UserAddModalInstanceController',
-            size: 'lg',
+            // Its own width (mcrrc.less): the site's large modals go full width
+            windowClass: 'user-modal-window',
             backdrop: 'static',
             resolve: {
                 membersList: function() {
@@ -69,7 +73,8 @@ angular.module('mcrrcApp.results').factory('UsersService', ['Restangular', '$uib
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/userEditModal.html',
             controller: 'UserEditModalInstanceController',
-            size: 'lg',
+            // Its own width (mcrrc.less): the site's large modals go full width
+            windowClass: 'user-modal-window',
             backdrop: 'static',
             resolve: {
                 user: function() {
@@ -81,8 +86,10 @@ angular.module('mcrrcApp.results').factory('UsersService', ['Restangular', '$uib
             }
         });
 
-        return modalInstance.result.then(function(updatedUser) {
-            return factory.editUser(updatedUser);
+        // { user, notifyUser }: notifyUser emails them that their account is
+        // now active (only when it was just enabled)
+        return modalInstance.result.then(function(result) {
+            return factory.editUser(result.user, { notifyUser: result.notifyUser });
         }, function() {
             return null;
         });

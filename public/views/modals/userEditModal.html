@@ -1,74 +1,86 @@
-<div class="modal-header">
-    <h3 class="modal-title">Edit User</h3>
+<div class="site-modal user-modal">
+<div class="modal-header site-modal-header">
+    <div>
+        <h3 class="modal-title">Edit user</h3>
+        <p class="site-modal-subtitle">{{formData.username}}</p>
+    </div>
 </div>
 <div class="modal-body" style="overflow: visible;">
     <form name="formEditUser">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-sm-6">
                 <div class="form-group"
                     ng-class="{ 'has-error' : formEditUser.username.$invalid && !formEditUser.username.$pristine}">
-                    <label class="text-left">Username:</label>
-                    <input type="text" name="username" class="form-control input-md text-left"
-                        ng-model="formData.username" required>
+                    <label for="editUsername">Username</label>
+                    <input id="editUsername" type="text" name="username" class="form-control" ng-model="formData.username" required>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-6">
                 <div class="form-group"
                     ng-class="{ 'has-error' : formEditUser.email.$invalid && !formEditUser.email.$pristine}">
-                    <label class="text-left">Email:</label>
-                    <input type=" email" name="email" class="form-control input-md text-left" ng-model="formData.email"
-                        required>
+                    <label for="editEmail">Email</label>
+                    <input id="editEmail" type="email" name="email" class="form-control" ng-model="formData.email" required>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-sm-6">
                 <div class="form-group">
-                    <label class="text-left">Role:</label>
-                    <select name="role" class="form-control" ng-model="formData.role"
+                    <label for="editRole">Role</label>
+                    <select id="editRole" name="role" class="form-control" ng-model="formData.role"
                         ng-options="role for role in roleOptions" required>
                     </select>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-sm-6">
                 <div class="form-group">
-                    <label class="text-left">Account Status:</label>
-                    <div>
-                        <label class="hoverhand">
-                            <input type="checkbox" ng-model="formData.enabled"> Enabled
-                        </label>
+                    <label>Account status</label>
+                    <div class="user-status-toggle" role="group">
+                        <button type="button" class="mcrrc-btn" ng-class="{'is-on': formData.enabled}"
+                            ng-click="formData.enabled = true"><i class="fa fa-check"></i> Enabled</button>
+                        <button type="button" class="mcrrc-btn" ng-class="{'is-on is-off-state': !formData.enabled}"
+                            ng-click="formData.enabled = false"><i class="fa fa-ban"></i> Disabled</button>
                     </div>
+                    <p class="user-status-hint" ng-if="!wasEnabled && !formData.enabled">
+                        <i class="fa fa-clock-o"></i> Waiting for approval: enable it to let them log in.
+                    </p>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="form-group">
-                    <label class="text-left">Associated Member:</label>
-                    <ui-select ng-model="formData.member" theme="select2" style="min-width: 200px;"
+
+        <!-- Approving an account waiting since signup -->
+        <div class="user-notify-option" ng-if="!wasEnabled && formData.enabled">
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" ng-model="formData.notifyUser">
+                    Email <strong>{{formData.email || 'them'}}</strong> that their account is active
+                </label>
+            </div>
+            <small>The email has the link to log in.</small>
+        </div>
+
+        <div class="form-group">
+            <label>Associated member</label>
+                    <ui-select ng-model="formData.member" theme="select2" class="user-member-select"
                         append-to-body="true" allow-clear="true">
                         <ui-select-match placeholder="Select a member" allow-clear="true">
                             {{$select.selected.firstname}} {{$select.selected.lastname}}
                         </ui-select-match>
                         <ui-select-choices repeat="member in membersList | memberFilter: $select.search">
                             <span ng-class="{'past-member' : member.memberStatus === 'past'}">
-                                <div
-                                    ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search">
-                                </div>
-                                <small>
-                                    <span ng-if="member.memberStatus === 'past'">(past)</span>
-                                </small>
+                                <div ng-bind-html="(member.firstname +' ' + member.lastname) | highlight: $select.search"></div>
+                                <small><span ng-if="member.memberStatus === 'past'">(past)</span></small>
                             </span>
                         </ui-select-choices>
                     </ui-select>
-                </div>
-            </div>
         </div>
     </form>
 </div>
-<div class="modal-footer">
-    <button type="submit" class="btn btn-primary" ng-click="saveUser()" ng-disabled="formEditUser.$invalid">
-        Save Changes
+<div class="modal-footer site-modal-footer">
+    <button type="button" class="mcrrc-btn" ng-click="cancel()">Cancel</button>
+    <span class="site-modal-footer-spacer"></span>
+    <button type="submit" class="member-primary-btn" ng-click="saveUser()" ng-disabled="formEditUser.$invalid">
+        <i class="fa fa-check"></i> {{!wasEnabled && formData.enabled ? 'Approve and save' : 'Save changes'}}
     </button>
-    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+</div>
 </div>

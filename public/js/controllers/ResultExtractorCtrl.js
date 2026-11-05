@@ -157,6 +157,17 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             }
         });
 
+        // The server's fetchedVia, for the "loaded" notification
+        var FETCHED_VIA = {
+            'pasted': 'from the pasted page source',
+            'direct': 'directly from the site',
+            'proxy': 'through the proxy (the site blocked a direct request)',
+            'jina': 'through r.jina.ai (the site blocked a direct request)',
+            'runsignup-api': 'from the RunSignUp API',
+            'parkrun-proxy': 'from parkrun through the proxy',
+            'athlinks-api': 'from the Athlinks API'
+        };
+
         $scope.loadTable = function() {
             if (!$scope.formData.raceDate) {
                 NotificationService.showNotifiction(false,
@@ -165,6 +176,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             }
 
             $scope.isLoading = true;
+            $scope.distanceSuggestions = [];
 
             // Pasted source and a URL go to the same endpoint: it finds the
             // results table generically and tells us whether the page was a
@@ -181,6 +193,9 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         $scope.tableHeaders = response.data.headers;
                         $scope.tableData = response.data.data;
                         $scope.pageTitle = response.data.pageTitle;
+                        NotificationService.showNotifiction(true,
+                            'Loaded ' + response.data.data.length + ' rows ' +
+                            (FETCHED_VIA[response.data.fetchedVia] || 'from the page') + '.');
 
                         // Pasted source: the server says what it recognised.
                         // A URL: the host name still tells us.
@@ -242,6 +257,14 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         );
 
                         
+                        $scope.distanceSuggestions = ResultExtractionService.guessRaceDistance($scope.racetypesList, {
+                            pageTitle: response.data.pageTitle,
+                            url: $scope.url,
+                            headers: $scope.tableHeaders,
+                            rows: $scope.tableData,
+                            columnMapping: $scope.columnMapping
+                        });
+
                         // Try to extract race name from the page title or content
                         if (response.data.pageTitle) {
                             // Remove common suffixes and clean up the title
@@ -313,6 +336,22 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 }
             });
         });
+
+        // A guessed distance: select its race type, and for an "Odd ...
+        // distance" one fill in the measured length
+        $scope.applyDistanceSuggestion = function(s) {
+            $scope.formData.raceType = s.racetype;
+            $scope.onRaceTypeSelect(s.racetype);
+            if (s.miles) {
+                $scope.formData.miles = s.miles;
+                $scope.formData.meters = Math.round(s.miles * 1609.344);
+                if (!$scope.formData.distanceName) $scope.formData.distanceName = s.miles + ' miles';
+            }
+        };
+
+        $scope.isSuggestionApplied = function(s) {
+            return !!$scope.formData.raceType && $scope.formData.raceType._id === s.racetype._id;
+        };
 
         $scope.onRaceTypeSelect = function(selected) {
             $scope.raceType = selected;
@@ -816,6 +855,13 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         formatYear: 'yy',
 
         startingDay: 1
+    };
+
+    // Today's local calendar date, at UTC midnight like the picker's dates
+    // (its ng-model-options timezone is utc)
+    $scope.setToday = function() {
+        var now = new Date();
+        $scope.formData.raceDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     };
 
     $scope.open = function($event) {

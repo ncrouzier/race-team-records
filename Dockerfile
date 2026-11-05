@@ -70,6 +70,8 @@ COPY --from=build /app/views ./views
 COPY --from=build /app/config ./config
 COPY --from=build /app/app ./app
 COPY --from=build /app/package.json /app/server.js ./
+# The one-time member photo import, run inside this container (see the script)
+COPY --from=build /app/scripts/import-member-photos.js ./scripts/
 
 # Stamped by .github/workflows/deploy.yml so the running site can report which
 # image it is. Placed after every COPY on purpose: an ENV change invalidates

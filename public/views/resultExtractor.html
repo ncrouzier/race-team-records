@@ -21,6 +21,8 @@
                                 min-date="'2013-01-01'" max-date="'3015-06-22'" required
                                 close-text="Close" />
                             <span class="input-group-btn">
+                                <button type="button" class="btn btn-default rx-today" ng-click="setToday()"
+                                    uib-tooltip="Set to today's date">Today</button>
                                 <button type="button" class="btn btn-default" ng-click="open($event)"><i
                                         class="glyphicon glyphicon-calendar"></i></button>
                             </span>
@@ -134,6 +136,7 @@
             <div class="row">
                 <div class="col-md-12 rx-field">
                     <label>Race type</label>
+                    <div class="rx-racetype-row">
                     <ui-select ng-model="formData.raceType" theme="select2" class="stats-year-select rx-select-wide"
                         on-select="onRaceTypeSelect($item)">
                         <ui-select-match placeholder="Select a race type">
@@ -159,6 +162,20 @@
                             </div>
                         </ui-select-choices>
                     </ui-select>
+
+                    <!-- Distance guessed from the table (time ÷ pace) and the page title / link -->
+                    <div class="rx-suggest" ng-if="distanceSuggestions.length">
+                        <span class="rx-suggest-label"><i class="fa fa-lightbulb-o"></i> Suggested</span>
+                        <button type="button" class="mcrrc-btn rx-suggest-btn" ng-repeat="s in distanceSuggestions"
+                            ng-click="applyDistanceSuggestion(s)" ng-class="{'is-on': isSuggestionApplied(s)}"
+                            uib-tooltip="From the {{s.reason}}" tooltip-append-to-body="true">
+                            <i class="fa" ng-class="isSuggestionApplied(s) ? 'fa-check' : 'fa-magic'"></i>
+                            {{s.racetype.name}}
+                            <span ng-class="getRaceTypeClass(s.racetype.surface)">({{s.racetype.surface}})</span>
+                            <span ng-if="s.miles">&middot; {{s.miles}} mi</span>
+                        </button>
+                    </div>
+                    </div>
                 </div>
             </div>
 

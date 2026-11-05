@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'DexieService', 'DataCacheService', function (Restangular, $uibModal, $q, DexieService, DataCacheService) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', '$http', 'DexieService', 'DataCacheService', function (Restangular, $uibModal, $q, $http, DexieService, DataCacheService) {
     var factory = {};
     var members = Restangular.all('members');
 
@@ -109,17 +109,31 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         });
     };
 
-    //edit a member's photo link only
-    factory.editMemberPhoto = function (memberId, pictureLink) {
-        return Restangular.one('members', memberId).customPUT({ pictureLink: pictureLink }, 'photo');
+    // Upload a member's photo: the file (or the browser's resized copy) is the
+    // request body. Resolves to { pictureLink }.
+    factory.uploadMemberPhoto = function (memberId, blob) {
+        return $http.put('/api/members/' + memberId + '/photo', blob, {
+            headers: { 'Content-Type': blob.type || 'image/jpeg' },
+            transformRequest: angular.identity
+        }).then(function (res) { return res.data; });
     };
 
+    factory.removeMemberPhoto = function (memberId) {
+        return $http.delete('/api/members/' + memberId + '/photo').then(function (res) { return res.data; });
+    };
+
+    // The modal uploads (or removes) the photo and saves the thumbnail crop
+    // itself, so errors show in it. Resolves to the new pictureLink ('' once
+    // removed), null when cancelled with nothing changed.
     factory.showEditPhotoModal = function (member) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/photoEditModal.html',
             controller: 'PhotoEditModalInstanceController',
-            size: 'lg',
+            // Its own width (mcrrc.less): the site's large modals go to 1200px
+            windowClass: 'photo-edit-window',
             backdrop: 'static',
+            // Esc would dismiss and lose track of an upload already saved
+            keyboard: false,
             resolve: {
                 member: function () {
                     return member;
@@ -127,15 +141,10 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
             }
         });
 
-        return modalInstance.result.then(function (pictureLink) {
-            return factory.editMemberPhoto(member._id, pictureLink).then(function () {
-                if ((member.pictureLink || '') !== (pictureLink || '')) {
-                    // The server drops a crop chosen on the old photo too
-                    member.profileThumbCrop = undefined;
-                }
-                member.pictureLink = pictureLink;
-                return pictureLink;
-            });
+        return modalInstance.result.then(function (changed) {
+            member.pictureLink = changed.pictureLink;
+            member.profileThumbCrop = changed.profileThumbCrop;
+            return changed.pictureLink;
         }, function () {
             return null;
         });
@@ -147,20 +156,9 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         return Restangular.one('members', memberId).customPUT({ crop: crop }, 'thumbnail-crop');
     };
 
-    factory.showThumbnailCropModal = function (member) {
-        return $uibModal.open({
-            templateUrl: 'views/modals/thumbnailCropModal.html',
-            controller: 'ThumbnailCropModalInstanceController',
-            size: 'lg',
-            backdrop: 'static',
-            resolve: {
-                member: function () {
-                    return member;
-                }
-            }
-        }).result.catch(function () {
-            return null;
-        });
+    // The square the current thumbnail is cut from: { crop, chosen }
+    factory.getThumbnailCrop = function (memberId) {
+        return $http.get('/api/members/' + memberId + '/thumbnail-crop').then(function (res) { return res.data; });
     };
 
     //delete a member

@@ -402,5 +402,153 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
         });
     };
 
+    // ---------- Race distance guess ----------
+    //
+    // Two clues, once a results table is loaded:
+    //   - time ÷ pace, row by row, when the table has a pace column: the
+    //     median is the course length, to within the pace's rounding;
+    //   - distances written in the page title or URL ("10K", "half marathon",
+    //     "kentlands-lakelands-5k").
+    // Matched to the race types of that length (within 2%), every surface the
+    // distance exists on: the one the text names first (track, trail, cross
+    // country), else road. Returns the suggestions best first, each
+    // { racetype, reason, miles? } — miles only for an "Odd ... distance"
+    // type, when the measured length matches no standard one.
+
+    var MILE = 1609.344;
+    var WORD_NUMBERS = {
+        one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+        ten: 10, eleven: 11, twelve: 12, thirteen: 13, fifteen: 15, twenty: 20, fifty: 50, hundred: 100
+    };
+
+    // The distances, in meters, written in a piece of text
+    function distancesInText(text) {
+        var t = ' ' + String(text || '').toLowerCase()
+            .replace(/%20|[-_+\/]/g, ' ')
+            .replace(new RegExp('\\b(' + Object.keys(WORD_NUMBERS).join('|') + ')\\b', 'g'), function (w) { return WORD_NUMBERS[w]; }) + ' ';
+        var found = [];
+        var m;
+        if (/half\s*marathon|\bhalf\b|13\.1\b/.test(t)) found.push(21097.5);
+        if (/marathon|\b26\.2\b/.test(t.replace(/half\s*marathon/g, ''))) found.push(42195);
+        var km = /(\d+(?:\.\d+)?)\s*(?:k|km|kilometers?|kilometres?)(?![a-z])/g;
+        while ((m = km.exec(t))) found.push(parseFloat(m[1]) * 1000);
+        var mi = /(\d+(?:\.\d+)?)\s*(?:mi|miles?|miler)(?![a-z])/g;
+        while ((m = mi.exec(t))) found.push(parseFloat(m[1]) * MILE);
+        var relay = /\b(\d)\s*x\s*(\d{2,4})\b/g;
+        while ((m = relay.exec(t))) found.push(parseFloat(m[1]) * parseFloat(m[2]));
+        var meters = /(\d{2,5})\s*m(?![a-z])/g;
+        while ((m = meters.exec(t))) found.push(parseFloat(m[1]));
+        return found.filter(function (d, i) {
+            return d >= 50 && d <= 400000 && found.indexOf(d) === i;
+        });
+    }
+
+    function surfaceHint(text) {
+        var t = String(text || '').toLowerCase();
+        if (/\btrack\b|indoor|outdoor meet|\btrack meet\b|steeple/.test(t)) return 'track';
+        if (/trail|\bxc\b|cross[\s-]*country/.test(t)) return 'trail';
+        return null;
+    }
+
+    function median(values) {
+        var v = values.slice().sort(function (a, b) { return a - b; });
+        var n = v.length;
+        return n ? (n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2) : null;
+    }
+
+    // The course length from time ÷ pace over the rows, or null
+    function measuredMeters(headers, rows, columnMapping) {
+        var paceCol = (headers || []).find(function (h) { return /pace|min\s*\/\s*(mi|km)|per\s*(mile|km)/i.test(h); });
+        if (!paceCol) return null;
+        var timeCol = factory.columnFor(columnMapping, 'time') ||
+            (headers || []).find(function (h) { return h !== paceCol && /net|chip/i.test(h); }) ||
+            (headers || []).find(function (h) { return h !== paceCol && /time/i.test(h) && !/gun|clock/i.test(h); });
+        if (!timeCol) return null;
+        var perKm = /km/i.test(paceCol);
+        var ratios = [];
+        (rows || []).slice(0, 200).forEach(function (row) {
+            var paceText = String(row[paceCol] || '');
+            var time = factory.cleanTime(row[timeCol]);
+            var pace = factory.cleanTime(paceText.replace(/\/.*$/, ''));
+            if (!(time > 0 && pace > 0) || paceText.indexOf(':') === -1) return;
+            var unit = perKm || /km/i.test(paceText) ? 1000 : MILE;
+            ratios.push(time / pace * unit);
+        });
+        return ratios.length >= 3 ? median(ratios) : null;
+    }
+
+    function typesNear(racetypes, meters, tolerance) {
+        return (racetypes || []).filter(function (rt) {
+            return !rt.isVariable && rt.meters && Math.abs(rt.meters - meters) / meters <= tolerance;
+        });
+    }
+
+    var SURFACE_ORDER = ['road', 'track', 'trail', 'ultra'];
+    // A length written in the text is exact, give or take the race types'
+    // own rounding: tight enough that "8K" does not also mean 5 miles (0.6%)
+    var TEXT_TOLERANCE = 0.003;
+
+    function bySurface(surface) {
+        var order = [surface].concat(SURFACE_ORDER);
+        return function (a, b) {
+            var sa = order.indexOf(a.surface), sb = order.indexOf(b.surface);
+            return (sa < 0 ? 9 : sa) - (sb < 0 ? 9 : sb);
+        };
+    }
+
+    // The race types at one distance, every surface, the likeliest first: the
+    // surface the text names, else road. Relays (4x400, 50k relay) only when
+    // the text says relay, or when nothing else has that length.
+    function rankTypes(types, surface, text) {
+        var isRelay = function (rt) { return /relay|\dx\d/i.test(rt.name); };
+        var wantRelay = /relay|\d\s*x\s*\d/i.test(text);
+        var picked = types.filter(function (rt) { return isRelay(rt) === wantRelay; });
+        return (picked.length ? picked : types).slice().sort(bySurface(surface));
+    }
+
+    factory.guessRaceDistance = function (racetypes, page) {
+        var text = [page.pageTitle, page.raceName, page.url].filter(Boolean).join(' ');
+        var surface = surfaceHint(text);
+        var suggestions = [];
+        var add = function (racetype, reason, miles) {
+            if (!racetype || suggestions.some(function (s) { return s.racetype === racetype; })) return;
+            suggestions.push({ racetype: racetype, reason: reason, miles: miles });
+        };
+
+        var textDistances = distancesInText(text);
+        var measured = measuredMeters(page.headers, page.rows, page.columnMapping);
+
+        if (measured) {
+            var near = rankTypes(typesNear(racetypes, measured, 0.02), surface, text);
+            // The title confirms a type when it names that exact length
+            var inText = function (rt) {
+                return textDistances.some(function (d) { return Math.abs(rt.meters - d) / d <= TEXT_TOLERANCE; });
+            };
+            var milesText = (measured / MILE).toFixed(2) + ' mi';
+            if (near.length) {
+                near.filter(inText).concat(near.filter(function (rt) { return !inText(rt); })).forEach(function (rt) {
+                    add(rt, (inText(rt) ? 'page title and ' : '') + 'time ÷ pace ≈ ' + milesText);
+                });
+            } else {
+                // No standard length: the "Odd ... distance" types, ultra
+                // only past a marathon
+                (racetypes || []).filter(function (rt) {
+                    return rt.isVariable && /odd/i.test(rt.name) &&
+                        (rt.surface !== 'ultra' || measured > 42195 * 1.02);
+                }).sort(bySurface(surface)).forEach(function (rt) {
+                    add(rt, 'time ÷ pace ≈ ' + milesText + ', no standard distance', Math.round(measured / MILE * 100) / 100);
+                });
+            }
+        }
+
+        textDistances.forEach(function (d) {
+            rankTypes(typesNear(racetypes, d, TEXT_TOLERANCE), surface, text).forEach(function (rt) {
+                add(rt, 'page title or link');
+            });
+        });
+
+        return suggestions.slice(0, 8);
+    };
+
     return factory;
 }]);

@@ -33,3 +33,7 @@ public/dist/js/app.js
 
 # Safety dumps taken by scripts/restore-local.sh before it replaces the local database
 backups-local/
+
+# Member photos uploaded at runtime (app/memberPhotos.js). In production they
+# live on the host (/opt/mcrrc/uploads/photos), never in git or the image.
+uploads/

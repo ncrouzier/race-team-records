@@ -72,6 +72,29 @@ find "$BACKUP_DIR" -name 'mcrrcrecords-*.archive.gz' -mtime "+$RETAIN_DAYS" -del
 
 echo "$(date -u +%FT%TZ) local backup ok: $ARCHIVE ($((SIZE / 1024)) KiB)"
 
+# ---- Uploads: member photos and banners ------------------------------------
+# Plain files in the host folder (docker-compose.yml), not in Mongo, so the
+# dump above does not have them: uploads/photos (~30 MB) and uploads/banners
+# (~5 MB), in one archive. Archives from before banners moved there were
+# photos-<stamp>.tar.gz; they are pruned the same way.
+UPLOADS_ARCHIVE=""
+UPLOAD_PARTS=""
+for part in photos banners; do
+	[ -d "$STACK_DIR/uploads/$part" ] && UPLOAD_PARTS="$UPLOAD_PARTS $part"
+done
+if [ -n "$UPLOAD_PARTS" ]; then
+	UPLOADS_ARCHIVE="$BACKUP_DIR/uploads-$STAMP.tar.gz"
+	# Only finished files: not an upload in progress (*.tmp, .tmp-*) nor a
+	# banner photo still being framed (.drafts)
+	# shellcheck disable=SC2086
+	tar -czf "$UPLOADS_ARCHIVE" -C "$STACK_DIR/uploads" \
+		--exclude='*.tmp' --exclude='.tmp-*' --exclude='.drafts' $UPLOAD_PARTS
+	find "$BACKUP_DIR" \( -name 'uploads-*.tar.gz' -o -name 'photos-*.tar.gz' \) -mtime "+$RETAIN_DAYS" -delete
+	echo "$(date -u +%FT%TZ) uploads backup ok: $UPLOADS_ARCHIVE ($(($(wc -c < "$UPLOADS_ARCHIVE") / 1024)) KiB," \
+		"$(find "$STACK_DIR/uploads/photos" -name '*.jpg' 2>/dev/null | wc -l) photos," \
+		"$(find "$STACK_DIR/uploads/banners" -maxdepth 1 -name '*.jpg' 2>/dev/null | wc -l) banners)"
+fi
+
 # ---- Off-box copy to Google Drive -------------------------------------------
 # A backup sitting on the same droplet as the database does not survive losing
 # the droplet, which is most of what a backup is for.
@@ -79,6 +102,10 @@ echo "$(date -u +%FT%TZ) local backup ok: $ARCHIVE ($((SIZE / 1024)) KiB)"
 GDRIVE_REMOTE="${GDRIVE_REMOTE:-}"
 GDRIVE_FOLDER="${GDRIVE_FOLDER:-mcrrc-backups}"
 GDRIVE_RETAIN_DAYS="${GDRIVE_RETAIN_DAYS:-90}"
+# Upload archives kept in Drive: a count, not an age, so a missed week or a
+# run a few seconds late never leaves fewer. Weekly runs: 4 = the last 4
+# weeks. (PHOTOS_GDRIVE_KEEP is its old name, still read.)
+UPLOADS_GDRIVE_KEEP="${UPLOADS_GDRIVE_KEEP:-${PHOTOS_GDRIVE_KEEP:-4}}"
 
 if [ -z "$GDRIVE_REMOTE" ]; then
 	echo "GDRIVE_REMOTE not set - local backup only, nothing copied off-box."
@@ -113,3 +140,33 @@ rclone delete "${GDRIVE_REMOTE}:${GDRIVE_FOLDER}" \
 	--min-age "${GDRIVE_RETAIN_DAYS}d" --include 'mcrrcrecords-*.archive.gz' || true
 
 echo "$(date -u +%FT%TZ) uploaded to $DEST ($((SIZE / 1024)) KiB)"
+
+if [ -n "$UPLOADS_ARCHIVE" ]; then
+	UPLOADS_DEST="${GDRIVE_REMOTE}:${GDRIVE_FOLDER}/$(basename "$UPLOADS_ARCHIVE")"
+	if ! rclone copyto "$UPLOADS_ARCHIVE" "$UPLOADS_DEST" --transfers 1 --retries 3 2>&1; then
+		echo "FAILED: could not upload to $UPLOADS_DEST"
+		exit 1
+	fi
+	UPLOADS_SIZE=$(wc -c < "$UPLOADS_ARCHIVE")
+	UPLOADS_REMOTE_SIZE=$(rclone size "$UPLOADS_DEST" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
+	if [ "$UPLOADS_REMOTE_SIZE" != "$UPLOADS_SIZE" ]; then
+		echo "FAILED: uploaded size ${UPLOADS_REMOTE_SIZE:-unknown} does not match local $UPLOADS_SIZE"
+		exit 1
+	fi
+	echo "$(date -u +%FT%TZ) uploaded to $UPLOADS_DEST ($((UPLOADS_SIZE / 1024)) KiB)"
+
+	# Keep only the newest UPLOADS_GDRIVE_KEEP, the older photos-* archives
+	# counted with them. Names carry a UTC stamp after the prefix
+	# (uploads-20261108T031700Z.tar.gz), so sorting on the stamp sorts by
+	# date. Only after the new one is confirmed above, so a failed upload
+	# never prunes.
+	rclone lsf "${GDRIVE_REMOTE}:${GDRIVE_FOLDER}" --files-only --include 'uploads-*.tar.gz' --include 'photos-*.tar.gz' 2>/dev/null \
+		| sed -nE 's/^((uploads|photos)-(.*))$/\3 \1/p' \
+		| sort -r | tail -n +"$((UPLOADS_GDRIVE_KEEP + 1))" \
+		| while IFS=' ' read -r _stamp old; do
+			[ -n "$old" ] || continue
+			if rclone deletefile "${GDRIVE_REMOTE}:${GDRIVE_FOLDER}/$old"; then
+				echo "$(date -u +%FT%TZ) removed old uploads backup from Drive: $old"
+			fi
+		done
+fi

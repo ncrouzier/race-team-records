@@ -12,6 +12,9 @@ var BannerSchema = new mongoose.Schema({
     // group shots. Unset reads as 'right' (most banners have the runner on the
     // left). New entries get it from app/bannerDefaults.js.
     titlePosition: { type: String, enum: ['left', 'center', 'right'] },
+    // Hash of the banner file's contents (app/bannerFiles.js): its link
+    // carries ?v=<version>, so a replaced banner is fetched afresh
+    version: { type: String, default: '' },
     copyright: {
         name:  { type: String, default: '' },
         url:   { type: String, default: '' },

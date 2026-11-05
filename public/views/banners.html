@@ -4,10 +4,13 @@
             <div class="member-card-header">
                 <h3><i class="fa fa-picture-o"></i> Banner Management</h3>
                 <span class="banner-chip-row">
+                    <button class="member-primary-btn" ng-click="openEditor()">
+                        <i class="fa fa-plus"></i> New banner
+                    </button>
                     <button class="mcrrc-btn" ng-click="reset()" ng-disabled="savingAll || !dirty">
                         <i class="fa fa-undo"></i> Reset
                     </button>
-                    <button class="member-primary-btn" ng-click="saveAll()" ng-disabled="savingAll">
+                    <button class="mcrrc-btn" ng-click="saveAll()" ng-disabled="savingAll">
                         <i class="fa" ng-class="savingAll ? 'fa-spinner fa-spin' : 'fa-save'"></i>
                         {{savingAll ? 'Saving…' : 'Save all'}}
                     </button>
@@ -18,34 +21,11 @@
                 Click a preview to display it on the homepage.
             </p>
 
-        <!-- New images on disk with no banner entry yet -->
-        <div class="banner-new-images" ng-if="newImages.length">
-            <div class="banner-new-head">
-                <div>
-                    <strong><i class="fa fa-picture-o"></i>
-                        {{newImages.length}} new banner image{{newImages.length === 1 ? '' : 's'}} found</strong>
-                    <div class="banner-new-help">In public/images/banners but not on the site yet. Adding
-                        them puts them in the homepage rotation; then tag members and add the photo credit on their
-                        cards.</div>
-                </div>
-                <button class="crf-chip crf-chip-primary" ng-click="addNewImages()" ng-disabled="addingImages">
-                    <i class="fa" ng-class="addingImages ? 'fa-spinner fa-spin' : 'fa-plus'"></i>
-                    Add {{newImages.length === 1 ? 'it' : 'them'}}
-                </button>
-            </div>
-            <div class="banner-new-list">
-                <div class="banner-new-item" ng-repeat="img in newImages track by img.filename">
-                    <img ng-src="{{img.url}}">
-                    <div>{{img.filename}} &middot; title {{img.titlePosition}}</div>
-                </div>
-            </div>
-        </div>
-
         <!-- Entries whose image file is gone -->
-        <div class="alert alert-warning banner-missing-files" ng-if="missingFiles.length">
+        <div class="alert alert-warning banner-missing-files" ng-if="missingFiles().length">
             <i class="fa fa-exclamation-triangle"></i>
-            No image file for: <strong>{{missingFiles.join(', ')}}</strong>. Those cards show a broken image; delete
-            them, or put the file back in public/images/banners.
+            No image file for: <strong>{{missingFiles().join(', ')}}</strong>. Those cards show a broken image;
+            use <em>Replace photo</em> on them, or delete them.
         </div>
 
         <div class="banner-search">
@@ -101,12 +81,33 @@
 
                 <!-- Preview -->
                 <div class="banner-preview" ng-click="setActive(banner)" title="Click to preview on homepage">
-                    <img ng-src="{{'/images/banners/' + banner.filename}}">
+                    <img ng-src="{{banner.url}}">
                     <div class="banner-preview-overlay">
                         <i class="fa fa-eye"></i>
                     </div>
-                    <div class="banner-filename">{{banner.filename}}</div>
+                    <div class="banner-filename" ng-if="!renaming[banner._id]">{{banner.filename}}</div>
                 </div>
+
+                <!-- Rename: the file is renamed with it -->
+                <div class="banner-name-row" ng-if="!renaming[banner._id]">
+                    <button type="button" class="crf-chip crf-chip-ghost" ng-click="startRename(banner)" title="Rename this banner">
+                        <i class="fa fa-pencil"></i> Rename
+                    </button>
+                    <button type="button" class="crf-chip crf-chip-ghost" ng-click="openEditor(banner)"
+                        title="Upload the photo again to change the framing, or use another photo">
+                        <i class="fa fa-picture-o"></i> Replace photo
+                    </button>
+                </div>
+                <form class="banner-rename" ng-if="renaming[banner._id]" ng-submit="saveRename(banner)">
+                    <input type="text" class="form-control input-sm" ng-model="renaming[banner._id].name" maxlength="80"
+                        ng-keydown="$event.keyCode === 27 && cancelRename(banner)" aria-label="Banner name">
+                    <span class="banner-rename-ext">.jpg</span>
+                    <button type="submit" class="crf-chip crf-chip-primary" ng-disabled="renaming[banner._id].busy">
+                        <i class="fa" ng-class="renaming[banner._id].busy ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                    </button>
+                    <button type="button" class="crf-chip crf-chip-ghost" ng-click="cancelRename(banner)"><i class="fa fa-times"></i></button>
+                    <div class="banner-rename-error" ng-if="renaming[banner._id].error">{{renaming[banner._id].error}}</div>
+                </form>
 
                 <!-- Fields -->
                 <div class="banner-card-body">
@@ -161,7 +162,7 @@
                         </button>
                     </div>
                     <div class="banner-chip-row">
-                        <button type="button" class="crf-chip crf-chip-danger" ng-click="deleteBanner(banner)" title="Remove banner entry">
+                        <button type="button" class="crf-chip crf-chip-danger" ng-click="deleteBanner(banner)" title="Delete the banner and its image">
                             <i class="fa fa-trash"></i>
                         </button>
                         <button type="button" class="crf-chip" ng-click="save(banner)" ng-disabled="saving[banner._id]"

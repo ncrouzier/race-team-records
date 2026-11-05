@@ -1,13 +1,18 @@
 // Small server-side profile-photo thumbnails: a 160x160 JPEG cropped from a
 // member's pictureLink, generated once and kept on the member document in
-// Mongo — not the filesystem. The app container has no persistent volume,
-// so anything written to disk at runtime is lost on the next deploy; Mongo
-// already has one, so the thumbnail rides along on the member document
-// instead (small: a few KB of JPEG), behind `profileThumb`'s `select: false`
-// so it never bloats a list/bio query by accident (app/models/member.js).
-//
-// Used by the member list's "Cards" view, so loading ~100 cards doesn't mean
-// ~100 full-size photo downloads.
+// Mongo, behind `profileThumb`'s `select: false` so it never bloats a
+// list/bio query by accident (app/models/member.js). Not in a folder next to
+// the photos (app/memberPhotos.js), on purpose:
+//   - the cached list of all members embeds every thumbnail as a data: URI
+//     (MembersService.getAllMembersWithThumbs), so a page full of avatars is
+//     one request; with files that list would read ~150 files to build, or
+//     link to them and cost a request per avatar;
+//   - the thumbnail, the photo it was made from (sourceHash), the square it
+//     was cut from and any failure change in one write, so they can never
+//     disagree, as a file and its record could after a crash or a partial
+//     restore;
+//   - it is small (a few KB of JPEG, under 1 MB for the whole team), backed
+//     up with the database, and can always be made again from the photo.
 //
 // Regeneration triggers (wired up by the caller, not this module):
 //   - server startup, via ensureAllGenerated() — for any member whose
@@ -31,6 +36,8 @@
 const crypto = require('crypto');
 const path = require('path');
 const axios = require('axios');
+const memberPhotos = require('./memberPhotos');
+const { initFaceDetector } = require('./faceDetector');
 const sharp = require('sharp');
 const Member = require('./models/member');
 
@@ -61,6 +68,10 @@ function needsGeneration(member) {
 }
 
 async function fetchImageBuffer(link) {
+    // A photo stored on this server: read the file, no HTTP round trip
+    const localId = memberPhotos.localPhotoId(link);
+    if (localId) return memberPhotos.readPhoto(localId);
+
     const res = await axios.get(link, {
         responseType: 'arraybuffer',
         timeout: FETCH_TIMEOUT_MS,
@@ -73,32 +84,6 @@ async function fetchImageBuffer(link) {
         throw new Error('Not an image (content-type: ' + (contentType || 'unknown') + ')');
     }
     return Buffer.from(res.data);
-}
-
-// Lazily loads the face detector exactly once, however many calls arrive
-// concurrently (ensureAllGenerated runs several at a time) — a second call
-// while the first is still loading gets the same in-flight promise rather
-// than triggering a second load. A failed load is not cached, so the next
-// call tries again instead of being stuck failing forever.
-let faceDetectorPromise = null;
-function initFaceDetector() {
-    if (!faceDetectorPromise) {
-        faceDetectorPromise = (async () => {
-            const tf = require('@tensorflow/tfjs-core');
-            require('@tensorflow/tfjs-backend-wasm');
-            const { setWasmPaths } = require('@tensorflow/tfjs-backend-wasm');
-            const faceapi = require('@vladmandic/face-api/dist/face-api.node-wasm.js');
-            setWasmPaths(path.join(__dirname, '..', 'node_modules/@tensorflow/tfjs-backend-wasm/dist/'));
-            await tf.setBackend('wasm');
-            await tf.ready();
-            await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(__dirname, '..', 'node_modules/@vladmandic/face-api/model'));
-            return { tf, faceapi };
-        })().catch(err => {
-            faceDetectorPromise = null; // let the next call try again
-            throw err;
-        });
-    }
-    return faceDetectorPromise;
 }
 
 // The square region — in the same pixel space as `box`/`imgWidth`/`imgHeight`
@@ -170,35 +155,69 @@ function cropFor(member, link) {
     return crop;
 }
 
+function sameCrop(a, b) {
+    if (!a || !b) return !a && !b;
+    return a.left === b.left && a.top === b.top && a.size === b.size;
+}
+
+// The thumbnail, and the square it was cut from as { left, top, size }
+// fractions of the upright photo (Member.profileThumbCrop's units): the
+// chosen crop, else the one face detection or the smart crop picked. Stored
+// with the thumbnail, so the photo pop-up can show where it is and start
+// adjusting from there.
 async function resizeToSquareJpeg(buffer, crop) {
+    const round = n => Math.round(n * 10000) / 10000;
+
     if (crop) {
         // Upright first (EXIF), the same orientation the admin saw the photo in
         const upright = await sharp(buffer).rotate().toBuffer({ resolveWithObject: true });
         const region = cropToRegion(crop, upright.info.width, upright.info.height);
-        return sharp(upright.data)
+        const data = await sharp(upright.data)
             .extract({ left: region.left, top: region.top, width: region.size, height: region.size })
             .resize(SIZE, SIZE)
             .jpeg({ quality: JPEG_QUALITY })
             .toBuffer();
+        return { data, crop: { left: crop.left, top: crop.top, size: crop.size } };
     }
 
     const face = await detectFaceCrop(buffer);
     if (face) {
-        return sharp(face.data, { raw: { width: face.info.width, height: face.info.height, channels: 3 } })
+        const { width, height } = face.info;
+        const data = await sharp(face.data, { raw: { width, height, channels: 3 } })
             .extract({ left: face.region.left, top: face.region.top, width: face.region.size, height: face.region.size })
             .resize(SIZE, SIZE)
             .jpeg({ quality: JPEG_QUALITY })
             .toBuffer();
+        return {
+            data,
+            crop: { left: round(face.region.left / width), top: round(face.region.top / height), size: round(face.region.size / Math.min(width, height)) }
+        };
     }
 
     // No face found (a stats graphic, nobody in the shot, a corrupt image)
     // or detection itself failed — sharp's own generic smart crop, favouring
-    // the most visually "salient" region of the photo.
-    return sharp(buffer)
+    // the most visually "salient" region of the photo. It covers the square
+    // with the photo's shorter side; cropOffset* say where, in the scaled photo.
+    const out = await sharp(buffer)
         .rotate() // respect EXIF orientation before the square crop
         .resize(SIZE, SIZE, { fit: 'cover', position: 'entropy' })
         .jpeg({ quality: JPEG_QUALITY })
-        .toBuffer();
+        .toBuffer({ resolveWithObject: true });
+    let autoCrop = null;
+    try {
+        const meta = await sharp(buffer).metadata();
+        const swap = (meta.orientation || 1) >= 5;
+        const w = swap ? meta.height : meta.width, h = swap ? meta.width : meta.height;
+        const scale = SIZE / Math.min(w, h);
+        autoCrop = {
+            left: round(Math.abs(out.info.cropOffsetLeft || 0) / (w * scale)),
+            top: round(Math.abs(out.info.cropOffsetTop || 0) / (h * scale)),
+            size: 1
+        };
+    } catch (e) {
+        autoCrop = null;
+    }
+    return { data: out.data, crop: autoCrop };
 }
 
 // Fetches, resizes and saves the thumbnail for one member — or clears it, if
@@ -218,14 +237,24 @@ async function generateForMember(member) {
     const hash = hashSource(link);
     try {
         const source = await fetchImageBuffer(link);
-        const data = await resizeToSquareJpeg(source, cropFor(member, link));
+        const crop = cropFor(member, link);
+        const { data, crop: usedCrop } = await resizeToSquareJpeg(source, crop);
+        // Superseded while this ran (face detection takes a moment)? A new
+        // photo, or a crop chosen right after the upload, has its own
+        // generation: writing this one now would overwrite it.
+        const now = await Member.findById(id).select('pictureLink profileThumbCrop').lean();
+        if (!now || (now.pictureLink || '').trim() !== link || !sameCrop(cropFor(now, link), crop)) {
+            return true;
+        }
         await Member.updateOne({ _id: id }, {
             $set: {
                 profileThumb: {
                     data,
                     contentType: 'image/jpeg',
                     sourceHash: hash,
-                    generatedAt: new Date()
+                    generatedAt: new Date(),
+                    // Where it was cut from: the chosen crop, or the automatic one
+                    crop: usedCrop || undefined
                 }
             }
         });

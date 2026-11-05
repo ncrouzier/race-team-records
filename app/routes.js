@@ -12,9 +12,10 @@ const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
-const Banner = require('./models/banner');
-const { bannerDefaults, bannerImageFiles, loadSources: loadBannerSources } = require('./bannerDefaults');
 const profileThumbnails = require('./profileThumbnails');
+const memberPhotos = require('./memberPhotos');
+const rateLimit = require('express-rate-limit');
+const express = require('express');
 
 // Locating the results on a scraped page is its own problem — layout tables,
 // several result tables per page, fixed-width <pre> blocks — so it lives in its
@@ -102,16 +103,17 @@ function scrapeBypassHeaders(url) {
 // Fetch a results page as HTML.
 //
 // Some hosts sit behind Cloudflare and answer a plain server-side request with
-// 403 no matter what headers are sent — mcrrc.org does exactly this. Two ways
+// 403 no matter what headers are sent — mcrrc.org does exactly this. Ways
 // past it, tried in order:
 //   1. A secret header the site's WAF is configured to wave through, for hosts
 //      we control. See scrapeBypassHeaders above.
 //   2. The proxy that the parkrun branch already uses, which requests from a
 //      different address.
+//   3. r.jina.ai, a public reader service (fetchViaJina below).
 //
 // Note the proxy keeps its own allowlist of domains; if it has not been told
-// about the host being fetched it answers 403 too, and the caller gets an error
-// explaining that rather than a bare 500.
+// about the host being fetched it answers 403 too. When everything fails the
+// caller gets an error naming what was tried rather than a bare 500.
 async function fetchPageHtml(url) {
     const bypassHeaders = scrapeBypassHeaders(url);
     const directHeaders = Object.assign({
@@ -149,41 +151,97 @@ async function fetchPageHtml(url) {
     }
 
     const usedBypass = Object.keys(bypassHeaders).length > 0;
-    const bypassNote = usedBypass
-        ? ' A bypass token was sent but the site still refused it — check the WAF rule matches this header.'
-        : ' No bypass token is configured for this host.';
+    const tried = ['the site refused the request (HTTP ' + directStatus + ')' +
+        (usedBypass ? ', even with the bypass token — check the WAF rule matches this header'
+            : ', no bypass token is configured for this host')];
 
-    if (!process.env.PARKRUN_PROXY_URL) {
-        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
-            bypassNote + ' No proxy is configured to retry through.');
-        error.scrapeBlocked = true;
-        throw error;
-    }
-
-    const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
-    const proxyResponse = await axios.get(proxyUrl, {
-        headers: {
-            'User-Agent': SCRAPE_USER_AGENT,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9'
-        },
-        timeout: 30000,
-        maxRedirects: 5,
-        validateStatus: function (status) {
-            return status >= 200 && status < 500;
+    if (process.env.PARKRUN_PROXY_URL) {
+        const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+        try {
+            const proxyResponse = await axios.get(proxyUrl, {
+                headers: {
+                    'User-Agent': SCRAPE_USER_AGENT,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9'
+                },
+                timeout: 30000,
+                maxRedirects: 5,
+                validateStatus: function (status) {
+                    return status >= 200 && status < 500;
+                }
+            });
+            const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
+            if (proxyResponse.status < 400 && !isBotChallenge(body)) {
+                return { html: body, via: 'proxy' };
+            }
+            tried.push('the proxy could not fetch it (HTTP ' + proxyResponse.status + ')');
+        } catch (proxyError) {
+            tried.push('the proxy failed (' + proxyError.message + ')');
         }
-    });
-
-    const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
-    if (proxyResponse.status >= 400) {
-        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
-            bypassNote + ' The proxy could not fetch it either (HTTP ' + proxyResponse.status + '): ' +
-            body.slice(0, 200));
-        error.scrapeBlocked = true;
-        throw error;
+    } else {
+        tried.push('no proxy is configured');
     }
 
-    return { html: body, via: 'proxy' };
+    const jina = await fetchViaJina(url);
+    if (jina.html) return { html: jina.html, via: 'jina' };
+    tried.push(jina.note);
+
+    const error = new Error('Could not fetch the page: ' + tried.join('; ') +
+        '. Paste the page source instead.');
+    error.scrapeBlocked = true;
+    throw error;
+}
+
+// A bot-check page instead of the content: Cloudflare's "Just a moment...",
+// parkrun's "Human Verification" and the like. They can come back with a 200.
+function isBotChallenge(html) {
+    if (!html) return true;
+    const head = String(html).slice(0, 4000);
+    return /<title>\s*(Just a moment|Attention Required|Human Verification|Access denied)/i.test(head) ||
+        /cf-browser-verification|challenge-platform|cf_chl_/i.test(head);
+}
+
+// Last resort: r.jina.ai, a public reader service, fetches the page from its
+// own servers and returns the HTML. It gets past some Cloudflare blocks
+// (mcrrc.org, often) but not all, and not every time: the outcome changes from
+// one try to the next, hence two tries. Only the URL is sent — never the
+// bypass headers. JINA_API_KEY raises the rate limit (about 20 requests a
+// minute without one); SCRAPE_JINA=off turns this off.
+async function fetchViaJina(url) {
+    if (/^(off|false|0|no)$/i.test(process.env.SCRAPE_JINA || '')) {
+        return { note: 'r.jina.ai is turned off (SCRAPE_JINA)' };
+    }
+    const headers = {
+        'Accept': 'application/json',
+        'X-Return-Format': 'html',
+        'X-No-Cache': 'true'
+    };
+    if (process.env.JINA_API_KEY) headers.Authorization = 'Bearer ' + process.env.JINA_API_KEY;
+
+    let note = 'r.jina.ai could not fetch it either';
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const response = await axios.get('https://r.jina.ai/' + url, {
+                headers: headers,
+                timeout: 45000,
+                validateStatus: function () { return true; }
+            });
+            const data = response.data && response.data.data;
+            const html = data && typeof data.html === 'string' ? data.html : '';
+            const status = data && data.httpStatus;
+            if (response.status === 200 && html && (!status || status < 400) && !isBotChallenge(html)) {
+                return { html: html };
+            }
+            if (response.status === 429) {
+                return { note: 'r.jina.ai is rate limiting us (HTTP 429)' + (process.env.JINA_API_KEY ? '' : ' — a JINA_API_KEY raises the limit') };
+            }
+            const badStatus = response.status !== 200 ? response.status : (status >= 400 ? status : null);
+            note = 'r.jina.ai got ' + (badStatus ? 'HTTP ' + badStatus : (html ? 'a bot check' : 'an empty page')) + ' instead of the page';
+        } catch (jinaError) {
+            note = 'r.jina.ai failed (' + jinaError.message + ')';
+        }
+    }
+    return { note: note };
 }
 
 const bioSanitizeOptions = {
@@ -810,132 +868,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    // Banner images for the homepage top banner.
-    // Selection priority: birthday banners > pinned banners > all banners (random pick from pool).
-    // Disabled banners are never picked.
-    app.get('/api/banners', async function (req, res) {
-        try {
-            const banners = await Banner.find({ disabled: { $ne: true } }).populate('members', 'dateofbirth').lean();
-            if (!banners.length) return res.json([]);
-
-            const now = req.query.date ? new Date(req.query.date) : new Date();
-            const todayMonth = now.getUTCMonth();
-            const todayDay = now.getUTCDate();
-
-            const hasBirthdayToday = (banner) =>
-                (banner.members || []).some((m) => {
-                    if (!m.dateofbirth) return false;
-                    const dob = new Date(m.dateofbirth);
-                    return dob.getUTCMonth() === todayMonth && dob.getUTCDate() === todayDay;
-                });
-
-            const toResponse = (b) => ({
-                url: '/images/banners/' + b.filename,
-                titlePosition: b.titlePosition || 'right',
-                pinned: !!b.pinned,
-                copyright: b.copyright || null,
-            });
-
-            const birthdayBanners = banners.filter(hasBirthdayToday);
-            if (birthdayBanners.length) {
-                const pick = birthdayBanners[Math.floor(Math.random() * birthdayBanners.length)];
-                return res.json([toResponse(pick)]);
-            }
-
-            const pinnedBanners = banners.filter((b) => b.pinned);
-            const pool = pinnedBanners.length ? pinnedBanners : banners;
-            const pick = pool[Math.floor(Math.random() * pool.length)];
-            res.json([toResponse(pick)]);
-        } catch (err) {
-            res.status(500).json({ error: 'Could not load banners' });
-        }
-    });
-
-    // Banner admin endpoints (admin/captain only)
-    app.get('/api/admin/banners', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const banners = await Banner.find().populate('members', 'firstname lastname memberStatus').sort('filename').lean();
-            res.json(banners);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    app.put('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const { members, pinned, disabled, titlePosition, copyright } = req.body;
-            const updated = await Banner.findByIdAndUpdate(
-                req.params.id,
-                { members, pinned, disabled: !!disabled, titlePosition, copyright },
-                { returnDocument: 'after', runValidators: true }
-            ).populate('members', 'firstname lastname memberStatus');
-            if (!updated) return res.status(404).json({ error: 'Banner not found' });
-            res.json(updated);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // Image files in public/images/banners with no banner entry yet (new
-    // images deployed since), and entries whose image file is gone
-    app.get('/api/admin/banners/unregistered', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const files = bannerImageFiles();
-            const known = new Set((await Banner.find().select('filename').lean()).map((b) => b.filename));
-            const sources = loadBannerSources();
-            res.json({
-                images: files.filter((f) => !known.has(f)).map((filename) => Object.assign(
-                    { filename, url: '/images/banners/' + filename }, bannerDefaults(filename, sources))),
-                missingFiles: [...known].filter((f) => !files.includes(f)).sort()
-            });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    // Create entries for new images, with the same title side as
-    // scripts/seed-banners.js. Only files that exist and have no entry yet.
-    app.post('/api/admin/banners/register', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const requested = Array.isArray(req.body.filenames) ? req.body.filenames.map(String) : [];
-            const files = new Set(bannerImageFiles());
-            const known = new Set((await Banner.find().select('filename').lean()).map((b) => b.filename));
-            const sources = loadBannerSources();
-            const toAdd = [...new Set(requested)].filter((f) => files.has(f) && !known.has(f));
-
-            const created = [];
-            for (const filename of toAdd) {
-                const defaults = bannerDefaults(filename, sources);
-                created.push(await Banner.create({
-                    filename, members: [], pinned: false, titlePosition: defaults.titlePosition
-                }));
-            }
-            if (created.length) {
-                service.logActivity({
-                    userId: req.user._id,
-                    username: req.user.username,
-                    action: 'banners_added',
-                    description: 'Added ' + created.length + ' banner image' + (created.length === 1 ? '' : 's'),
-                    targetType: 'banner',
-                    metadata: { filenames: toAdd },
-                    ipAddress: req.ip
-                });
-            }
-            res.json({ created });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    app.delete('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const deleted = await Banner.findByIdAndDelete(req.params.id);
-            if (!deleted) return res.status(404).json({ error: 'Banner not found' });
-            res.json({ ok: true });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
+    // Banners: app/bannerRoutes.js
 
     // =====================================
     // TEAM MEMBERS ========================
@@ -1161,7 +1094,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 dateofbirth: req.body.dateofbirth,
                 sex: req.body.sex,
                 bio: req.body.bio,
-                pictureLink: req.body.pictureLink,
+                // No pictureLink: photos are uploaded (PUT /api/members/:id/photo)
                 memberStatus: req.body.memberStatus,
                 membershipDates: req.body.membershipDates,
                 achievements: req.body.achievements,
@@ -1247,56 +1180,183 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    //update a member's photo link (own member or admin)
-    app.put('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
-        res.setHeader("Content-Type", "application/json");
-        try {
-            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
-            var isAdmin = req.user.role === 'admin';
-            if (!isOwnMember && !isAdmin) {
-                return res.status(403).json({ error: 'You can only edit your own photo' });
-            }
-            const member = await Member.findById(req.params.member_id);
-            if (!member) {
-                return res.status(404).json({ error: 'Member not found' });
-            }
-            var oldPictureLink = member.pictureLink || '';
-            member.pictureLink = req.body.pictureLink || '';
-            if (member.pictureLink !== oldPictureLink) {
-                // A crop chosen on the old photo means nothing on the new one
-                member.profileThumbCrop = undefined;
-            }
-            await member.save();
+    // ---- Member photos, stored on the server (app/memberPhotos.js) ----
 
-            if (member.pictureLink !== oldPictureLink) {
-                profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
-            }
+    // The member's own user, or an admin
+    function canEditMemberPhoto(req) {
+        var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+        return isOwnMember || req.user.role === 'admin';
+    }
 
-            // Log the photo edit
-            service.logActivity({
-                userId: req.user._id,
-                username: req.user.username,
-                action: 'photo_edit',
-                description: 'Updated photo for ' + member.firstname + ' ' + member.lastname,
-                targetType: 'member',
-                targetId: member._id.toString(),
-                targetName: member.firstname + ' ' + member.lastname,
-                metadata: { targetUsername: member.username, oldValue: oldPictureLink, newValue: req.body.pictureLink || '' },
-                ipAddress: req.ip
-            });
+    // Per user, not per IP: uploads are signed in, and each one costs a decode
+    const photoUploadLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 20,
+        keyGenerator: function (req) { return 'photo:' + String(req.user._id); },
+        message: { error: 'Too many photo uploads. Try again in an hour.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+        validate: { keyGeneratorIpFallback: false }
+    });
 
-            res.json({ success: 'Photo updated successfully', pictureLink: member.pictureLink });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Error updating photo' });
+    // The raw file is the request body, its Content-Type the browser's idea of
+    // the type. Only the accepted image types are read at all, and no more
+    // than MAX_UPLOAD_BYTES: a bigger body is refused before it is buffered.
+    const readPhotoBody = express.raw({
+        type: memberPhotos.ACCEPTED_TYPES,
+        limit: memberPhotos.MAX_UPLOAD_BYTES
+    });
+
+    // Once the member is saved with its new pictureLink: the activity log
+    // (the caller makes the new thumbnail)
+    function photoChanged(req, member, oldLink, newLink, action) {
+        service.logActivity({
+            userId: req.user._id,
+            username: req.user.username,
+            action: 'photo_edit',
+            description: (action === 'remove' ? 'Removed photo for ' : 'Uploaded photo for ') + member.firstname + ' ' + member.lastname,
+            targetType: 'member',
+            targetId: member._id.toString(),
+            targetName: member.firstname + ' ' + member.lastname,
+            metadata: { targetUsername: member.username, oldValue: oldLink, newValue: newLink },
+            ipAddress: req.ip
+        });
+    }
+
+    // Upload a member's photo (own member or admin)
+    app.put('/api/members/:member_id/photo', service.isLoggedIn, function (req, res, next) {
+        if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+        if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own photo' });
+        if (!req.is(memberPhotos.ACCEPTED_TYPES)) {
+            return res.status(415).json({ error: 'Only JPEG, PNG or WebP photos are accepted (iPhone HEIC photos are not).' });
         }
+        next();
+    }, photoUploadLimiter, function (req, res, next) {
+        readPhotoBody(req, res, function (err) {
+            if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'The file is over 10 MB.' });
+            if (err) return res.status(400).json({ error: 'The upload could not be read.' });
+            next();
+        });
+    }, async function (req, res) {
+        try {
+            const member = await Member.findById(req.params.member_id);
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+
+            const oldLink = member.pictureLink || '';
+            const link = await memberPhotos.savePhoto(member._id, req.body);
+            member.pictureLink = link;
+            // A crop chosen on the old photo means nothing on the new one
+            member.profileThumbCrop = undefined;
+            await member.save();
+            photoChanged(req, member, oldLink, link, 'upload');
+
+            // The thumbnail now, not in the background: the photo pop-up's
+            // next step shows the square it was cut from (face detection's
+            // pick) for the member to adjust
+            await profileThumbnails.generateForMember(member);
+            await service.markMemberProfileChanged();
+            const fresh = await Member.findById(member._id).select('+profileThumb').lean();
+            const thumb = fresh && fresh.profileThumb;
+
+            res.json({ success: 'Photo updated', pictureLink: link, thumbCrop: (thumb && thumb.crop) || null });
+        } catch (err) {
+            if (err.photoError) return res.status(err.status || 400).json({ error: err.message });
+            console.error('Photo upload failed:', err);
+            res.status(500).json({ error: 'The photo could not be saved.' });
+        }
+    });
+
+    // Remove a member's photo (own member or admin): back to initials
+    app.delete('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+            if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own photo' });
+            const member = await Member.findById(req.params.member_id);
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+
+            const oldLink = member.pictureLink || '';
+            await memberPhotos.deletePhoto(member._id);
+            member.pictureLink = '';
+            member.profileThumbCrop = undefined;
+            await member.save();
+            photoChanged(req, member, oldLink, '', 'remove');
+            profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
+
+            res.json({ success: 'Photo removed', pictureLink: '' });
+        } catch (err) {
+            console.error('Photo removal failed:', err);
+            res.status(500).json({ error: 'The photo could not be removed.' });
+        }
+    });
+
+    // Serve a stored photo. Not express.static on the folder: only a member
+    // id names a file here, so there is no directory listing, no temporary
+    // file half-written by an upload, nothing else in the folder.
+    app.get('/uploads/photos/:file', function (req, res) {
+        const m = /^([a-f0-9]{24})\.jpg$/.exec(req.params.file);
+        if (!m) return res.status(404).end();
+        res.set({
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'none'",
+            // The link carries ?v=<hash of the photo>: a new photo is a new URL
+            'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'public, max-age=300'
+        });
+        res.sendFile(memberPhotos.fileFor(m[1]), { dotfiles: 'deny', headers: { 'Content-Type': 'image/jpeg' } }, function (err) {
+            if (err && !res.headersSent) {
+                res.removeHeader('Cache-Control');
+                res.status(err.status === 404 || err.code === 'ENOENT' ? 404 : 500).end();
+            }
+        });
     });
 
     // An admin picks which square of a member's photo makes their thumbnail
     // (body: { crop: { left, top, size } } as fractions, or { crop: null } to
     // go back to automatic face detection). Regenerates it right away and
     // returns it, so the picker can show the result.
-    app.put('/api/members/:member_id/thumbnail-crop', service.isAdminLoggedIn, async function (req, res) {
+    // The square the current thumbnail is cut from (own member or admin):
+    // { crop, chosen } — chosen when a member or admin picked it, else what
+    // face detection picked. A thumbnail made before squares were recorded is
+    // remade once to learn its square.
+    app.get('/api/members/:member_id/thumbnail-crop', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+            if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own thumbnail' });
+            let member = await Member.findById(req.params.member_id).select('+profileThumb pictureLink profileThumbCrop').lean();
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+            const link = (member.pictureLink || '').trim();
+            if (!link) return res.json({ crop: null, chosen: false });
+
+            const chosen = profileThumbnails.cropFor(member, link);
+            if (chosen) return res.json({ crop: { left: chosen.left, top: chosen.top, size: chosen.size }, chosen: true });
+
+            const thumb = member.profileThumb;
+            if (!thumb || !thumb.crop || thumb.sourceHash !== profileThumbnails.hashSource(link)) {
+                await profileThumbnails.generateForMember(member);
+                member = await Member.findById(member._id).select('+profileThumb').lean();
+            }
+            const auto = member.profileThumb && member.profileThumb.crop;
+            res.json({ crop: auto ? { left: auto.left, top: auto.top, size: auto.size } : null, chosen: false });
+        } catch (err) {
+            console.error('Could not read the thumbnail crop:', err);
+            res.status(500).json({ error: 'Could not read the thumbnail' });
+        }
+    });
+
+    // Choose the thumbnail's square (own member or admin), or null for automatic
+    const thumbCropLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 60,
+        keyGenerator: function (req) { return 'thumbcrop:' + String(req.user._id); },
+        message: { error: 'Too many thumbnail changes. Try again in an hour.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+        validate: { keyGeneratorIpFallback: false }
+    });
+    app.put('/api/members/:member_id/thumbnail-crop', service.isLoggedIn, function (req, res, next) {
+        if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+        if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own thumbnail' });
+        next();
+    }, thumbCropLimiter, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
             const member = await Member.findById(req.params.member_id);
@@ -1363,7 +1423,6 @@ module.exports = async function (app, qs, passport, async, _) {
             // Store old values to detect changes that require age grade recalculation
             const oldDateOfBirth = member.dateofbirth;
             const oldSex = member.sex;
-            const oldPictureLink = member.pictureLink || '';
 
             // Update member fields
             member.firstname = req.body.firstname;
@@ -1373,21 +1432,14 @@ module.exports = async function (app, qs, passport, async, _) {
             member.dateofbirth = req.body.dateofbirth;
             member.sex = req.body.sex;
             member.bio = req.body.bio;
-            member.pictureLink = req.body.pictureLink;
+            // pictureLink is not taken from the form: photos are uploaded
+            // (PUT /api/members/:id/photo), the server sets the link
             member.memberStatus = req.body.memberStatus;
             member.membershipDates = req.body.membershipDates;
             member.achievements = req.body.achievements;
-            if ((member.pictureLink || '') !== oldPictureLink) {
-                // A crop chosen on the old photo means nothing on the new one
-                member.profileThumbCrop = undefined;
-            }
 
             // Save the updated member
             await member.save();
-
-            if ((member.pictureLink || '') !== oldPictureLink) {
-                profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
-            }
 
             // Check if age grade recalculation is needed
             const needsAgeGradeRecalculation =
@@ -1532,6 +1584,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 _id: req.params.member_id
             }).then(async deleteResult => {
                 if (deleteResult.deletedCount === 1) {
+                    await memberPhotos.deletePhoto(req.params.member_id).catch(err => console.error('Could not delete the member photo:', err));
                     await service.invalidateSystemInfoCache();
                     await service.markMemberProfileChanged();
                     res.send('{"success" : "Member deleted successfully", "status" : 200}');
@@ -4361,6 +4414,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 const parkrun = parkrunMetadata(htmlSource);
                 return res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'pasted',
                     headers: parsed.headers,
                     data: parsed.data,
                     pageTitle: (parkrun && parkrun.pageTitle) || parsed.pageTitle,
@@ -4448,6 +4503,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'runsignup-api',
                     headers: headers,
                     data: data,
                     pageTitle: pageTitle
@@ -4582,6 +4639,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                     res.json({
                         success: true,
+                        // How the page was fetched, shown to the admin
+                        fetchedVia: 'parkrun-proxy',
                         headers: headers,
                         data: data,
                         pageTitle: pageTitle,
@@ -4742,6 +4801,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'athlinks-api',
                     headers: headers,
                     data: data,
                     pageTitle: pageTitle,
@@ -4771,6 +4832,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: page.via,
                     headers: parsed.headers,
                     data: parsed.data,
                     pageTitle: parsed.pageTitle,

@@ -530,64 +530,11 @@ footer {
     font-family: 'Courier New', monospace;
 }
 
-.navimg {
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center top;
-    position: relative;
-
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: var(--banner-gradient, linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)));
-        z-index: 0;
-        pointer-events: none;
-    }
-
-    margin-left: 0px;
-    margin-right: 0px;
-    width: 100%;
-
-    height: 200px;
-
-    @media (min-width: @screen-md-min) {
-        height: 250px;
-        width: 100%;
-    }
-
-    @media (min-width: @screen-lg-min) {
-        height: 250px;
-        width: 100%;
-    }
-
-    .banner-copyright {
-        position: absolute;
-        bottom: 5px;
-        right: 8px;
-        font-size: 10px;
-        color: rgba(255,255,255,0.7);
-        text-decoration: none;
-        z-index: 3;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
-
-        &:hover {
-            color: #fff;
-        }
-    }
-
-    // The banner wordmark: a slanted badge — a navy strip over a solid orange
-    // block, trailed by speed stripes. It carries its own background, so it
-    // reads the same on every photo, and sits on the side of the photo away
-    // from the runner (the banner's titlePosition: right, the default, or
-    // left), or centred over group shots.
-    //
-    // Sized in container units (@bpx = one pixel of a 1140px-wide banner), so
-    // it scales with the banner exactly as the photo does: the slanted fade
-    // in banners made by scripts/slant-banners.mjs stays lined up with the
-    // stripes at every width.
+// The banner wordmark badge (see .navimg below). A mixin, so the banner
+// editor on the Banners page (.bstage-window) draws the very same badge.
+// Sized in container units: the caller is the container (container-type).
+.banner-title-styles() {
     @bpx: (100cqw / 1140);
-    container-type: inline-size;
 
     .banner-title {
         position: absolute;
@@ -674,6 +621,68 @@ footer {
             }
         }
     }
+}
+
+.navimg {
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center top;
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--banner-gradient, linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5)));
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    margin-left: 0px;
+    margin-right: 0px;
+    width: 100%;
+
+    height: 200px;
+
+    @media (min-width: @screen-md-min) {
+        height: 250px;
+        width: 100%;
+    }
+
+    @media (min-width: @screen-lg-min) {
+        height: 250px;
+        width: 100%;
+    }
+
+    .banner-copyright {
+        position: absolute;
+        bottom: 5px;
+        right: 8px;
+        font-size: 10px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        z-index: 3;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+
+        &:hover {
+            color: #fff;
+        }
+    }
+
+    // The banner wordmark: a slanted badge — a navy strip over a solid orange
+    // block, trailed by speed stripes. It carries its own background, so it
+    // reads the same on every photo, and sits on the side of the photo away
+    // from the runner (the banner's titlePosition: right, the default, or
+    // left), or centred over group shots.
+    //
+    // Sized in container units (@bpx = one pixel of a 1140px-wide banner), so
+    // it scales with the banner exactly as the photo does: the slanted fade
+    // in banners made by scripts/slant-banners.mjs stays lined up with the
+    // stripes at every width.
+    @bpx: (100cqw / 1140);
+    container-type: inline-size;
+
+    .banner-title-styles();
 
     .logo-stats {
         padding-top: 8px;
@@ -17014,102 +17023,152 @@ h2 .club-mark {
     overflow-x: hidden;
 }
 
-// Photo modal specifics
+// The photo pop-up's width: room for the photo beside its controls, and
+// for the thumbnail cropper, without spreading across a wide screen
+// !important to win over the "Comprehensive Bootstrap Modal Override"
+// below, which makes every modal full width
+.modal.photo-edit-window .modal-dialog {
+    width: 820px !important;
+    max-width: calc(~"100vw - 24px") !important;
+}
+
+// Photo modal specifics: the photo beside its controls, then the tips
 .photo-edit-modal {
-    .photo-preview-label {
-        display: block;
-        margin-bottom: 6px;
-        .site-label();
+    .photo-upload-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-start;
     }
 
     .photo-preview-box {
+        position: relative;
+        flex: 0 1 280px;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border: 1px solid #d5e1e6;
         border-radius: 10px;
         padding: 12px;
         background: @brand-primary-very-light;
-        text-align: center;
 
         img {
             max-width: 100%;
-            max-height: 300px;
+            max-height: 320px;
             border-radius: 6px;
+        }
+
+        &.is-empty {
+            border-style: dashed;
         }
     }
 
+    .photo-preview-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: #8aa0aa;
+
+        .fa {
+            font-size: 56px;
+        }
+    }
+
+    .photo-preview-tag {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+
+    .photo-upload-side {
+        flex: 1 1 220px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    // A <label> wrapping the hidden file input, so the whole button picks
+    .photo-pick-btn {
+        position: relative;
+        overflow: hidden;
+        margin: 0;
+        cursor: pointer;
+
+        input[type=file] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        &.is-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    }
+
+    .photo-file-name {
+        color: #333;
+        font-size: 13px;
+        word-break: break-all;
+
+        .fa {
+            color: @brand-primary;
+        }
+
+        small {
+            margin-left: 4px;
+            color: #6b7f88;
+        }
+    }
+
+    .photo-error {
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #fdecea;
+        color: @brand-danger;
+        font-size: 13px;
+    }
+
+    .photo-remove-confirm {
+        padding: 10px 12px;
+        border: 1px solid #f3c7c1;
+        border-radius: 8px;
+        background: #fff7f6;
+        font-size: 13px;
+    }
+
+    .photo-remove-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
     .photo-tip-card {
-        margin-top: 14px;
-        padding: 10px 14px;
+        margin-top: 18px;
+        padding: 12px 16px;
         border-radius: 10px;
         background: @brand-primary-very-light;
         color: #333;
         font-size: 13px;
 
-        .fa {
-            color: @brand-primary;
-        }
-    }
-
-    .photo-help-toggle {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        margin-top: 12px;
-        justify-content: flex-start;
-
-        .fa {
-            color: @brand-primary;
-        }
-    }
-
-    .photo-help {
-        margin-top: 10px;
-        padding: 4px 2px 2px;
-    }
-
-    .photo-help-item {
-        padding: 12px 0;
-        border-top: 1px solid #edf1f3;
-
-        &:first-child {
-            border-top: none;
+        > strong .fa {
+            color: #e0a800;
+            margin-right: 2px;
         }
 
-        h5 {
-            margin: 0 0 4px;
-            font-size: 13px;
-            font-weight: 700;
-            color: @brand-primary-dark;
-
-            .fa {
-                color: @brand-primary;
-                margin-right: 4px;
-                width: 16px;
-                text-align: center;
-            }
+        ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
         }
 
-        p {
-            margin: 0;
-            font-size: 13px;
-            color: #333;
+        li {
+            margin-bottom: 4px;
             line-height: 1.5;
         }
-
-        code {
-            background: @brand-primary-very-light;
-            color: @brand-primary-dark;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-    }
-
-    .photo-help-template {
-        display: block;
-        margin-top: 8px;
-        padding: 8px 10px;
-        word-break: break-all;
     }
 }
 
@@ -17181,10 +17240,14 @@ h2 .club-mark {
 
         .input-group-btn .btn {
             height: auto;
-            border-radius: 0 8px 8px 0;
+            border-radius: 0;
             border-color: #c8dbe4;
             color: @brand-primary;
             background: #fff;
+
+            &:last-child {
+                border-radius: 0 8px 8px 0;
+            }
 
             &:hover,
             &:focus {
@@ -17192,6 +17255,50 @@ h2 .club-mark {
                 border-color: @brand-primary;
                 color: #fff;
             }
+        }
+
+        .rx-today {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    }
+
+    // The race type picker, with the guessed distances beside it
+    .rx-racetype-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+
+        .ui-select-container.rx-select-wide {
+            flex: 1 1 260px;
+        }
+    }
+
+    .rx-suggest {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .rx-suggest-label {
+        .site-label();
+        color: #6b7f88;
+
+        .fa {
+            color: #e0a800;
+        }
+    }
+
+    .mcrrc-btn.rx-suggest-btn {
+        padding: 4px 10px;
+        font-size: 13px;
+
+        &.is-on span {
+            color: inherit;
+            opacity: 0.85;
         }
     }
 
@@ -18475,46 +18582,83 @@ h2 .club-mark {
     line-height: 1.5;
 }
 
-// The pop-up around it (same chrome as the Edit Bio / Edit Photo pop-ups)
-.thumb-crop-modal {
-    .modal-header {
-        padding: 18px 24px 12px;
-        border-bottom: 0;
-
-        .modal-title {
-            display: inline-block;
-            padding-bottom: 8px;
-            border-bottom: 2px solid @brand-primary;
-            color: @brand-primary-dark;
-            font-weight: 700;
-        }
-    }
-
-    .modal-body {
-        padding: 8px 24px 16px;
-    }
-
+// The photo pop-up's thumbnail step
+.photo-edit-modal {
     .thumb-crop-intro {
         margin-bottom: 14px;
         color: #5b707a;
         font-size: 14px;
     }
 
-    .thumb-crop-error {
-        margin: 14px 0 0;
-        border-radius: 8px;
+    .photo-saved-icon {
+        color: #3c763d;
     }
 
-    .thumb-crop-footer {
+    .modal-footer.thumb-crop-footer {
         display: flex;
         align-items: center;
         gap: 4px;
-        padding: 12px 24px 18px;
-        border-top: 1px solid #edf1f3;
+
+        &::before,
+        &::after {
+            display: none;
+        }
     }
 
     .thumb-crop-spacer {
         flex: 1;
+    }
+
+    // 1 Photo — 2 Thumbnail
+    .photo-steps {
+        display: flex;
+        gap: 18px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #8aa0aa;
+            font-size: 13px;
+            font-weight: 600;
+
+            &.is-on {
+                color: @brand-primary-dark;
+            }
+        }
+
+        .photo-step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border: 1px solid currentColor;
+            border-radius: 50%;
+            font-size: 11px;
+        }
+
+        li.is-on .photo-step-num {
+            border-color: @brand-primary;
+            background: @brand-primary;
+            color: #fff;
+        }
+
+        li.is-done .photo-step-num {
+            border-color: #3c763d;
+            background: #3c763d;
+            color: #fff;
+            font-size: 0;
+
+            &::after {
+                content: '\f00c';
+                font-family: FontAwesome;
+                font-size: 11px;
+            }
+        }
     }
 }
 
@@ -18948,4 +19092,335 @@ h2 .club-mark {
         color: #6b7f88;
         .site-card-surface();
     }
+}
+
+// ---- Banners page: renaming and the banner editor ----
+.banners-page {
+    .banner-name-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 12px 0;
+    }
+
+    .banner-rename {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px 0;
+
+        .form-control {
+            flex: 1 1 140px;
+            border-radius: 6px;
+        }
+    }
+
+    .banner-rename-ext {
+        color: #6b7f88;
+        font-size: 12px;
+    }
+
+    .banner-rename-error {
+        flex-basis: 100%;
+        color: @brand-danger;
+        font-size: 12px;
+    }
+}
+
+// The editor pop-up: wide enough for the stage
+.modal.banner-editor-window .modal-dialog {
+    width: 1180px !important;
+    max-width: calc(~"100vw - 24px") !important;
+}
+
+.banner-editor-modal {
+    .site-modal-chrome();
+
+    .bio-edit-subtitle {
+        margin: 6px 0 0;
+        color: #6b7f88;
+        font-size: 13px;
+    }
+
+    .modal-footer .mcrrc-btn,
+    .modal-footer .member-primary-btn {
+        margin-left: 6px;
+    }
+
+    .bed-label {
+        .site-label();
+    }
+
+    // Step 1: where the photo goes
+    .bed-drop {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 36px 20px;
+        border: 2px dashed #9fc6d6;
+        border-radius: 12px;
+        background: #fff;
+        text-align: center;
+
+        > .fa {
+            font-size: 38px;
+            color: @brand-primary;
+        }
+
+        &.is-over {
+            border-color: @brand-primary;
+            background: @brand-primary-very-light;
+        }
+    }
+
+    .bed-drop-title {
+        color: @brand-primary-dark;
+        font-size: 17px;
+        font-weight: 600;
+    }
+
+    .bed-pick {
+        position: relative;
+        overflow: hidden;
+        margin: 0;
+        cursor: pointer;
+
+        input[type=file] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+    }
+
+    .photo-error {
+        margin-top: 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #fdecea;
+        color: @brand-danger;
+        font-size: 13px;
+    }
+
+    .photo-tip-card {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        background: @brand-primary-very-light;
+        color: #333;
+        font-size: 13px;
+
+        > strong .fa {
+            color: #e0a800;
+        }
+
+        ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
+        }
+
+        li {
+            margin-bottom: 4px;
+            line-height: 1.5;
+        }
+    }
+
+    // Step 2
+    .bed-name-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        margin-bottom: 12px;
+    }
+
+    .bed-name-field {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        flex: 1 1 320px;
+
+        .form-control {
+            flex: 0 1 320px;
+            border-radius: 8px;
+        }
+    }
+
+    .bed-name-status {
+        color: #6b7f88;
+        font-size: 13px;
+
+        &.is-ok {
+            color: #3c763d;
+        }
+
+        &.is-bad {
+            color: @brand-danger;
+        }
+    }
+
+    .bed-notice {
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #fff8e1;
+        color: #8a6100;
+        font-size: 13px;
+    }
+
+    .bed-hint {
+        margin: 0 0 10px;
+        color: #6b7f88;
+        font-size: 12.5px;
+    }
+
+    .bed-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        margin-top: 12px;
+    }
+
+    .bed-segment {
+        display: inline-flex;
+        gap: 4px;
+    }
+
+    .bed-check {
+        margin: 0;
+        font-weight: 400;
+        font-size: 13px;
+    }
+
+    .bed-spacer {
+        flex: 1;
+    }
+
+    .bed-preview {
+        margin-top: 14px;
+
+        img {
+            display: block;
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 6px;
+            border: 1px solid #d5e1e6;
+            background: #fff;
+        }
+    }
+
+    .bed-preview-stale {
+        margin-left: 6px;
+        color: #a05a00;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+}
+
+// The stage: the photo, dimmed outside the banner's window
+banner-stage {
+    display: block;
+}
+
+.bstage {
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: 8px;
+    background: #2b3036;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+
+    &.is-dragging {
+        cursor: grabbing;
+    }
+
+    &.is-title-hidden .banner-title {
+        display: none;
+    }
+}
+
+.bstage-photo {
+    position: absolute;
+    max-width: none;
+    pointer-events: none;
+}
+
+.bstage-mask {
+    position: absolute;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(20, 24, 28, 0.62);
+    outline: 2px solid #fff;
+}
+
+// The window is a container, like the site's banner: the badge inside is
+// the site's own (.banner-title-styles), sized in its units
+.bstage-window {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+    container-type: inline-size;
+    .banner-title-styles();
+}
+
+.bstage-fade {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+}
+
+.bstage-past {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+}
+
+.bstage-wide-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed rgba(255, 255, 255, 0.9);
+
+    span {
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        padding: 0 5px;
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-size: 10px;
+    }
+}
+
+.bstage-zoom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0 0;
+    font-weight: 400;
+
+    input[type=range] {
+        width: 260px;
+        max-width: 50vw;
+    }
+}
+
+.bstage-label {
+    .site-label();
+}
+
+.bstage-zoom-value {
+    color: #333;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
 }

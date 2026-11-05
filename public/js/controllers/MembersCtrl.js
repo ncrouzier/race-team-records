@@ -156,10 +156,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         MembersService.showEditPhotoModal(member);
     };
 
-    $scope.adjustThumbnail = function (member) {
-        MembersService.showThumbnailCropModal(member);
-    };
-
     $scope.removeMember = function (member) {
         var dlg = dialogs.confirm("Remove Member?", "Are you sure you want to remove this member?");
         dlg.result.then(function (btn) {
@@ -1003,49 +999,197 @@ angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', 
     };
 }]);
 
-angular.module('mcrrcApp.members').controller('ThumbnailCropModalInstanceController', ['$scope', '$uibModalInstance', 'member', 'MembersService', function ($scope, $uibModalInstance, member, MembersService) {
-    var saved = member.profileThumbCrop;
-    $scope.memberName = member.firstname + ' ' + member.lastname;
-    $scope.firstname = member.firstname;
-    $scope.pictureLink = member.pictureLink;
-    $scope.hadCrop = !!(saved && isFinite(saved.size));
-    $scope.draft = { crop: $scope.hadCrop ? { left: saved.left, top: saved.top, size: saved.size } : null };
+angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$q', '$uibModalInstance', 'member', 'MembersService', function ($scope, $q, $uibModalInstance, member, MembersService) {
+    // Big photos are shrunk in the browser before upload, so phone photos stay
+    // under the server's 10 MB / 100 MP limits and upload quickly. 2000 px is
+    // twice what the server keeps (1000 px), so the server's own resize hides
+    // this step; a photo already within both limits is sent untouched.
+    var RESIZE_ABOVE_SIDE = 2000;
+    var RESIZE_ABOVE_BYTES = 8 * 1024 * 1024;
+    var MAX_BYTES = 10 * 1024 * 1024;
+    var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
-    function send(crop) {
-        $scope.saving = true;
+    $scope.memberName = member.firstname + ' ' + member.lastname;
+    $scope.currentUrl = member.pictureLink || null;
+    $scope.previewUrl = null;
+    // 'photo' (choose / upload / remove), then 'thumb' (the round crop)
+    $scope.step = 'photo';
+    $scope.justUploaded = false;
+    $scope.draft = { crop: null };
+    // What changed, for the page: { pictureLink, profileThumbCrop }
+    var result = { pictureLink: member.pictureLink || '', profileThumbCrop: member.profileThumbCrop };
+
+    function hasCrop(c) {
+        return !!(c && isFinite(c.size));
+    }
+    $scope.upload = null;
+    $scope.busy = false;
+    $scope.error = null;
+
+    function sizeText(bytes) {
+        return bytes >= 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + ' MB' : Math.round(bytes / 1024) + ' KB';
+    }
+
+    function setPreview(blob) {
+        if ($scope.previewUrl) URL.revokeObjectURL($scope.previewUrl);
+        $scope.previewUrl = blob ? URL.createObjectURL(blob) : null;
+    }
+
+    // The file, decoded upright (EXIF orientation applied) and drawn at most
+    // RESIZE_ABOVE_SIDE px, as a high quality JPEG; the file itself when it is
+    // already small enough
+    function shrinkIfNeeded(file) {
+        if (!window.createImageBitmap) return $q.when(file);
+        return $q.when(createImageBitmap(file, { imageOrientation: 'from-image' })).then(function (bitmap) {
+            var longSide = Math.max(bitmap.width, bitmap.height);
+            if (longSide <= RESIZE_ABOVE_SIDE && file.size <= RESIZE_ABOVE_BYTES) {
+                bitmap.close && bitmap.close();
+                return file;
+            }
+            var scale = Math.min(1, RESIZE_ABOVE_SIDE / longSide);
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.round(bitmap.width * scale);
+            canvas.height = Math.round(bitmap.height * scale);
+            var ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            bitmap.close && bitmap.close();
+            return $q(function (resolve) {
+                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.92);
+            });
+        }, function () {
+            // The browser could not decode it: let the server judge (and explain)
+            return file;
+        });
+    }
+
+    $scope.onFileChosen = function (file) {
+        $scope.error = null;
+        $scope.confirmRemove = false;
+        var isHeic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+        if (isHeic) {
+            $scope.error = 'iPhone HEIC photos are not accepted. Export it as JPEG first (see the tips below).';
+            return;
+        }
+        if (ACCEPTED.indexOf(file.type) === -1) {
+            $scope.error = 'Only JPEG, PNG or WebP photos are accepted.';
+            return;
+        }
+        $scope.busy = true;
+        shrinkIfNeeded(file).then(function (blob) {
+            if (blob.size > MAX_BYTES) {
+                $scope.error = 'This photo is over 10 MB. Try a smaller one.';
+                return;
+            }
+            $scope.upload = blob;
+            $scope.chosen = { name: file.name, sizeText: sizeText(blob.size) + (blob !== file ? ' after resizing' : '') };
+            setPreview(blob);
+        }).finally(function () {
+            $scope.busy = false;
+        });
+    };
+
+    function failed(res) {
+        $scope.busy = false;
+        $scope.error = (res && res.data && res.data.error) ||
+            (res && res.status === 413 ? 'The file is too large.' : 'The photo could not be saved. Try again.');
+    }
+
+    $scope.savePhoto = function () {
+        if (!$scope.upload) return;
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.uploadMemberPhoto(member._id, $scope.upload).then(function (res) {
+            // Saved: the photo is changed whatever happens in step 2
+            setPreview(null);
+            result = { pictureLink: res.pictureLink, profileThumbCrop: undefined };
+            $scope.currentUrl = res.pictureLink;
+            $scope.upload = null;
+            $scope.justUploaded = true;
+            $scope.busy = false;
+            // The server made the thumbnail already: start from its square
+            openThumbnailStep(res.thumbCrop);
+        }, failed);
+    };
+
+    // ---- Step 2: the thumbnail ----
+
+    // Step 2 starts on the square the current thumbnail is cut from (null:
+    // the cropper's own default), so "unchanged" means keep it as it is
+    var startCrop = null;
+
+    function openThumbnailStep(crop) {
+        startCrop = hasCrop(crop) ? { left: crop.left, top: crop.top, size: crop.size } : null;
+        $scope.draft = { crop: startCrop ? angular.copy(startCrop) : null };
+        $scope.thumbSrc = result.pictureLink;
+        $scope.error = null;
+        $scope.step = 'thumb';
+    }
+
+    // From step 1 without uploading: ask where the current thumbnail is
+    $scope.goToThumbnail = function () {
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.getThumbnailCrop(member._id).then(function (res) {
+            $scope.busy = false;
+            openThumbnailStep(res.crop);
+        }, function () {
+            $scope.busy = false;
+            openThumbnailStep(null);
+        });
+    };
+
+    function near(a, b) {
+        return Math.abs(Number(a) - Number(b)) < 0.002;
+    }
+
+    $scope.thumbChanged = function () {
+        var c = $scope.draft.crop;
+        if (!c) return false;
+        if (!startCrop) return true;
+        return !(near(c.left, startCrop.left) && near(c.top, startCrop.top) && near(c.size, startCrop.size));
+    };
+
+    $scope.backToPhoto = function () {
+        $scope.error = null;
+        $scope.step = 'photo';
+    };
+
+    function sendCrop(crop) {
+        $scope.busy = true;
         $scope.error = null;
         MembersService.setThumbnailCrop(member._id, crop).then(function (res) {
-            member.profileThumbCrop = res.crop || undefined;
-            $uibModalInstance.close(res.thumbUrl);
+            result.profileThumbCrop = res.crop || undefined;
+            $uibModalInstance.close(result);
         }, function (res) {
-            $scope.saving = false;
+            $scope.busy = false;
             $scope.error = (res && res.data && res.data.error) || 'The thumbnail could not be saved.';
         });
     }
 
-    $scope.save = function () {
+    // Unchanged: the thumbnail stays as it is (automatic, or the crop
+    // already chosen), nothing to send
+    $scope.saveThumbnail = function () {
+        if (!$scope.thumbChanged()) return $uibModalInstance.close(result);
         var c = $scope.draft.crop;
-        send({ left: Number(c.left), top: Number(c.top), size: Number(c.size) });
+        sendCrop({ left: Number(c.left), top: Number(c.top), size: Number(c.size) });
     };
 
-    $scope.reset = function () {
-        send(null);
+    $scope.removePhoto = function () {
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.removeMemberPhoto(member._id).then(function () {
+            $uibModalInstance.close({ pictureLink: '', profileThumbCrop: undefined });
+        }, failed);
     };
 
+    // After an upload the photo is already saved: closing reports it
     $scope.cancel = function () {
-        $uibModalInstance.dismiss('cancel');
-    };
-}]);
-
-angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
-    $scope.formData = { pictureLink: member.pictureLink || '' };
-    $scope.memberName = member.firstname + ' ' + member.lastname;
-
-    $scope.savePhoto = function () {
-        $uibModalInstance.close($scope.formData.pictureLink);
-    };
-
-    $scope.cancel = function () {
-        $uibModalInstance.dismiss('cancel');
+        setPreview(null);
+        if ($scope.justUploaded) $uibModalInstance.close(result);
+        else $uibModalInstance.dismiss('cancel');
     };
 }]);

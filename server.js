@@ -249,6 +249,7 @@ app.get('/api/weather/current', weatherLimiter);
 
 // routes ======================================================================
 // Before routes.js, which ends with the catch-all that serves the app for any GET
+require('./app/bannerRoutes.js')(app);
 require('./app/raceSeriesRoutes.js')(app);
 require('./app/correctionRoutes.js')(app);
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
@@ -263,6 +264,26 @@ require('./app/routes.js')(app, qs, passport, async, _); // load our routes and 
 
 //update at startup and every day
 service.startUpUpdate();
+
+// Member photos live in PHOTO_DIR (a host folder in production): say at boot
+// if it cannot be written, not on the first upload
+require('./app/memberPhotos').checkWritable();
+
+// Banners live in BANNER_DIR (a host folder in production). At boot: say if
+// it cannot be written; the first time, copy in the banners that shipped in
+// the image; and every hour, drop editor drafts left for over a day.
+(function () {
+    const bannerFiles = require('./app/bannerFiles');
+    bannerFiles.checkWritable()
+        .then(() => bannerFiles.seedFromImage(require('./app/models/banner')))
+        .then(({ copied, created }) => {
+            if (copied) console.log(`Banners: copied ${copied} banner(s) from the image into ${bannerFiles.BANNER_DIR}` + (created ? `, ${created} new entr${created === 1 ? 'y' : 'ies'}` : ''));
+        })
+        .catch(err => console.error('Banners: could not set up the banner folder:', err));
+    const sweep = () => bannerFiles.sweepDrafts().catch(err => console.error('Banners: draft cleanup failed:', err));
+    sweep();
+    setInterval(sweep, 60 * 60 * 1000).unref();
+})();
 
 // Backfill member profile thumbnails at boot — covers members whose
 // pictureLink has no matching thumbnail yet (new members, or ones who had a

@@ -1,72 +1,107 @@
 <div class="photo-edit-modal">
     <div class="modal-header">
-        <h3 class="modal-title">Edit photo</h3>
+        <h3 class="modal-title">{{step === 'thumb' ? 'Adjust thumbnail' : 'Edit photo'}}</h3>
         <p class="bio-edit-subtitle">{{memberName}}</p>
+        <!-- 1. the photo, 2. the round thumbnail cut from it -->
+        <ol class="photo-steps">
+            <li ng-class="{'is-on': step === 'photo', 'is-done': step === 'thumb'}">
+                <span class="photo-step-num">1</span> Photo
+            </li>
+            <li ng-class="{'is-on': step === 'thumb'}">
+                <span class="photo-step-num">2</span> Thumbnail
+            </li>
+        </ol>
     </div>
-    <div class="modal-body">
-        <form name="formphoto">
-            <div class="bio-field"
-                ng-class="{'has-error': formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid}">
-                <label>Photo URL</label>
-                <input type="url" name="pictureLink" class="form-control" ng-model="formData.pictureLink"
-                    ng-pattern="/^https?:\/\//" placeholder="https://example.com/photo.jpg">
-                <span class="help-block" ng-show="formphoto.pictureLink.$dirty && formphoto.pictureLink.$invalid">
-                    Please enter a valid URL starting with http:// or https://
-                </span>
-            </div>
 
-            <div class="form-group" ng-show="formData.pictureLink && !formphoto.pictureLink.$invalid">
-                <label class="photo-preview-label">Preview</label>
-                <div class="photo-preview-box">
-                    <img ng-src="{{formData.pictureLink}}" alt="Photo preview">
-                </div>
-            </div>
-
-            <div class="photo-tip-card">
-                <strong><i class="fa fa-info-circle"></i> Please keep the file size small</strong> — the photo
-                display is limited to 500px wide, so there's no need for very large images.
-            </div>
-
-            <!-- Collapsed by default; toggled with plain scope state, no controller change needed -->
-            <button type="button" class="mcrrc-btn photo-help-toggle" ng-click="showPhotoHelp = !showPhotoHelp">
-                <i class="fa" ng-class="showPhotoHelp ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                How do I get a photo link?
-            </button>
-
-            <div class="photo-help" ng-show="showPhotoHelp">
-                <div class="photo-help-item">
-                    <h5><i class="fa fa-globe"></i> From any website</h5>
-                    <p>Right-click (or press and hold on a phone) the photo itself, then choose
-                        <strong>Copy image address</strong> (or <em>Copy image link</em>). Paste that into the box
-                        above. A link to the page the photo is on won't work — it has to point at the image
-                        file itself, and usually ends in <code>.jpg</code>, <code>.png</code> or similar.</p>
-                </div>
-                <div class="photo-help-item">
-                    <h5><i class="fa fa-picture-o"></i> From Google Photos</h5>
-                    <p>Open the photo so it fills the screen, right-click it and choose <strong>Open image in new
-                            tab</strong>. On the new tab, right-click the photo again and choose
-                        <strong>Copy image address</strong> — that link (it will contain
-                        <code>googleusercontent.com</code>) can be pasted above. The "Share &gt; Create link" option
-                        gives a link to a shared album page instead, which won't display as a photo here.</p>
-                </div>
-                <div class="photo-help-item">
-                    <h5><i class="fa fa-folder-open-o"></i> From Google Drive</h5>
-                    <p>Right-click the file in Drive, choose <strong>Share</strong>, and set access to
-                        <em>Anyone with the link</em>. Copy the share link — it looks like
-                        <code>https://drive.google.com/file/d/<strong>FILE_ID</strong>/view?usp=sharing</code>.
-                        That link opens Drive's viewer, not the photo, so copy just the <strong>FILE_ID</strong> part
-                        (the long string of letters and numbers between <code>/d/</code> and <code>/view</code>) and
-                        paste it into this address instead:</p>
-                    <code class="photo-help-template">https://drive.google.com/thumbnail?id=FILE_ID&amp;sz=w1000</code>
-                </div>
-            </div>
-        </form>
+    <!-- ============ Step 2: the thumbnail ============ -->
+    <div class="modal-body" ng-if="step === 'thumb'">
+        <p class="thumb-crop-intro">
+            <span ng-if="justUploaded"><i class="fa fa-check-circle photo-saved-icon"></i> Photo saved.</span>
+            The square is the part of the photo used for the round profile picture across the site
+            (member cards, awards, results, the menu bar)<span ng-if="justUploaded">, picked around the face
+            automatically</span>. Move or resize it if you want, or keep it as it is.
+        </p>
+        <thumb-cropper src="{{thumbSrc}}" crop="draft.crop"></thumb-cropper>
+        <div class="photo-error" ng-if="error"><i class="fa fa-exclamation-circle"></i> {{error}}</div>
     </div>
-    <div class="modal-footer">
-        <button class="mcrrc-btn" ng-click="cancel()">Cancel</button>
-        <button type="submit" class="mcrrc-btn member-primary-btn" ng-click="savePhoto()"
-            ng-disabled="formphoto.pictureLink.$invalid">
-            <i class="fa fa-check"></i> Save
+
+    <!-- ============ Step 1: the photo ============ -->
+    <div class="modal-body" ng-if="step === 'photo'">
+        <div class="photo-upload-grid">
+            <!-- The photo: the chosen file, else the current one -->
+            <div class="photo-preview-box" ng-class="{'is-empty': !previewUrl && !currentUrl}">
+                <img ng-if="previewUrl || currentUrl" ng-src="{{previewUrl || currentUrl}}" alt="Photo preview">
+                <div class="photo-preview-empty" ng-if="!previewUrl && !currentUrl">
+                    <i class="fa fa-user-circle-o"></i>
+                    <span>No photo yet</span>
+                </div>
+                <span class="site-tag site-tag-info photo-preview-tag" ng-if="previewUrl">New</span>
+            </div>
+
+            <div class="photo-upload-side">
+                <label class="mcrrc-btn member-primary-btn photo-pick-btn" ng-class="{'is-disabled': busy}">
+                    <i class="fa fa-upload"></i> {{currentUrl || previewUrl ? 'Choose another photo' : 'Choose a photo'}}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" photo-file-input="onFileChosen(file)"
+                        ng-disabled="busy">
+                </label>
+                <div class="photo-file-name" ng-if="chosen">
+                    <i class="fa fa-file-image-o"></i> {{chosen.name}}
+                    <small>{{chosen.sizeText}}</small>
+                </div>
+
+                <div class="photo-error" ng-if="error">
+                    <i class="fa fa-exclamation-circle"></i> {{error}}
+                </div>
+
+                <button type="button" class="mcrrc-btn photo-thumb-btn" ng-if="currentUrl && !previewUrl && !confirmRemove"
+                    ng-click="goToThumbnail()" ng-disabled="busy">
+                    <i class="fa" ng-class="busy ? 'fa-spinner fa-spin' : 'fa-crop'"></i> Adjust the thumbnail only
+                </button>
+
+                <button type="button" class="mcrrc-btn is-danger photo-remove-btn" ng-if="currentUrl && !previewUrl"
+                    ng-click="confirmRemove = true" ng-hide="confirmRemove" ng-disabled="busy">
+                    <i class="fa fa-trash"></i> Remove photo
+                </button>
+                <div class="photo-remove-confirm" ng-if="confirmRemove">
+                    Remove the photo? The member will show initials until a new one is uploaded.
+                    <div class="photo-remove-actions">
+                        <button type="button" class="mcrrc-btn" ng-click="confirmRemove = false"
+                            ng-disabled="busy">Keep it</button>
+                        <button type="button" class="mcrrc-btn is-danger" ng-click="removePhoto()" ng-disabled="busy">
+                            <i class="fa" ng-class="busy ? 'fa-spinner fa-spin' : 'fa-trash'"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="photo-tip-card">
+            <strong><i class="fa fa-lightbulb-o"></i> Before you upload</strong>
+            <ul>
+                <li><strong>JPEG, PNG or WebP</strong>, up to 10 MB.</li>
+                <li><strong>iPhone HEIC photos are not accepted.</strong> Picking the photo from your iPhone's
+                    library in Safari usually sends a JPEG on its own. On a Mac, open it in Preview and use
+                    <em>File &rsaquo; Export</em>, format <em>JPEG</em>.</li>               
+                <li>Uploading replaces the current photo. Only use a photo you have the right to share.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="modal-footer" ng-if="step === 'photo'">
+        <button class="mcrrc-btn" ng-click="cancel()" ng-disabled="busy">Cancel</button>
+        <button type="button" class="mcrrc-btn member-primary-btn" ng-click="savePhoto()"
+            ng-disabled="!upload || busy">
+            <i class="fa" ng-class="busy && upload ? 'fa-spinner fa-spin' : 'fa-arrow-right'"></i>
+            {{busy && upload ? 'Uploading…' : 'Save photo, next'}}
+        </button>
+    </div>
+    <div class="modal-footer thumb-crop-footer" ng-if="step === 'thumb'">
+        <span class="thumb-crop-spacer"></span>
+        <button type="button" class="mcrrc-btn" ng-click="backToPhoto()" ng-if="!justUploaded" ng-disabled="busy">
+            <i class="fa fa-arrow-left"></i> Back
+        </button>
+        <button type="button" class="member-primary-btn" ng-click="saveThumbnail()" ng-disabled="busy">
+            <i class="fa" ng-class="busy ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+            {{thumbChanged() ? 'Save thumbnail' : 'Done'}}
         </button>
     </div>
 </div>

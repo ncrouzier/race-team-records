@@ -31,6 +31,10 @@ var memberSchema = mongoose.Schema({
             contentType: String,
             sourceHash: String, // sha1 of pictureLink when this was generated
             generatedAt: Date,
+            // The square it was cut from, as fractions of the upright photo
+            // (the same units as profileThumbCrop): the chosen crop, or the
+            // one face detection / the smart crop picked
+            crop: { left: Number, top: Number, size: Number },
             error: String // set instead of data when the fetch/resize failed
         },
         select: false

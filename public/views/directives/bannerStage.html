@@ -1,0 +1,22 @@
+<div class="bstage-wrap">
+    <div class="bstage" ng-class="{'is-title-hidden': !showTitle}">
+        <img class="bstage-photo" ng-src="{{draft.photoUrl}}" alt="" draggable="false">
+        <div class="bstage-mask"></div>
+        <!-- The banner's window: the photo shows through, with the fade and the
+             title badge exactly as on the site -->
+        <div class="bstage-window">
+            <div class="bstage-past"></div>
+            <img class="bstage-fade" src="/api/admin/banner-fade.svg" alt="" draggable="false">
+            <div class="banner-title banner-title-right">
+                <div class="banner-title-top">Montgomery County Road Runners</div>
+                <div class="banner-title-bottom">Racing Team</div>
+            </div>
+            <div class="bstage-wide-line"><span>wide screens end here</span></div>
+        </div>
+    </div>
+    <label class="bstage-zoom">
+        <span class="bstage-label">Zoom</span>
+        <input type="range" min="0" max="1000" ng-model="zoom.value" ng-change="onZoomSlider()" ng-model-options="{getterSetter: false}">
+        <span class="bstage-zoom-value">{{zoom.label}}</span>
+    </label>
+</div>

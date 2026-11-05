@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+const bumpStamp = require('./stamp');
 const SystemInfo = require('./systeminfo');
 
 // define the schema for volunteer job model
@@ -40,26 +41,11 @@ volunteerJobSchema.pre('save', function() {
         this.createdAt = currentDate;
     }
     this.updatedAt = currentDate;
-    volunteerJobSchema.methods.updateSystemInfo('mcrrc', currentDate);
+    return volunteerJobSchema.methods.updateSystemInfo('mcrrc', currentDate);
 });
 
-volunteerJobSchema.methods.updateSystemInfo = function(name, date) {
-    try {
-        SystemInfo.findOne({
-            name: name
-        }).then(systemInfo => {
-            if (systemInfo) {
-                systemInfo.volunteerJobUpdate = date;
-                systemInfo.save().then(err => {
-                    if (!err) {
-                        console.log("error fetching systemInfo", err);
-                    }
-                });
-            }
-        });
-    } catch(SystemInfoFindOneErr) {
-        console.log("error fetching systemInfo")
-    }
+volunteerJobSchema.methods.updateSystemInfo = function (name, date) {
+    return bumpStamp('volunteerJobUpdate', date);
 };
 
 // create the model and expose it to our app

@@ -1,0 +1,161 @@
+<div class="jumbotron hosted-pages-page">
+    <div class="racetypes-content">
+
+        <div class="member-card hosted-pages">
+            <div class="member-card-header">
+                <h3><i class="fa fa-file-code-o"></i> Hosted Pages</h3>
+                <button class="member-primary-btn" ng-click="newPage()" ng-if="!editor">
+                    <i class="fa fa-upload"></i> Upload a page
+                </button>
+            </div>
+
+            <!-- Upload / edit -->
+            <div class="hp-editor" ng-if="editor">
+                <h4 class="hp-editor-title">{{ editor.mode === 'new' ? 'Upload a page' : 'Edit "' + editor.title + '"' }}</h4>
+                <form ng-submit="savePage()" novalidate>
+                    <div class="hp-field">
+                        <label>HTML file</label>
+                        <input type="file" accept=".html,.htm,text/html" html-file-input="fileChosen(file, text)">
+                        <p class="help-block" ng-if="editor.mode === 'edit' && !editor.html">
+                            Current file: {{ editor.currentFilename || 'uploaded page' }}. Choose a file only to replace it.
+                        </p>
+                        <p class="help-block" ng-if="editor.html">
+                            <i class="fa fa-check text-success"></i> {{ editor.filename }} ({{ formatSize(editor.html.length) }}) ready
+                        </p>
+                        <p class="help-block">
+                            One self-contained file: images and styles inside it, or linked from elsewhere on the web. Up to 10 MB.
+                        </p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6 hp-field">
+                            <label>Title</label>
+                            <input class="form-control" ng-model="editor.title" ng-change="titleChanged()" maxlength="200" required>
+                        </div>
+                        <div class="col-sm-6 hp-field">
+                            <label>Address</label>
+                            <div class="input-group">
+                                <span class="input-group-addon">/pages/</span>
+                                <input class="form-control" ng-model="editor.slug" ng-change="slugChanged()" maxlength="80"
+                                    placeholder="team-handbook">
+                            </div>
+                            <p class="help-block">Lowercase letters, numbers and dashes. Changing it breaks links already shared.</p>
+                        </div>
+                    </div>
+
+                    <div class="hp-field">
+                        <label>Description <span class="hp-optional">(optional)</span></label>
+                        <input class="form-control" ng-model="editor.description" maxlength="300"
+                            placeholder="Shown when the link is shared on social media or in messages">
+                    </div>
+
+                    <div class="hp-field">
+                        <label>Who can see it</label>
+                        <div class="hp-btn-row" role="group">
+                            <button type="button" class="mcrrc-btn" ng-repeat="level in ACCESS_LEVELS"
+                                ng-class="{'is-on': editor.access === level.key}"
+                                ng-click="editor.access = level.key">
+                                <i class="fa fa-fw" ng-class="level.icon"></i> {{ level.label }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="hp-checks">
+                        <label class="hp-check">
+                            <input type="checkbox" ng-model="editor.published">
+                            <span><strong>Published</strong> <span class="text-muted">(a draft can only be opened by admins)</span></span>
+                        </label>
+                        <label class="hp-check">
+                            <input type="checkbox" ng-model="editor.showBanner">
+                            <span><strong>Show the site bar</strong> <span class="text-muted">(a bar at the very top with a link back to the site)</span></span>
+                        </label>
+                        <label class="hp-check">
+                            <input type="checkbox" ng-model="editor.trusted">
+                            <span><strong>Trusted</strong> <span class="text-muted">(run as part of the site, not sandboxed)</span></span>
+                        </label>
+                    </div>
+                    <div class="alert alert-warning hp-trusted-warning" ng-if="editor.trusted">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        A trusted page's scripts act as whoever is viewing it: they can use that person's login and the
+                        site's data, including an admin's. Only turn this on for a page you wrote or fully trust, and only
+                        if it needs the site's API. Most pages work sandboxed.
+                    </div>
+
+                    <div class="alert alert-danger" ng-if="editor.error">{{ editor.error }}</div>
+
+                    <div class="hp-btn-row">
+                        <button type="submit" class="member-primary-btn" ng-disabled="editor.saving">
+                            <i class="fa" ng-class="editor.saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                            {{ editor.mode === 'new' ? 'Upload' : 'Save' }}
+                        </button>
+                        <button type="button" class="mcrrc-btn" ng-click="cancelEdit()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- The pages -->
+            <div class="hp-list">
+                <div class="alert alert-danger" ng-if="listError">{{ listError }}</div>
+                <p class="text-muted" ng-if="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
+                <p class="text-muted" ng-if="loadError">The pages could not be loaded.</p>
+                <p class="text-muted hp-empty" ng-if="!loading && !loadError && !pages.length">
+                    No pages yet. Upload an HTML file to host it at its own address.
+                </p>
+
+                <div class="table-responsive" ng-if="pages.length">
+                    <table class="table member-table hp-table">
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Who can see it</th>
+                                <th>Status</th>
+                                <th>Size</th>
+                                <th>Updated</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="page in pages track by page._id">
+                                <td>
+                                    <a ng-href="/pages/{{ page.slug }}" target="_blank" rel="noopener"><strong>{{ page.title }}</strong></a>
+                                    <div class="hp-address">/pages/{{ page.slug }}</div>
+                                </td>
+                                <td>
+                                    <i class="fa fa-fw hp-access-icon" ng-class="accessLevel(page.access).icon"></i> {{ accessLevel(page.access).label }}
+                                </td>
+                                <td class="nowrap">
+                                    <span class="site-tag" ng-class="page.published ? 'site-tag-success' : 'site-tag-muted'">
+                                        {{ page.published ? 'Published' : 'Draft' }}
+                                    </span>
+                                    <span class="site-tag site-tag-warning" ng-if="page.trusted"
+                                        uib-tooltip="Runs as part of the site, not sandboxed">Trusted</span>
+                                </td>
+                                <td class="member-table-date">{{ formatSize(page.size) }}</td>
+                                <td class="member-table-date">
+                                    {{ page.updatedAt | date:'MMM d, y' }}
+                                    <div ng-if="page.updatedBy.username">by {{ page.updatedBy.username }}</div>
+                                </td>
+                                <td class="text-right nowrap">
+                                    <button class="mcrrc-btn site-icon-btn" ng-click="copyLink(page)" uib-tooltip="Copy link">
+                                        <i class="fa" ng-class="page.copied ? 'fa-check' : 'fa-link'"></i>
+                                    </button>
+                                    <button class="mcrrc-btn site-icon-btn" ng-click="togglePublished(page)"
+                                        uib-tooltip="{{ page.published ? 'Unpublish (back to draft)' : 'Publish' }}">
+                                        <i class="fa" ng-class="page.published ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                    </button>
+                                    <button class="mcrrc-btn site-icon-btn" ng-click="editPage(page)" uib-tooltip="Edit or replace the file">
+                                        <i class="fa fa-pencil"></i>
+                                    </button>
+                                    <button class="mcrrc-btn site-icon-btn is-danger" ng-click="deletePage(page)" uib-tooltip="Delete">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

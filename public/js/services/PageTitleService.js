@@ -20,8 +20,10 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/results': 'Race Results',
         '/individualresults': 'Individual Results',
         '/races': 'Race',
+        '/series': 'Race Series',
+        '/series-detail': 'Race Series',
         '/results/result': 'Result',
-        '/about': 'About',
+        '/about-agegrading': 'About Age Grading',
         '/login': 'Log In',
         '/forgot-password': 'Forgot Password',
         '/reset-password': 'Reset Password',
@@ -54,7 +56,6 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/pdf': 'PDF Report',
         '/gallery': 'Gallery',
         '/contact': 'Contact',
-        '/bulk': 'Bulk Edit',
         '/mcrrcreport': 'MCRRC Report',
         '/submitresult': 'Submit a Result',
         '/submitvolunteer': 'Submit a Volunteer Job',
@@ -62,7 +63,9 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/notacult': 'Not a Cult',
         '/comp-race-forms': 'Competitive Race Forms',
         '/comp-race-forms/detail': 'Competitive Race Form',
-        '/applications': 'Team Applications'
+        '/applications': 'Team Applications',
+        '/hosted-pages': 'Hosted Pages',
+        '/corrections': 'Correction Requests'
     };
 
     // A member's pages: "<name>" plus what the page shows. member2 is the
@@ -77,7 +80,7 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
     };
 
     // Pages that call set() themselves once their data is in
-    var SET_BY_PAGE = { '/races': true, '/results/result': true };
+    var SET_BY_PAGE = { '/races': true, '/results/result': true, '/series-detail': true };
 
     // How long a page view waits for a title that is still loading
     var WAIT_MS = 4000;

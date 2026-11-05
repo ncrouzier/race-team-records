@@ -8,7 +8,8 @@
     "build:js:prod": "node scripts/build-js.mjs prod",
     "build:js": "npm run build:js:dev && npm run build:js:prod",
     "build:css": "node scripts/build-css.mjs",
-    "banners:crop": "node scripts/crop-banners.mjs",
+    "db:restore": "scripts/restore-local.sh",
+    "photos:import": "node scripts/import-member-photos.js",
     "copy:assets": "mkdir -p public/dist/fonts public/dist/font public/views/templates && cp public/libs/fontawesome/fonts/fontawesome-webfont.eot public/libs/fontawesome/fonts/fontawesome-webfont.ttf public/libs/fontawesome/fonts/fontawesome-webfont.woff public/libs/fontawesome/fonts/fontawesome-webfont.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.eot public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.ttf public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff public/libs/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2 public/dist/fonts/ 2>/dev/null; cp public/libs/angular-utils-pagination/dirPagination.tpl.html public/views/templates/ 2>/dev/null; true",
     "build": "npm run build:css && npm run build:js && npm run copy:assets",
     "heroku-postbuild": "npx bower install --allow-root",
@@ -18,6 +19,7 @@
     "dev": "npm run build:css && npm run build:js:dev && npm run copy:assets && run-p server watch",
     "prod": "npm run build && run-p server:prod watch",
     "migrate:cross-country-to-trail": "node migrations/migrate-cross-country-to-trail.js",
+    "migrate:race-series": "node migrations/backfill-race-series.js",
     "test": "jest"
   },
   "name": "mcrrc-race-team-records",
@@ -27,6 +29,9 @@
     "node": ">=22 <23"
   },
   "dependencies": {
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
     "async": "~3.2.4",
     "axios": "^1.9.0",
     "bcryptjs": "^2.4.3",
@@ -51,12 +56,10 @@
     "passport-local": "~1.0.0",
     "sanitize-html": "^2.17.2",
     "serve-favicon": "^2.5.0",
+    "sharp": "^0.32.6",
     "underscore": "^1.9.1"
   },
   "devDependencies": {
-    "@tensorflow/tfjs": "^4.22.0",
-    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
-    "@vladmandic/face-api": "^1.7.15",
     "bower": "^1.8.14",
     "chokidar-cli": "^3.0.0",
     "clean-css-cli": "^5.6.3",
@@ -66,8 +69,6 @@
     "less": "^4.6.4",
     "nodemon": "^3.1.14",
     "npm-run-all2": "^8.0.4",
-    "sharp": "^0.32.6",
-    "smartcrop-sharp": "^2.0.8",
     "terser": "^5.16.1"
   },
   "jest": {

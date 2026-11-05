@@ -4,12 +4,18 @@ const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const service = require('./service');
+const raceSeriesSync = require('./raceSeriesSync');
+const { raceMatchFilter } = require('./raceMatch');
+const { resultStanding } = require('./resultStanding');
 const cheerio = require('cheerio');
 const axios = require('axios');
 const sanitizeHtml = require('sanitize-html');
 const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
-const Banner = require('./models/banner');
+const profileThumbnails = require('./profileThumbnails');
+const memberPhotos = require('./memberPhotos');
+const rateLimit = require('express-rate-limit');
+const express = require('express');
 
 // Locating the results on a scraped page is its own problem — layout tables,
 // several result tables per page, fixed-width <pre> blocks — so it lives in its
@@ -97,16 +103,17 @@ function scrapeBypassHeaders(url) {
 // Fetch a results page as HTML.
 //
 // Some hosts sit behind Cloudflare and answer a plain server-side request with
-// 403 no matter what headers are sent — mcrrc.org does exactly this. Two ways
+// 403 no matter what headers are sent — mcrrc.org does exactly this. Ways
 // past it, tried in order:
 //   1. A secret header the site's WAF is configured to wave through, for hosts
 //      we control. See scrapeBypassHeaders above.
 //   2. The proxy that the parkrun branch already uses, which requests from a
 //      different address.
+//   3. r.jina.ai, a public reader service (fetchViaJina below).
 //
 // Note the proxy keeps its own allowlist of domains; if it has not been told
-// about the host being fetched it answers 403 too, and the caller gets an error
-// explaining that rather than a bare 500.
+// about the host being fetched it answers 403 too. When everything fails the
+// caller gets an error naming what was tried rather than a bare 500.
 async function fetchPageHtml(url) {
     const bypassHeaders = scrapeBypassHeaders(url);
     const directHeaders = Object.assign({
@@ -144,41 +151,97 @@ async function fetchPageHtml(url) {
     }
 
     const usedBypass = Object.keys(bypassHeaders).length > 0;
-    const bypassNote = usedBypass
-        ? ' A bypass token was sent but the site still refused it — check the WAF rule matches this header.'
-        : ' No bypass token is configured for this host.';
+    const tried = ['the site refused the request (HTTP ' + directStatus + ')' +
+        (usedBypass ? ', even with the bypass token — check the WAF rule matches this header'
+            : ', no bypass token is configured for this host')];
 
-    if (!process.env.PARKRUN_PROXY_URL) {
-        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
-            bypassNote + ' No proxy is configured to retry through.');
-        error.scrapeBlocked = true;
-        throw error;
-    }
-
-    const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
-    const proxyResponse = await axios.get(proxyUrl, {
-        headers: {
-            'User-Agent': SCRAPE_USER_AGENT,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9'
-        },
-        timeout: 30000,
-        maxRedirects: 5,
-        validateStatus: function (status) {
-            return status >= 200 && status < 500;
+    if (process.env.PARKRUN_PROXY_URL) {
+        const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+        try {
+            const proxyResponse = await axios.get(proxyUrl, {
+                headers: {
+                    'User-Agent': SCRAPE_USER_AGENT,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.9'
+                },
+                timeout: 30000,
+                maxRedirects: 5,
+                validateStatus: function (status) {
+                    return status >= 200 && status < 500;
+                }
+            });
+            const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
+            if (proxyResponse.status < 400 && !isBotChallenge(body)) {
+                return { html: body, via: 'proxy' };
+            }
+            tried.push('the proxy could not fetch it (HTTP ' + proxyResponse.status + ')');
+        } catch (proxyError) {
+            tried.push('the proxy failed (' + proxyError.message + ')');
         }
-    });
-
-    const body = typeof proxyResponse.data === 'string' ? proxyResponse.data : '';
-    if (proxyResponse.status >= 400) {
-        const error = new Error('The site refused the request (HTTP ' + directStatus + ').' +
-            bypassNote + ' The proxy could not fetch it either (HTTP ' + proxyResponse.status + '): ' +
-            body.slice(0, 200));
-        error.scrapeBlocked = true;
-        throw error;
+    } else {
+        tried.push('no proxy is configured');
     }
 
-    return { html: body, via: 'proxy' };
+    const jina = await fetchViaJina(url);
+    if (jina.html) return { html: jina.html, via: 'jina' };
+    tried.push(jina.note);
+
+    const error = new Error('Could not fetch the page: ' + tried.join('; ') +
+        '. Paste the page source instead.');
+    error.scrapeBlocked = true;
+    throw error;
+}
+
+// A bot-check page instead of the content: Cloudflare's "Just a moment...",
+// parkrun's "Human Verification" and the like. They can come back with a 200.
+function isBotChallenge(html) {
+    if (!html) return true;
+    const head = String(html).slice(0, 4000);
+    return /<title>\s*(Just a moment|Attention Required|Human Verification|Access denied)/i.test(head) ||
+        /cf-browser-verification|challenge-platform|cf_chl_/i.test(head);
+}
+
+// Last resort: r.jina.ai, a public reader service, fetches the page from its
+// own servers and returns the HTML. It gets past some Cloudflare blocks
+// (mcrrc.org, often) but not all, and not every time: the outcome changes from
+// one try to the next, hence two tries. Only the URL is sent — never the
+// bypass headers. JINA_API_KEY raises the rate limit (about 20 requests a
+// minute without one); SCRAPE_JINA=off turns this off.
+async function fetchViaJina(url) {
+    if (/^(off|false|0|no)$/i.test(process.env.SCRAPE_JINA || '')) {
+        return { note: 'r.jina.ai is turned off (SCRAPE_JINA)' };
+    }
+    const headers = {
+        'Accept': 'application/json',
+        'X-Return-Format': 'html',
+        'X-No-Cache': 'true'
+    };
+    if (process.env.JINA_API_KEY) headers.Authorization = 'Bearer ' + process.env.JINA_API_KEY;
+
+    let note = 'r.jina.ai could not fetch it either';
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const response = await axios.get('https://r.jina.ai/' + url, {
+                headers: headers,
+                timeout: 45000,
+                validateStatus: function () { return true; }
+            });
+            const data = response.data && response.data.data;
+            const html = data && typeof data.html === 'string' ? data.html : '';
+            const status = data && data.httpStatus;
+            if (response.status === 200 && html && (!status || status < 400) && !isBotChallenge(html)) {
+                return { html: html };
+            }
+            if (response.status === 429) {
+                return { note: 'r.jina.ai is rate limiting us (HTTP 429)' + (process.env.JINA_API_KEY ? '' : ' — a JINA_API_KEY raises the limit') };
+            }
+            const badStatus = response.status !== 200 ? response.status : (status >= 400 ? status : null);
+            note = 'r.jina.ai got ' + (badStatus ? 'HTTP ' + badStatus : (html ? 'a bot check' : 'an empty page')) + ' instead of the page';
+        } catch (jinaError) {
+            note = 'r.jina.ai failed (' + jinaError.message + ')';
+        }
+    }
+    return { note: note };
 }
 
 const bioSanitizeOptions = {
@@ -218,6 +281,8 @@ module.exports = async function (app, qs, passport, async, _) {
     // Google Analytics, for every page that renders views/partials/ga.ejs:
     // on in production only, so local and test traffic stays out of the real
     // property. GA_ENABLED=true or false overrides either way.
+    // GA_MEASUREMENT_ID: a test property instead of the real one
+    app.locals.gaMeasurementId = process.env.GA_MEASUREMENT_ID || 'G-2HBYX9M5YQ';
     app.locals.gaEnabled = process.env.GA_ENABLED ?
         process.env.GA_ENABLED === 'true' : process.env.NODE_ENV === 'production';
     // Hits marked debug_mode show in GA4's DebugView, and its "Developer
@@ -241,6 +306,10 @@ module.exports = async function (app, qs, passport, async, _) {
                     this.set('X-Racetype-Update', systemInfo.racetypeUpdate ? systemInfo.racetypeUpdate.toISOString() : '');
                     this.set('X-Member-Update', systemInfo.memberUpdate ? systemInfo.memberUpdate.toISOString() : '');
                     this.set('X-Volunteer-Job-Update', systemInfo.volunteerJobUpdate ? systemInfo.volunteerJobUpdate.toISOString() : '');
+                    // Not part of the overall update below: see SystemInfo.seriesUpdate
+                    this.set('X-Series-Update', systemInfo.seriesUpdate ? systemInfo.seriesUpdate.toISOString() : '');
+                    // Nor this: a bio / photo / thumbnail change (SystemInfo.memberProfileUpdate)
+                    this.set('X-Member-Profile-Update', systemInfo.memberProfileUpdate ? systemInfo.memberProfileUpdate.toISOString() : '');
                     // Calculate overall update
                     const dates = [
                         systemInfo.resultUpdate,
@@ -799,80 +868,7 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    // Banner images for the homepage top banner.
-    // Selection priority: birthday banners > pinned banners > all banners (random pick from pool).
-    app.get('/api/banners', async function (req, res) {
-        try {
-            const banners = await Banner.find().populate('members', 'dateofbirth').lean();
-            if (!banners.length) return res.json([]);
-
-            const now = req.query.date ? new Date(req.query.date) : new Date();
-            const todayMonth = now.getUTCMonth();
-            const todayDay = now.getUTCDate();
-
-            const hasBirthdayToday = (banner) =>
-                (banner.members || []).some((m) => {
-                    if (!m.dateofbirth) return false;
-                    const dob = new Date(m.dateofbirth);
-                    return dob.getUTCMonth() === todayMonth && dob.getUTCDate() === todayDay;
-                });
-
-            const toResponse = (b) => ({
-                url: '/images/banners/' + b.filename,
-                titleTheme: b.titleTheme || null,
-                pinned: !!b.pinned,
-                copyright: b.copyright || null,
-            });
-
-            const birthdayBanners = banners.filter(hasBirthdayToday);
-            if (birthdayBanners.length) {
-                const pick = birthdayBanners[Math.floor(Math.random() * birthdayBanners.length)];
-                return res.json([toResponse(pick)]);
-            }
-
-            const pinnedBanners = banners.filter((b) => b.pinned);
-            const pool = pinnedBanners.length ? pinnedBanners : banners;
-            const pick = pool[Math.floor(Math.random() * pool.length)];
-            res.json([toResponse(pick)]);
-        } catch (err) {
-            res.status(500).json({ error: 'Could not load banners' });
-        }
-    });
-
-    // Banner admin endpoints (admin/captain only)
-    app.get('/api/admin/banners', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const banners = await Banner.find().populate('members', 'firstname lastname').sort('filename').lean();
-            res.json(banners);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    app.put('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const { members, pinned, titleTheme, copyright } = req.body;
-            const updated = await Banner.findByIdAndUpdate(
-                req.params.id,
-                { members, pinned, titleTheme, copyright },
-                { returnDocument: 'after', runValidators: true }
-            ).populate('members', 'firstname lastname');
-            if (!updated) return res.status(404).json({ error: 'Banner not found' });
-            res.json(updated);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
-
-    app.delete('/api/admin/banners/:id', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const deleted = await Banner.findByIdAndDelete(req.params.id);
-            if (!deleted) return res.status(404).json({ error: 'Banner not found' });
-            res.json({ ok: true });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    });
+    // Banners: app/bannerRoutes.js
 
     // =====================================
     // TEAM MEMBERS ========================
@@ -938,19 +934,19 @@ module.exports = async function (app, qs, passport, async, _) {
             }
         }
 
-        //remove teamRequirementStats if not logged in
-        if (!req.isAuthenticated()) {
-            query = query.select('-teamRequirementStats');
-        }
-
         if (sort) {
             query = query.sort(sort);
         }
         if (limit) {
             query = query.limit(limit);
         }
+        // Built as one list and applied in a single .select() call: Mongoose
+        // silently drops a `+field` override (used below for +profileThumb)
+        // when it arrives in a *second* .select() call merged onto a query
+        // that already excluded other fields.
+        const selectParts = [];
         if (select) {
-            query = query.select(select);
+            selectParts.push.apply(selectParts, String(select).split(/\s+/).filter(Boolean));
         } else {
             // This is a list endpoint, so it returns a summary of each member.
             //
@@ -965,12 +961,44 @@ module.exports = async function (app, qs, passport, async, _) {
             // Callers that genuinely want these ask for them with an explicit
             // `select`, which takes the branch above (StatsService does this to
             // keep personalBests.result.agegrade for the age-grade histogram).
-            query = query.select('-bio -personalBests');
+            selectParts.push('-bio', '-personalBests');
         }
+        if (!req.isAuthenticated()) {
+            // No teamRequirementStats when not logged in. An inclusion
+            // projection ("firstname lastname ...") cannot also exclude a field
+            // (MongoDB rejects the mix), so there it is just never included.
+            const isInclusion = selectParts.some(part => part[0] !== '-' && part[0] !== '+');
+            if (isInclusion) {
+                for (let i = selectParts.length - 1; i >= 0; i--) {
+                    if (selectParts[i].replace(/^\+/, '') === 'teamRequirementStats') selectParts.splice(i, 1);
+                }
+            } else {
+                selectParts.push('-teamRequirementStats');
+            }
+        }
+        query = query.select(selectParts.join(' '));
         try {
             query.lean().exec().then(members => {
-                // if there is an error retrieving, send the error. nothing after res.send(err) will execute
+                // A page that explicitly asked for +profileThumb (the member
+                // list's "Cards" view does) gets it embedded as a ready-to-use
+                // data: URI, not the raw Buffer — res.json() would otherwise
+                // serialize a Buffer as a {type, data:[...]} byte array, about
+                // 3x larger than base64 for no benefit. This also means that
+                // page's one cached list response carries every member's
+                // photo, instead of one request per card.
+                members.forEach(member => {
+                    if (member.profileThumb) {
+                        const dataUri = profileThumbnails.toDataUri(member.profileThumb);
+                        if (dataUri) {
+                            member.profileThumbUrl = dataUri;
+                        }
+                        delete member.profileThumb;
+                    }
+                });
                 res.json(members); // return all members in JSON format
+            }).catch(err => {
+                console.error('GET /api/members failed:', err.message);
+                res.status(500).json({ error: 'Could not load members' });
             });
         } catch (err) {
             res.send(err);
@@ -1066,7 +1094,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 dateofbirth: req.body.dateofbirth,
                 sex: req.body.sex,
                 bio: req.body.bio,
-                pictureLink: req.body.pictureLink,
+                // No pictureLink: photos are uploaded (PUT /api/members/:id/photo)
                 memberStatus: req.body.memberStatus,
                 membershipDates: req.body.membershipDates,
                 achievements: req.body.achievements,
@@ -1074,12 +1102,44 @@ module.exports = async function (app, qs, passport, async, _) {
             });
             //will be 0 but initialize the fields
             await service.updateTeamRequirementStats(member);
+            profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
         } catch (err) {
             res.send(err);
         }
         await service.invalidateSystemInfoCache();
         res.end('{"success" : "Member created successfully", "status" : 200}');
 
+    });
+
+    // Serves the 160x160 thumbnail generated by app/profileThumbnails.js,
+    // not pictureLink itself — kept on the member document (select: false
+    // by default; see app/models/member.js), so it has to be asked for
+    // explicitly here. Public, like the rest of a member's bio info.
+    app.get('/api/members/:member_id/thumbnail.jpg', async function (req, res) {
+        let member;
+        try {
+            member = await Member.findById(req.params.member_id).select('+profileThumb').lean();
+        } catch (err) {
+            return res.status(404).end();
+        }
+        const thumb = member && member.profileThumb;
+        if (!thumb || !thumb.data) {
+            return res.status(404).end();
+        }
+        // The photo and when it was cut: a re-crop of the same photo (an
+        // admin's thumbnail crop) is a new version
+        const etag = '"' + thumb.sourceHash + '-' + new Date(thumb.generatedAt || 0).getTime() + '"';
+        if (req.headers['if-none-match'] === etag) {
+            return res.status(304).end();
+        }
+        res.set({
+            'Content-Type': thumb.contentType || 'image/jpeg',
+            // An hour: a new photo or a re-crop shows up for everyone soon,
+            // and repeat views of a list still come from the browser cache
+            'Cache-Control': 'public, max-age=3600',
+            'ETag': etag
+        });
+        res.end(profileThumbnails.toBuffer(thumb.data));
     });
 
 
@@ -1120,40 +1180,234 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    //update a member's photo link (own member or admin)
-    app.put('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
+    // ---- Member photos, stored on the server (app/memberPhotos.js) ----
+
+    // The member's own user, or an admin
+    function canEditMemberPhoto(req) {
+        var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
+        return isOwnMember || req.user.role === 'admin';
+    }
+
+    // Per user, not per IP: uploads are signed in, and each one costs a decode
+    const photoUploadLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 20,
+        keyGenerator: function (req) { return 'photo:' + String(req.user._id); },
+        message: { error: 'Too many photo uploads. Try again in an hour.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+        validate: { keyGeneratorIpFallback: false }
+    });
+
+    // The raw file is the request body, its Content-Type the browser's idea of
+    // the type. Only the accepted image types are read at all, and no more
+    // than MAX_UPLOAD_BYTES: a bigger body is refused before it is buffered.
+    const readPhotoBody = express.raw({
+        type: memberPhotos.ACCEPTED_TYPES,
+        limit: memberPhotos.MAX_UPLOAD_BYTES
+    });
+
+    // Once the member is saved with its new pictureLink: the activity log
+    // (the caller makes the new thumbnail)
+    function photoChanged(req, member, oldLink, newLink, action) {
+        service.logActivity({
+            userId: req.user._id,
+            username: req.user.username,
+            action: 'photo_edit',
+            description: (action === 'remove' ? 'Removed photo for ' : 'Uploaded photo for ') + member.firstname + ' ' + member.lastname,
+            targetType: 'member',
+            targetId: member._id.toString(),
+            targetName: member.firstname + ' ' + member.lastname,
+            metadata: { targetUsername: member.username, oldValue: oldLink, newValue: newLink },
+            ipAddress: req.ip
+        });
+    }
+
+    // Upload a member's photo (own member or admin)
+    app.put('/api/members/:member_id/photo', service.isLoggedIn, function (req, res, next) {
+        if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+        if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own photo' });
+        if (!req.is(memberPhotos.ACCEPTED_TYPES)) {
+            return res.status(415).json({ error: 'Only JPEG, PNG or WebP photos are accepted (iPhone HEIC photos are not).' });
+        }
+        next();
+    }, photoUploadLimiter, function (req, res, next) {
+        readPhotoBody(req, res, function (err) {
+            if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'The file is over 10 MB.' });
+            if (err) return res.status(400).json({ error: 'The upload could not be read.' });
+            next();
+        });
+    }, async function (req, res) {
+        try {
+            const member = await Member.findById(req.params.member_id);
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+
+            const oldLink = member.pictureLink || '';
+            const link = await memberPhotos.savePhoto(member._id, req.body);
+            member.pictureLink = link;
+            // A crop chosen on the old photo means nothing on the new one
+            member.profileThumbCrop = undefined;
+            await member.save();
+            photoChanged(req, member, oldLink, link, 'upload');
+
+            // The thumbnail now, not in the background: the photo pop-up's
+            // next step shows the square it was cut from (face detection's
+            // pick) for the member to adjust
+            await profileThumbnails.generateForMember(member);
+            await service.markMemberProfileChanged();
+            const fresh = await Member.findById(member._id).select('+profileThumb').lean();
+            const thumb = fresh && fresh.profileThumb;
+
+            res.json({ success: 'Photo updated', pictureLink: link, thumbCrop: (thumb && thumb.crop) || null });
+        } catch (err) {
+            if (err.photoError) return res.status(err.status || 400).json({ error: err.message });
+            console.error('Photo upload failed:', err);
+            res.status(500).json({ error: 'The photo could not be saved.' });
+        }
+    });
+
+    // Remove a member's photo (own member or admin): back to initials
+    app.delete('/api/members/:member_id/photo', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+            if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own photo' });
+            const member = await Member.findById(req.params.member_id);
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+
+            const oldLink = member.pictureLink || '';
+            await memberPhotos.deletePhoto(member._id);
+            member.pictureLink = '';
+            member.profileThumbCrop = undefined;
+            await member.save();
+            photoChanged(req, member, oldLink, '', 'remove');
+            profileThumbnails.regenerateInBackground(member, () => service.markMemberProfileChanged());
+
+            res.json({ success: 'Photo removed', pictureLink: '' });
+        } catch (err) {
+            console.error('Photo removal failed:', err);
+            res.status(500).json({ error: 'The photo could not be removed.' });
+        }
+    });
+
+    // Serve a stored photo. Not express.static on the folder: only a member
+    // id names a file here, so there is no directory listing, no temporary
+    // file half-written by an upload, nothing else in the folder.
+    app.get('/uploads/photos/:file', function (req, res) {
+        const m = /^([a-f0-9]{24})\.jpg$/.exec(req.params.file);
+        if (!m) return res.status(404).end();
+        res.set({
+            'X-Content-Type-Options': 'nosniff',
+            'Content-Security-Policy': "default-src 'none'",
+            // The link carries ?v=<hash of the photo>: a new photo is a new URL
+            'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'public, max-age=300'
+        });
+        res.sendFile(memberPhotos.fileFor(m[1]), { dotfiles: 'deny', headers: { 'Content-Type': 'image/jpeg' } }, function (err) {
+            if (err && !res.headersSent) {
+                res.removeHeader('Cache-Control');
+                res.status(err.status === 404 || err.code === 'ENOENT' ? 404 : 500).end();
+            }
+        });
+    });
+
+    // An admin picks which square of a member's photo makes their thumbnail
+    // (body: { crop: { left, top, size } } as fractions, or { crop: null } to
+    // go back to automatic face detection). Regenerates it right away and
+    // returns it, so the picker can show the result.
+    // The square the current thumbnail is cut from (own member or admin):
+    // { crop, chosen } — chosen when a member or admin picked it, else what
+    // face detection picked. A thumbnail made before squares were recorded is
+    // remade once to learn its square.
+    app.get('/api/members/:member_id/thumbnail-crop', service.isLoggedIn, async function (req, res) {
+        try {
+            if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+            if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own thumbnail' });
+            let member = await Member.findById(req.params.member_id).select('+profileThumb pictureLink profileThumbCrop').lean();
+            if (!member) return res.status(404).json({ error: 'Member not found' });
+            const link = (member.pictureLink || '').trim();
+            if (!link) return res.json({ crop: null, chosen: false });
+
+            const chosen = profileThumbnails.cropFor(member, link);
+            if (chosen) return res.json({ crop: { left: chosen.left, top: chosen.top, size: chosen.size }, chosen: true });
+
+            const thumb = member.profileThumb;
+            if (!thumb || !thumb.crop || thumb.sourceHash !== profileThumbnails.hashSource(link)) {
+                await profileThumbnails.generateForMember(member);
+                member = await Member.findById(member._id).select('+profileThumb').lean();
+            }
+            const auto = member.profileThumb && member.profileThumb.crop;
+            res.json({ crop: auto ? { left: auto.left, top: auto.top, size: auto.size } : null, chosen: false });
+        } catch (err) {
+            console.error('Could not read the thumbnail crop:', err);
+            res.status(500).json({ error: 'Could not read the thumbnail' });
+        }
+    });
+
+    // Choose the thumbnail's square (own member or admin), or null for automatic
+    const thumbCropLimiter = rateLimit({
+        windowMs: 60 * 60 * 1000,
+        max: 60,
+        keyGenerator: function (req) { return 'thumbcrop:' + String(req.user._id); },
+        message: { error: 'Too many thumbnail changes. Try again in an hour.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+        validate: { keyGeneratorIpFallback: false }
+    });
+    app.put('/api/members/:member_id/thumbnail-crop', service.isLoggedIn, function (req, res, next) {
+        if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
+        if (!canEditMemberPhoto(req)) return res.status(403).json({ error: 'You can only change your own thumbnail' });
+        next();
+    }, thumbCropLimiter, async function (req, res) {
         res.setHeader("Content-Type", "application/json");
         try {
-            var isOwnMember = req.user.member && req.user.member._id.equals(req.params.member_id);
-            var isAdmin = req.user.role === 'admin';
-            if (!isOwnMember && !isAdmin) {
-                return res.status(403).json({ error: 'You can only edit your own photo' });
-            }
             const member = await Member.findById(req.params.member_id);
             if (!member) {
                 return res.status(404).json({ error: 'Member not found' });
             }
-            var oldPictureLink = member.pictureLink || '';
-            member.pictureLink = req.body.pictureLink || '';
+            const link = (member.pictureLink || '').trim();
+            if (!link) {
+                return res.status(400).json({ error: 'This member has no photo' });
+            }
+
+            const crop = req.body && req.body.crop;
+            if (crop) {
+                const left = Number(crop.left), top = Number(crop.top), size = Number(crop.size);
+                const valid = [left, top, size].every(n => isFinite(n) && n >= 0 && n <= 1) && size >= 0.05;
+                if (!valid) {
+                    return res.status(400).json({ error: 'Invalid crop' });
+                }
+                member.profileThumbCrop = { left, top, size, sourceHash: profileThumbnails.hashSource(link) };
+            } else {
+                member.profileThumbCrop = undefined;
+            }
             await member.save();
 
-            // Log the photo edit
+            const ok = await profileThumbnails.generateForMember(member);
+            if (!ok) {
+                return res.status(502).json({ error: 'Could not read the photo to make the thumbnail' });
+            }
+            const fresh = await Member.findById(member._id).select('+profileThumb').lean();
+            // Cached member lists embed thumbnails: tell browsers they changed
+            await service.markMemberProfileChanged();
+
             service.logActivity({
                 userId: req.user._id,
                 username: req.user.username,
                 action: 'photo_edit',
-                description: 'Updated photo for ' + member.firstname + ' ' + member.lastname,
+                description: (crop ? 'Set the thumbnail crop for ' : 'Reset the thumbnail to automatic for ') + member.firstname + ' ' + member.lastname,
                 targetType: 'member',
                 targetId: member._id.toString(),
                 targetName: member.firstname + ' ' + member.lastname,
-                metadata: { targetUsername: member.username, oldValue: oldPictureLink, newValue: req.body.pictureLink || '' },
+                metadata: { targetUsername: member.username },
                 ipAddress: req.ip
             });
 
-            res.json({ success: 'Photo updated successfully', pictureLink: member.pictureLink });
+            res.json({
+                crop: fresh.profileThumbCrop || null,
+                thumbUrl: profileThumbnails.toDataUri(fresh.profileThumb)
+            });
         } catch (err) {
             console.error(err);
-            res.status(500).json({ error: 'Error updating photo' });
+            res.status(500).json({ error: 'Error updating the thumbnail' });
         }
     });
 
@@ -1178,11 +1432,11 @@ module.exports = async function (app, qs, passport, async, _) {
             member.dateofbirth = req.body.dateofbirth;
             member.sex = req.body.sex;
             member.bio = req.body.bio;
-            member.pictureLink = req.body.pictureLink;
+            // pictureLink is not taken from the form: photos are uploaded
+            // (PUT /api/members/:id/photo), the server sets the link
             member.memberStatus = req.body.memberStatus;
             member.membershipDates = req.body.membershipDates;
             member.achievements = req.body.achievements;
-
 
             // Save the updated member
             await member.save();
@@ -1304,7 +1558,12 @@ module.exports = async function (app, qs, passport, async, _) {
             // Update member stats using bulk operations
             await service.updateMemberStatsBulk([member._id]);
 
-            await service.updateSystemInfoAndInvalidateSystemInfoCache("results");
+            // The member's own save stamped memberUpdate or memberProfileUpdate
+            // (Member's save hook); volunteer jobs embedding their name were
+            // rewritten with bulkWrite, which no hook sees
+            if (volunteerJobBulkOperations.length > 0) {
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('volunteerJobUpdate');
+            }
 
             res.json({
                 success: "Member updated successfully, results updated: " + resultBulkOperations.length + ", volunteer jobs updated: " + volunteerJobBulkOperations.length,
@@ -1325,7 +1584,9 @@ module.exports = async function (app, qs, passport, async, _) {
                 _id: req.params.member_id
             }).then(async deleteResult => {
                 if (deleteResult.deletedCount === 1) {
+                    await memberPhotos.deletePhoto(req.params.member_id).catch(err => console.error('Could not delete the member photo:', err));
                     await service.invalidateSystemInfoCache();
+                    await service.markMemberProfileChanged();
                     res.send('{"success" : "Member deleted successfully", "status" : 200}');
                 } else {
                     res.send('{"error" : "Member not deleted", "status" : 200}');
@@ -1343,21 +1604,35 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // get all volunteer jobs
-    app.get('/api/volunteerjobs', service.isCaptainOrAdminLoggedIn, function (req, res) {
+    // What the public volunteer job lists leave out of each job
+    const VOLUNTEER_PUBLIC_FIELDS = '-member.sex -member.dateofbirth';
+
+    // Anyone may read the jobs, like the volunteering stats (the race page
+    // shows who volunteered at it, from this list); adding and editing them
+    // stays with admins
+    app.get('/api/volunteerjobs', function (req, res) {
         res.setHeader("Content-Type", "application/json");
 
         const filters = req.query.filters;
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
 
-        let query = VolunteerJob.find();
+        // The volunteer's sex and birth date stay in the database (the
+        // volunteering stats use them) but are not sent: the list is public
+        let query = VolunteerJob.find().select(VOLUNTEER_PUBLIC_FIELDS);
 
         if (filters) {
             if (filters.memberId) {
+                if (!mongoose.isValidObjectId(filters.memberId)) {
+                    return res.status(400).json({ error: 'filters.memberId must be a member id' });
+                }
                 query = query.where('member._id').equals(filters.memberId);
             }
             if (filters.eventName) {
-                query = query.regex('eventName', new RegExp(filters.eventName, 'i'));
+                // The search text taken literally: the list is public, and a
+                // pattern from the URL could throw, or take the server minutes
+                const text = String(filters.eventName).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                query = query.regex('eventName', new RegExp(text, 'i'));
             }
             if (filters.dateFrom) {
                 query = query.where('jobDate').gte(new Date(filters.dateFrom));
@@ -1375,7 +1650,8 @@ module.exports = async function (app, qs, passport, async, _) {
         }
 
         try {
-            query.lean().exec().then(jobs => {
+            // Returned: a failing query answers 500 (app/asyncErrors.js)
+            return query.lean().exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
@@ -1405,39 +1681,25 @@ module.exports = async function (app, qs, passport, async, _) {
     app.get('/api/members/:member_id/volunteerjobs', function (req, res) {
         res.setHeader("Content-Type", "application/json");
         const sort = req.query.sort || '-jobDate';
+        if (!mongoose.isValidObjectId(req.params.member_id)) {
+            return res.status(400).json({ error: 'Not a member id' });
+        }
 
         try {
             let query = VolunteerJob.find({
                 'member._id': req.params.member_id
-            });
+            }).select(VOLUNTEER_PUBLIC_FIELDS);
 
             if (sort) {
                 query = query.sort(sort);
             }
 
-            query.exec().then(jobs => {
+            // Returned: a failing query answers 500 (app/asyncErrors.js)
+            return query.exec().then(jobs => {
                 res.json(jobs);
             });
         } catch (err) {
             res.send(err);
-        }
-    });
-
-    // Volunteer jobs linked to one race, for the race page. Logged-in users
-    // only, like the volunteering stats.
-    app.get('/api/races/:race_id/volunteerjobs', service.isLoggedIn, async function (req, res) {
-        try {
-            if (!mongoose.Types.ObjectId.isValid(req.params.race_id)) {
-                return res.status(400).json({ error: 'Invalid race id' });
-            }
-            const jobs = await VolunteerJob.find({ 'race._id': req.params.race_id })
-                .select('member._id member.firstname member.lastname member.username jobDate description')
-                .sort('jobDate member.lastname')
-                .lean();
-            res.json(jobs);
-        } catch (err) {
-            console.log('error fetching race volunteer jobs', err);
-            res.status(500).json({ error: 'Error while fetching volunteer jobs' });
         }
     });
 
@@ -1858,123 +2120,6 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    // Same convention as the age records grid (RecordsGridService)
-    function ageAtDate(birthday, date) {
-        const bd = new Date(birthday);
-        const d = new Date(date);
-        let age = d.getUTCFullYear() - bd.getUTCFullYear();
-        if (d.getUTCMonth() < bd.getUTCMonth() ||
-            (d.getUTCMonth() === bd.getUTCMonth() && d.getUTCDate() < bd.getUTCDate())) {
-            age--;
-        }
-        return Math.max(0, age);
-    }
-
-    // Buckets every team time at one distance into a histogram, so the page
-    // can show where this particular time falls among them.
-    // Times are centiseconds throughout.
-    function buildTimeDistribution(times, markTime) {
-        // Bucket-count budget for the bulk of the field, and the floor on how
-        // much of it may be swept into the single overflow bar
-        // The floor matters most for small populations: a dozen marathons
-        // spread over twenty minutes have room for far more than a dozen bars,
-        // and 2*sqrt(n) alone would round them into three-minute blocks.
-        const MIN_BUCKETS = 24;
-        const MAX_BUCKETS = 60;
-        const MIN_KEPT_PERCENTILE = 0.95;
-        // Bucket widths that read as round numbers on a time axis
-        const NICE_WIDTHS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600, 900, 1800]
-            .map(function (seconds) { return seconds * 100; });
-
-        if (times.length < 8) {
-            return null;
-        }
-
-        // times arrives sorted
-        const quantile = function (fraction) {
-            const position = fraction * (times.length - 1);
-            const lower = Math.floor(position);
-            const upper = Math.min(times.length - 1, lower + 1);
-            return times[lower] + (times[upper] - times[lower]) * (position - lower);
-        };
-
-        // The fast end stays exact — a team record belongs at its own time —
-        // but the slow tail is cut off and collected into a single bar at the
-        // end. Twenty near-empty buckets stretching out to a walked race cost
-        // the bulk of the field both pixels and resolution.
-        //
-        // The result being viewed is never swept into that bar: if it is
-        // itself a slow outlier the cutoff moves out to include it.
-        //
-        // Tukey's fence rather than a fixed percentile, because it follows how
-        // tightly the times actually cluster. A runner whose 5ks sit inside a
-        // 35-second band, with one 35-minute jog, has 61 of 63 results under
-        // Q3 + 1.5*IQR — a 99th-percentile cut would keep the jog and flatten
-        // the band it exists to show. Floored at the 95th percentile so the
-        // overflow bar never swallows a meaningful share of the population.
-        const q1 = quantile(0.25);
-        const q3 = quantile(0.75);
-        const cutoff = Math.max(q3 + 1.5 * (q3 - q1), quantile(MIN_KEPT_PERCENTILE));
-
-        const lo = times[0];
-        const hi = Math.max(cutoff, markTime);
-
-        // Roughly 2*sqrt(n) buckets: enough shape for a large population
-        // without turning a small one into a comb of single-result spikes.
-        const targetBuckets = Math.min(MAX_BUCKETS,
-            Math.max(MIN_BUCKETS, Math.round(Math.sqrt(times.length) * 2)));
-        const span = hi - lo;
-        const target = span > 0 ? span / targetBuckets : NICE_WIDTHS[0];
-
-        const bucketsAt = function (w) {
-            return Math.floor((hi - Math.floor(lo / w) * w) / w) + 1;
-        };
-
-        let widthIndex = NICE_WIDTHS.findIndex(function (w) { return w >= target; });
-        if (widthIndex === -1) {
-            widthIndex = NICE_WIDTHS.length - 1;
-        }
-        // Widen rather than overrun the bar budget; at the coarsest width we
-        // simply accept what we get.
-        while (widthIndex < NICE_WIDTHS.length - 1 && bucketsAt(NICE_WIDTHS[widthIndex]) > MAX_BUCKETS) {
-            widthIndex++;
-        }
-        const width = NICE_WIDTHS[widthIndex];
-
-        const start = Math.floor(lo / width) * width;
-        const count = Math.floor((hi - start) / width) + 1;
-        // Strictly past the last bucket, so markTime can never land here
-        const overflowFrom = start + count * width;
-
-        const buckets = [];
-        for (let i = 0; i < count; i++) {
-            buckets.push({ start: start + i * width, end: start + (i + 1) * width, count: 0 });
-        }
-
-        let overflow = 0;
-        times.forEach(function (time) {
-            const index = Math.floor((time - start) / width);
-            if (index >= count) {
-                overflow++;
-            } else {
-                buckets[Math.max(0, index)].count++;
-            }
-        });
-        if (overflow > 0) {
-            buckets.push({ start: overflowFrom, end: null, count: overflow, overflow: true });
-        }
-
-        return {
-            bucketWidth: width,
-            buckets: buckets,
-            markIndex: Math.min(count - 1, Math.max(0, Math.floor((markTime - start) / width))),
-            markTime: markTime,
-            overflowFrom: overflow > 0 ? overflowFrom : null,
-            overflowCount: overflow,
-            total: times.length
-        };
-    }
-
     // everything the single-result page shows: the result itself, where the
     // time stands on the team and in the runner's own history, and how the
     // team's times at this distance are spread out around it
@@ -1985,142 +2130,45 @@ module.exports = async function (app, qs, passport, async, _) {
                 return res.status(404).json({ error: 'Result not found' });
             }
 
-            const response = {
-                result: result,
-                stats: null,
-                distributions: null,
-                defaultDistribution: 'all'
-            };
+            // Where the time stands (app/resultStanding.js, which the result
+            // page also runs on the cached race list): one query for every
+            // record-eligible solo time at this race type, when it can rank
+            const ranks = result.members.length === 1 && result.isRecordEligible === true && result.time > 0;
+            const sameDistance = !ranks ? [] : (await Result.find({
+                isRecordEligible: true,
+                time: { $gt: 0 },
+                'race.racetype._id': result.race.racetype._id,
+                $expr: { $eq: [{ $size: '$members' }, 1] }
+            }).select('time members._id members.sex members.dateofbirth race.racedate race.racename').lean())
+                .map(r => ({
+                    _id: r._id, time: r.time, memberId: r.members[0]._id, sex: r.members[0].sex,
+                    dob: r.members[0].dateofbirth, racedate: r.race.racedate, racename: r.race.racename
+                }));
+            const response = Object.assign({ result: result },
+                resultStanding({ result: result, race: result.race, sameDistance: sameDistance }));
 
-            // Standings only mean something for one runner's time over a fixed
-            // distance — relay/multisport entries and results flagged as not
-            // record eligible have nothing comparable to rank against.
-            //
-            // Neither do the variable race types: "Odd road distance", the
-            // other Odd types, and Swim/Cycling name no distance of their own,
-            // so two results sharing that type are not the same race length
-            // and ranking one against the other would be meaningless.
-            const isSolo = result.members.length === 1 && !result.race.isMultisport;
-            const comparable = isSolo &&
-                result.isRecordEligible === true &&
-                result.time > 0 &&
-                result.race.racetype.isVariable !== true;
-            const member = isSolo ? result.members[0] : null;
-
-            if (comparable) {
-                const sameDistance = {
-                    isRecordEligible: true,
-                    time: { $gt: 0 },
-                    'race.racetype._id': result.race.racetype._id,
-                    $expr: { $eq: [{ $size: '$members' }, 1] }
-                };
-
-                const year = new Date(result.race.racedate).getUTCFullYear();
-                const yearWindow = {
-                    $gte: new Date(Date.UTC(year, 0, 1)),
-                    $lt: new Date(Date.UTC(year + 1, 0, 1))
-                };
-
-                // Ties take the better rank: tied for the fastest time is 1st,
-                // not 2nd. `tied` counts the other results on exactly this
-                // time, so the page can say "T5th".
-                const rankAgainst = async function (extra) {
-                    const scope = Object.assign({}, sameDistance, extra);
-                    const [faster, same, total] = await Promise.all([
-                        Result.countDocuments(Object.assign({}, scope, { time: { $gt: 0, $lt: result.time } })),
-                        Result.countDocuments(Object.assign({}, scope, { time: result.time })),
-                        Result.countDocuments(scope)
-                    ]);
-                    return { rank: faster + 1, total: total, tied: Math.max(0, same - 1) };
-                };
-
-                const personal = await rankAgainst({ 'members._id': member._id });
-                const sameSex = { 'members.sex': member.sex };
-
-                const teamAllTime = await rankAgainst({});
-                const teamGender = await rankAgainst(sameSex);
-
-                // How the time stands among runners of the same sex who were
-                // exactly this age when they ran — the same single-year
-                // treatment the age records grid uses. Age depends on both the
-                // runner's birthday and the date of their race, so this cannot
-                // be a plain query; the same-sex results get filtered in
-                // memory, which is cheap at a few hundred per distance.
-                let teamAgeGroup = null;
-                if (member.dateofbirth) {
-                    const age = ageAtDate(member.dateofbirth, result.race.racedate);
-
-                    const peers = (await Result.find(Object.assign({}, sameDistance, sameSex))
-                        .select('time members.dateofbirth race.racedate'))
-                        .filter(function (r) {
-                            const dob = r.members[0] && r.members[0].dateofbirth;
-                            if (!dob) return false;
-                            return ageAtDate(dob, r.race.racedate) === age;
-                        });
-
-                    teamAgeGroup = {
-                        age: age,
-                        rank: peers.filter(function (r) { return r.time < result.time; }).length + 1,
-                        total: peers.length,
-                        tied: Math.max(0, peers.filter(function (r) { return r.time === result.time; }).length - 1)
-                    };
+            // Where this race falls in each runner's history: their Nth race,
+            // Nth on this surface, and so on (app/memberRaceCounts.js). Every
+            // runner of a relay has a history of their own.
+            const RaceSeries = require('./models/raceseries');
+            const { memberRaceCounts } = require('./memberRaceCounts');
+            // The race's series, when it is a public one (two confirmed editions)
+            let series = null;
+            const found = await RaceSeries.findOne(
+                { races: { $elemMatch: { race: result.race._id, status: 'confirmed' } } }, 'name races').lean();
+            const confirmed = found ? found.races.filter(l => l.status === 'confirmed').map(l => String(l.race)) : [];
+            if (confirmed.length >= 2) series = { _id: found._id, name: found.name, raceIds: new Set(confirmed) };
+            response.memberCounts = [];
+            for (const m of result.members) {
+                const history = await Result.find({ 'members._id': m._id },
+                    'race._id race.racename race.racedate race.order race.racetype race.isMultisport').lean();
+                const counts = memberRaceCounts({ result: result, history: history, series: series });
+                if (counts) {
+                    response.memberCounts.push({
+                        member: { _id: m._id, firstname: m.firstname, lastname: m.lastname, username: m.username },
+                        counts: counts
+                    });
                 }
-
-                // The time to beat as of race day — what the runner improved
-                // on (or missed), rather than their best ever.
-                const previousBest = await Result.findOne(Object.assign({}, sameDistance, {
-                    'members._id': member._id,
-                    _id: { $ne: result._id },
-                    'race.racedate': { $lt: result.race.racedate }
-                })).sort('time').select('time race.racename race.racedate');
-
-                response.stats = {
-                    // Always the race type's own name — variable types never
-                    // reach here, so there is no distanceName to fall back on
-                    distanceLabel: result.race.racetype.name,
-                    surface: result.race.racetype.surface,
-                    year: year,
-                    sex: member.sex,
-                    category: result.category,
-                    teamAllTime: teamAllTime,
-                    teamYear: await rankAgainst({ 'race.racedate': yearWindow }),
-                    teamGender: teamGender,
-                    teamGenderYear: await rankAgainst(
-                        Object.assign({}, sameSex, { 'race.racedate': yearWindow })),
-                    teamAgeGroup: teamAgeGroup,
-                    personal: personal,
-                    isPersonalBest: personal.rank === 1,
-                    previousBest: previousBest ? {
-                        // Lets the sentence link to that result's own page
-                        _id: previousBest._id,
-                        time: previousBest.time,
-                        racename: previousBest.race.racename,
-                        racedate: previousBest.race.racedate,
-                        improvement: previousBest.time - result.time
-                    } : null
-                };
-
-                // Each histogram is built from exactly the population its rank
-                // is counted against, so the chart and the "Nth best" line can
-                // never disagree.
-                const distributionFor = async function (extra, standing) {
-                    const times = (await Result.find(Object.assign({}, sameDistance, extra))
-                        .select('time').sort('time')).map(function (r) { return r.time; });
-                    const dist = buildTimeDistribution(times, result.time);
-                    return dist ? Object.assign(dist, { rank: standing.rank }) : null;
-                };
-
-                response.distributions = {
-                    all: await distributionFor({}, teamAllTime),
-                    gender: await distributionFor(sameSex, teamGender),
-                    // Null unless the runner has enough of this distance to
-                    // make a shape — buildTimeDistribution wants at least 8.
-                    member: await distributionFor({ 'members._id': member._id }, personal)
-                };
-                // Women are the smaller population and the one a woman's time
-                // is most usefully read against, so that is what her page opens
-                // on; the toggle still gets her to the whole team.
-                response.defaultDistribution = member.sex === 'Female' ? 'gender' : 'all';
             }
 
             res.json(response);
@@ -2156,16 +2204,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             //does the race exists?
             try {
-                Race.findOne({
-                    'racename': req.body.race.racename,
-                    'isMultisport': req.body.race.isMultisport,
-                    'distanceName': req.body.race.distanceName,
-                    'racedate': req.body.race.racedate,
-                    'location.country': req.body.race.location.country,
-                    'location.state': req.body.race.location.state,
-                    'racetype._id': req.body.race.racetype._id,
-                    'order': req.body.race.order
-                }).then(race => {
+                Race.findOne(raceMatchFilter(req.body.race)).then(race => {
                     if (!race) { //if race does not exists
                         try {
                             Race.create({
@@ -2180,6 +2219,8 @@ module.exports = async function (app, qs, passport, async, _) {
                                 },
                                 racetype: req.body.race.racetype
                             }).then(async r => {
+                                // The series the admin picked for this race on the form, if any
+                                raceSeriesSync.raceAssigned(r._id, req.body.seriesChoice, req.user.username);
                                 try {
 
                                     Result.create({
@@ -2197,19 +2238,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                         achievements: [],
                                         done: false
                                     }).then(async result => {
-                                        //update PBs
-
-                                        for (let m of result.members) {
-                                            let member = await Member.findById(m._id);
-                                            await service.updateMemberStats(member);
-                                        }
-
-                                        // Update location achievements for this location
+                                        // PBs and stats of every runner at once, then this
+                                        // location and this race type's records
+                                        await service.updateMemberStatsBulk(result.members.map(m => m._id));
                                         await service.updateAllLocationAchievements(r.location.country, r.location.state);
-                                        await service.updateAllTeamRecordAchievements();
+                                        await service.updateAllTeamRecordAchievements([r.racetype._id]);
 
                                         resultWithPBsAndAchievements = await Result.findById(result._id);
-                                        await service.invalidateSystemInfoCache();
+                                        // The stamp last, after every change above: a browser that sees it
+                                        // has everything this save did
+                                        await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                                         res.json(resultWithPBsAndAchievements);
                                     });
                                 } catch (resultCreateErr) {
@@ -2221,6 +2259,7 @@ module.exports = async function (app, qs, passport, async, _) {
                         }
 
                     } else { // race exists
+                        raceSeriesSync.raceAssigned(race._id, req.body.seriesChoice, req.user.username);
                         try {
 
                             Result.create({
@@ -2238,17 +2277,16 @@ module.exports = async function (app, qs, passport, async, _) {
                                 achievements: [],
                                 done: false
                             }).then(async result => {
-                                //update PBs
-                                for (let m of result.members) {
-                                    let member = await Member.findById(m._id);
-                                    await service.updateMemberStats(member);
-                                }
-                                // Update location achievements for this location
+                                // PBs and stats of every runner at once, then this
+                                // location and this race type's records
+                                await service.updateMemberStatsBulk(result.members.map(m => m._id));
                                 await service.updateAllLocationAchievements(race.location.country, race.location.state);
-                                await service.updateAllTeamRecordAchievements();
+                                await service.updateAllTeamRecordAchievements([race.racetype._id]);
 
                                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                                await service.invalidateSystemInfoCache();
+                                // The stamp last, after every change above: a browser that sees it
+                                // has everything this save did
+                                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                                 res.json(resultWithPBsAndAchievements);
                             });
                         } catch (resultCreateErr) {
@@ -2278,6 +2316,7 @@ module.exports = async function (app, qs, passport, async, _) {
             }
 
             const updatedResults = [];
+            const previousMemberIds = new Set();
 
             // Process each result
             for (const resultData of results) {
@@ -2291,6 +2330,8 @@ module.exports = async function (app, qs, passport, async, _) {
                     if (!existingResult) {
                         throw new Error(`Result with ID ${resultData._id} not found`);
                     }
+                    // Runners taken off a result need their stats updated too
+                    existingResult.members.forEach(m => previousMemberIds.add(String(m._id)));
 
                     // Update the result with new data
                     const updatedResult = await Result.findByIdAndUpdate(
@@ -2319,23 +2360,33 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
             }
 
-            // Update member stats for all affected members
-            const memberIds = new Set();
+            // Every runner's stats at once, the ones taken off a result included
+            const memberIds = new Set(previousMemberIds);
             updatedResults.forEach(result => {
                 result.members.forEach(member => {
                     memberIds.add(member._id.toString());
                 });
             });
-
-            // Update stats for each unique member
-            for (const memberId of memberIds) {
-                try {
-                    let member = await Member.findById(memberId);
-                    await service.updateMemberStats(member);
-                } catch (memberError) {
-                    console.error('Error updating member stats:', memberError);
-                }
+            try {
+                await service.updateMemberStatsBulk([...memberIds]);
+            } catch (memberError) {
+                console.error('Error updating member stats:', memberError);
             }
+
+            // Times and eligibility change records; the race's location
+            // achievement follows its results' race
+            const locations = new Map();
+            const racetypeIds = new Set();
+            updatedResults.forEach(result => {
+                if (result.race && result.race.location) {
+                    locations.set(result.race.location.country + '|' + result.race.location.state, result.race.location);
+                }
+                if (result.race && result.race.racetype) racetypeIds.add(String(result.race.racetype._id));
+            });
+            for (const location of locations.values()) {
+                await service.updateAllLocationAchievements(location.country, location.state);
+            }
+            await service.updateAllTeamRecordAchievements([...racetypeIds]);
 
             // Invalidate cache 
             await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
@@ -2376,18 +2427,29 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             let result = await Result.findById(req.params.result_id);
             const oldraceid = result.race._id;
+            // What the edit may move away from: its runners, race type and
+            // location are recalculated too
+            const before = {
+                memberIds: result.members.map(m => m._id),
+                racetypeId: result.race.racetype && result.race.racetype._id,
+                location: result.race.location || {}
+            };
+            const afterSave = async function (race) {
+                const memberIds = before.memberIds.concat(result.members.map(m => m._id));
+                await service.updateMemberStatsBulk([...new Set(memberIds.map(String))]);
+                await service.updateAllLocationAchievements(race.location.country, race.location.state);
+                if (before.location.country !== race.location.country || before.location.state !== race.location.state) {
+                    await service.updateAllLocationAchievements(before.location.country, before.location.state);
+                }
+                await service.updateAllTeamRecordAchievements([race.racetype._id, before.racetypeId]);
+            };
             //does the race exists?
 
-            const race = await Race.findOne({ //by id would be simpler?
-                'racename': req.body.race.racename,
-                'isMultisport': req.body.race.isMultisport,
-                'distanceName': req.body.race.distanceName,
-                'racedate': req.body.race.racedate,
-                'location.country': req.body.race.location.country,
-                'location.state': req.body.race.location.state,
-                'racetype._id': req.body.race.racetype._id,
-                'order': req.body.race.order
-            });
+            // Its own race first when the details still match it (several
+            // races can share them), then any race that matches
+            const raceFilter = raceMatchFilter(req.body.race);
+            const race = await Race.findOne(Object.assign({ _id: oldraceid }, raceFilter)) ||
+                await Race.findOne(raceFilter);
             if (!race) { //if race does not exists                        
                 const r = await Race.create({
                     racename: req.body.race.racename,
@@ -2422,6 +2484,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 const cleanResults = await cleanQuery.exec();
                 if (cleanResults) {
                     if (cleanResults.length === 0) {
+                        // The edit moved the last result onto the new race: its series link moves too
+                        raceSeriesSync.raceReplaced(oldraceid, r._id);
                         Race.deleteOne({
                             _id: oldraceid
                         }).then(raceD => {
@@ -2429,17 +2493,12 @@ module.exports = async function (app, qs, passport, async, _) {
                         });
                     }
                 }
-                //update PBs
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);
-                    await service.updateMemberStats(member);
-                }
-                // Update location achievements for this location
-                await service.updateAllLocationAchievements(r.location.country, r.location.state);
-                await service.updateAllTeamRecordAchievements();
+                await afterSave(r);
 
                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                await service.invalidateSystemInfoCache();
+                // The stamp last, after every change above: a browser that sees it
+                // has everything this save did
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                 res.json(resultWithPBsAndAchievements);
 
 
@@ -2464,6 +2523,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 cleanResults = await cleanQuery.exec();
                 if (cleanResults) {
                     if (cleanResults.length === 0) {
+                        // The edit moved the last result onto `race`: its series link moves too
+                        raceSeriesSync.raceReplaced(oldraceid, race._id);
                         Race.deleteOne({
                             _id: oldraceid
                         }).then(raceD => {
@@ -2471,16 +2532,11 @@ module.exports = async function (app, qs, passport, async, _) {
                         });
                     }
                 }
-                //update PBs
-                for (let m of result.members) {
-                    let member = await Member.findById(m._id);
-                    await service.updateMemberStats(member);
-                }
-                // Update location achievements for this location
-                await service.updateAllLocationAchievements(race.location.country, race.location.state);
-                await service.updateAllTeamRecordAchievements();
+                await afterSave(race);
                 resultWithPBsAndAchievements = await Result.findById(result._id);
-                await service.invalidateSystemInfoCache();
+                // The stamp last, after every change above: a browser that sees it
+                // has everything this save did
+                await service.updateSystemInfoAndInvalidateSystemInfoCache('resultUpdate');
                 res.json(resultWithPBsAndAchievements);
             }
 
@@ -2511,16 +2567,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // No ID?, check if race exists or create it
             if (!existingRace) {
-                existingRace = await Race.findOne({
-                    'racename': race.racename,
-                    'isMultisport': race.isMultisport,
-                    'distanceName': race.distanceName,
-                    'racedate': race.racedate,
-                    'location.country': race.location.country,
-                    'location.state': race.location.state,
-                    'racetype._id': race.racetype._id,
-                    'order': race.order
-                });
+                existingRace = await Race.findOne(raceMatchFilter(race));
             }
 
             let raceToUse = existingRace;
@@ -2538,6 +2585,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     racetype: race.racetype
                 });
             }
+
+            // The series the admin picked for this race on the form, if any
+            raceSeriesSync.raceAssigned(raceToUse._id, req.body.seriesChoice, req.user.username);
 
             const createdResults = [];
             const memberIds = new Set(); // Track unique members for PB updates
@@ -2604,7 +2654,7 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // Update location achievements
             await service.updateAllLocationAchievements(raceToUse.location.country, raceToUse.location.state);
-            await service.updateAllTeamRecordAchievements();
+            await service.updateAllTeamRecordAchievements([raceToUse.racetype._id]);
 
             // Invalidate cache
             await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
@@ -2631,36 +2681,26 @@ module.exports = async function (app, qs, passport, async, _) {
             Result.findById(req.params.result_id).then(result => {
                 const members = result.members;
                 const oldraceid = result.race._id;
+                const oldRacetypeId = result.race.racetype && result.race.racetype._id;
+                const oldLocation = result.race.location || {};
                 try {
                     Result.deleteOne({
                         _id: req.params.result_id
                     }).then(async result => {
-                        let cleanQuery = Result.find().where('race._id').equals(oldraceid);
-                        try {
-                            cleanQuery.exec().then(cleanResults => {
-                                if (cleanResults) {
-                                    if (cleanResults.length === 0) {
-                                        try {
-                                            Race.deleteOne({
-                                                _id: oldraceid
-                                            }).then(raceD => {
-                                                console.log("remove zombie race entry successful");
-                                            });
-                                        } catch (RacedeleteOneErr) {
-                                            res.send(RacedeleteOneErr);
-                                        }
-
-                                    }
-                                }
-                            });
-                        } catch (cleanQueryExecErr) {
-                            res.send(cleanQueryExecErr)
+                        // A deleted result's open correction requests close
+                        await require('./correctionRoutes').closeForResult(req.params.result_id)
+                            .catch(err => console.error('Could not close correction requests:', err));
+                        // A race left with no results goes too
+                        const cleanResults = await Result.find().where('race._id').equals(oldraceid);
+                        if (cleanResults.length === 0) {
+                            await Race.deleteOne({ _id: oldraceid });
+                            console.log("remove zombie race entry successful");
                         }
-                        for (let m of members) {
-                            let member = await Member.findById(m._id);
-                            service.updateMemberStats(member);
-                        }
-                        await service.updateAllTeamRecordAchievements();
+                        // Its runners, its location (the race may be gone) and
+                        // its race type's records
+                        await service.updateMemberStatsBulk(members.map(m => m._id));
+                        await service.updateAllLocationAchievements(oldLocation.country, oldLocation.state);
+                        await service.updateAllTeamRecordAchievements([oldRacetypeId]);
                         await service.updateSystemInfoAndInvalidateSystemInfoCache("resultUpdate");
                         res.end('{"success" : "Result deleted successfully", "status" : 200}');
 
@@ -2790,6 +2830,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 raceToUse.racedate = req.body.racedate;
                 raceToUse.order = req.body.order;
                 raceToUse.isMultisport = req.body.isMultisport;
+                // Left as it is by callers that do not send it
+                if (req.body.clubRace !== undefined) raceToUse.clubRace = !!req.body.clubRace;
                 raceToUse.racetype = req.body.racetype;
                 raceToUse.location = req.body.location;
                 raceToUse.achievements = req.body.achievements || [];
@@ -2940,11 +2982,13 @@ module.exports = async function (app, qs, passport, async, _) {
                 }
             }
 
-            // Update location achievements for this location
+            // Its location's first race may have changed (a new date or a
+            // new location), and the old location's too when it moved
+            await service.updateAllLocationAchievements(updatedRace.location.country, updatedRace.location.state);
             if (oldRace.location.country !== updatedRace.location.country || oldRace.location.state !== updatedRace.location.state) {
                 await service.updateAllLocationAchievements(oldRace.location.country, oldRace.location.state);
             }
-            await service.updateAllTeamRecordAchievements();
+            await service.updateAllTeamRecordAchievements([oldRace.racetype && oldRace.racetype._id, updatedRace.racetype && updatedRace.racetype._id]);
 
             // Volunteer jobs linked to this race follow it: the new name (and
             // the merged-into race, when the edit merged two races), and the
@@ -3009,7 +3053,14 @@ module.exports = async function (app, qs, passport, async, _) {
 
             // If we found an existing race we are merging into it, delete the old race AFTER all updates are complete
             if (existingRace) {
+                raceSeriesSync.raceReplaced(race._id, existingRace._id);
                 await race.deleteOne();
+            }
+
+            // The series picked in the edit dialog, applied after any merge above.
+            // Only admins can change a race's series.
+            if (req.user.role === 'admin') {
+                raceSeriesSync.raceAssigned(raceToUse._id, req.body.seriesChoice, req.user.username, { override: true });
             }
 
             res.json(raceWithResults);
@@ -3055,31 +3106,16 @@ module.exports = async function (app, qs, passport, async, _) {
         });
     }
 
-    app.get('/api/raceinfos', async function (req, res) {
-        const sort = req.query.sort;
-        const limit = parseInt(req.query.limit);
-        let raceId = req.query.raceId;
-
-        // Build a cache key from the query params
-        const cacheKey = JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: req.query.filters });
-
-        // Check cache freshness against systemInfo.resultUpdate
-        try {
-            const systemInfo = await service.getCachedSystemInfo();
-            if (systemInfo) {
-                const latestUpdate = Math.max(
-                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
-                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
-                );
-                const cached = raceInfosCache[cacheKey];
-                if (cached && cached.timestamp >= latestUpdate) {
-                    return sendRaceInfos(req, res, cached);
-                }
-            }
-        } catch (err) {
-            // If systemInfo check fails, proceed without cache
-        }
-
+    // The race list for one set of parameters, as the route sends it:
+    // { gzip, timestamp }, or { results } when compressing failed. timestamp
+    // is when the build started, so a change landing during the build makes
+    // the entry stale rather than looking fresh.
+    function buildRaceInfos(params) {
+        const sort = params.sort;
+        const limit = params.limit;
+        const raceId = params.raceId;
+        const filters = params.filters;
+        const startedAt = Date.now();
         let query = Race.aggregate([
 
             {
@@ -3129,8 +3165,7 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.match({ '_id': new mongoose.Types.ObjectId(raceId) });
         }
 
-        if (req.query.filters) {
-            const filters = JSON.parse(req.query.filters);
+        if (filters) {
             if (filters.dateFrom) {
                 query = query.match({ 'racedate': { $gte: new Date(filters.dateFrom) } });
             }
@@ -3147,32 +3182,95 @@ module.exports = async function (app, qs, passport, async, _) {
             query = query.limit(limit); //no idea why I need to parse
         }
 
-        try {
-            query.exec().then(results => {
-                results.forEach(function (resu) {
-                    resu.results = _.sortBy(resu.results, 'time');
-                });
-
-                // Compress once, on the miss, and cache the bytes. Async
-                // rather than gzipSync: this is several MB, and blocking the
-                // event loop for it would stall every other request on what is
-                // a single-core box.
+        return query.exec().then(results => {
+            results.forEach(function (resu) {
+                resu.results = _.sortBy(resu.results, 'time');
+            });
+            // Async rather than gzipSync: this is several MB, and blocking
+            // the event loop for it would stall every other request on what
+            // is a single-core box.
+            return new Promise(function (resolve) {
                 zlib.gzip(JSON.stringify(results), function (err, buf) {
-                    if (err) {
-                        // Fall back to the ordinary path rather than 500 —
-                        // the response is still perfectly serveable.
-                        return res.json(results);
-                    }
-                    raceInfosCache[cacheKey] = {
-                        gzip: buf,
-                        timestamp: Date.now()
-                    };
-                    sendRaceInfos(req, res, raceInfosCache[cacheKey]);
+                    // The response is still serveable uncompressed
+                    if (err) return resolve({ results: results });
+                    resolve({ gzip: buf, timestamp: startedAt });
                 });
             });
-        } catch (err) {
-            res.send(err);
+        });
+    }
+
+    // The key a set of parameters is cached under (the route's own)
+    function raceInfosKey(sort, limit, raceId, filters) {
+        return JSON.stringify({ sort: sort, limit: limit, raceId: raceId, filters: filters });
+    }
+
+    // The full list, as the site asks for it (ResultsService), is rebuilt in
+    // the background a moment after data changes: the next page to load it
+    // (an editor's, after a run of saves) gets it from the cache instead of
+    // waiting for the rebuild. Once per run of changes, not once per save.
+    const FULL_LIST = { sort: '-racedate -order racename' };
+    let warmTimer = null;
+    service.onDataChange(function () {
+        clearTimeout(warmTimer);
+        warmTimer = setTimeout(function () {
+            const key = raceInfosKey(FULL_LIST.sort, NaN, undefined, undefined);
+            buildRaceInfos({ sort: FULL_LIST.sort, limit: NaN }).then(function (entry) {
+                if (entry.gzip && (!raceInfosCache[key] || raceInfosCache[key].timestamp < entry.timestamp)) {
+                    raceInfosCache[key] = entry;
+                }
+            }).catch(function (err) {
+                console.error('Could not rebuild the race list in the background:', err.message);
+            });
+        }, 2000);
+        if (warmTimer.unref) warmTimer.unref();
+    });
+
+    app.get('/api/raceinfos', async function (req, res) {
+        const sort = req.query.sort;
+        const limit = parseInt(req.query.limit);
+        let raceId = req.query.raceId;
+
+        // A public URL: anything can arrive here. filters must be a JSON
+        // object and raceId a race id; anything else is the caller's mistake.
+        let filters = null;
+        if (req.query.filters !== undefined) {
+            try {
+                filters = typeof req.query.filters === 'string' ? JSON.parse(req.query.filters) : null;
+            } catch (e) {
+                filters = null;
+            }
+            if (!filters || typeof filters !== 'object' || Array.isArray(filters)) {
+                return res.status(400).json({ error: 'filters must be a JSON object' });
+            }
         }
+        if (raceId !== undefined && !mongoose.isValidObjectId(raceId)) {
+            return res.status(400).json({ error: 'raceId must be a race id' });
+        }
+
+        // Build a cache key from the query params
+        const cacheKey = raceInfosKey(sort, limit, raceId, req.query.filters);
+
+        // Check cache freshness against systemInfo.resultUpdate
+        try {
+            const systemInfo = await service.getCachedSystemInfo();
+            if (systemInfo) {
+                const latestUpdate = Math.max(
+                    systemInfo.resultUpdate ? new Date(systemInfo.resultUpdate).getTime() : 0,
+                    systemInfo.raceUpdate ? new Date(systemInfo.raceUpdate).getTime() : 0
+                );
+                const cached = raceInfosCache[cacheKey];
+                if (cached && cached.timestamp >= latestUpdate) {
+                    return sendRaceInfos(req, res, cached);
+                }
+            }
+        } catch (err) {
+            // If systemInfo check fails, proceed without cache
+        }
+
+        const entry = await buildRaceInfos({ sort: sort, limit: limit, raceId: raceId, filters: filters });
+        if (!entry.gzip) return res.json(entry.results);
+        raceInfosCache[cacheKey] = entry;
+        sendRaceInfos(req, res, entry);
 
 
     });
@@ -3187,6 +3285,9 @@ module.exports = async function (app, qs, passport, async, _) {
             // Collect all member IDs first
             const memberIds = new Set();
             await Result.deleteMany({ _id: { $in: results.map(r => r._id) } });
+            // Their open correction requests close with them
+            await require('./correctionRoutes').closeForResults(results.map(r => r._id))
+                .catch(err => console.error('Could not close correction requests:', err));
             results.forEach(res => {
                 res.members.forEach(m => memberIds.add(m._id));
             });
@@ -3483,10 +3584,11 @@ module.exports = async function (app, qs, passport, async, _) {
 
 
     // get participation stats
-    // Volunteering stats for the Stats page. Logged-in users only: it names
-    // members and what they did, which the public site does not show.
+    // Volunteering stats for the Stats page, open to everyone like the other
+    // stats: member names (already public on member pages), dates, events
+    // and the role each volunteer filled.
     // ?year=YYYY narrows to one calendar year; anything else is all time.
-    app.get('/api/stats/volunteering', service.isLoggedIn, async function (req, res) {
+    app.get('/api/stats/volunteering', async function (req, res) {
         try {
             const year = /^\d{4}$/.test(req.query.year || '') ? parseInt(req.query.year, 10) : null;
             const match = year ? {
@@ -4260,25 +4362,33 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // MAIL
+    // The contact page's message to the webmaster. Sent from the site's own
+    // address: Brevo only sends from verified senders, and a visitor's gmail
+    // or yahoo address sent from Brevo's servers fails their DMARC checks.
+    // The visitor goes in reply-to, so answering it reaches them.
     app.post('/sendEmail', function (req, res) {
-        const data = req.body;
+        const data = req.body || {};
+        const name = String(data.name || '').trim().slice(0, 200);
+        const email = String(data.from || '').trim();
+        const body = String(data.body || '').trim();
+        if (!name || !body || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Name, a valid email and a message are required' });
+        }
         transport.sendMail({
-            from: {
-                name: data.name,
-                address: data.from
-            },
+            from: { name: name + ' via MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
             to: {
                 name: "MCRRC RACE TEAM SITE ADMIN",
                 address: process.env.MCRRC_FROM_EMAIL
             },
-            subject: data.subject, // Subject line
-            text: data.body // plaintext body
-        }, function (error, response) {
+            replyTo: { name: name, address: email },
+            subject: 'MCRRC race team contact from ' + name,
+            text: 'From: ' + name + ' <' + email + '>\n\n' + body.slice(0, 20000)
+        }, function (error) {
             if (error) {
-                res.sendStatus(404);
-            } else {
-                res.end('{"success" : "Email sent successfully", "status" : 200}');
+                console.error('Contact email failed:', error);
+                return res.status(502).json({ error: 'Could not send the message' });
             }
+            res.json({ success: 'Email sent successfully', status: 200 });
         });
     });
 
@@ -4304,6 +4414,8 @@ module.exports = async function (app, qs, passport, async, _) {
                 const parkrun = parkrunMetadata(htmlSource);
                 return res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'pasted',
                     headers: parsed.headers,
                     data: parsed.data,
                     pageTitle: (parkrun && parkrun.pageTitle) || parsed.pageTitle,
@@ -4391,6 +4503,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'runsignup-api',
                     headers: headers,
                     data: data,
                     pageTitle: pageTitle
@@ -4525,6 +4639,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                     res.json({
                         success: true,
+                        // How the page was fetched, shown to the admin
+                        fetchedVia: 'parkrun-proxy',
                         headers: headers,
                         data: data,
                         pageTitle: pageTitle,
@@ -4685,6 +4801,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'athlinks-api',
                     headers: headers,
                     data: data,
                     pageTitle: pageTitle,
@@ -4714,6 +4832,8 @@ module.exports = async function (app, qs, passport, async, _) {
 
                 res.json({
                     success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: page.via,
                     headers: parsed.headers,
                     data: parsed.data,
                     pageTitle: parsed.pageTitle,
@@ -5107,7 +5227,18 @@ module.exports = async function (app, qs, passport, async, _) {
                 const rt = await RaceType.findOne({ name: form.race.racetype.name, surface: form.race.racetype.surface }).lean();
                 if (rt) form.race.racetype._id = rt._id;
             }
-            res.render('compRaceForm.ejs', { form, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
+            // Captains share this link in group chats: the preview says what it
+            // is for and until when
+            const closed = !form.isOpen || (form.closesAt && new Date(form.closesAt) < new Date());
+            const closes = form.closesAt && new Date(form.closesAt).toLocaleDateString('en-US',
+                { month: 'long', day: 'numeric', timeZone: 'America/New_York' });
+            // The race's name reads better than the form's ("Parks Half Comp Form")
+            const raceName = (form.race && form.race.racename) || form.title;
+            const social = socialFor(req, form.title, closed ?
+                'Sign-ups for ' + raceName + ' with the MCRRC Racing Team are closed.' :
+                'Sign up for ' + raceName + ' with the MCRRC Racing Team.' + (closes ? ' Sign-ups close ' + closes + '.' : ''),
+                form.bannerImageUrl);
+            res.render('compRaceForm.ejs', { form, social, user: req.user || null, gaUserRole: req.user ? req.user.role : 'anonymous' });
         } catch (err) {
             res.status(500).send('Server error');
         }
@@ -5646,6 +5777,11 @@ module.exports = async function (app, qs, passport, async, _) {
     // =====================================
 
     // Public application form page
+    function applySocial(req) {
+        return socialFor(req, 'Join the MCRRC Racing Team',
+            'Apply to the MCRRC Racing Team: requirements and the application form.');
+    }
+
     app.get('/apply', async function (req, res) {
         try {
             // Only distances we hold age grading standards for — the two races are
@@ -5660,10 +5796,10 @@ module.exports = async function (app, qs, passport, async, _) {
                 .sort({ meters: 1 })
                 .select('name surface meters miles')
                 .lean();
-            res.render('applyForm.ejs', { racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+            res.render('applyForm.ejs', { social: applySocial(req), racetypes, raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
         } catch (err) {
             console.error('Error loading apply page:', err);
-            res.render('applyForm.ejs', { racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
+            res.render('applyForm.ejs', { social: applySocial(req), racetypes: [], raceCommitment: APPLICATION_RACE_COMMITMENT, raceMaxAgeDays: APPLICATION_RACE_MAX_AGE_DAYS });
         }
     });
 
@@ -5806,6 +5942,7 @@ module.exports = async function (app, qs, passport, async, _) {
             await application.save();
 
             sendApplicationNotification(application);
+            sendApplicationConfirmation(application);
 
             // Submitted from the public form, so there is no logged-in user —
             // logActivity falls back to 'system' for the username.
@@ -5839,6 +5976,34 @@ module.exports = async function (app, qs, passport, async, _) {
             res.status(500).json({ error: 'Something went wrong submitting your application. Please try again.' });
         }
     });
+
+    // Tell the applicant their application arrived (the "confirmation"
+    // template, which the captains can edit). Replies go to the captains; no
+    // copy to them, they have their own notification. Recorded on the
+    // application like the decision emails. A failure is logged and never
+    // affects the submission.
+    async function sendApplicationConfirmation(application) {
+        if (process.env.SEND_EMAIL_FOR_FORM !== 'true' || !application.email) return;
+        try {
+            const template = await buildDecisionTemplate(application, 'confirmation');
+            const body = sanitizeEmailBody(template.body);
+            transport.sendMail({
+                from: { name: 'MCRRC Racing Team', address: process.env.MCRRC_FROM_EMAIL },
+                to: application.email,
+                replyTo: process.env.CAPTAINS_EMAIL || undefined,
+                subject: template.subject,
+                html: body,
+                text: htmlToPlainText(body)
+            }, function (err) {
+                if (err) return console.error('Error sending application confirmation email:', err);
+                TeamApplication.updateOne({ _id: application._id }, {
+                    $set: { confirmationEmail: { subject: template.subject, body: body, sentAt: new Date(), sentByUsername: 'system' } }
+                }).catch(function (e) { console.error('Could not record the confirmation email:', e); });
+            });
+        } catch (err) {
+            console.error('Error building application confirmation email:', err);
+        }
+    }
 
     // Notify the captains that a new application landed
     function sendApplicationNotification(application) {
@@ -5945,9 +6110,36 @@ module.exports = async function (app, qs, passport, async, _) {
     // or per deployment are written as {{placeholders}} rather than being
     // interpolated at definition time, so an edited template keeps working.
     const EMAIL_TEMPLATE_KEYS = {
+        // Sent by itself when someone applies (sendApplicationConfirmation)
+        confirmation: 'application_confirmation',
         approval: 'application_approval',
-        rejection: 'application_rejection'
+        rejection: 'application_rejection',
+        // Sent by hand after approval, with the Signal group chat invite link
+        signal: 'application_signal'
     };
+    const EMAIL_TEMPLATE_LABELS = {
+        confirmation: 'Confirmation email',
+        approval: 'Approval email',
+        rejection: 'Rejection email',
+        signal: 'Signal invite email'
+    };
+
+    // The emails a captain sends by hand from an application, the field each is
+    // recorded in, and the status the application must be in for it to apply.
+    const SENT_EMAILS = {
+        approval: { field: 'approvalEmail', status: 'approved' },
+        rejection: { field: 'rejectionEmail', status: 'rejected' },
+        signal: { field: 'signalEmail', status: 'approved' }
+    };
+
+    function sentEmailType(value) {
+        return Object.prototype.hasOwnProperty.call(SENT_EMAILS, value) ? value : 'approval';
+    }
+
+    // A template type from a request: one of the keys above, else approval
+    function templateType(value) {
+        return Object.prototype.hasOwnProperty.call(EMAIL_TEMPLATE_KEYS, value) ? value : 'approval';
+    }
 
     // Shown in the editor so a captain knows what they can use
     const EMAIL_TEMPLATE_PLACEHOLDERS = [
@@ -5957,7 +6149,9 @@ module.exports = async function (app, qs, passport, async, _) {
         { token: 'siteUrl', description: 'Address of this site' },
         { token: 'captainsEmail', description: "The captains' email address" },
         { token: 'signalUrl', description: 'Invite link for the Signal group chat' },
-        { token: 'raceCommitment', description: 'Races a member must run per year' }
+        { token: 'raceCommitment', description: 'Races a member must run per year' },
+        { token: 'submittedDate', description: 'The day the application was submitted' },
+        { token: 'races', description: 'The races the applicant submitted, as a list' }
     ];
 
     function emailTemplateValues(application) {
@@ -5968,8 +6162,24 @@ module.exports = async function (app, qs, passport, async, _) {
             siteUrl: (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org',
             captainsEmail: process.env.CAPTAINS_EMAIL || '',
             signalUrl: process.env.SIGNAL_URL || '',
-            raceCommitment: String(APPLICATION_RACE_COMMITMENT)
+            raceCommitment: String(APPLICATION_RACE_COMMITMENT),
+            submittedDate: new Date(application.createdAt || Date.now()).toLocaleDateString('en-US',
+                { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }),
+            races: applicationRacesHtml(application.races || [])
         };
+    }
+
+    // The submitted races as an HTML list, for {{races}}. The names come from
+    // the applicant, so they are escaped.
+    function applicationRacesHtml(races) {
+        if (!races.length) return '';
+        return '<ul>' + races.map(function (r) {
+            const date = r.racedate ? new Date(r.racedate).toLocaleDateString('en-US',
+                { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : '';
+            return '<li>' + escapeHtmlText(r.racename || '') + (date ? ' (' + date + ')' : '') +
+                (r.racetype && r.racetype.name ? ', ' + escapeHtmlText(r.racetype.name) : '') +
+                (r.timeCentiseconds ? ' in ' + centisToString(r.timeCentiseconds) : '') + '</li>';
+        }).join('') + '</ul>';
     }
 
     // {{token}} -> value. An unknown token is left alone rather than blanked, so
@@ -5994,16 +6204,40 @@ module.exports = async function (app, qs, passport, async, _) {
     }
 
     function defaultDecisionTemplate(type) {
+        if (type === 'signal') {
+            return {
+                subject: 'Join the MCRRC Racing Team Signal chat',
+                body: [
+                    '<p>Hi {{firstname}},</p>',
+                    '<p>Now that you are officially on the team and have introduced yourself, we also wanted to send along a link to our Signal group chat. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun.</p>',
+                    '<p>If you have the Signal app, you can join the chat with this link: <a href="{{signalUrl}}" target="_blank">{{signalUrl}}</a></p>',
+                    '<p>See you there,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
+        if (type === 'confirmation') {
+            return {
+                subject: 'We received your MCRRC Racing Team application',
+                body: [
+                    '<p>Hi {{firstname}},</p>',
+                    '<p>Thank you for applying to the MCRRC Racing Team. We received your application on {{submittedDate}}.</p>',
+                    '<p>The races you submitted:</p>',
+                    '{{races}}',
+                    '<p>The team captains will review your application and get back to you by email. If anything changes in the meantime, just reply to this email.</p>',
+                    '<p>Thanks again,<br>The MCRRC Racing Team captains</p>'
+                ].join('\n')
+            };
+        }
         if (type === 'rejection') {
             return {
                 subject: 'Your MCRRC Racing Team application',
                 body: [
                     '<p>Hi {{firstname}},</p>',
-                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.</p>',
-                    '<p>After reviewing your application, we\'re not able to offer you a spot on the team at this time.</p>',
-                    '<p>We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
+                    '<p>Thank you for your interest in the MCRRC Racing Team, and for taking the time to apply.',
+                    'After reviewing your application, we\'re not able to offer you a spot on the team at this time.',
+                    'We\'d genuinely encourage you to apply again once you have new race results to share. You can ',
                     'reapply any time at <a href="{{siteUrl}}/apply">{{siteUrl}}/apply</a>.</p>',
-                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone, take a look at ',
+                    '<p>In the meantime, MCRRC has plenty going on that\'s open to everyone. Take a look at ',
                     '<a href="https://mcrrc.org">mcrrc.org</a> for club races, training programs and group runs.</p>',
                     '<p>Best of luck with your running,<br>The MCRRC Racing Team captains</p>'
                 ].join('\n')
@@ -6015,17 +6249,15 @@ module.exports = async function (app, qs, passport, async, _) {
             body: [
                 '<p>Hi {{firstname}},</p>',
                 '<p>Great news, your application to join the MCRRC Racing Team has been approved. Welcome aboard!</p>',
-                '<p>A few things to get you started:</p>',
+                '<p><strong>A few things to get you started:</strong></p>',
                 '<ul>',
-                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. </li>',
-                '  <li>We require team members to race at least {{raceCommitment}} times a year and to help out at club events.</li>',
-                '  <li>We\'ll be adding you to our team\'s message board/communication group (Groups.io) and will send a welcome announcement out to the team.</li>',
-                '  <li>We also have a Signal group chat. If you have the Signal app, you can join the chat using this <a href="{{signalUrl}}" target="_blank">link</a>. The conversation there is usually a bit less "official team business" and a bit more lighthearted/fun. If you\'re interested, please join!</li>',
-                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up</strong></li>',
+                '  <li>Nico, one of our racing team members, helps maintain our team\'s results website <a href="{{siteUrl}}" target="_blank" rel="noopener noreferrer">{{siteUrl}}</a>. Please <a href="{{siteUrl}}/signup" target="_blank" rel="noopener noreferrer">register </a> to the site to get started and keep track of your results and requirements. When you complete a race, submit your results to the website so that Nico can update it. As a reminder, we require team members to race at least {{raceCommitment}} times a year and to help out at club events. You can submit both your race results and volunteer positions using the site. </li>',
+                '  <li>We\'ll be adding you to our team\'s message board/communication group (MCRRCRacingTeam@groups.io at Groups.io). This is where you will receive all official communication from the team.</li>',
+                '  <li>We provide to each team member the coveted orange racing team singlet: <strong>please send us your size and contact us when you are ready to coordonate picking it up.</strong></li>',
                 '</ul>',
-                '<p><strong>One last thing: your bio and photo.</strong> The site carries a bio for each of our',
+                '<p><strong>Your bio and photo.</strong> The site carries a bio for each of our',
                 'members. Please take a little time and send yours back with the info below. Everything is optional,',
-                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank">one of our runners</a>',
+                'of course. Have a look at <a href="{{siteUrl}}/members/charliestern/bio" target="_blank" rel="noopener noreferrer">one of our runners</a>',
                 'for inspiration:</p>',
                 '<ul>',
                 '  <li><strong>A photo</strong></li>',
@@ -6041,8 +6273,9 @@ module.exports = async function (app, qs, passport, async, _) {
                 '  <li>Fun fact about yourself:</li>',
                 '  <li>Running logs: link to your Strava/Garmin Connect or whatever you use and want to share:</li>',
                 '</ul>',
-                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
-                '<p>See you at the races,<br>The MCRRC Racing Team captains</p>'
+                '<p><strong>One last thing- letting the team know about our newest member! </strong> We would love it if you could send out a brief email to the team letting everyone know a little more about you. You can format it however you like. If you are looking for inspiration, grabbing a few facts from your bio above will do the trick. Please try to do this at your earliest convenience so we can keep everyone informed of the latest roster update. You can email the team at MCRRCRacingTeam@groups.io. We will also be announcing your addition to the team through the club\'s weekly Ins &amp; Outs newsletter.</p>',
+                '<p>If you have any questions, just reply to this email or write to <a href="mailto:{{captainsEmail}}" target="_blank" rel="noopener noreferrer">{{captainsEmail}}</a> and one of the captains will get back to you.</p>',
+                '<p>See you at the races,<br />The MCRRC Racing Team captains</p>'
             ].join('\n')
         };
     }
@@ -6124,7 +6357,7 @@ module.exports = async function (app, qs, passport, async, _) {
         return Object.assign({
             key: EMAIL_TEMPLATE_KEYS[type],
             type: type,
-            label: type === 'rejection' ? 'Rejection email' : 'Approval email'
+            label: EMAIL_TEMPLATE_LABELS[type]
         }, template);
     }
 
@@ -6132,7 +6365,8 @@ module.exports = async function (app, qs, passport, async, _) {
     app.get('/api/email-templates', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
             const templates = [];
-            for (const type of ['approval', 'rejection']) {
+            // In the order an applicant receives them
+            for (const type of ['confirmation', 'approval', 'signal', 'rejection']) {
                 templates.push(templateSummary(type, await storedDecisionTemplate(type)));
             }
             res.json({ templates: templates, placeholders: EMAIL_TEMPLATE_PLACEHOLDERS });
@@ -6147,11 +6381,16 @@ module.exports = async function (app, qs, passport, async, _) {
     // the preview cannot drift from what is actually sent.
     app.post('/api/email-templates/:type/preview', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const sample = {
                 firstname: 'Alex',
                 lastname: 'Runner',
-                email: 'alex.runner@example.com'
+                email: 'alex.runner@example.com',
+                createdAt: new Date(),
+                races: [
+                    { racename: 'Country Road 5K', racedate: new Date('2026-09-20T00:00:00Z'), racetype: { name: '5k' }, timeCentiseconds: 115700 },
+                    { racename: 'Parks Half Marathon', racedate: new Date('2026-09-07T00:00:00Z'), racetype: { name: 'Half Marathon' }, timeCentiseconds: 532000 }
+                ]
             };
             const values = emailTemplateValues(sample);
             res.json({
@@ -6171,7 +6410,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: save an edited template
     app.put('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const key = EMAIL_TEMPLATE_KEYS[type];
 
             const subject = (req.body.subject || '').trim();
@@ -6194,7 +6433,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 description: 'Edited the team application ' + type + ' email template',
                 targetType: 'emailtemplate',
                 targetId: key,
-                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                targetName: EMAIL_TEMPLATE_LABELS[type],
                 metadata: {
                     type: type,
                     wasCustom: previous.isCustom,
@@ -6214,7 +6453,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: drop the override and go back to the built-in wording
     app.delete('/api/email-templates/:type', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.params.type === 'rejection' ? 'rejection' : 'approval';
+            const type = templateType(req.params.type);
             const key = EMAIL_TEMPLATE_KEYS[type];
             const previous = await storedDecisionTemplate(type);
             if (!previous.isCustom) {
@@ -6230,7 +6469,7 @@ module.exports = async function (app, qs, passport, async, _) {
                 description: 'Reset the team application ' + type + ' email template to the default',
                 targetType: 'emailtemplate',
                 targetId: key,
-                targetName: type === 'rejection' ? 'Rejection email' : 'Approval email',
+                targetName: EMAIL_TEMPLATE_LABELS[type],
                 metadata: {
                     type: type,
                     oldValue: { subject: previous.subject, body: previous.body }
@@ -6248,13 +6487,13 @@ module.exports = async function (app, qs, passport, async, _) {
     // Captain/admin: template to prefill the send-email dialog with
     app.get('/api/team-applications/:id/email-template', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.query.type === 'rejection' ? 'rejection' : 'approval';
+            const type = sentEmailType(req.query.type);
             const application = await TeamApplication.findById(req.params.id).lean();
             if (!application) return res.status(404).json({ error: 'Application not found' });
 
-            // An email already sent for this decision comes back as-is, so a resend
-            // starts from what the applicant actually received.
-            const already = type === 'rejection' ? application.rejectionEmail : application.approvalEmail;
+            // An email already sent comes back as-is, so a resend starts from
+            // what the applicant actually received.
+            const already = application[SENT_EMAILS[type].field];
             if (already && already.sentAt) {
                 return res.json({
                     subject: already.subject, body: already.body,
@@ -6269,16 +6508,15 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
-    // Captain/admin: send the approval or rejection email to the applicant
+    // Captain/admin: send the approval, rejection or Signal invite email to the applicant
     app.post('/api/team-applications/:id/send-email', service.isCaptainOrAdminLoggedIn, async function (req, res) {
         try {
-            const type = req.body.type === 'rejection' ? 'rejection' : 'approval';
+            const type = sentEmailType(req.body.type);
             const application = await TeamApplication.findById(req.params.id);
             if (!application) return res.status(404).json({ error: 'Application not found' });
 
-            const expectedStatus = type === 'rejection' ? 'rejected' : 'approved';
-            if (application.status !== expectedStatus) {
-                return res.status(400).json({ error: 'This application is ' + application.status + ' — an ' + type + ' email doesn\'t apply' });
+            if (application.status !== SENT_EMAILS[type].status) {
+                return res.status(400).json({ error: 'This application is ' + application.status + ' — the ' + EMAIL_TEMPLATE_LABELS[type].toLowerCase() + ' doesn\'t apply' });
             }
 
             const subject = (req.body.subject || '').trim();
@@ -6289,9 +6527,13 @@ module.exports = async function (app, qs, passport, async, _) {
 
             sendDecisionEmail(application, subject, body);
 
-            const record = { subject: subject, body: body, sentAt: new Date(), sentByUsername: req.user.username };
-            if (type === 'rejection') application.rejectionEmail = record;
-            else application.approvalEmail = record;
+            const sentAt = new Date();
+            application[SENT_EMAILS[type].field] = { subject: subject, body: body, sentAt: sentAt, sentByUsername: req.user.username };
+            if (type === 'signal') {
+                application.signalInvited = true;
+                application.signalInvitedAt = sentAt;
+                application.signalInvitedByUsername = req.user.username;
+            }
             await application.save();
 
             service.logActivity({
@@ -6511,6 +6753,14 @@ module.exports = async function (app, qs, passport, async, _) {
             atField: 'addedToGroupsIoAt',
             byField: 'addedToGroupsIoByUsername',
             description: 'added to Groups.io'
+        },
+        // Normally ticked by sending the Signal invite email; set directly when
+        // the invite went out some other way.
+        'signal': {
+            field: 'signalInvited',
+            atField: 'signalInvitedAt',
+            byField: 'signalInvitedByUsername',
+            description: 'invited to Signal'
         }
     };
 
@@ -6577,6 +6827,288 @@ module.exports = async function (app, qs, passport, async, _) {
         }
     });
 
+    // ---- Hosted pages: admin-uploaded HTML, served at /pages/<slug> --------
+    // Managed from the admin "Hosted Pages" screen. Each page has an access
+    // level (public, members, captains, admin), a draft/published state and,
+    // unless marked trusted, is served sandboxed: the browser gives it its own
+    // anonymous origin, so its scripts cannot use the visitor's session or
+    // the site's API. Registered before the catch-all below.
+    const HOSTED_PAGE_SLUG = /^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$/;
+    const HOSTED_PAGE_MAX_BYTES = 10 * 1024 * 1024;
+    const HOSTED_PAGE_SANDBOX = 'sandbox allow-scripts allow-forms allow-popups ' +
+        'allow-popups-to-escape-sandbox allow-modals allow-downloads allow-top-navigation-by-user-activation';
+
+    function escapeHtmlText(text) {
+        return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function sendHostedPageMessage(res, status, heading, text) {
+        res.status(status).type('html').send('<!doctype html><html><head><meta charset="utf-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+            '<title>' + escapeHtmlText(heading) + ' | MCRRC Racing Team</title></head>' +
+            '<body style="font-family: sans-serif; max-width: 40em; margin: 4em auto; padding: 0 1em;">' +
+            '<h1>' + escapeHtmlText(heading) + '</h1><p>' + escapeHtmlText(text) + '</p>' +
+            '<p><a href="/">MCRRC Racing Team</a></p></body></html>');
+    }
+
+    function canSeeHostedPage(access, user) {
+        var role = user ? user.role : null;
+        if (access === 'public') return true;
+        if (access === 'members') return !!user;
+        if (access === 'captains') return role === 'captain' || role === 'admin';
+        return role === 'admin';
+    }
+
+    // The bar at the very top of a hosted page, back to the site. Styled
+    // inline with all:initial first, so the page's own CSS cannot restyle it;
+    // in the flow of the page (not fixed), so it never covers the content.
+    const HOSTED_PAGE_BAR = (function () {
+        // Every declaration !important: an inline !important rule beats the
+        // page's own !important rules too
+        function css(rules) {
+            return rules.map(function (rule) { return rule + ' !important'; }).join(';');
+        }
+        var font = "600 14px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+        var bar = css(['all:initial', 'display:block', 'box-sizing:border-box', 'width:100%', 'margin:0',
+            'padding:6px 16px', 'background:#008cba', 'position:relative', 'z-index:2147483647', 'font:' + font]);
+        var link = css(['all:initial', 'display:inline-flex', 'align-items:center', 'gap:8px',
+            'color:#fff', 'cursor:pointer', 'font:' + font]);
+        // The club logo, committed at this size (the application form uses it too)
+        // all:initial also resets the cursor, so the logo and the text each
+        // need the link's hand cursor again
+        var logo = css(['all:initial', 'display:block', 'width:26px', 'height:26px', 'flex:none', 'cursor:pointer']);
+        return '<div id="mcrrc-site-bar" style="' + bar + '">' +
+            '<a href="/" style="' + link + '">' +
+            '<img src="/images/mcrrc_logo_256.png" alt="" width="26" height="26" style="' + logo + '">' +
+            '<span style="' + css(['all:initial', 'color:#fff', 'cursor:pointer', 'font:' + font]) + '">&larr; Back to MCRRC Racing Team</span>' +
+            '</a></div>';
+    })();
+
+    function withSiteBar(page, html) {
+        if (page.showBanner === false) return html;
+        // Right after <body ...>, or first thing if the file has no <body>
+        return /<body[^>]*>/i.test(html) ? html.replace(/<body[^>]*>/i, function (tag) { return tag + HOSTED_PAGE_BAR; }) :
+            HOSTED_PAGE_BAR + html;
+    }
+
+    // The page's own <head> gets social preview tags from its title and
+    // description, unless it already has its own
+    function withSocialTags(page, html) {
+        if (!/<\/head>/i.test(html) || /property=["']og:title["']/i.test(html)) return html;
+        var tags = '<meta property="og:title" content="' + escapeHtmlText(page.title) + '">' +
+            '<meta property="og:type" content="website">';
+        if (page.description) {
+            tags += '<meta property="og:description" content="' + escapeHtmlText(page.description) + '">' +
+                '<meta name="description" content="' + escapeHtmlText(page.description) + '">';
+        }
+        return html.replace(/<\/head>/i, tags + '</head>');
+    }
+
+    // ---- Google Analytics on hosted pages ----------------------------------
+    // A trusted page gets the site's own tag (views/partials/ga.ejs). A
+    // sandboxed one cannot run it: without allow-same-origin its scripts may
+    // not touch cookies, and gtag.js then sends nothing at all. Its page view
+    // is sent from here instead, through GA4's Measurement Protocol (needs
+    // GA_API_SECRET: Admin > Data streams > the stream > Measurement Protocol
+    // API secrets). The visitor's own _ga cookies come with the request, so
+    // the view joins their visit to the rest of the site.
+    async function withGaTag(html, user) {
+        if (!app.locals.gaEnabled || /googletagmanager\.com\/gtag\/js/i.test(html)) return html;
+        const tag = await require('ejs').renderFile(path.join(__dirname, '..', 'views', 'partials', 'ga.ejs'), {
+            gaEnabled: true,
+            gaDebug: app.locals.gaDebug,
+            gaMeasurementId: app.locals.gaMeasurementId,
+            gaConfig: { page_template: 'hosted_page' },
+            gaUserRole: user && user.role ? user.role : 'anonymous'
+        });
+        return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (head) { return head + tag; }) : tag + html;
+    }
+
+    function cookieValue(req, name) {
+        const pair = (req.headers.cookie || '').split(/;\s*/).find(function (c) { return c.indexOf(name + '=') === 0; });
+        return pair ? decodeURIComponent(pair.slice(name.length + 1)) : null;
+    }
+
+    function sendHostedPageView(req, page, user) {
+        const secret = process.env.GA_API_SECRET;
+        if (!app.locals.gaEnabled || !secret) return;
+        const id = app.locals.gaMeasurementId;
+        // _ga is "GA1.1.<random>.<first visit>"; the client id is the last two
+        const ga = (cookieValue(req, '_ga') || '').split('.');
+        const clientId = ga.length >= 4 ? ga.slice(-2).join('.') :
+            Math.floor(Math.random() * 2147483647) + '.' + Math.floor(Date.now() / 1000);
+        // _ga_<id> holds the session: "GS1.1.<session id>.…" or "GS2.1.s<session id>$…"
+        const session = cookieValue(req, '_ga_' + id.replace(/^G-/, '')) || '';
+        const sessionMatch = session.match(/^GS1\.\d+\.(\d+)/) || session.match(/^GS2\.\d+\.s(\d+)/);
+        const params = {
+            page_location: siteUrl() + req.originalUrl,
+            page_title: page.title,
+            page_template: 'hosted_page',
+            engagement_time_msec: 1
+        };
+        if (sessionMatch) params.session_id = sessionMatch[1];
+        if (req.get('referer')) params.page_referrer = req.get('referer');
+        if (app.locals.gaDebug) params.debug_mode = true;
+        fetch('https://www.google-analytics.com/mp/collect?measurement_id=' + encodeURIComponent(id) +
+            '&api_secret=' + encodeURIComponent(secret), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                client_id: clientId,
+                user_properties: { user_role: { value: user && user.role ? user.role : 'anonymous' } },
+                events: [{ name: 'page_view', params: params }]
+            }),
+            signal: AbortSignal.timeout(5000)
+        }).catch(function (err) {
+            console.error('Could not send a hosted page view to Google Analytics:', err.message);
+        });
+    }
+
+    app.get('/pages/:slug', async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const slug = String(req.params.slug || '').toLowerCase();
+        const user = req.isAuthenticated() ? req.user : null;
+        const isAdmin = !!user && user.role === 'admin';
+        try {
+            const page = HOSTED_PAGE_SLUG.test(slug) ?
+                await HostedPage.findOne({ slug: slug }).select('+html').lean() : null;
+            // Drafts and unknown addresses look the same to everyone but admins
+            if (!page || (!page.published && !isAdmin)) {
+                return sendHostedPageMessage(res, 404, 'Page not found', 'There is no page at this address.');
+            }
+            if (!canSeeHostedPage(page.access, user)) {
+                if (!user) {
+                    // Log in, then come straight back here
+                    return res.redirect('/login?returnTo=' + encodeURIComponent(req.originalUrl));
+                }
+                return sendHostedPageMessage(res, 403, 'Not allowed',
+                    'This page is only available to ' + (page.access === 'admin' ? 'admins' : 'captains and admins') + '.');
+            }
+            res.set('Content-Type', 'text/html; charset=utf-8');
+            res.set('X-Content-Type-Options', 'nosniff');
+            // Anything behind a login must not be cached by a shared cache
+            res.set('Cache-Control', page.access === 'public' && page.published ? 'no-cache' : 'private, no-store');
+            if (!page.trusted) res.set('Content-Security-Policy', HOSTED_PAGE_SANDBOX);
+            let html = withSiteBar(page, withSocialTags(page, page.html));
+            // Visits to drafts are an admin checking their work
+            if (page.published) {
+                if (page.trusted) html = await withGaTag(html, user);
+                else sendHostedPageView(req, page, user);
+            }
+            res.send(html);
+        } catch (err) {
+            console.error('Error serving hosted page:', err);
+            sendHostedPageMessage(res, 500, 'Something went wrong', 'This page could not be loaded.');
+        }
+    });
+
+    // Admin API: list, create, update, delete. The list never carries the HTML.
+    function hostedPageFields(body, isCreate) {
+        const HostedPage = require('./models/hostedpage');
+        const fields = {};
+        if (isCreate || body.title !== undefined) {
+            fields.title = String(body.title || '').trim();
+            if (!fields.title) return { error: 'A title is required.' };
+        }
+        if (isCreate || body.slug !== undefined) {
+            fields.slug = String(body.slug || '').trim().toLowerCase();
+            if (!HOSTED_PAGE_SLUG.test(fields.slug)) {
+                return { error: 'The address may use lowercase letters, numbers and dashes (not at the start or end), up to 80 characters.' };
+            }
+        }
+        if (body.description !== undefined) fields.description = String(body.description || '').trim().slice(0, 300);
+        if (body.access !== undefined || isCreate) {
+            fields.access = body.access || 'public';
+            if (HostedPage.ACCESS_LEVELS.indexOf(fields.access) === -1) return { error: 'Unknown access level.' };
+        }
+        if (body.published !== undefined) fields.published = !!body.published;
+        if (body.trusted !== undefined) fields.trusted = !!body.trusted;
+        if (body.showBanner !== undefined) fields.showBanner = !!body.showBanner;
+        if (isCreate || body.html !== undefined) {
+            if (typeof body.html !== 'string' || !body.html.trim()) return { error: 'Choose an HTML file to upload.' };
+            fields.size = Buffer.byteLength(body.html, 'utf8');
+            if (fields.size > HOSTED_PAGE_MAX_BYTES) return { error: 'The file is larger than 10 MB.' };
+            fields.html = body.html;
+            fields.filename = String(body.filename || '').slice(0, 200);
+        }
+        return { fields: fields };
+    }
+
+    function logHostedPage(req, action, page, description) {
+        service.logActivity({
+            userId: req.user._id,
+            username: req.user.username,
+            action: action,
+            description: description,
+            targetType: 'hostedpage',
+            targetId: String(page._id),
+            targetName: page.title,
+            metadata: { slug: page.slug, access: page.access, published: page.published, trusted: page.trusted, showBanner: page.showBanner !== false },
+            ipAddress: req.ip
+        });
+    }
+
+    app.get('/api/hosted-pages', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const HostedPage = require('./models/hostedpage');
+            res.json(await HostedPage.find({}).sort({ updatedAt: -1 }).lean());
+        } catch (err) {
+            res.status(500).json({ error: 'Error loading pages' });
+        }
+    });
+
+    app.post('/api/hosted-pages', service.isAdminLoggedIn, async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const input = hostedPageFields(req.body || {}, true);
+        if (input.error) return res.status(400).json({ error: input.error });
+        try {
+            const who = { _id: req.user._id, username: req.user.username };
+            const page = await HostedPage.create(Object.assign(input.fields, { createdBy: who, updatedBy: who }));
+            logHostedPage(req, 'hosted_page_created', page, 'Uploaded hosted page "' + page.title + '" (/pages/' + page.slug + ')');
+            const out = page.toObject();
+            delete out.html;
+            res.status(201).json(out);
+        } catch (err) {
+            if (err && err.code === 11000) return res.status(409).json({ error: 'Another page already uses this address.' });
+            console.error('Error creating hosted page:', err);
+            res.status(500).json({ error: 'Error saving the page' });
+        }
+    });
+
+    app.put('/api/hosted-pages/:id', service.isAdminLoggedIn, async function (req, res) {
+        const HostedPage = require('./models/hostedpage');
+        const input = hostedPageFields(req.body || {}, false);
+        if (input.error) return res.status(400).json({ error: input.error });
+        try {
+            input.fields.updatedBy = { _id: req.user._id, username: req.user.username };
+            const page = await HostedPage.findByIdAndUpdate(req.params.id, { $set: input.fields },
+                { returnDocument: 'after', runValidators: true }).lean();
+            if (!page) return res.status(404).json({ error: 'Page not found' });
+            logHostedPage(req, 'hosted_page_updated', page, 'Updated hosted page "' + page.title + '" (/pages/' + page.slug + ')' +
+                (input.fields.html !== undefined ? ', new file' : ''));
+            res.json(page);
+        } catch (err) {
+            if (err && err.code === 11000) return res.status(409).json({ error: 'Another page already uses this address.' });
+            if (err && err.name === 'CastError') return res.status(404).json({ error: 'Page not found' });
+            console.error('Error updating hosted page:', err);
+            res.status(500).json({ error: 'Error saving the page' });
+        }
+    });
+
+    app.delete('/api/hosted-pages/:id', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const HostedPage = require('./models/hostedpage');
+            const page = await HostedPage.findByIdAndDelete(req.params.id).lean();
+            if (!page) return res.status(404).json({ error: 'Page not found' });
+            logHostedPage(req, 'hosted_page_deleted', page, 'Deleted hosted page "' + page.title + '" (/pages/' + page.slug + ')');
+            res.json({ success: true });
+        } catch (err) {
+            if (err && err.name === 'CastError') return res.status(404).json({ error: 'Page not found' });
+            res.status(500).json({ error: 'Error deleting the page' });
+        }
+    });
+
     // ---- Social sharing: og:/twitter: meta tags per page -------------------
     // The SPA is a single static index.ejs for every URL; Angular fills the
     // page in afterwards. A link-preview crawler (iMessage, Slack, Facebook,
@@ -6585,13 +7117,59 @@ module.exports = async function (app, qs, passport, async, _) {
     // title (PageTitleService, client-side), the title/description a shared
     // link shows has to be decided here, before res.render.
     //
-    // Mirrors PageTitleService's per-page titles, for the three kinds of page
-    // worth a specific preview: a race, a result, a member. Every other URL
-    // (lists, stats, tools...) keeps the site's default description below —
-    // one lightweight, indexed lookup per request, and never lets a lookup
-    // failure (bad id, member deleted, DB hiccup) break the page render.
+    // Mirrors PageTitleService's per-page titles. Pages about one thing (a
+    // race, a result, a series, a member) look it up: one lightweight,
+    // indexed lookup per request, and a lookup failure (bad id, member
+    // deleted, DB hiccup) never breaks the page render. The public lists,
+    // stats and tools have a fixed preview (PAGE_PREVIEWS); every other URL
+    // (log in, admin pages...) keeps the site's default description below.
     const DEFAULT_OG_TITLE = 'MCRRC Racing Team';
     const DEFAULT_OG_DESCRIPTION = 'MCRRC Racing Team Site: Members bios, race results and records.';
+
+    // Fixed previews by path. No description: the default one.
+    const PAGE_PREVIEWS = {
+        '/': ['MCRRC Racing Team', 'Montgomery County Road Runners Club Racing Team: member bios, race results, team records and stats.'],
+        '/members': ['Team Members', 'Meet the MCRRC Racing Team — current and past members, their bios and race results.'],
+        '/results': ['Race Results', 'Every race MCRRC Racing Team members have run, searchable by distance, date and location.'],
+        '/individualresults': ['Individual Results', 'Every individual result from the MCRRC Racing Team — filter by runner, distance, age group and more.'],
+        '/series': ['Race Series', 'The races MCRRC Racing Team members come back to year after year — every edition, team turnout and fastest times.'],
+        '/records': ['Team Records', 'MCRRC Racing Team records: the fastest times by team members at every distance.'],
+        '/records/age': ['Records by Age', 'MCRRC Racing Team records by age, for men and women at every distance.'],
+        '/records/year': ['Records by Year', 'The MCRRC Racing Team\'s best performances, year by year.'],
+        '/stats': ['Racing Stats', 'MCRRC Racing Team by the numbers: races, distances, surfaces, age grades and series.'],
+        '/stats/team': ['Racing Stats', 'MCRRC Racing Team by the numbers: races, distances, surfaces, age grades and series.'],
+        '/stats/volunteering': ['Volunteering Stats', 'How the MCRRC Racing Team gives back: volunteer hours and jobs by member.'],
+        '/stats/members': ['Member Stats', 'MCRRC Racing Team members by the numbers.'],
+        '/stats/participation': ['Participation', 'MCRRC Racing Team members\' participation and performance over time.'],
+        '/stats/awards': ['Awards', 'The MCRRC Racing Team\'s ROY and MUTROY award winners, year by year.'],
+        '/stats/us-map': ['US Map', 'Where the MCRRC Racing Team has raced: every state on the map.'],
+        '/stats/world-map': ['World Map', 'Where the MCRRC Racing Team has raced: every country on the map.'],
+        '/stats/progress-map': ['Progress Map', 'How far the MCRRC Racing Team\'s combined race miles would take us along a route.'],
+        '/tools/agegrade': ['Age Grade Calculator', 'Calculate your age-graded score and equivalent times for any race distance.'],
+        '/tools/paceAdjustment': ['Pace Adjustment Calculator', 'Adjust your running pace for temperature and dew point.'],
+        '/about-agegrading': ['About Age Grading', 'Where the MCRRC Racing Team\'s age grading standards come from, and which tables are in use.'],
+        '/gallery': ['Gallery', 'Photos of MCRRC Racing Team members racing and volunteering.'],
+        '/contact': ['Contact', 'Contact the webmaster of the MCRRC Racing Team site with comments, questions or requests.']
+    };
+
+    function siteUrl() {
+        return (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
+    }
+
+    // Link-preview tags for the standalone pages (views/partials/social.ejs)
+    function socialFor(req, title, description, image) {
+        return {
+            title: title,
+            description: truncate(description, 200),
+            url: siteUrl() + req.originalUrl,
+            image: image ? (/^https?:\/\//.test(image) ? image : siteUrl() + '/' + image.replace(/^\//, '')) :
+                siteUrl() + '/images/ogimage.jpg'
+        };
+    }
+
+    function plural(n, word) {
+        return n + ' ' + word + (n === 1 ? '' : 's');
+    }
 
     function truncate(text, max) {
         text = (text || '').trim();
@@ -6654,13 +7232,80 @@ module.exports = async function (app, qs, passport, async, _) {
             };
         }
 
-        // Not /members/head-to-head/... (two runners compared, a different
-        // page shape) — only a single member's own pages
-        if ((m = path.match(/^\/members\/([^\/]+)/)) && m[1] !== 'head-to-head') {
-            const Member = require('./models/member');
-            const member = await Member.findOne({ username: m[1] }).select('firstname lastname bio').lean().catch(function () { return null; });
+        if ((m = path.match(/^\/series\/([0-9a-fA-F]{24})/))) {
+            const preview = await require('./raceSeriesRoutes').seriesPreview(m[1]);
+            if (!preview) return null;
+            const sum = preview.summary;
+            var text = preview.name + ' — ' + plural(sum.editions, 'edition') +
+                (sum.firstYear === sum.lastYear ? ' in ' + sum.firstYear : ' since ' + sum.firstYear) + ', ' +
+                plural(sum.runners, 'team member') + ', ' + plural(sum.results, 'result') + '.';
+            const best = function (list) { return list && list[0] && formatRaceTime(list[0].time); };
+            if (sum.teamSeries) {
+                if (best(preview.bests.teams)) text += ' Fastest team: ' + best(preview.bests.teams) + '.';
+            } else {
+                const bests = [];
+                if (best(preview.bests.men)) bests.push(best(preview.bests.men) + ' (men)');
+                if (best(preview.bests.women)) bests.push(best(preview.bests.women) + ' (women)');
+                if (bests.length) text += ' Team bests: ' + bests.join(', ') + '.';
+            }
+            if (preview.clubRace) text += ' MCRRC club race.';
+            return { ogTitle: preview.name, ogDescription: truncate(text, 200) };
+        }
+
+        const Member = require('./models/member');
+        const findMember = function (username) {
+            return Member.findOne({ username: username }).select('firstname lastname bio').lean().catch(function () { return null; });
+        };
+
+        // Two runners compared: /members/head-to-head/:a/:b and
+        // /members/:a/head-to-head/:b. A race counts when they each have a
+        // result of their own in it, as on the page (not on one relay team).
+        if ((m = path.match(/^\/members\/head-to-head\/([^\/]+)\/([^\/]+)/)) ||
+            (m = path.match(/^\/members\/([^\/]+)\/head-to-head\/([^\/]+)/))) {
+            const [a, b] = await Promise.all([findMember(m[1]), findMember(m[2])]);
+            if (!a || !b) return null;
+            const Result = require('./models/result');
+            const [ra, rb] = await Promise.all([a, b].map(function (x) {
+                return Result.find({ 'members._id': x._id }).select('race._id').lean();
+            }));
+            const together = new Set(ra.map(function (r) { return String(r._id); }).filter(function (id) {
+                return rb.some(function (r) { return String(r._id) === id; });
+            }));
+            const racesB = new Set(rb.filter(function (r) { return !together.has(String(r._id)); }).map(function (r) { return String(r.race._id); }));
+            const shared = new Set(ra.filter(function (r) { return !together.has(String(r._id)) && racesB.has(String(r.race._id)); })
+                .map(function (r) { return String(r.race._id); })).size;
+            const nameA = memberFullName(a).trim(), nameB = memberFullName(b).trim();
+            return {
+                ogTitle: nameA + ' vs ' + nameB,
+                ogDescription: 'Head-to-head: ' + nameA + ' and ' + nameB + ' have raced each other ' +
+                    (shared === 1 ? 'once' : shared + ' times') + '.'
+            };
+        }
+
+        // A single member's own pages
+        if ((m = path.match(/^\/members\/([^\/]+)(?:\/([^\/]+))?/)) && m[1] !== 'head-to-head') {
+            const member = await findMember(m[1]);
             if (!member) return null;
             const name = memberFullName(member).trim();
+            if (m[2] === 'stats') {
+                const races = await require('./models/result').countDocuments({ 'members._id': member._id });
+                return {
+                    ogTitle: name + ' – Stats',
+                    ogDescription: name + '\'s racing stats: ' + plural(races, 'race') + ', with distances, surfaces and personal bests.'
+                };
+            }
+            if (m[2] === 'head-to-head') {
+                return {
+                    ogTitle: name + ' – Head to Head',
+                    ogDescription: 'Compare ' + name + '\'s races with any other MCRRC Racing Team member.'
+                };
+            }
+            if (m[2] === 'volunteer-jobs') {
+                return {
+                    ogTitle: name + ' – Volunteer Jobs',
+                    ogDescription: name + '\'s volunteer jobs for the MCRRC Racing Team.'
+                };
+            }
             const bioText = truncate((member.bio || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '), 160);
             return {
                 ogTitle: name,
@@ -6669,12 +7314,19 @@ module.exports = async function (app, qs, passport, async, _) {
             };
         }
 
+        const fixed = PAGE_PREVIEWS[path.length > 1 ? path.replace(/\/+$/, '') : path];
+        if (fixed) return { ogTitle: fixed[0], ogDescription: fixed[1] };
+
         return null;
     }
 
+    // The page moved; a permanent redirect so shared links and search engines follow
+    app.get('/about', function (req, res) {
+        res.redirect(301, '/about-agegrading');
+    });
+
     app.get('*', async function (req, res) {
         const isDev = process.env.NODE_ENV !== 'production';
-        const siteUrl = (process.env.SITE_URL || '').replace(/\/$/, '') || 'https://raceteam.mcrrc.org';
         // Never let a bad id or a DB hiccup break the page itself — the site's
         // default title/description still render
         const social = await socialMetaForPath(req.path).catch(function () { return null; });
@@ -6686,8 +7338,8 @@ module.exports = async function (app, qs, passport, async, _) {
             buildDate: process.env.BUILD_DATE || '',
             ogTitle: (social && social.ogTitle) || DEFAULT_OG_TITLE,
             ogDescription: (social && social.ogDescription) || DEFAULT_OG_DESCRIPTION,
-            ogUrl: siteUrl + req.originalUrl,
-            ogImage: siteUrl + '/images/ogimage.jpg'
+            ogUrl: siteUrl() + req.originalUrl,
+            ogImage: siteUrl() + '/images/ogimage.jpg'
         });
     });
 

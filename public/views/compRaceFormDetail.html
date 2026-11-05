@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron crf-list-page crf-detail-page">
 
     <div style="margin-bottom: 16px;">
         <a ng-click="goBack()" href="" class="crf-chip crf-chip-ghost">
@@ -48,9 +48,8 @@
                         <i class="fa fa-flag-checkered" style="color:#006687;"></i>
                         <strong>{{ formData.race.racename }}</strong>
                         <span class="text-muted"> &mdash; {{ formData.race.racedate | date:'mediumDate':'UTC' }}</span>
-                        <span ng-if="formData.race.racetype" class="crf-chip crf-chip-ghost"
-                            style="margin-left:6px; font-size:11px;">
-                            {{ formData.race.racetype.name }}
+                        <span ng-if="formData.race.racetype" class="text-muted">
+                            &middot; {{ formData.race.racetype.name }}
                         </span>
                     </div>
                     <div ng-if="formData.closesAt" style="font-size:0.85em; color:#666; margin-bottom: 6px;">

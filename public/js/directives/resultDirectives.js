@@ -11,7 +11,9 @@ app.directive('resultIcon', ['UtilsService', function (UtilsService) {
     scope: {
       result: '=result',
       race: '=race',
-      raceDisplay: '@raceDisplay'
+      raceDisplay: '@raceDisplay',
+      // "true" where the page lists the achievements itself (the result page)
+      hideAchievements: '@hideAchievements'
     },
     link: function ($scope, element, attrs) {
       // $scope.imgsrc = "";
@@ -36,7 +38,7 @@ app.directive('resultIcon', ['UtilsService', function (UtilsService) {
         $scope.resultIcons = $scope.result.customOptions.filter(x => x.name === "resultIcon");
         $scope.resultTexts = $scope.result.customOptions.filter(x => x.name === "resultText");
       }
-      if ($scope.result.achievements !== undefined) {
+      if ($scope.result.achievements !== undefined && $scope.hideAchievements !== 'true') {
         $scope.raceCounts = $scope.result.achievements.filter(x => x.name === "raceCount");
         $scope.pbs = $scope.result.achievements.filter(x => x.name === "pb");
         $scope.ags = $scope.result.achievements.filter(x => x.name === "agegrade");

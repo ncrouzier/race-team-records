@@ -971,7 +971,10 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'A
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', 'correctionRequest', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated, correctionRequest) {
+    // A member's correction request this edit was opened from, shown above
+    // the form for reference (views/templates/correctionReference.html)
+    $scope.correctionRequest = correctionRequest;
 
     
     $scope.isOlderDateCheck = function(date){       
@@ -1327,7 +1330,9 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
 
         $scope.isSaving = true;
         ResultsService.editResult($scope.formData).then(function(savedResult) {
-            $uibModalInstance.close(savedResult);
+            // A failed save has already said so (ResultsService); the form
+            // stays open with what was typed, to try again
+            if (savedResult) $uibModalInstance.close(savedResult);
         }).finally(function() {
             $scope.isSaving = false;
         });
@@ -1529,7 +1534,10 @@ angular.module('mcrrcApp.results').controller('ResultDetailslInstanceController'
 }]);
 
 // Race Edit Modal Controller
-angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', '$q', 'race', 'ResultsService', 'UtilsService', 'MembersService', 'ResultExtractionService', 'NotificationService', function($scope, $uibModalInstance, $q, race, ResultsService, UtilsService, MembersService, ResultExtractionService, NotificationService) {
+angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController', ['$scope', '$uibModalInstance', '$q', 'race', 'ResultsService', 'UtilsService', 'MembersService', 'ResultExtractionService', 'NotificationService', 'correctionRequest', function($scope, $uibModalInstance, $q, race, ResultsService, UtilsService, MembersService, ResultExtractionService, NotificationService, correctionRequest) {
+    // A member's correction request this edit was opened from, shown above
+    // the form for reference (views/templates/correctionReference.html)
+    $scope.correctionRequest = correctionRequest;
     
 
     
@@ -2222,8 +2230,18 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
             });
         }
        
+        // One save at a time: the button is disabled until this one is done
+        if ($scope.isSaving) return;
+        $scope.isSaving = true;
+
         // Save the race first
         ResultsService.updateRace($scope.race).then(function(updatedRace) {
+            // A failed save has already said so (ResultsService); the form
+            // stays open with what was typed, to try again
+            if (!updatedRace) {
+                $scope.isSaving = false;
+                return;
+            }
 
             // Results added from an extraction have no _id yet: they are created
             // against this race, while the rest are updated in place.
@@ -2281,13 +2299,17 @@ angular.module('mcrrcApp.results').controller('RaceEditModalInstanceController',
             $q.all(work).then(function() {
                 $uibModalInstance.close(updatedRace);
             }).catch(function(error) {
+                // The race itself is saved, but not its results: say so and
+                // stay open, so the admin can try again (and a correction
+                // request this was opened from is not marked handled)
                 console.error('Error saving results:', error);
-                // Still close the modal even if the results step fails
-                $uibModalInstance.close(updatedRace);
+                NotificationService.showNotifiction(false, 'The race was saved, but its results could not be. Please try again.');
+                $scope.isSaving = false;
             });
         }).catch(function(error) {
             console.error('Error saving race:', error);
-            // Don't close modal if race save fails
+            NotificationService.showNotifiction(false, 'Error while saving the race. Please try again.');
+            $scope.isSaving = false;
         });
     };
     

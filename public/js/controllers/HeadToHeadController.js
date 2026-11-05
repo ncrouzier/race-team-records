@@ -671,6 +671,7 @@ angular.module('mcrrcApp').controller('HeadToHeadController', ['$scope', '$state
                                     username: member.username,
                                     sex: member.sex,
                                     memberStatus: fullMemberData ? fullMemberData.memberStatus : undefined,
+                                    pictureLink: fullMemberData ? fullMemberData.pictureLink : undefined,
                                     count: 0,
                                     ageGradeCount: 0,
                                     headToHeadRecord: {

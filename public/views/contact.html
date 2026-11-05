@@ -34,7 +34,7 @@
                     <span class="help-block" ng-show="contactForm.message.$error.required">Required</span>
                 </div>
             </div>
-            <button class="btn btn-primary btn-lg" ng-click="send()" ng-disabled="contactForm.$invalid">Send</button>
+            <button class="btn btn-primary btn-lg" ng-click="send()" ng-disabled="contactForm.$invalid || sending">{{ sending ? 'Sending…' : 'Send' }}</button>
         </form>
     </div>
 </div>

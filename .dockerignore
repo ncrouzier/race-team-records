@@ -24,7 +24,6 @@ tests
 doc
 migrations
 scripts/seed-*.js
-public/images/banners/source
 
 *.log
 npm-debug.log
@@ -32,3 +31,6 @@ npm-debug.log
 .openshift
 README.md
 HEAD_TO_HEAD_FEATURE.md
+
+# Runtime uploads (member photos) stay on the host, out of the image
+uploads

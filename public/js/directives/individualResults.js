@@ -10,7 +10,7 @@
 // Filtering uses the same Advanced Filters panel as "By race"
 // (<advanced-filter-panel>, AdvancedFiltersService), plus filters that only
 // arrive by link (race, age, cutoffs, highlight...), shown as chips.
-angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', '$rootScope', '$document', 'Analytics', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs, $rootScope, $document, Analytics) {
+angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'MembersService', 'AuthService', 'AdvancedFiltersService', 'UtilsService', '$filter', '$state', '$q', '$transitions', '$timeout', 'dialogs', '$rootScope', '$document', 'Analytics', '$sce', function (ResultsService, MembersService, AuthService, AdvancedFiltersService, UtilsService, $filter, $state, $q, $transitions, $timeout, dialogs, $rootScope, $document, Analytics, $sce) {
 
     var PAGE_SIZE = 100;
     var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
@@ -70,7 +70,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 location: location.state || location.country || '', multisport: !!r.isMultisport,
                 variable: !!type.isVariable, miles: type.miles,
                 typeId: (type.name || '').toLowerCase() + '|' + (type.surface || '').toLowerCase(),
-                state: (location.state || '').toUpperCase(), country: (location.country || '').toUpperCase()
+                state: (location.state || '').toUpperCase(), country: (location.country || '').toUpperCase(),
+                clubRace: !!r.clubRace
             };
             if (!typeSeen[race.typeKey]) {
                 typeSeen[race.typeKey] = true;
@@ -91,6 +92,10 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     ageAt(runners[0].dateofbirth, r.racedate) : null;
                 var pace = race.multisport ? null : paceOf(res.time, res.miles || type.miles);
                 var ranking = res.ranking || {};
+                // Place: a woman's gender rank when there is one (what she
+                // raced against), otherwise the overall rank
+                var isWoman = runners.length === 1 && /^f/i.test(runners[0].sex || '');
+                var byGender = isWoman && !!ranking.genderrank;
                 // Lists cached before the API sent category: Master is 40+ on race day
                 var category = res.category ||
                     (runners[0].dateofbirth && r.racedate ? (ageAt(runners[0].dateofbirth, r.racedate) >= 40 ? 'Master' : 'Open') : '');
@@ -107,6 +112,11 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     eligible: res.isRecordEligible === true && runners.length === 1 && res.time > 0,
                     overallrank: ranking.overallrank || null, overalltotal: ranking.overalltotal || null,
                     genderrank: ranking.genderrank || null, agerank: ranking.agerank || null,
+                    placeRank: (byGender ? ranking.genderrank : ranking.overallrank) || null,
+                    placeTotal: (byGender ? ranking.gendertotal : ranking.overalltotal) || null,
+                    placeByGender: byGender,
+                    // Every ranking, as in the race list's tooltip
+                    rankTip: $filter('rankTooltip')(ranking) || '',
                     pb: hasAchievement(res, 'pb'), record: hasAchievement(res, 'teamrecord'), agBest: hasAchievement(res, 'agegrade'),
                     sexes: runners.map(function (m) { return m.sex; }),
                     // Lower-cased once, so search is a plain indexOf per word
@@ -130,7 +140,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
         time: { field: function (r) { return r.time || null; }, desc: false },
         pace: { field: function (r) { return r.pace; }, desc: false },
         agegrade: { field: function (r) { return r.agegrade; }, desc: true },
-        place: { field: function (r) { return r.overallrank; }, desc: false },
+        place: { field: function (r) { return r.placeRank; }, desc: false },
         age: { field: function (r) { return r.age; }, desc: false },
         name: { field: function (r) { return r.names.toLowerCase(); }, desc: false },
         race: { field: function (r) { return r.race.name.toLowerCase(); }, desc: false }
@@ -146,7 +156,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             raceTypes: [], countries: [], states: [], selectedMembers: [], missingRanking: null,
             // search box and links
             search: '', year: '', month: '', day: '', sex: '', division: '',
-            race: '', age: null, agemin: null, agemax: null, eligible: false, win: false,
+            race: '', age: null, agemin: null, agemax: null, eligible: false, win: false, club: false,
             under: null, variable: false,
             highlight: '',
             sort: DEFAULT_SORT, desc: SORTS[DEFAULT_SORT].desc
@@ -221,6 +231,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
         f.agemax = toInt(p.agemax);
         f.eligible = p.eligible === '1' || p.eligible === 'true';
         f.win = p.win === '1' || p.win === 'true';
+        f.club = p.club === '1' || p.club === 'true';
         f.under = parseTime(p.under);
         f.variable = p.variable === '1' || p.variable === 'true';
         f.highlight = p.highlight || '';
@@ -282,6 +293,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             agemax: f.agemax !== null && f.agemax !== undefined ? String(f.agemax) : null,
             eligible: f.eligible ? '1' : null,
             win: f.win ? '1' : null,
+            club: f.club ? '1' : null,
             under: f.under ? formatTime(f.under) : null,
             variable: f.variable ? '1' : null,
             agmin: f.agMin > 0 ? String(f.agMin) : null,
@@ -446,6 +458,8 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     // Wins, as the team stats count them: first overall or first
                     // of the runner's gender
                     if (f.win && !(r.overallrank === 1 || r.genderrank === 1)) return false;
+                    // MCRRC club races (marked on the race by an admin)
+                    if (f.club && !r.race.clubRace) return false;
                     // Milestone cutoff: strictly under a time
                     if (f.under && !(r.time > 0 && r.time < f.under)) return false;
                     if (ageGradeOn && !(r.agegrade >= f.agMin && r.agegrade <= f.agMax)) return false;
@@ -641,6 +655,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 if (f.under) chips.push({ key: 'under', label: 'Under ' + formatTime(f.under) });
                 if (f.eligible) chips.push({ key: 'eligible', label: 'Counted for team standings' });
                 if (f.win) chips.push({ key: 'win', label: 'Wins (1st overall or gender)' });
+                if (f.club) chips.push({ key: 'club', label: 'MCRRC club races' });
                 return chips;
             }
 
@@ -667,6 +682,7 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 if (kind === 'agerange') { f.agemin = null; f.agemax = null; }
                 if (kind === 'eligible') f.eligible = false;
                 if (kind === 'win') f.win = false;
+                if (kind === 'club') f.club = false;
                 if (kind === 'under') f.under = null;
                 if (kind === 'variable') f.variable = false;
                 if (kind === 'agRange') scope.clearAgeGradeFilter();
@@ -712,13 +728,17 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
             // follows hovering; on a touch screen a tap on a data-tip opens it
             // (and does not open the result), a tap anywhere else in the row
             // opens the result as usual.
-            scope.cellTip = { text: '', open: false };
+            scope.cellTip = { html: '', open: false };
             var tipEl = null;
 
             // What, under this element, has a tooltip to show, and its text
             function tipFor(target, tipsOnly) {
                 if (!target.closest) return null;
-                var tagged = target.closest('.resultlistrow.ir-row [data-tip]');
+                // data-tip-html: formatted (the place's rankings); data-tip: plain
+                var tagged = target.closest('.resultlistrow.ir-row [data-tip], .resultlistrow.ir-row [data-tip-html]');
+                if (tagged && tagged.getAttribute('data-tip-html')) {
+                    return { el: tagged, html: tagged.getAttribute('data-tip-html') };
+                }
                 if (tagged && tagged.getAttribute('data-tip')) {
                     return { el: tagged, text: tagged.getAttribute('data-tip') };
                 }
@@ -734,6 +754,11 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                     text: cell.classList.contains('ir-flags') && meanings.length ? meanings.join(' · ') :
                         cell.innerText.replace(/\s+/g, ' ').trim()
                 };
+            }
+
+            function escapeHtml(text) {
+                return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
             function hideTip() {
@@ -760,7 +785,9 @@ angular.module('mcrrcApp').directive('individualResults', ['ResultsService', 'Me
                 // afresh over this one rather than left on the last
                 $timeout(function () {
                     if (tipEl !== tip.el) return;
-                    scope.cellTip.text = tip.text;
+                    // Formatted tips come from the rankTooltip filter (our own
+                    // markup); plain text is escaped
+                    scope.cellTip.html = $sce.trustAsHtml(tip.html || escapeHtml(tip.text));
                     scope.cellTip.open = true;
                 });
             }

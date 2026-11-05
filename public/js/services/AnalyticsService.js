@@ -3,6 +3,7 @@
 //   Analytics.event(name, params)  an interaction, e.g. 'view_records'
 //   Analytics.pageView(stateName)  a page view; sent only by the transition
 //                                  hook in app.js, once per page
+//   Analytics.setLocation(href)    the page later events belong to (app.js)
 //   Analytics.setUser(user)        the user_role user property
 //
 // gtag is only on the page in production (views/index.ejs, gaEnabled), so
@@ -53,13 +54,24 @@ angular.module('mcrrcApp').service('Analytics', ['$window', '$timeout', function
         }, delay || 1500, false);
     };
 
+    // The address GA reports for this page, and for every event sent from it
+    // until the next page: the page tag (views/partials/ga.ejs) set the first
+    // one, and leaves out the secret in a login or password-reset link
+    function pageLocation(href) {
+        return $window.gaPageLocation ? $window.gaPageLocation(href) : href;
+    }
+
+    this.setLocation = function (href) {
+        gtag('set', { page_location: pageLocation(href || $window.location.href) });
+    };
+
     // page_template is the route's name ('/results/result', not the result's
     // own URL), so every page of a kind can be reported together. Location
     // and title are passed in: the title can arrive after the reader has
     // already moved on (app.js).
     this.pageView = function (stateName, location, title) {
         gtag('event', 'page_view', {
-            page_location: location || $window.location.href,
+            page_location: pageLocation(location || $window.location.href),
             page_title: title || $window.document.title,
             page_template: stateName
         });

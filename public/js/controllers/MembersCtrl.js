@@ -4,10 +4,6 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
     $scope.reqConfig = TeamRequirementsConfig.getForYear(new Date().getFullYear());
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
-        // If columns are already built, move logged-in user's member to top
-        if (user && user.member && user.member._id && $scope.memberListcolumns) {
-            moveLoggedInMemberToTop();
-        }
     });
 
     $scope.$watch('paramModel', function (user) {
@@ -109,10 +105,15 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         $scope.paramModel = localStorageService.get('members.options');
     } else {
         $scope.paramModel = {};
-        $scope.paramModel.sex = '.*';
-        $scope.paramModel.category = '.*';
-        // $scope.paramModel.limit = '';
         $scope.paramModel.memberStatus = 'current';
+    }
+    // The list always loads both sexes and categories; the group buttons
+    // filter in the page. (Older saved options may still carry narrower ones.)
+    $scope.paramModel.sex = '.*';
+    $scope.paramModel.category = '.*';
+    $scope.paramModel.view = $scope.paramModel.view || 'sections';
+    if ($scope.paramModel.group === undefined) {
+        $scope.paramModel.group = 'all';
     }
 
     // =====================================
@@ -356,47 +357,16 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
         }
     }
 
-    function moveLoggedInMemberToTop() {
-        if ($scope.user && $scope.user.member && $scope.user.member._id && $scope.memberListcolumns) {
-            $scope.memberListcolumns.forEach(function (column) {
-                var myIndex = -1;
-                for (var i = 0; i < column.length; i++) {
-                    if (column[i]._id === $scope.user.member._id) {
-                        myIndex = i;
-                        break;
-                    }
-                }
-                if (myIndex > 0) {
-                    var myMember = column.splice(myIndex, 1)[0];
-                    column.unshift(myMember);
-                }
-            });
-        }
-    }
-
+    // The site's one cached list of all members, thumbnails embedded (the
+    // Cards view's photos, and every avatar elsewhere), filtered here by
+    // status rather than asked of the server per filter
     $scope.getMembers = async function (params_) {
-        var params;
-        if (params_ === undefined) {
-            params = {
-                "filters[sex]": $scope.paramModel.sex,
-                "filters[category]": $scope.paramModel.category,
-                "filters[memberStatus]": $scope.paramModel.memberStatus,
-                select: '-bio -personalBests',
-                sort: 'firstname'
-                // limit: $scope.paramModel.limit
-            };
-        } else {
-            params = {
-                "filters[sex]": params_.sex,
-                "filters[category]": params_.category,
-                "filters[memberStatus]": params_.memberStatus,
-                select: '-bio -personalBests',
-                sort: 'firstname'
-            };
-        }
+        var status = (params_ || $scope.paramModel).memberStatus || 'current';
 
-        await MembersService.getMembersWithCacheSupport(params).then(function (members) {
-            $scope.membersList = members;
+        await MembersService.getAllMembersWithThumbs().then(function (members) {
+            $scope.membersList = (members || []).filter(function (m) {
+                return status === 'all' || m.memberStatus === status;
+            });
             $scope.memberListcolumns = [];
             for (var i = 0; i < 4; i++) {
                 $scope.memberListcolumns.push([]);
@@ -412,11 +382,103 @@ angular.module('mcrrcApp.members').controller('MembersController', ['$scope', '$
                 $scope.memberListcolumns[columnIndex].push(person);
             });
 
-            // Move logged-in user's member to the top of their column
-            moveLoggedInMemberToTop();
         });
 
 
+    };
+
+    // =====================================
+    // MEMBER LIST VIEWS ===================
+    // =====================================
+    // Three ways to show the same list: by group (sections), as photo cards,
+    // or A–Z. All filtered here by the group buttons and the search box.
+
+    $scope.memberGroups = [
+        // compact: the filter button's label when the window is too narrow
+        // for the full one (the filter row never wraps)
+        { index: 1, label: 'Open Women', short: 'OW', compact: 'Open W' },
+        { index: 0, label: 'Open Men', short: 'OM', compact: 'Open M' },
+        { index: 3, label: 'Masters Women', short: 'MW', compact: 'Masters W' },
+        { index: 2, label: 'Masters Men', short: 'MM', compact: 'Masters M' }
+    ];
+    $scope.memberSearch = { text: '' };
+    $scope.memberView = { sections: [], cards: [], letters: [], count: 0 };
+
+    function lastName(member) {
+        var parts = (member.lastname || '').trim().split(/\s+/);
+        return (parts[parts.length - 1] || member.firstname || '').toLowerCase();
+    }
+
+    function byLastName(a, b) {
+        return lastName(a).localeCompare(lastName(b)) ||
+            (a.firstname || '').localeCompare(b.firstname || '');
+    }
+
+    function matchesSearch(member, text) {
+        if (!text) return true;
+        return ((member.firstname || '') + ' ' + (member.lastname || '')).toLowerCase().indexOf(text) !== -1;
+    }
+
+    // Rebuilt only when the members, the group or the search change, so the
+    // templates repeat over stable arrays.
+    function rebuildMemberView() {
+        var text = ($scope.memberSearch.text || '').trim().toLowerCase();
+        var group = $scope.paramModel.group;
+        var sections = [];
+        var all = [];
+        $scope.memberGroups.forEach(function (g) {
+            if (group !== 'all' && group !== g.index) return;
+            var members = ($scope.memberListcolumns[g.index] || []).filter(function (m) {
+                m.$group = g;
+                return matchesSearch(m, text);
+            }).sort(byLastName);
+            sections.push({ group: g, members: members, column: $scope.memberListcolumns[g.index] || [] });
+            all = all.concat(members);
+        });
+        all.sort(byLastName);
+
+        var letters = [];
+        var byLetter = {};
+        all.forEach(function (m) {
+            var letter = (lastName(m).charAt(0) || '#').toUpperCase();
+            if (!byLetter[letter]) {
+                byLetter[letter] = { letter: letter, members: [] };
+                letters.push(byLetter[letter]);
+            }
+            byLetter[letter].members.push(m);
+        });
+
+        $scope.memberView = {
+            sections: sections.filter(function (s) { return s.members.length > 0; }),
+            cards: all,
+            letters: letters,
+            count: all.length
+        };
+    }
+
+    $scope.$watchGroup(['memberListcolumns', 'paramModel.group', 'memberSearch.text'], rebuildMemberView);
+
+    $scope.setMemberView = function (view) {
+        $scope.paramModel.view = view;
+    };
+
+    $scope.setMemberGroup = function (group) {
+        $scope.paramModel.group = group;
+    };
+
+    $scope.scrollToLetter = function (letter) {
+        var el = document.getElementById('members-letter-' + letter);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    $scope.memberInitials = function (member) {
+        return ((member.firstname || '').charAt(0) + (member.lastname || '').charAt(0)).toUpperCase();
+    };
+
+    $scope.isMyMember = function (member) {
+        return !!($scope.user && $scope.user.member && $scope.user.member._id && member._id === $scope.user.member._id);
     };
 
     $scope.getMaxColumnSize = function () {
@@ -937,15 +999,197 @@ angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', 
     };
 }]);
 
-angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$uibModalInstance', 'member', function ($scope, $uibModalInstance, member) {
-    $scope.formData = { pictureLink: member.pictureLink || '' };
-    $scope.memberName = member.firstname + ' ' + member.lastname;
+angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$q', '$uibModalInstance', 'member', 'MembersService', function ($scope, $q, $uibModalInstance, member, MembersService) {
+    // Big photos are shrunk in the browser before upload, so phone photos stay
+    // under the server's 10 MB / 100 MP limits and upload quickly. 2000 px is
+    // twice what the server keeps (1000 px), so the server's own resize hides
+    // this step; a photo already within both limits is sent untouched.
+    var RESIZE_ABOVE_SIDE = 2000;
+    var RESIZE_ABOVE_BYTES = 8 * 1024 * 1024;
+    var MAX_BYTES = 10 * 1024 * 1024;
+    var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
-    $scope.savePhoto = function () {
-        $uibModalInstance.close($scope.formData.pictureLink);
+    $scope.memberName = member.firstname + ' ' + member.lastname;
+    $scope.currentUrl = member.pictureLink || null;
+    $scope.previewUrl = null;
+    // 'photo' (choose / upload / remove), then 'thumb' (the round crop)
+    $scope.step = 'photo';
+    $scope.justUploaded = false;
+    $scope.draft = { crop: null };
+    // What changed, for the page: { pictureLink, profileThumbCrop }
+    var result = { pictureLink: member.pictureLink || '', profileThumbCrop: member.profileThumbCrop };
+
+    function hasCrop(c) {
+        return !!(c && isFinite(c.size));
+    }
+    $scope.upload = null;
+    $scope.busy = false;
+    $scope.error = null;
+
+    function sizeText(bytes) {
+        return bytes >= 1024 * 1024 ? (bytes / 1024 / 1024).toFixed(1) + ' MB' : Math.round(bytes / 1024) + ' KB';
+    }
+
+    function setPreview(blob) {
+        if ($scope.previewUrl) URL.revokeObjectURL($scope.previewUrl);
+        $scope.previewUrl = blob ? URL.createObjectURL(blob) : null;
+    }
+
+    // The file, decoded upright (EXIF orientation applied) and drawn at most
+    // RESIZE_ABOVE_SIDE px, as a high quality JPEG; the file itself when it is
+    // already small enough
+    function shrinkIfNeeded(file) {
+        if (!window.createImageBitmap) return $q.when(file);
+        return $q.when(createImageBitmap(file, { imageOrientation: 'from-image' })).then(function (bitmap) {
+            var longSide = Math.max(bitmap.width, bitmap.height);
+            if (longSide <= RESIZE_ABOVE_SIDE && file.size <= RESIZE_ABOVE_BYTES) {
+                bitmap.close && bitmap.close();
+                return file;
+            }
+            var scale = Math.min(1, RESIZE_ABOVE_SIDE / longSide);
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.round(bitmap.width * scale);
+            canvas.height = Math.round(bitmap.height * scale);
+            var ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            bitmap.close && bitmap.close();
+            return $q(function (resolve) {
+                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.92);
+            });
+        }, function () {
+            // The browser could not decode it: let the server judge (and explain)
+            return file;
+        });
+    }
+
+    $scope.onFileChosen = function (file) {
+        $scope.error = null;
+        $scope.confirmRemove = false;
+        var isHeic = /heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
+        if (isHeic) {
+            $scope.error = 'iPhone HEIC photos are not accepted. Export it as JPEG first (see the tips below).';
+            return;
+        }
+        if (ACCEPTED.indexOf(file.type) === -1) {
+            $scope.error = 'Only JPEG, PNG or WebP photos are accepted.';
+            return;
+        }
+        $scope.busy = true;
+        shrinkIfNeeded(file).then(function (blob) {
+            if (blob.size > MAX_BYTES) {
+                $scope.error = 'This photo is over 10 MB. Try a smaller one.';
+                return;
+            }
+            $scope.upload = blob;
+            $scope.chosen = { name: file.name, sizeText: sizeText(blob.size) + (blob !== file ? ' after resizing' : '') };
+            setPreview(blob);
+        }).finally(function () {
+            $scope.busy = false;
+        });
     };
 
+    function failed(res) {
+        $scope.busy = false;
+        $scope.error = (res && res.data && res.data.error) ||
+            (res && res.status === 413 ? 'The file is too large.' : 'The photo could not be saved. Try again.');
+    }
+
+    $scope.savePhoto = function () {
+        if (!$scope.upload) return;
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.uploadMemberPhoto(member._id, $scope.upload).then(function (res) {
+            // Saved: the photo is changed whatever happens in step 2
+            setPreview(null);
+            result = { pictureLink: res.pictureLink, profileThumbCrop: undefined };
+            $scope.currentUrl = res.pictureLink;
+            $scope.upload = null;
+            $scope.justUploaded = true;
+            $scope.busy = false;
+            // The server made the thumbnail already: start from its square
+            openThumbnailStep(res.thumbCrop);
+        }, failed);
+    };
+
+    // ---- Step 2: the thumbnail ----
+
+    // Step 2 starts on the square the current thumbnail is cut from (null:
+    // the cropper's own default), so "unchanged" means keep it as it is
+    var startCrop = null;
+
+    function openThumbnailStep(crop) {
+        startCrop = hasCrop(crop) ? { left: crop.left, top: crop.top, size: crop.size } : null;
+        $scope.draft = { crop: startCrop ? angular.copy(startCrop) : null };
+        $scope.thumbSrc = result.pictureLink;
+        $scope.error = null;
+        $scope.step = 'thumb';
+    }
+
+    // From step 1 without uploading: ask where the current thumbnail is
+    $scope.goToThumbnail = function () {
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.getThumbnailCrop(member._id).then(function (res) {
+            $scope.busy = false;
+            openThumbnailStep(res.crop);
+        }, function () {
+            $scope.busy = false;
+            openThumbnailStep(null);
+        });
+    };
+
+    function near(a, b) {
+        return Math.abs(Number(a) - Number(b)) < 0.002;
+    }
+
+    $scope.thumbChanged = function () {
+        var c = $scope.draft.crop;
+        if (!c) return false;
+        if (!startCrop) return true;
+        return !(near(c.left, startCrop.left) && near(c.top, startCrop.top) && near(c.size, startCrop.size));
+    };
+
+    $scope.backToPhoto = function () {
+        $scope.error = null;
+        $scope.step = 'photo';
+    };
+
+    function sendCrop(crop) {
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.setThumbnailCrop(member._id, crop).then(function (res) {
+            result.profileThumbCrop = res.crop || undefined;
+            $uibModalInstance.close(result);
+        }, function (res) {
+            $scope.busy = false;
+            $scope.error = (res && res.data && res.data.error) || 'The thumbnail could not be saved.';
+        });
+    }
+
+    // Unchanged: the thumbnail stays as it is (automatic, or the crop
+    // already chosen), nothing to send
+    $scope.saveThumbnail = function () {
+        if (!$scope.thumbChanged()) return $uibModalInstance.close(result);
+        var c = $scope.draft.crop;
+        sendCrop({ left: Number(c.left), top: Number(c.top), size: Number(c.size) });
+    };
+
+    $scope.removePhoto = function () {
+        $scope.busy = true;
+        $scope.error = null;
+        MembersService.removeMemberPhoto(member._id).then(function () {
+            $uibModalInstance.close({ pictureLink: '', profileThumbCrop: undefined });
+        }, failed);
+    };
+
+    // After an upload the photo is already saved: closing reports it
     $scope.cancel = function () {
-        $uibModalInstance.dismiss('cancel');
+        setPreview(null);
+        if ($scope.justUploaded) $uibModalInstance.close(result);
+        else $uibModalInstance.dismiss('cancel');
     };
 }]);

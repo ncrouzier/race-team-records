@@ -16,16 +16,19 @@
                         <div class="col-sm-12">
                             <div class="detailscontainer" ng-if="member1">
 
-                                <div class="row text-center">
-                                    <h2 class="bold">{{member1.firstname}} {{member1.lastname}}</h2>
-                                    <h4> ({{member1.dateofbirth | categoryFilter}} {{member1 | memberGenderFilter}}<span
-                                            ng-if="user.role == 'admin' || user.role == 'captain'">, {{member1 |
-                                            memberAgeFilter }}</span>) <i class="hoverhand fa fa-pencil-square-o"
-                                            ng-show="user.role == 'admin'" ng-click="retrieveMemberForEdit(member1)"
-                                            title="edit user"></i><i class="hoverhand fa fa-trash"
-                                            ng-show="user.role == 'admin'" ng-click="removeMember(member1)"
-                                            title="remove user"></i></h4>
-                                    <h6 class="italic"> member <span
+                                <div class="row text-center member-page-header">
+                                    <h2 class="member-name">{{member1.firstname}} {{member1.lastname}}</h2>
+                                    <div class="member-meta">
+                                        <div class="member-attrs">
+                                            <span class="member-attr">{{member1.dateofbirth | categoryFilter}} {{member1 | memberGenderFilter}}</span>
+                                            <span class="member-attr" ng-if="user.role == 'admin' || user.role == 'captain'">Age {{member1 | memberAgeFilter}}</span>
+                                        </div>
+                                        <span class="member-admin-actions" ng-show="user.role == 'admin'">
+                                            <i class="hoverhand fa fa-pencil-square-o" ng-click="retrieveMemberForEdit(member1)" title="edit user"></i>
+                                            <i class="hoverhand fa fa-trash" ng-click="removeMember(member1)" title="remove user"></i>
+                                        </span>
+                                    </div>
+                                    <div class="member-since">Member <span
                                             ng-repeat="membershipdate in member1.membershipDates | orderBy:'start' track by $index"><span
                                                 ng-if="membershipdate.end === undefined">since</span><span
                                                 ng-if="membershipdate.end !== undefined">from</span>
@@ -35,7 +38,7 @@
                                                 ng-if="member1.membershipDates.length >1 && $index < member1.membershipDates.length-2">,
                                             </span><span
                                                 ng-if="member1.membershipDates.length >1  && $index < member1.membershipDates.length-1 && $index !== member1.membershipDates.length-1  && $index === member1.membershipDates.length-2">
-                                                and </span></span></h6>
+                                                and </span></span></div>
                                 </div>
 
                                 <!-- View Toggle Buttons -->
@@ -71,7 +74,7 @@
                                                         <i class="fa fa-users"></i> Compare with:
                                                     </label>
                                                     <ui-select ng-model="selectedComparisonMember" theme="select2"
-                                                        style="min-width: 250px;" on-select="loadComparison($item)">
+                                                        class="stats-year-select h2h-member-select" on-select="loadComparison($item)">
                                                         <ui-select-match placeholder="Select team member...">
 
                                                             {{$select.selected.firstname}}
@@ -101,7 +104,7 @@
                                                     </ui-select>
                                                     <button type="button"
                                                         ng-if="member2 && topTeamMembers && topTeamMembers.length > 0"
-                                                        class="btn btn-sm btn-primary"
+                                                        class="btn member-edit-btn"
                                                         ng-click="showTeamMembersList(member1)">
                                                         <i class="fa fa-list"></i> View All Team Members
                                                     </button>
@@ -137,7 +140,7 @@
                                                         <i class="fa fa-calendar"></i> Year:
                                                     </label>
                                                     <ui-select ng-model="yearFilter.selected" ng-change="onYearChange()"
-                                                        theme="select2" style="min-width: 90px;">
+                                                        theme="select2" class="stats-year-select h2h-year-select">
                                                         <ui-select-match
                                                             placeholder="Select a year">{{$select.selected}}</ui-select-match>
                                                         <ui-select-choices repeat="year in yearsList">
@@ -161,23 +164,23 @@
                                                         ({{topTeamMembers.length}}) </h4>
                                                     <!-- Gender Filter -->
                                                     <div class="gender-filter-container">
-                                                        <div class="btn-group" role="group">
-                                                            <button type="button" class="btn btn-sm"
-                                                                ng-class="{'btn-primary': !teamMemberGenderFilter, 'btn-outline-primary': teamMemberGenderFilter}"
+                                                        <div class="h2h-gender-filter" role="group">
+                                                            <button type="button" class="mcrrc-btn"
+                                                                ng-class="{'is-on': !teamMemberGenderFilter}"
                                                                 ng-click="setTeamMemberGenderFilter(null)">
                                                                 <i class="fa fa-users"></i>
                                                                 All Members
                                                             </button>
-                                                            <button type="button" class="btn btn-sm"
-                                                                ng-class="{'btn-primary': teamMemberGenderFilter === 'Female', 'btn-outline-primary': teamMemberGenderFilter !== 'Female'}"
+                                                            <button type="button" class="mcrrc-btn"
+                                                                ng-class="{'is-on': teamMemberGenderFilter === 'Female'}"
                                                                 ng-click="setTeamMemberGenderFilter('Female')"
                                                                 tooltip-append-to-body="true" tooltip-placement="top"
                                                                 uib-tooltip-html="'Show only female team members'">
                                                                 <i class="fa fa-venus"></i>
                                                                 Women Only
                                                             </button>
-                                                            <button type="button" class="btn btn-sm"
-                                                                ng-class="{'btn-primary': teamMemberGenderFilter === 'Male', 'btn-outline-primary': teamMemberGenderFilter !== 'Male'}"
+                                                            <button type="button" class="mcrrc-btn"
+                                                                ng-class="{'is-on': teamMemberGenderFilter === 'Male'}"
                                                                 ng-click="setTeamMemberGenderFilter('Male')"
                                                                 tooltip-append-to-body="true" tooltip-placement="top"
                                                                 uib-tooltip-html="'Show only male team members'">
@@ -250,8 +253,8 @@
                                                                 <td>
                                                                     <span
                                                                         ng-class="{'past-member' : member.memberStatus === 'past'}"
-                                                                        class="hoverhand"
-                                                                        ng-click="goToMemberDetail(member)"><strong>{{member.firstname}}
+                                                                        class="hoverhand h2h-member-cell"
+                                                                        ng-click="goToMemberDetail(member)"><member-avatar member="member" size="30"></member-avatar><strong>{{member.firstname}}
                                                                             {{member.lastname}}</strong>
                                                                         {{member.memberStatus === 'past' ? '(past)' :
                                                                         ''}}</span>
@@ -271,7 +274,7 @@
                                                                         number:1}}%</strong>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <button class="btn btn-primary btn-sm"
+                                                                    <button class="btn member-edit-btn"
                                                                         ng-click="loadComparison(member)"
                                                                         title="Compare head-to-head">
                                                                         <i class="fa fa-trophy"></i> Compare
@@ -316,6 +319,7 @@
                                                 <div class="row text-center" ng-if="sharedRaces.length > 0">
                                                     <!-- Member 1 -->
                                                     <div class="col-md-4">
+                                                        <member-avatar class="h2h-photo h2h-photo-1" member="member1" size="88"></member-avatar>
                                                         <h3 class="member-1-color">{{member1.firstname}}
                                                             {{member1.lastname}}</h3>
                                                         <div class="win-count">
@@ -339,6 +343,8 @@
 
                                                     <!-- Member 2 -->
                                                     <div class="col-md-4">
+                                                        <member-avatar class="h2h-photo h2h-photo-2 hoverhand" member="member2" size="88"
+                                                            ng-click="goToMemberHeadToHead(member2)"></member-avatar>
                                                         <h3 class="member-2-color hoverhand"
                                                             tooltip-append-to-body="true" tooltip-placement="top"
                                                             uib-tooltip-html="'View head-to-head records for {{member2.firstname}} {{member2.lastname}}'"

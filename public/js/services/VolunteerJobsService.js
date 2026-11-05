@@ -1,15 +1,7 @@
-angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular', '$uibModal', '$q', 'SystemService', 'DexieService', 'MemoryCacheService', function (Restangular, $uibModal, $q, SystemService, DexieService, MemoryCacheService) {
+angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular', '$uibModal', '$q', 'DexieService', 'DataCacheService', function (Restangular, $uibModal, $q, DexieService, DataCacheService) {
 
     var factory = {};
     var volunteerjobs = Restangular.all('volunteerjobs');
-
-    var CACHE_NAMES = {
-        VOLUNTEER_JOBS: 'volunteerJobs'
-    };
-
-    async function getKey(store, key) {
-        return await store.get(key);
-    }
 
     // =====================================
     // API CALLS ============================
@@ -23,75 +15,68 @@ angular.module('mcrrcApp.results').factory('VolunteerJobsService', ['Restangular
         });
     };
 
-    // Volunteer jobs at one race, for the race page (logged-in users only).
+    // Volunteer jobs at one race, for the race page.
     // Resolves with [] rather than failing, so the page just omits the section.
+    // Picked from the full list this browser keeps (allJobs, below): the race's
+    // jobs with the fields the page shows, by date, last name, then id.
+    function jobsForRace(jobs, raceId) {
+        return jobs.filter(function (job) {
+            return job.race && String(job.race._id) === String(raceId);
+        }).map(function (job) {
+            var m = job.member || {};
+            return {
+                _id: job._id,
+                member: { _id: m._id, firstname: m.firstname, lastname: m.lastname, username: m.username },
+                jobDate: job.jobDate,
+                description: job.description
+            };
+        }).sort(function (a, b) {
+            var byDate = new Date(a.jobDate) - new Date(b.jobDate);
+            if (byDate) return byDate;
+            var la = a.member.lastname || '', lb = b.member.lastname || '';
+            if (la !== lb) return la < lb ? -1 : 1;
+            return String(a._id) < String(b._id) ? -1 : 1;
+        });
+    }
+
     factory.getRaceVolunteerJobs = function (raceId) {
         if (!raceId) return $q.resolve([]);
-        return Restangular.one('races', raceId).getList('volunteerjobs').then(function (jobs) {
-            return jobs.plain ? jobs.plain() : jobs;
-        }, function () {
+        return allJobs.get().then(function (jobs) {
+            return angular.isArray(jobs) ? jobsForRace(jobs, raceId) : [];
+        }).catch(function () {
             return [];
         });
     };
 
-    // Get all volunteer jobs with cache support (memory -> IndexedDB -> API)
-    // Wrapped in $q.resolve() so the returned promise is always digest-aware
-    factory.getVolunteerJobsWithCacheSupport = function (params) {
-        return $q.resolve().then(async function () {
-            var sysinfo = await SystemService.getSystemInfo('mcrrc');
-            var date = new Date(sysinfo.volunteerJobUpdate);
+    // Every volunteer job, newest first (public, like the volunteering stats):
+    // answered at once from the copy this browser keeps, which is replaced in
+    // the background when the jobs change (DataCacheService)
+    var allJobs = DataCacheService.create({
+        name: 'volunteerjobs',
+        stampFields: ['volunteerJobUpdate'],
+        readStore: function () {
+            return $q.when(DexieService.open()).then(function () {
+                return DexieService.volunteerjobs.get('all');
+            }).then(function (stored) {
+                if (!stored || !stored.data) return null;
+                return {
+                    stamp: DataCacheService.stampOf(JSON.parse(stored.date)),
+                    data: Restangular.restangularizeCollection(null, JSON.parse(stored.data), 'volunteerjobs', true)
+                };
+            });
+        },
+        writeStore: function (entry) {
+            return $q.when(DexieService.volunteerjobs.put({
+                instance: 'all', date: JSON.stringify(entry.stamp), data: JSON.stringify(entry.data)
+            }));
+        },
+        fetchFresh: function () {
+            return volunteerjobs.getList({ sort: '-jobDate' });
+        }
+    });
 
-            var db = DexieService;
-            await db.open();
-
-            var key = 'all';
-            var memKey = key + ':' + JSON.stringify(params || {});
-
-            // Check in-memory cache first
-            var memCacheEntry = MemoryCacheService.get(CACHE_NAMES.VOLUNTEER_JOBS, memKey);
-            if (memCacheEntry && memCacheEntry.date && date.getTime() === new Date(memCacheEntry.date).getTime()) {
-                return memCacheEntry.data;
-            }
-
-            // Try IndexedDB
-            var cache;
-            try {
-                cache = await getKey(db.volunteerjobs, key);
-            } catch (error) {
-                cache = undefined;
-            }
-
-            var cacheDate;
-            if (cache && cache.date) {
-                try {
-                    cacheDate = new Date(JSON.parse(cache.date));
-                } catch (e) {
-                    cacheDate = null;
-                }
-            }
-
-            var cacheData;
-            if (cache === undefined || !cacheDate || date.getTime() > cacheDate.getTime()) {
-                // Fetch from API
-                var jobsFromDatabase = await volunteerjobs.getList(params);
-                try {
-                    var jsonDate = JSON.stringify(date);
-                    db.volunteerjobs.put({ instance: key, date: jsonDate, data: JSON.stringify(jobsFromDatabase) }).catch(function () { });
-                } catch (error) {
-                    // Don't throw, just log
-                }
-
-                cacheData = { date: date, data: jobsFromDatabase };
-                MemoryCacheService.set(CACHE_NAMES.VOLUNTEER_JOBS, memKey, cacheData);
-                return jobsFromDatabase;
-            } else {
-                // Use IndexedDB cache
-                var data = Restangular.restangularizeCollection(null, JSON.parse(cache.data), 'volunteerjobs', true);
-                cacheData = { date: date, data: data };
-                MemoryCacheService.set(CACHE_NAMES.VOLUNTEER_JOBS, memKey, cacheData);
-                return data;
-            }
-        });
+    factory.getVolunteerJobsWithCacheSupport = function () {
+        return allJobs.get();
     };
 
     // Get single volunteer job

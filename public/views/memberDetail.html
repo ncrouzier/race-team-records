@@ -3,39 +3,37 @@
         <div class="col-sm-12">
             <div class="detailscontainer" ng-if="currentMember" style="position: relative;">
 
-                <!-- Achievement icons -->
-                <div ng-if="currentMember.achievements.length > 0"
-                    style="position: absolute; top: 10px; right: 15px; z-index: 1; background:#006484; border-radius: 6px; padding: 4px 6px; display: inline-flex; align-items: center; gap: 6px;">
-                    <span ng-repeat="ach in currentMember.achievements" tooltip-append-to-body="true"
-                        tooltip-placement="top" uib-tooltip-html="ach.text"
-                        style="display: inline-flex; align-items: center;">
-                        <a ng-if="ach.name === 'ROY' || ach.name === 'MUTROY'" ui-sref="/stats/awards"
-                            style="display: inline-flex; align-items: center;">
-                            <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
-                                style="height: 32px; vertical-align: top;">
-                            <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
-                                style="font-size: 32px;" ng-style="{ 'color': ach.value.color || '#333' }"></i>
-                            <span ng-if="!ach.value.img && !ach.value.icon" class="label label-default">{{ach.name}}</span>
+                <!-- Achievements: icon + short caption ("ROY 2017"); full text in the tooltip -->
+                <div class="member-awards" ng-if="currentMember.achievements.length > 0">
+                    <span class="member-awards-title">Awards</span>
+                    <div class="member-awards-list">
+                        <a ng-repeat="ach in currentMember.achievements" class="member-award"
+                            ui-sref="/stats/awards" tooltip-append-to-body="true" tooltip-placement="bottom"
+                            uib-tooltip-html="ach.text">
+                            <span class="member-award-icon">
+                                <img ng-if="ach.value.img" ng-src="{{ach.value.img}}" alt="{{ach.name}}">
+                                <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
+                                    ng-style="{ 'color': ach.value.color || '#fff' }"></i>
+                                <span ng-if="!ach.value.img && !ach.value.icon">{{ach.name}}</span>
+                            </span>
+                            <span class="member-award-caption">{{ach.name}} {{ach.text | achievementYear}}</span>
                         </a>
-                        <span ng-if="ach.name !== 'ROY' && ach.name !== 'MUTROY'">
-                            <img ng-if="ach.value.img" ng-src="{{ach.value.img}}"
-                                style="height: 32px; vertical-align: top;">
-                            <i ng-if="!ach.value.img && ach.value.icon" class="fa {{ach.value.icon}}"
-                                style="font-size: 32px;" ng-style="{ 'color': ach.value.color || '#333' }"></i>
-                            <span ng-if="!ach.value.img && !ach.value.icon" class="label label-default">{{ach.name}}</span>
-                        </span>
-                    </span>
+                    </div>
                 </div>
 
-                <div class="row text-center">
-                    <h2 class="bold">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
-                    <h4> ({{currentMember.dateofbirth | categoryFilter}} {{currentMember | memberGenderFilter}}<span
-                            ng-if="user.role == 'admin' || user.role == 'captain'">, {{currentMember | memberAgeFilter
-                            }}</span>) <i class="hoverhand fa fa-pencil-square-o" ng-show="user.role == 'admin'"
-                            ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i><i
-                            class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
-                            ng-click="removeMember(currentMember)" title="remove user"></i></h4>
-                    <h6 class="italic"> member <span
+                <div class="row text-center member-page-header">
+                    <h2 class="member-name">{{currentMember.firstname}} {{currentMember.lastname}}</h2>
+                    <div class="member-meta">
+                        <div class="member-attrs">
+                            <span class="member-attr">{{currentMember.dateofbirth | categoryFilter}} {{currentMember | memberGenderFilter}}</span>
+                            <span class="member-attr" ng-if="user.role == 'admin' || user.role == 'captain'">Age {{currentMember | memberAgeFilter}}</span>
+                        </div>
+                        <span class="member-admin-actions" ng-show="user.role == 'admin'">
+                            <i class="hoverhand fa fa-pencil-square-o" ng-click="retrieveMemberForEdit(currentMember)" title="edit user"></i>
+                            <i class="hoverhand fa fa-trash" ng-click="removeMember(currentMember)" title="remove user"></i>
+                        </span>
+                    </div>
+                    <div class="member-since">Member <span
                             ng-repeat="membershipdate in currentMember.membershipDates | orderBy:'start' track by $index"><span
                                 ng-if="membershipdate.end === undefined">since</span><span
                                 ng-if="membershipdate.end !== undefined">from</span> {{membershipdate.start |
@@ -44,7 +42,7 @@
                                 ng-if="currentMember.membershipDates.length >1 && $index < currentMember.membershipDates.length-2">,
                             </span><span
                                 ng-if="currentMember.membershipDates.length >1  && $index < currentMember.membershipDates.length-1 && $index !== currentMember.membershipDates.length-1  && $index === currentMember.membershipDates.length-2">
-                                and </span></span></h6>
+                                and </span></span></div>
                 </div>
 
                 <!-- View Toggle Buttons -->
@@ -71,19 +69,6 @@
 
                 <!-- Bio and Results Content -->
                 <div class="row">
-                    <div class="col-sm-7">
-                        <div class="row row-no-left-margin">
-                            <h3 style="display: flex; align-items: center; gap: 10px;">
-                                Member Bio:
-                                <button class="btn btn-default btn-xs"
-                                    ng-show="user.role === 'admin' || (user.member._id && user.member._id === currentMember._id)"
-                                    ng-click="editMyBio(currentMember)">
-                                    <i class="fa fa-pencil"></i> Edit Bio
-                                </button>
-                            </h3>
-                            <span class="black" ng-bind-html="currentMember.bio"></span>
-                        </div>
-                    </div>
                     <div class="col-sm-5">
                         <div class="row ">
                             <div class="col-sm-12">
@@ -95,28 +80,46 @@
                                         ng-if="currentMember.pictureLink && currentMember.pictureLink !== ''"
                                         ng-src="{{currentMember.pictureLink}}" / alt="Member's Picture">
                                 </div>
-                                <button class="btn btn-default btn-xs" style="margin-top: 8px;"
+                                <div class="member-photo-actions">
+                                    <button class="btn member-edit-btn member-edit-photo-btn"
+                                        ng-show="user.role === 'admin' || (user.member._id && user.member._id === currentMember._id)"
+                                        ng-click="editMyPhoto(currentMember)">
+                                        <i class="fa fa-camera"></i> Edit Photo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="member-card member-bio-card">
+                            <div class="member-card-header">
+                                <h3>About {{currentMember.firstname}}</h3>
+                                <button class="btn member-edit-btn"
                                     ng-show="user.role === 'admin' || (user.member._id && user.member._id === currentMember._id)"
-                                    ng-click="editMyPhoto(currentMember)">
-                                    <i class="fa fa-camera"></i> Edit Photo
+                                    ng-click="editMyBio(currentMember)">
+                                    <i class="fa fa-pencil"></i> Edit Bio
                                 </button>
                             </div>
+                            <div class="member-bio" ng-bind-html="currentMember.bio" show-more="800" show-more-watch="currentMember.bio"></div>
                         </div>
                     </div>
                 </div>
                 <div id="member-list" class="row">
                     <div class="col-md-12">
-                        <h3 style="margin-top:10px">{{currentMember.firstname}}'s Results ({{(currentMemberResultList |
-                            resultSuperFilter: searchQuery:paramModelMember.racetype).length}}):</h3>
-                        <div class="btn-group " style="padding-bottom: 4px;">
+                        <div class="member-card member-results-card">
+                        <div class="member-card-header">
+                            <h3>{{currentMember.firstname}}'s Results</h3>
+                            <span class="member-results-count">{{(currentMemberResultList |
+                                resultSuperFilter: searchQuery:paramModelMember.racetype).length}} races</span>
+                        </div>
+                        <div class="btn-group member-results-filters">
                             <div class="input-wrapper">
                                 <input ng-model="searchQuery" class="form-control" type="text"
-                                    placeholder="Filter results" style="width: 300px; display:inline;">
+                                    placeholder="Filter results">
                                 <span class="searchclear fa fa-times-circle" ng-show="searchQuery"
                                     ng-click="searchQuery=''"></span>
                             </div>
-                            <ui-select ng-model="paramModelMember.racetype" theme="select2"
-                                style="min-width: 300px; bottom: 2px;">
+                            <ui-select ng-model="paramModelMember.racetype" theme="select2">
                                 <ui-select-match placeholder="Select a race type">{{$select.selected.name}}
                                     ({{$select.selected.surface}})</ui-select-match>
                                 <ui-select-choices
@@ -224,21 +227,19 @@
                                                 title="view result"></i></a>
                                     </div>
 
-                                    <div class="col-sm-1" ng-show="user.role == 'admin'">
-                                        <span class="pull-right"><i class="hoverhand fa fa-pencil-square-o"
-                                                ng-show="user.role == 'admin'" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)"
-                                                title="edit result"></i><i class="hoverhand fa fa-times"
-                                                ng-show="user.role == 'admin'" ng-click="$event.stopPropagation(); removeResult(result)"
-                                                title="remove result"></i> </span>
+                                    <div class="col-sm-1 site-admin-actions site-admin-actions-end" ng-show="user.role == 'admin'">
+                                        <button type="button" class="mcrrc-btn site-icon-btn is-compact" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)"
+                                            title="Edit result"><i class="fa fa-pencil"></i></button>
+                                        <button type="button" class="mcrrc-btn site-icon-btn is-compact is-danger" ng-click="$event.stopPropagation(); removeResult(result)"
+                                            title="Remove result"><i class="fa fa-trash"></i></button>
                                     </div>
                                 </div>
                             </li>
                         </ul>
-                    </div>
-                </div>
-                <div class="row text-center">
-                    <div class="col-md-12">
-                        <dir-pagination-controls></dir-pagination-controls>
+                        <div class="text-center">
+                            <dir-pagination-controls></dir-pagination-controls>
+                        </div>
+                        </div>
                     </div>
                 </div>
             </div>

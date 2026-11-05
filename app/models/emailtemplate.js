@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 // rather than a copy of the original text. That way improvements to the
 // defaults reach anyone who has not overridden them.
 const emailTemplateSchema = mongoose.Schema({
-    // 'application_approval' | 'application_rejection'
+    // 'application_confirmation' | 'application_approval' | 'application_rejection'
     key: { type: String, required: true, unique: true, index: true },
     subject: { type: String, required: true },
     body: { type: String, required: true },

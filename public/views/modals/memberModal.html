@@ -1,19 +1,22 @@
-<div class="modal-header">
-    <h3 ng-show="editmode" class="modal-title">Edit Member</h3>
-    <h3 ng-show="!editmode" class="modal-title">Add Member</h3>
+<div class="site-modal member-modal">
+<div class="modal-header site-modal-header">
+    <div>
+        <h3 class="modal-title">{{ editmode ? 'Edit member' : 'Add member' }}</h3>
+        <p class="site-modal-subtitle" ng-if="editmode && formData.firstname">{{formData.firstname}} {{formData.lastname}}</p>
+    </div>
 </div>
 <div class="modal-body" style="overflow: visible;">
     <form name="formmember">
         <div class="row">
             <div class="col-sm-6">
                 <div class="form-group" ng-class="{ 'has-error' : formmember.firstname.$invalid && !formmember.firstname.$pristine}">
-                    <label class="text-left">Firstname:</label>
+                    <label class="text-left">Firstname</label>
                     <input type="text" class="form-control input-md text-left" name="firstname" ng-model="formData.firstname" required>
                 </div>
             </div>
             <div class="col-sm-6">
                 <div class="form-group" ng-class="{ 'has-error' : formmember.lastname.$invalid && !formmember.lastname.$pristine}">
-                    <label class="text-left">Lastname:</label>
+                    <label class="text-left">Lastname</label>
                     <input type="text" class="form-control input-md text-left" name="lastname" ng-model="formData.lastname" required>
                 </div>
             </div>
@@ -21,7 +24,7 @@
         <div class="row">
             <div class="col-sm-6">
                 <div class="form-group">
-                    <label class="text-left">Username:</label>
+                    <label class="text-left">Username</label>
                     <input type="text" class="form-control input-md text-left" name="username" ng-model="formData.username" placeholder="Leave empty for default (firstname+lastname)">
                 </div>
             </div>
@@ -29,7 +32,7 @@
         <div class="row">
             <div class="col-sm-12">
                 <div class="form-group">
-                    <label class="text-left">Alternate Full Names:</label>
+                    <label class="text-left">Alternate Full Names</label>
                     <div class="bubble-input">
                         <div class="bubble-container" ng-show="formData.alternateFullNames.length >0">
                             <div class="bubble" ng-repeat="name in formData.alternateFullNames track by $index">
@@ -47,7 +50,7 @@
         </div>
         <div class="row">
             <div class="col-sm-6">
-                <label class="text-left">Date of Birth:</label>
+                <label class="text-left">Date of Birth</label>
                 <div class="row">
                     <div class="col-sm-12">
                         <p class="input-group">
@@ -61,7 +64,7 @@
                 <div class="row">
                     <div class="col-sm-12">
                         {{formData.firstname}} is a <span class="bold">{{formData.memberStatus}}</span> member!<br>
-                        <label class="text-left">Membership Dates:</label> <i class="hoverhand fa fa-plus" style="color:#03C03C;"  ng-click="addMembershipDates()" title="Add member"></i><br>
+                        <label class="text-left">Membership Dates</label> <i class="hoverhand fa fa-plus" style="color:#03C03C;"  ng-click="addMembershipDates()" title="Add member"></i><br>
                         <div ng-repeat="membershipdate in formData.membershipDates track by $index" class="row" style="margin-bottom:5px" >
                           <div class="col-sm-9 daterangecol">
                             <div class=" input-group">
@@ -87,43 +90,34 @@
             <div class="col-sm-6">
               <div class="row">
                 <div class="col-sm-12">
-                    <label class="text-left">Sex:</label>
+                    <label class="text-left">Sex</label>
                     <br>
                     <div class="btn-group" >
-                        <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Male'" required>Men</label>
-                        <label class="btn btn-primary" ng-model="formData.sex" uib-btn-radio="'Female'" required>Women</label>
+                        <label class="btn btn-default" ng-model="formData.sex" uib-btn-radio="'Male'" required>Men</label>
+                        <label class="btn btn-default" ng-model="formData.sex" uib-btn-radio="'Female'" required>Women</label>
                     </div>
                 </div>
               </div>
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="text-left">Member bio:</label>
+                        <label class="text-left">Member bio</label>
                         <textarea class="form-control" ng-model="formData.bio" rows="3"></textarea>
                     </div>
                 </div>
-
-                <div class="row">
-                    <div class="col-sm-10">
-                        <label class="text-left">Picture Link:</label>
-                        <input type="text" class="form-control input-md text-left" name="pictureLink" ng-model="formData.pictureLink">
-                    </div>
-                    <div class="col-sm-2">
-                    <img src="{{formData.pictureLink}}" style="max-width:50px;max-height:50px;margin-top:20px;">
-                    </div>
-                </div>
+                <!-- The photo is uploaded from the member's page (Edit photo), not set here -->
             </div>
         </div>
         <!-- Achievements -->
         <div class="row" style="margin-top: 10px;">
             <div class="col-sm-12">
-                <label class="text-left">Achievements:</label>
+                <label class="text-left">Achievements</label>
                 <i class="hoverhand fa fa-plus" style="color:#03C03C;" ng-click="addAchievement()"
                     title="Add achievement"></i>
                 <div ng-repeat="ach in formData.achievements track by $index"
                     style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 8px; background: #f9f9f9;">
                     <div class="row">
                         <div class="col-sm-4">
-                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Name:</label>
+                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Name</label>
                             <div class="input-group">
                                 <div class="input-group-btn" uib-dropdown>
                                     <button type="button" class="btn btn-default" uib-dropdown-toggle>
@@ -139,13 +133,13 @@
                             </div>
                         </div>
                         <div class="col-sm-5">
-                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Text:</label>
+                            <label class="text-left" style="font-weight: normal; font-size: 12px;">Text</label>
                             <input type="text" class="form-control" ng-model="ach.text"
                                 placeholder="Description text">
                         </div>
                         <div class="col-sm-3">
                             <label class="text-left" style="font-weight: normal; font-size: 12px;">Icon
-                                Value:</label>
+                                Value</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" ng-model="ach.valueJson"
                                     placeholder='{"icon":"fa-trophy"}'>
@@ -164,8 +158,12 @@
         </div>
     </form>
 </div>
-<div class="modal-footer">
-    <button ng-show="editmode" type="submit" class="btn btn-primary" ng-click="editMember()" ng-disabled="formmember.$invalid">Edit Member</button>
-    <button ng-show="!editmode" type="submit" class="btn btn-primary" ng-click="addMember()" ng-disabled="formmember.$invalid">Add Member</button>
-    <button class="btn btn-danger" ng-click="cancel()">Cancel</button>
+<div class="modal-footer site-modal-footer">
+    <button type="button" class="mcrrc-btn" ng-click="cancel()">Cancel</button>
+    <span class="site-modal-footer-spacer"></span>
+    <button ng-show="editmode" type="submit" class="member-primary-btn" ng-click="editMember()" ng-disabled="formmember.$invalid">
+        <i class="fa fa-check"></i> Save changes</button>
+    <button ng-show="!editmode" type="submit" class="member-primary-btn" ng-click="addMember()" ng-disabled="formmember.$invalid">
+        <i class="fa fa-plus"></i> Add member</button>
+</div>
 </div>

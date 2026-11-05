@@ -1,34 +1,44 @@
-<div class="container">
+<div class="jumbotron account-page">
+    <div class="racetypes-content">
 
-    <div class="page-header text-center">
-        <h1>My Account</h1>
-        <a href="/logout" class="btn btn-default btn-sm">Logout</a>
-    </div>
+        <div class="member-card acc-intro">
+            <div>
+                <h2 class="acc-title">My Account</h2>
+                <p class="acc-subtitle">Your login details for the site.</p>
+            </div>
+            <a href="/logout" class="mcrrc-btn"><i class="fa fa-sign-out"></i> Log out</a>
+        </div>
 
-    <div class="row">
+        <div class="row">
 
-        <!-- PROFILE INFORMATION -->
-        <div class="col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 style="margin: 0;"><span class="fa fa-user"></span> Profile</h3>
-                </div>
-                <div class="panel-body">
-
-                    <!-- Display mode -->
-                    <div ng-hide="editingProfile">
-                        <p>
-                            <strong>Name</strong>: {{user.username}}<br>
-                            <strong>Email</strong>: {{user.email}}<br>
-                            <span ng-show="user.role"><strong>Role</strong>: {{user.role}}</span>
-                        </p>
-                        <button class="btn btn-primary btn-sm" ng-click="startEditProfile()">
-                            <i class="fa fa-pencil"></i> Edit Profile
+            <!-- PROFILE INFORMATION -->
+            <div class="col-sm-6">
+                <div class="member-card">
+                    <div class="member-card-header">
+                        <h3><i class="fa fa-user"></i> Profile</h3>
+                        <button class="mcrrc-btn" ng-hide="editingProfile" ng-click="startEditProfile()">
+                            <i class="fa fa-pencil"></i> Edit
                         </button>
                     </div>
 
+                    <!-- Display mode -->
+                    <dl class="acc-details" ng-hide="editingProfile">
+                        <div>
+                            <dt>Name</dt>
+                            <dd>{{user.username}}</dd>
+                        </div>
+                        <div>
+                            <dt>Email</dt>
+                            <dd>{{user.email}}</dd>
+                        </div>
+                        <div ng-show="user.role">
+                            <dt>Role</dt>
+                            <dd><span class="site-tag site-tag-info">{{user.role}}</span></dd>
+                        </div>
+                    </dl>
+
                     <!-- Edit mode -->
-                    <div ng-show="editingProfile">
+                    <div ng-show="editingProfile" class="acc-form">
                         <div ng-show="profileMessage" class="alert"
                             ng-class="{'alert-success': profileSuccess, 'alert-danger': !profileSuccess}">
                             {{profileMessage}}
@@ -46,64 +56,63 @@
                                 <input type="email" class="form-control" name="email"
                                     ng-model="editData.email" required>
                             </div>
-                            <button type="submit" class="btn btn-success btn-sm"
-                                ng-disabled="formEditProfile.$invalid">
-                                <i class="fa fa-check"></i> Save
-                            </button>
-                            <button type="button" class="btn btn-default btn-sm" ng-click="cancelEditProfile()">
-                                Cancel
-                            </button>
+                            <div class="acc-actions">
+                                <button type="submit" class="member-primary-btn" ng-disabled="formEditProfile.$invalid">
+                                    <i class="fa fa-check"></i> Save
+                                </button>
+                                <button type="button" class="mcrrc-btn" ng-click="cancelEditProfile()">Cancel</button>
+                            </div>
                         </form>
                     </div>
-
                 </div>
             </div>
-        </div>
 
-        <!-- CHANGE PASSWORD -->
-        <div class="col-sm-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 style="margin: 0;"><span class="fa fa-lock"></span> Change Password</h3>
-                </div>
-                <div class="panel-body">
-                    <div ng-show="passwordMessage" class="alert"
-                        ng-class="{'alert-success': passwordSuccess, 'alert-danger': !passwordSuccess}">
-                        {{passwordMessage}}
+            <!-- CHANGE PASSWORD -->
+            <div class="col-sm-6">
+                <div class="member-card">
+                    <div class="member-card-header">
+                        <h3><i class="fa fa-lock"></i> Change Password</h3>
                     </div>
-                    <form name="formChangePassword" ng-submit="changePassword()">
-                        <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" class="form-control" name="currentPassword"
-                                ng-model="passwordData.currentPassword" required>
+                    <div class="acc-form">
+                        <div ng-show="passwordMessage" class="alert"
+                            ng-class="{'alert-success': passwordSuccess, 'alert-danger': !passwordSuccess}">
+                            {{passwordMessage}}
                         </div>
-                        <div class="form-group" ng-class="{'has-error': formChangePassword.newPassword.$dirty && formChangePassword.newPassword.$invalid}">
-                            <label>New Password</label>
-                            <input type="password" class="form-control" name="newPassword"
-                                ng-model="passwordData.newPassword" required
-                                ng-minlength="8" maxlength="64">
-                            <p class="help-block" ng-show="formChangePassword.newPassword.$dirty && formChangePassword.newPassword.$error.minlength">
-                                Password must be at least 8 characters.
-                            </p>
-                        </div>
-                        <div class="form-group">
-                            <label>Confirm New Password</label>
-                            <input type="password" class="form-control" name="confirmPassword"
-                                ng-model="passwordData.confirmPassword" required>
-                        </div>
-                        <div ng-show="passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword"
-                            class="alert alert-danger">
-                            Passwords do not match.
-                        </div>
-                        <button type="submit" class="btn btn-warning btn-sm"
-                            ng-disabled="formChangePassword.$invalid || passwordData.newPassword !== passwordData.confirmPassword">
-                            <i class="fa fa-key"></i> Change Password
-                        </button>
-                    </form>
+                        <form name="formChangePassword" ng-submit="changePassword()">
+                            <div class="form-group">
+                                <label>Current password</label>
+                                <input type="password" class="form-control" name="currentPassword"
+                                    ng-model="passwordData.currentPassword" required>
+                            </div>
+                            <div class="form-group" ng-class="{'has-error': formChangePassword.newPassword.$dirty && formChangePassword.newPassword.$invalid}">
+                                <label>New password</label>
+                                <input type="password" class="form-control" name="newPassword"
+                                    ng-model="passwordData.newPassword" required
+                                    ng-minlength="8" maxlength="64">
+                                <p class="help-block" ng-show="formChangePassword.newPassword.$dirty && formChangePassword.newPassword.$error.minlength">
+                                    Password must be at least 8 characters.
+                                </p>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm new password</label>
+                                <input type="password" class="form-control" name="confirmPassword"
+                                    ng-model="passwordData.confirmPassword" required>
+                            </div>
+                            <div ng-show="passwordData.newPassword && passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword"
+                                class="alert alert-danger">
+                                Passwords do not match.
+                            </div>
+                            <div class="acc-actions">
+                                <button type="submit" class="member-primary-btn"
+                                    ng-disabled="formChangePassword.$invalid || passwordData.newPassword !== passwordData.confirmPassword">
+                                    <i class="fa fa-key"></i> Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
+
         </div>
-
     </div>
-
 </div>

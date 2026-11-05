@@ -1,11 +1,10 @@
-<div class="jumbotron">
+<div class="jumbotron crf-list-page ta-list-page">
 
     <div class="feed-card">
         <div class="feed-card-header">
             <h4>
                 <i class="fa fa-user-plus"></i> Team Applications
-                <button class="crf-chip crf-chip-ghost" ng-click="editEmailTemplates()"
-                    style="margin-left: auto;"
+                <button class="crf-chip crf-chip-ghost ta-header-first" ng-click="editEmailTemplates()"
                     uib-tooltip="Edit the wording of the approval and rejection emails">
                     <i class="fa fa-file-code-o"></i>
                     <span class="hidden-xs"> Email templates</span>
@@ -18,26 +17,25 @@
             </h4>
         </div>
 
-        <div class="feed-card-body ta-filters">
-            <button class="crf-chip" ng-repeat="tab in statusTabs" ng-click="setFilter(tab.key)"
-                ng-class="statusFilter === tab.key ? 'crf-chip-primary' : 'crf-chip-ghost'">
+        <div class="ta-tabs" role="tablist">
+            <button type="button" class="ta-tab" ng-repeat="tab in statusTabs" ng-click="setFilter(tab.key)"
+                ng-class="{'is-on': statusFilter === tab.key}" role="tab">
                 <i class="fa" ng-class="tab.icon"></i> {{ tab.label }}
-                <span ng-if="tab.key !== 'all'">({{ statusCounts[tab.key] || 0 }})</span>
+                <span class="ta-tab-count" ng-if="tab.key !== 'all'">{{ statusCounts[tab.key] || 0 }}</span>
             </button>
         </div>
 
-        <div class="feed-card-body" ng-if="loading" style="text-align: center; padding: 40px;">
-            <i class="fa fa-spinner fa-spin fa-2x" style="color:#006687;"></i>
-            <p style="margin-top: 12px; color: #666;">Loading applications…</p>
+        <div class="feed-card-body ta-state" ng-if="loading">
+            <i class="fa fa-spinner fa-spin fa-2x"></i>
+            <p>Loading applications…</p>
         </div>
 
         <div class="feed-card-body" ng-if="error">
             <div class="alert alert-danger">{{ error }}</div>
         </div>
 
-        <div class="feed-card-body" ng-if="!loading && !error && applications.length === 0"
-            style="text-align:center; padding: 40px; color: #999;">
-            <i class="fa fa-inbox fa-3x" style="margin-bottom: 12px; display:block;"></i>
+        <div class="feed-card-body ta-state" ng-if="!loading && !error && applications.length === 0">
+            <i class="fa fa-inbox fa-3x"></i>
             <p ng-if="statusFilter === 'pending'">No applications waiting for review.</p>
             <p ng-if="statusFilter !== 'pending'">Nothing here yet.</p>
         </div>
@@ -46,26 +44,24 @@
             <li class="feed-item" ng-repeat="application in applications">
                 <div class="feed-row">
 
-                    <div class="feed-body" style="flex:1; min-width:0; cursor:pointer;"
-                        ng-click="toggleExpand(application)">
+                    <div class="feed-body ta-row-main" ng-click="toggleExpand(application)">
                         <div class="feed-text">
-                            <i class="fa" ng-class="expanded[application._id] ? 'fa-caret-down' : 'fa-caret-right'"
-                                style="width:10px; color:#999;"></i>
+                            <i class="fa ta-caret" ng-class="expanded[application._id] ? 'fa-caret-down' : 'fa-caret-right'"></i>
                             <strong>{{ fullname(application) }}</strong>
-                            <span class="text-muted" style="font-weight:400;">
+                            <span class="ta-who">
                                 &nbsp;{{ application.sex }}<span ng-if="ageOf(application) !== null">, {{
                                     ageOf(application) }}</span>
                             </span>
                             <!-- Status is information, not an action, so it sits with the name -->
-                            <span class="crf-chip ta-status-chip" ng-class="{
-                                    'ta-chip-pending': application.status === 'pending',
-                                    'crf-chip-open': application.status === 'approved',
-                                    'ta-chip-rejected ': application.status === 'rejected'
+                            <span class="site-tag ta-status-tag" ng-class="{
+                                    'site-tag-warning': application.status === 'pending',
+                                    'site-tag-success': application.status === 'approved',
+                                    'site-tag-danger': application.status === 'rejected'
                                 }">
                                 {{ application.status }}
                             </span>
                         </div>
-                        <div class="feed-meta" style="margin-top: 3px;">
+                        <div class="feed-meta ta-meta">
                             Applied {{ application.createdAt | date:'mediumDate' }}
                             <span ng-if="application.reviewedAt">
                                 &mdash; {{ application.status }} by {{ application.reviewedByUsername || 'admin' }} on
@@ -102,6 +98,17 @@
                             <span class="hidden-xs"> {{ flag.label }}</span>
                         </button>
 
+                        <!-- Signal group chat invite — an email, done once sent -->
+                        <button class="crf-chip"
+                            ng-if="application.status === 'approved'"
+                            ng-class="signalDone(application) ? 'crf-chip-open' : 'ta-chip-pending'"
+                            ng-click="sendEmail(application, 'signal')"
+                            ng-disabled="!canReview || busy[application._id]"
+                            uib-tooltip="{{ signalDone(application) ? 'Invited to Signal by ' + (application.signalInvitedByUsername || 'a captain') + ' — click to review, resend or untick' : 'Email the Signal group chat invite link to the member' }}">
+                            <i class="fa" ng-class="signalDone(application) ? 'fa-check-square-o' : 'fa-square-o'"></i>
+                            <span class="hidden-xs"> Signal</span>
+                        </button>
+
                         <button class="crf-chip crf-chip-primary"
                             ng-if="canReview && application.status !== 'approved'" ng-click="approve(application)"
                             ng-disabled="busy[application._id]" uib-tooltip="Approve and create the member">
@@ -133,103 +140,118 @@
                 <!-- Detail -->
                 <div class="ta-detail" ng-if="expanded[application._id]">
 
-                    <div class="ta-detail-grid">
-                        <div>
-                            <div class="ta-label">Email</div>
-                            <div><a ng-href="mailto:{{ application.email }}">{{ application.email }}</a></div>
-                        </div>
-                        <div>
-                            <div class="ta-label">Date of birth</div>
-                            <div>{{ application.dateofbirth | date:'mediumDate':'UTC' }}</div>
-                        </div>
-                        <div>
-                            <div class="ta-label">Gender</div>
-                            <div style="text-transform: capitalize;">{{ application.sex }}</div>
-                        </div>
-                        <!-- Club membership is a prerequisite, so "No" is flagged
-                             the same way a failed requirement is. Applications
-                             submitted before this question existed have no value
-                             and show nothing rather than a misleading "No". -->
-                        <div ng-if="application.isClubMember !== null && application.isClubMember !== undefined">
-                            <div class="ta-label">MCRRC club member</div>
-                            <div ng-class="application.isClubMember ? 'ta-ag-good' : 'ta-ag-low'">
-                                <i class="fa"
-                                    ng-class="application.isClubMember ? 'fa-check' : 'fa-times'"></i>
-                                {{ application.isClubMember ? 'Yes' : 'Not yet — must join the club' }}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="ta-label">Commits to {{ raceCommitment }} races/year</div>
-                            <div ng-class="application.committedToRaces ? 'ta-ag-good' : 'ta-ag-low'">
-                                <i class="fa"
-                                    ng-class="application.committedToRaces ? 'fa-check' : 'fa-times'"></i>
-                                {{ application.committedToRaces ? 'Yes' : 'No' }}
-                            </div>
-                        </div>
-                        <div ng-if="application.member">
-                            <div class="ta-label">Member</div>
+                    <!-- The applicant -->
+                    <div class="ta-card">
+                        <div class="ta-card-head">Applicant</div>
+                        <div class="ta-detail-grid">
                             <div>
-                                <a ui-sref="/members/member({member: application.member.username})">
-                                    {{ application.member.firstname }} {{ application.member.lastname }}
-                                </a>
-                                <span ng-if="application.isReturningMember" class="ta-match-badge">returning</span>
+                                <div class="ta-label">Email</div>
+                                <div class="ta-value"><a ng-href="mailto:{{ application.email }}">{{ application.email }}</a></div>
                             </div>
+                            <div>
+                                <div class="ta-label">Date of birth</div>
+                                <div class="ta-value">{{ application.dateofbirth | date:'mediumDate':'UTC' }}</div>
+                            </div>
+                            <div>
+                                <div class="ta-label">Gender</div>
+                                <div class="ta-value ta-capitalize">{{ application.sex }}</div>
+                            </div>
+                            <div ng-if="application.member">
+                                <div class="ta-label">Member</div>
+                                <div class="ta-value">
+                                    <a ui-sref="/members/member({member: application.member.username})">
+                                        {{ application.member.firstname }} {{ application.member.lastname }}
+                                    </a>
+                                    <span ng-if="application.isReturningMember" class="ta-match-badge">returning</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- The yes/no requirements. Club membership is a prerequisite,
+                             so "No" is flagged the same way a failed requirement is.
+                             Applications submitted before that question existed have
+                             no value and show nothing rather than a misleading "No". -->
+                        <div class="ta-checks">
+                            <span class="ta-check" ng-if="application.isClubMember !== null && application.isClubMember !== undefined"
+                                ng-class="application.isClubMember ? 'ta-check-ok' : 'ta-check-no'">
+                                <i class="fa" ng-class="application.isClubMember ? 'fa-check' : 'fa-times'"></i>
+                                {{ application.isClubMember ? 'MCRRC club member' : 'Not an MCRRC member yet — must join the club' }}
+                            </span>
+                            <span class="ta-check" ng-class="application.committedToRaces ? 'ta-check-ok' : 'ta-check-no'">
+                                <i class="fa" ng-class="application.committedToRaces ? 'fa-check' : 'fa-times'"></i>
+                                {{ application.committedToRaces ? 'Commits' : 'Does not commit' }} to {{ raceCommitment }} races a year
+                            </span>
                         </div>
                     </div>
 
-                    <div class="ta-label" style="margin-top: 14px;">Recent races</div>
-                    <table class="table table-sm ta-races">
-                        <thead>
-                            <tr>
-                                <th>Race</th>
-                                <th>Date</th>
-                                <th>Distance</th>
-                                <th class="text-right">Time</th>
-                                <th class="text-right">Age grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr ng-repeat="race in application.races">
-                                <td>
-                                    {{ race.racename }}
-                                    <a ng-if="race.resultlink" ng-href="{{ race.resultlink }}" target="_blank"
-                                        rel="noopener noreferrer" class="ta-result-link"
-                                        uib-tooltip="{{ race.resultlink }}">
-                                        <i class="fa fa-external-link"></i>
-                                    </a>
-                                </td>
-                                <td>{{ race.racedate | date:'mediumDate':'UTC' }}</td>
-                                <td>{{ race.racetype.name }}</td>
-                                <td class="text-right">{{ centisToString(race.timeCentiseconds) }}</td>
-                                <td class="text-right">
-                                    <span ng-if="race.agegrade != null"
-                                        ng-class="race.agegrade >= minAgeGrade ? 'ta-ag-good' : 'ta-ag-low'">
-                                        {{ race.agegrade | number:1 }}%
-                                    </span>
-                                    <span ng-if="race.agegrade == null" class="text-muted">n/a</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div ng-if="application.motivation">
-                        <div class="ta-label" style="margin-top: 14px;">Why they want to join</div>
-                        <div class="ta-motivation">{{ application.motivation }}</div>
+                    <!-- Their races -->
+                    <div class="ta-card">
+                        <div class="ta-card-head">
+                            Recent races
+                            <span class="ta-card-aside">{{ minAgeGrade }}% age grade needed</span>
+                        </div>
+                        <table class="table ta-races">
+                            <thead>
+                                <tr>
+                                    <th>Race</th>
+                                    <th>Date</th>
+                                    <th>Distance</th>
+                                    <th class="text-right">Time</th>
+                                    <th class="text-right">Age grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="race in application.races">
+                                    <td class="ta-race-name">
+                                        {{ race.racename }}
+                                        <a ng-if="race.resultlink" ng-href="{{ race.resultlink }}" target="_blank"
+                                            rel="noopener noreferrer" class="ta-result-link"
+                                            uib-tooltip="{{ race.resultlink }}">
+                                            <i class="fa fa-external-link"></i>
+                                        </a>
+                                    </td>
+                                    <td>{{ race.racedate | date:'mediumDate':'UTC' }}</td>
+                                    <td>{{ race.racetype.name }}</td>
+                                    <td class="text-right ta-race-time">{{ centisToString(race.timeCentiseconds) }}</td>
+                                    <td class="text-right">
+                                        <span ng-if="race.agegrade != null" class="ta-ag"
+                                            ng-class="race.agegrade >= minAgeGrade ? 'ta-ag-good' : 'ta-ag-low'">
+                                            {{ race.agegrade | number:1 }}%
+                                        </span>
+                                        <span ng-if="race.agegrade == null" class="text-muted">n/a</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div ng-if="application.reviewNotes">
-                        <div class="ta-label" style="margin-top: 14px;">Review notes</div>
-                        <div class="ta-motivation">{{ application.reviewNotes }}</div>
+                    <!-- In their own words: shown as a letter -->
+                    <div class="ta-card ta-letter" ng-if="application.motivation">
+                        <div class="ta-card-head">Why they want to join</div>
+                        <div class="ta-letter-body">{{ application.motivation }}</div>
+                        <div class="ta-letter-sign">
+                            — {{ application.firstname }} {{ application.lastname }}, {{ application.createdAt | date:'MMM d, y' }}
+                        </div>
+                    </div>
+
+                    <div class="ta-review-notes" ng-if="application.reviewNotes">
+                        <div class="ta-label">Review notes</div>
+                        <div class="ta-review-notes-body">{{ application.reviewNotes }}</div>
                     </div>
 
                     <div ng-if="emailSent(application)">
-                        <div class="ta-label" style="margin-top: 14px;">
+                        <div class="ta-label ta-label-spaced">
                             {{ application.status === 'rejected' ? 'Rejection' : 'Approval' }} email sent
-                            {{ decisionEmail(application).sentAt | date:'medium' }}
-                            by {{ decisionEmail(application).sentByUsername || 'a captain' }}
                         </div>
-                        <div class="ta-motivation">
-                            <strong>{{ decisionEmail(application).subject }}</strong>
+                        <!-- Shown as the applicant got it: a message with its header -->
+                        <div class="ta-email-sent">
+                            <div class="ta-email-head">
+                                <div class="ta-email-subject">{{ decisionEmail(application).subject }}</div>
+                                <div class="ta-email-meta">
+                                    <span><span class="ta-email-meta-label">To</span> {{ application.firstname }} {{ application.lastname }} &lt;{{ application.email }}&gt;</span>
+                                    <span><span class="ta-email-meta-label">Sent</span> {{ decisionEmail(application).sentAt | date:'EEE, MMM d, y, h:mm a' }}
+                                        by {{ decisionEmail(application).sentByUsername || 'a captain' }}</span>
+                                </div>
+                            </div>
                             <div class="ta-email-preview-inline"
                                 ng-bind-html="decisionEmail(application).body | unsafe"></div>
                         </div>
@@ -248,6 +270,16 @@
                         <div>
                             Added to Groups.io by {{ application.addedToGroupsIoByUsername || 'a captain' }} on {{
                             application.addedToGroupsIoAt | date:'mediumDate' }}.
+                        </div>
+                    </div>
+
+                    <div ng-if="signalDone(application)" class="ta-notified-note">
+                        <i class="fa fa-check"></i>
+                        <div>
+                            {{ signalEmailed(application) ? 'Signal group invite emailed' : 'Marked as invited to Signal' }}
+                            by {{ application.signalInvitedByUsername || 'a captain' }} on {{
+                            application.signalInvitedAt | date:'mediumDate' }}{{ signalEmailed(application) ? '' : ' (no
+                            email sent from here)' }}.
                         </div>
                     </div>
 

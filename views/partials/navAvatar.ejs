@@ -1,0 +1,9 @@
+<%
+// The logged-in user's round profile photo in the navbar, over their
+// initials (a member's, or the account name's first letter) when there is
+// no photo or its thumbnail is not generated yet.
+var navMember = user && user.member;
+var navInitials = navMember
+    ? ((navMember.firstname || '').charAt(0) + (navMember.lastname || '').charAt(0))
+    : (user && user.username || '').charAt(0);
+%><span class="member-avatar nav-avatar"><span class="member-avatar-initials"><%= navInitials.toUpperCase() %></span><% if (navMember && navMember.pictureLink) { %><img src="/api/members/<%= navMember._id %>/thumbnail.jpg" alt="" onerror="this.style.display='none'"><% } %></span>

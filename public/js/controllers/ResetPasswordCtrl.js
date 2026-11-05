@@ -1,4 +1,4 @@
-angular.module('mcrrcApp.authentication').controller('ResetPasswordController', ['$scope', '$http', '$stateParams', function($scope, $http, $stateParams) {
+angular.module('mcrrcApp.authentication').controller('ResetPasswordController', ['$scope', '$http', '$stateParams', 'Analytics', function($scope, $http, $stateParams, Analytics) {
 
     $scope.success = false;
     $scope.tokenExpired = false;
@@ -10,6 +10,7 @@ angular.module('mcrrcApp.authentication').controller('ResetPasswordController', 
     }).error(function(data) {
         $scope.tokenExpired = true;
         $scope.message = (data && data.message) || 'Invalid or expired token.';
+        Analytics.event('password_reset', { status: 'link_invalid' });
     });
 
     $scope.resetPassword = function() {
@@ -21,6 +22,7 @@ angular.module('mcrrcApp.authentication').controller('ResetPasswordController', 
         $http.post('/api/reset/' + token, { password: $scope.newPassword }).success(function(data) {
             $scope.message = data.message;
             $scope.success = true;
+            Analytics.event('password_reset', { status: 'done' });
         }).error(function(data) {
             $scope.message = (data && data.message) || 'An error occurred. Please try again.';
             if (data && data.message && data.message.indexOf('expired') !== -1) {

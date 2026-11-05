@@ -1,0 +1,93 @@
+<div class="banner-editor-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">{{replacing ? 'Replace photo' : 'New banner'}}</h3>
+        <p class="bio-edit-subtitle" ng-if="replacing">{{replacing.filename}}: its members, credit and settings stay.</p>
+    </div>
+
+    <!-- ============ 1. The photo ============ -->
+    <div class="modal-body" ng-if="!draft">
+        <div class="bed-drop" ng-class="{'is-over': dropOver, 'is-busy': uploading}" banner-photo-drop="onFile(file)"
+            drop-over="dropOver">
+            <i class="fa" ng-class="uploading ? 'fa-spinner fa-spin' : 'fa-cloud-upload'"></i>
+            <div class="bed-drop-title" ng-if="!uploading">Drop a photo here, or paste one</div>
+            <div class="bed-drop-title" ng-if="uploading">Uploading and finding the runner…</div>
+            <label class="member-primary-btn bed-pick" ng-if="!uploading">
+                <i class="fa fa-folder-open"></i> Choose a photo
+                <input type="file" accept="image/jpeg,image/png,image/webp" photo-file-input="onFile(file)">
+            </label>
+        </div>
+        <div class="photo-error" ng-if="error"><i class="fa fa-exclamation-circle"></i> {{error}}</div>
+
+        <div class="photo-tip-card bed-tips">
+            <strong><i class="fa fa-lightbulb-o"></i> Good banner photos</strong>
+            <ul>
+                <li><strong>JPEG, PNG or WebP</strong>, at least 400 px on each side, up to 20 MB.
+                    iPhone HEIC photos are not accepted: export them as JPEG first.</li>
+                <li><strong>Landscape</strong>, with the runner on the <strong>left</strong>: the title covers the
+                    right of the banner.</li>
+                <li>The photo itself is <strong>not kept</strong> once the banner is saved. To change the framing
+                    later, upload it again with <em>Replace photo</em>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ============ 2. Framing ============ -->
+    <div class="modal-body" ng-if="draft">
+        <div class="bed-name-row">
+            <label for="bedName" class="bed-label">Banner name</label>
+            <div class="bed-name-field">
+                <input id="bedName" type="text" class="form-control" ng-model="form.name" maxlength="80"
+                    ng-change="checkName()" ng-model-options="{debounce: 250}" autocomplete="off">
+                <span class="bed-name-status" ng-class="nameState.cls">
+                    <i class="fa" ng-class="nameState.icon"></i> {{nameState.text}}
+                </span>
+            </div>
+        </div>
+
+        <div class="bed-notice" ng-if="draft.notice"><i class="fa fa-exclamation-triangle"></i> {{draft.notice}}</div>
+        <p class="bed-hint">Drag the photo to move it, scroll or use the slider to zoom, arrow keys to nudge
+            (Shift: further). The bright window is the banner; the dashed line is where it ends on wide screens.</p>
+
+        <banner-stage draft="draft" crop="crop" preview-mode="view.mode" show-title="view.showTitle"></banner-stage>
+
+        <div class="bed-controls">
+            <span class="bed-label">Preview</span>
+            <span class="bed-segment">
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': view.mode === 'narrow'}"
+                    ng-click="setMode('narrow')" title="The narrowest banner (962 px)">Narrow screen</button>
+                <button type="button" class="mcrrc-btn" ng-class="{'is-on': view.mode === 'wide'}"
+                    ng-click="setMode('wide')" title="The widest banner (1140 px): the bottom is cut off">Wide screen</button>
+            </span>
+            <label class="bed-check"><input type="checkbox" ng-model="view.showTitle"> Show title</label>
+            <span class="bed-spacer"></span>
+            <button type="button" class="mcrrc-btn" ng-click="resetFraming()" ng-disabled="isAutomatic()"
+                title="Back to the framing found automatically">
+                <i class="fa fa-magic"></i> Automatic framing
+            </button>
+            <button type="button" class="mcrrc-btn" ng-click="renderPreview()" ng-disabled="previewing">
+                <i class="fa" ng-class="previewing ? 'fa-spinner fa-spin' : 'fa-eye'"></i> Preview the banner
+            </button>
+        </div>
+
+        <div class="bed-preview" ng-if="previewUrl">
+            <div class="bed-label">The banner as it will be saved
+                <span class="bed-preview-stale" ng-if="previewStale">(framing changed since: preview again)</span>
+            </div>
+            <img ng-src="{{previewUrl}}" alt="Banner preview">
+        </div>
+
+        <div class="photo-error" ng-if="error"><i class="fa fa-exclamation-circle"></i> {{error}}</div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="mcrrc-btn" ng-click="cancel()" ng-disabled="saving">Cancel</button>
+        <button type="button" class="mcrrc-btn" ng-if="draft" ng-click="startOver()" ng-disabled="saving">
+            <i class="fa fa-arrow-left"></i> Another photo
+        </button>
+        <button type="button" class="member-primary-btn" ng-if="draft" ng-click="save()"
+            ng-disabled="saving || !nameState.ok">
+            <i class="fa" ng-class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+            {{saving ? 'Saving…' : (replacing ? 'Save new photo' : 'Save banner')}}
+        </button>
+    </div>
+</div>

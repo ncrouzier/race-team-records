@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/dist/css/comprace-form.css">
   <link rel="stylesheet" href="/dist/css/apply-form.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <%- include('partials/social', { social: social }) %>
   <%- include('partials/ga', { gaConfig: { page_template: 'apply_form' }, gaUserRole: 'anonymous' }) %>
 </head>
 

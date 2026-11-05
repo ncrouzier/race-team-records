@@ -29,9 +29,12 @@ COPY . .
 
 RUN npm run build
 
-# The runtime needs neither the build tooling nor the image/ML tooling. sharp
-# and the TensorFlow packages are devDependencies and are by far the largest
-# things in node_modules; dropping them here keeps the final image small.
+# The runtime does not need the build tooling. sharp and the face detection
+# slice — @tensorflow/tfjs-core, @tensorflow/tfjs-backend-wasm,
+# @vladmandic/face-api — are real dependencies, used at runtime for profile
+# thumbnails and banners (app/faceDetector.js), and survive this prune. The
+# full @tensorflow/tfjs package is not installed at all: app/tfjsCore.js
+# stands in for it.
 RUN npm prune --omit=dev
 
 
@@ -66,6 +69,9 @@ COPY --from=build /app/views ./views
 COPY --from=build /app/config ./config
 COPY --from=build /app/app ./app
 COPY --from=build /app/package.json /app/server.js ./
+# Scripts run inside this container: the one-time member photo import, and
+# remaking the profile thumbnails (both explained at the top of each)
+COPY --from=build /app/scripts/import-member-photos.js /app/scripts/regenerate-profile-thumbnails.js ./scripts/
 
 # Stamped by .github/workflows/deploy.yml so the running site can report which
 # image it is. Placed after every COPY on purpose: an ENV change invalidates

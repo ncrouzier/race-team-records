@@ -7,6 +7,8 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
     });
     // For any unmatched url, redirect to /state1
     $urlRouterProvider.otherwise("/");
+    // Renamed page: old links and bookmarks still land on it
+    $urlRouterProvider.when('/about', '/about-agegrading');
     //
     // Now set up the states
     $stateProvider
@@ -140,9 +142,10 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             //   eligible  1: only results that count for team standings
             //             (record eligible, one runner, a time)
             //   win       1: only wins (1st overall or of their gender)
+            //   club      1: only MCRRC club races
             //   highlight result id: opens on its page and marks the row
             // All dynamic: changing them updates the URL without a reload.
-            url: "/individualresults?q&types&from&to&minmi&maxmi&missing&distance&surface&year&month&day&state&country&sex&division&race&runner&age&agemin&agemax&under&agmin&agmax&variable&eligible&win&sort&dir&page&highlight",
+            url: "/individualresults?q&types&from&to&minmi&maxmi&missing&distance&surface&year&month&day&state&country&sex&division&race&runner&age&agemin&agemax&under&agmin&agmax&variable&eligible&win&club&sort&dir&page&highlight",
             templateUrl: "views/individualResultsPage.html",
             params: {
                 q: { value: null, squash: true, dynamic: true },
@@ -170,6 +173,7 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 agmin: { value: null, squash: true, dynamic: true },
                 agmax: { value: null, squash: true, dynamic: true },
                 win: { value: null, squash: true, dynamic: true },
+                club: { value: null, squash: true, dynamic: true },
                 variable: { value: null, squash: true, dynamic: true },
                 eligible: { value: null, squash: true, dynamic: true },
                 highlight: { value: null, squash: true, dynamic: true },
@@ -177,9 +181,10 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
                 dir: { value: null, squash: true, dynamic: true },
                 page: { value: null, squash: true, dynamic: true }
             }
-        }).state('/about', {
-            url: '/about',
+        }).state('/about-agegrading', {
+            url: '/about-agegrading',
             templateUrl: 'views/about.html',
+            controller: 'AboutAgeGradingController'
         })
         .state('/races', {
             url: '/races/:raceId',
@@ -331,10 +336,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/contact",
             templateUrl: "views/contact.html",
             controller: 'ContactController'
-        }).state('/bulk', {
-            url: "/bulk",
-            templateUrl: "views/bulkOperations.html",
-            controller: 'BulkOperationsController'
         }).state('/mcrrcreport', {
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",
@@ -375,6 +376,43 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/applications",
             templateUrl: "views/teamApplications.html",
             controller: 'TeamApplicationsController'
+        })
+        // Admin: upload HTML pages served at /pages/<address> (by the server,
+        // not this app: see app/routes.js)
+        .state('/hosted-pages', {
+            url: "/hosted-pages",
+            templateUrl: "views/hostedPages.html",
+            controller: 'HostedPagesController'
+        })
+        // Public: the same race across editions, confirmed links only
+        .state('/series', {
+            url: "/series",
+            templateUrl: "views/series.html",
+            controller: 'SeriesListController'
+        })
+        .state('/series-detail', {
+            url: "/series/:seriesId",
+            templateUrl: "views/seriesDetail.html",
+            controller: 'SeriesDetailController'
+        })
+        // Admin: members' correction requests (app/correctionRoutes.js)
+        .state('/corrections', {
+            url: "/corrections?tab",
+            params: { tab: { value: 'open', dynamic: true, squash: true } },
+            templateUrl: "views/corrections.html",
+            controller: 'CorrectionsController'
+        })
+        // Admin: the same race across editions (see app/raceSeriesRoutes.js)
+        .state('/race-series', {
+            url: "/race-series?tab",
+            params: { tab: { value: 'review', dynamic: true, squash: true } },
+            templateUrl: "views/raceSeries.html",
+            controller: 'RaceSeriesController'
+        })
+        .state('/race-series-detail', {
+            url: "/race-series/:seriesId",
+            templateUrl: "views/raceSeriesDetail.html",
+            controller: 'RaceSeriesDetailController'
         });
 
 });

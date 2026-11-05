@@ -1,10 +1,10 @@
-<div class="jumbotron">
+<div class="jumbotron racing-stats-page admin-stats-page">
     <!-- Navigation -->
     <ul class="nav nav-tabs">
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/team">Racing Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user">
+        <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/volunteering">Volunteering Stats</a>
         </li>
         <li role="presentation" ui-sref-active="active">
@@ -128,7 +128,7 @@
                         <label style="margin:0; font-weight:normal; font-size:12px;">Metric:</label>
                         <select class="form-control input-sm" style="width:auto; display:inline-block;"
                             ng-model="ageGradeMetric" ng-options="o.id as o.label for o in ageGradeMetricOptions"></select>
-                        <button type="button" class="btn btn-xs btn-default" ng-class="{active: ageGradeZoomed}"
+                        <button type="button" class="mcrrc-btn" ng-class="{'is-on': ageGradeZoomed}"
                             ng-click="ageGradeZoomed = !ageGradeZoomed"
                             uib-tooltip="Zoom the y-axis to fit the data shown">
                             <i class="fa" ng-class="ageGradeZoomed ? 'fa-search-minus' : 'fa-search-plus'"></i>
@@ -149,7 +149,7 @@
                 <div class="panel-heading">
                     <h4><i class="fa fa-list"></i> {{ statusChoiceLabel() }} Team Members</h4>
                 </div>
-                <div class="panel-body" style="padding: 0;">
+                <div class="panel-body admin-table-body">
                     <div class="table-responsive">
                         <table class="table table-hover members-table">
                             <thead>

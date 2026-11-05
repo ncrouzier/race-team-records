@@ -1,89 +1,6 @@
-angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', 'MemoryCacheService', function (Restangular, $uibModal, $q, MemoryCacheService) {
+angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$uibModal', '$q', '$http', 'DexieService', 'DataCacheService', function (Restangular, $uibModal, $q, $http, DexieService, DataCacheService) {
     var factory = {};
     var members = Restangular.all('members');
-
-    // Cache names for MemoryCacheService
-    var CACHE_NAMES = {
-        MEMBERS: 'members',
-        LOADING_PROMISES: 'loadingPromises'
-    };
-
-
-
-    // Helper function to strip functions and clean objects for IndexedDB storage
-    function stripFunctions(obj) {
-        try {
-            // First try the simple approach
-            var cleaned = JSON.parse(JSON.stringify(obj));
-
-            // Additional cleaning for member objects
-            if (Array.isArray(cleaned)) {
-                cleaned = cleaned.map(function (member) {
-                    if (member && typeof member === 'object') {
-                        // Remove any problematic properties that might cause IndexedDB issues
-                        var cleanMember = {};
-                        for (var key in member) {
-                            if (member.hasOwnProperty(key)) {
-                                var value = member[key];
-                                // Skip functions, undefined, and complex nested objects
-                                if (typeof value !== 'function' && value !== undefined) {
-                                    // Handle dates
-                                    if (value instanceof Date) {
-                                        cleanMember[key] = value.toISOString();
-                                    }
-                                    // Handle simple types
-                                    else if (typeof value === 'string' ||
-                                        typeof value === 'number' ||
-                                        typeof value === 'boolean' ||
-                                        value === null) {
-                                        cleanMember[key] = value;
-                                    }
-                                    // Handle arrays and objects (but be careful with deep nesting)
-                                    else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
-                                        try {
-                                            // Try to serialize and deserialize to ensure it's safe
-                                            var testSerialize = JSON.stringify(value);
-                                            if (testSerialize.length < 1000000) { // Limit size to 1MB
-                                                cleanMember[key] = JSON.parse(testSerialize);
-                                            } else {
-                                                console.warn("Skipping large property:", key, "size:", testSerialize.length);
-                                            }
-                                        } catch (e) {
-                                            console.warn("Skipping problematic property:", key, e.message);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        return cleanMember;
-                    }
-                    return member;
-                });
-            }
-
-            return cleaned;
-        } catch (error) {
-            console.error("Error in stripFunctions:", error);
-            // Fallback: return a minimal version with just essential properties
-            if (Array.isArray(obj)) {
-                return obj.map(function (member) {
-                    if (member && typeof member === 'object') {
-                        return {
-                            _id: member._id,
-                            firstname: member.firstname,
-                            lastname: member.lastname,
-                            username: member.username,
-                            memberStatus: member.memberStatus,
-                            dateofbirth: member.dateofbirth,
-                            sex: member.sex
-                        };
-                    }
-                    return member;
-                });
-            }
-            return obj;
-        }
-    }
 
     // =====================================
     // MEMBERS API CALLS ===================
@@ -96,38 +13,46 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         });
     };
 
-    //retrieve members with cache support (memory cache only)
+    // Members, kept in this browser like the race list: answered at once from
+    // the copy here, replaced in the background when members change
+    // (DataCacheService). One copy per query: pages ask for different
+    // fields, filters and orders, which only the server applies.
+    var memberLists = {};
+    // Every member (past ones too), without the heavy bio / personal bests,
+    // with each one's profile thumbnail embedded (profileThumbUrl). One
+    // cached list shared by the members page (which filters it by status
+    // itself) and by every avatar on the site (MemberThumbsService).
+    var ALL_MEMBERS_WITH_THUMBS = { select: '-bio -personalBests +profileThumb' };
+    factory.getAllMembersWithThumbs = function () {
+        return factory.getMembersWithCacheSupport(ALL_MEMBERS_WITH_THUMBS);
+    };
+
     factory.getMembersWithCacheSupport = function (params) {
-        var cacheKey = JSON.stringify(params || {});
-
-        // Check memory cache first
-        var cachedMembers = MemoryCacheService.get(CACHE_NAMES.MEMBERS, cacheKey);
-        if (cachedMembers) {
-            return $q.resolve(cachedMembers);
+        var key = JSON.stringify(params || {});
+        if (!memberLists[key]) {
+            memberLists[key] = DataCacheService.create({
+                name: 'members:' + key,
+                stampFields: DataCacheService.MEMBER_DATA,
+                readStore: function () {
+                    return $q.when(DexieService.open()).then(function () {
+                        return DexieService.members.get(key);
+                    }).then(function (stored) {
+                        if (!stored || !stored.data) return null;
+                        return {
+                            stamp: stored.stamp,
+                            data: Restangular.restangularizeCollection(null, JSON.parse(stored.data), 'members', true)
+                        };
+                    });
+                },
+                writeStore: function (entry) {
+                    return $q.when(DexieService.members.put({ params: key, stamp: entry.stamp, data: JSON.stringify(entry.data) }));
+                },
+                fetchFresh: function () {
+                    return members.getList(params);
+                }
+            });
         }
-
-        // Check for loading promises to prevent duplicate requests
-        var loadingPromises = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, cacheKey);
-        if (loadingPromises) {
-            return loadingPromises;
-        }
-
-
-        // Fetch from API and cache in memory only
-        var promise = members.getList(params).then(function (membersFromDatabase) {
-            // Cache in memory
-            MemoryCacheService.set(CACHE_NAMES.MEMBERS, cacheKey, membersFromDatabase);
-            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
-
-            return membersFromDatabase;
-        }).catch(function (error) {
-            console.error("❌ API call failed:", error);
-            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, null);
-            throw error;
-        });
-
-        MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, cacheKey, promise);
-        return promise;
+        return memberLists[key].get();
     };
 
 
@@ -184,17 +109,31 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
         });
     };
 
-    //edit a member's photo link only
-    factory.editMemberPhoto = function (memberId, pictureLink) {
-        return Restangular.one('members', memberId).customPUT({ pictureLink: pictureLink }, 'photo');
+    // Upload a member's photo: the file (or the browser's resized copy) is the
+    // request body. Resolves to { pictureLink }.
+    factory.uploadMemberPhoto = function (memberId, blob) {
+        return $http.put('/api/members/' + memberId + '/photo', blob, {
+            headers: { 'Content-Type': blob.type || 'image/jpeg' },
+            transformRequest: angular.identity
+        }).then(function (res) { return res.data; });
     };
 
+    factory.removeMemberPhoto = function (memberId) {
+        return $http.delete('/api/members/' + memberId + '/photo').then(function (res) { return res.data; });
+    };
+
+    // The modal uploads (or removes) the photo and saves the thumbnail crop
+    // itself, so errors show in it. Resolves to the new pictureLink ('' once
+    // removed), null when cancelled with nothing changed.
     factory.showEditPhotoModal = function (member) {
         var modalInstance = $uibModal.open({
             templateUrl: 'views/modals/photoEditModal.html',
             controller: 'PhotoEditModalInstanceController',
-            size: 'lg',
+            // Its own width (mcrrc.less): the site's large modals go to 1200px
+            windowClass: 'photo-edit-window',
             backdrop: 'static',
+            // Esc would dismiss and lose track of an upload already saved
+            keyboard: false,
             resolve: {
                 member: function () {
                     return member;
@@ -202,14 +141,24 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
             }
         });
 
-        return modalInstance.result.then(function (pictureLink) {
-            return factory.editMemberPhoto(member._id, pictureLink).then(function () {
-                member.pictureLink = pictureLink;
-                return pictureLink;
-            });
+        return modalInstance.result.then(function (changed) {
+            member.pictureLink = changed.pictureLink;
+            member.profileThumbCrop = changed.profileThumbCrop;
+            return changed.pictureLink;
         }, function () {
             return null;
         });
+    };
+
+    // Admin: which square of the photo makes the thumbnail ({ left, top,
+    // size } fractions), or null to go back to automatic face detection
+    factory.setThumbnailCrop = function (memberId, crop) {
+        return Restangular.one('members', memberId).customPUT({ crop: crop }, 'thumbnail-crop');
+    };
+
+    // The square the current thumbnail is cut from: { crop, chosen }
+    factory.getThumbnailCrop = function (memberId) {
+        return $http.get('/api/members/' + memberId + '/thumbnail-crop').then(function (res) { return res.data; });
     };
 
     //delete a member

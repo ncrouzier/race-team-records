@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+const bumpStamp = require('./stamp');
 const racetype = require('./racetype');
 const racetypeSchema = require('./racetype').schema
 
@@ -12,6 +13,8 @@ var raceSchema = mongoose.Schema({
     racedate: Date,
     order: Number, //order in case multiple races on same day, 0 earliest increases as day goes on 
     isMultisport: Boolean,
+    // An MCRRC club race, marked by an admin: nothing else in the data says so
+    clubRace: Boolean,
     racetype: racetypeSchema,
     location:{
       country: String,
@@ -46,7 +49,27 @@ raceSchema.pre('save', function() {
     }
     this.updatedAt = date;
 
-    this.updateSystemInfo('mcrrc',date);
+    // A race embedded in a result (or a result in a member's personal bests)
+    // is not a change to the races
+    if (this.$isSubdocument) return;
+    return this.updateSystemInfo('mcrrc', date);
+});
+
+// Race series follow their races (app/raceSeriesSync.js). This schema is also
+// embedded in every result, and Mongoose runs these hooks for the embedded
+// copies too: only a race document itself counts.
+raceSchema.pre('save', function () {
+    if (this.$isSubdocument) return;
+    this.$locals.seriesNew = this.isNew;
+    this.$locals.seriesChanged = !this.isNew &&
+        (this.isModified('racename') || this.isModified('racetype') || this.isModified('location'));
+});
+
+raceSchema.post('save', function (doc) {
+    if (doc.$isSubdocument) return;
+    const raceSeriesSync = require('../raceSeriesSync');
+    if (doc.$locals.seriesNew) raceSeriesSync.raceCreated(doc._id);
+    else if (doc.$locals.seriesChanged) raceSeriesSync.raceChanged(doc._id);
 });
 
 //or deleted
@@ -56,7 +79,7 @@ raceSchema.post('deleteOne', function(doc) {
         this.createdAt = date;
     }
     this.updatedAt = date;    
-    raceSchema.methods.updateSystemInfo('mcrrc',date);
+    return raceSchema.methods.updateSystemInfo('mcrrc', date);
 }); 
 
 
@@ -67,37 +90,19 @@ raceSchema.post('deleteOne', function(doc) {
 // results). Merging a race into another moves its jobs first, so by the time
 // the old race is deleted there is nothing left to unlink.
 raceSchema.pre('deleteOne', { document: true, query: true }, async function () {
+    if (this.$isSubdocument) return;
     const id = this instanceof mongoose.Query ? (this.getFilter() || {})._id : this._id;
     if (!id) return;
+    require('../raceSeriesSync').raceDeleted(id);
     const VolunteerJob = mongoose.model('VolunteerJob');
     const res = await VolunteerJob.updateMany({ 'race._id': id }, { $unset: { race: 1 } });
     if (res.modifiedCount > 0) {
-        VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
+        await VolunteerJob.prototype.updateSystemInfo('mcrrc', Date.now());
     }
 });
 
-raceSchema.methods.updateSystemInfo = function(name,date) {
-    try{
-        SystemInfo.findOne({
-            name: name
-        }).then(systemInfo =>{
-            if (systemInfo) {
-                systemInfo.raceUpdate = date;
-                systemInfo.save().then(err => {
-                    if (!err) {
-                        console.log("error fetching systemInfo", err);
-                    } else {
-                        // Update the backend cache after saving
-                        // const service = require('../service');
-                        // service.updateSystemInfoCache();
-                    }
-                });
-            }
-    
-        });
-    }catch(SystemInfoFindOneErr){
-        console.log("error fetching systemInfo")
-    }
+raceSchema.methods.updateSystemInfo = function (name, date) {
+    return bumpStamp('raceUpdate', date);
 };
 
 

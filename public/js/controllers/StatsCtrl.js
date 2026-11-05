@@ -616,7 +616,7 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
         $scope.loadingStates.awards = true;
 
         MembersService.getMembersWithCacheSupport({
-            select: 'firstname lastname username achievements sex'
+            select: 'firstname lastname username achievements sex pictureLink'
         }).then(function (members) {
             var awards = [];
             members.forEach(function (member) {
@@ -641,9 +641,11 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
                         category: category,
                         year: year,
                         member: {
+                            _id: member._id,
                             firstname: member.firstname,
                             lastname: member.lastname,
-                            username: member.username
+                            username: member.username,
+                            pictureLink: member.pictureLink
                         },
                         img: ach.value && ach.value.img ? ach.value.img : null,
                         text: ach.text
@@ -712,6 +714,94 @@ angular.module('mcrrcApp.results').controller('StatsController', ['$scope', 'Aut
             console.error('[StatsCtrl] Error loading stats:', error);
         });
     };
+
+    // =====================================
+    // US / WORLD MAP: ONE MEMBER'S MAP =====
+    // =====================================
+    // Each member's races per state and per country, counted once per race,
+    // from the race list the site already caches. The dropdown lists the
+    // members with the most places first; picking one recolours the map and
+    // swaps the table for theirs.
+    $scope.mapMember = { selected: null };
+    $scope.mapMembers = [];
+    $scope.memberMapCounts = null;
+    $scope.memberPlaceStats = null;
+    var mapKind = $state.current && $state.current.name === '/stats/us-map' ? 'state'
+        : ($state.current && $state.current.name === '/stats/world-map' ? 'country' : null);
+    $scope.mapKind = mapKind;
+    var placesByMember = {};
+
+    function placeOf(race) {
+        var loc = race.location || {};
+        if (mapKind === 'state') return loc.country === 'USA' && loc.state ? loc.state : null;
+        return loc.country || null;
+    }
+
+    function loadMapMembers() {
+        ResultsService.getRaceResultsWithCacheSupport({ sort: '-racedate -order racename', preload: false }).then(function (races) {
+            var byMember = {};
+            (races || []).forEach(function (race) {
+                var place = placeOf(race);
+                if (!place) return;
+                var seen = {};
+                (race.results || []).forEach(function (result) {
+                    (result.members || []).forEach(function (m) {
+                        if (!m._id || seen[m._id]) return; // one race counts once, whatever the results
+                        seen[m._id] = true;
+                        var entry = byMember[m._id] || (byMember[m._id] = {
+                            _id: m._id, username: m.username, firstname: m.firstname, lastname: m.lastname,
+                            places: {}, races: 0
+                        });
+                        entry.places[place] = (entry.places[place] || 0) + 1;
+                        entry.races++;
+                    });
+                });
+            });
+            placesByMember = byMember;
+            $scope.mapMembers = Object.keys(byMember).map(function (id) {
+                var e = byMember[id];
+                e.placeCount = Object.keys(e.places).length;
+                return e;
+            }).sort(function (a, b) {
+                return b.placeCount - a.placeCount || b.races - a.races ||
+                    (a.lastname || '').localeCompare(b.lastname || '');
+            });
+        });
+    }
+
+    $scope.placeWord = function (count) {
+        if (mapKind === 'state') return count === 1 ? 'state' : 'states';
+        return count === 1 ? 'country' : 'countries';
+    };
+
+    $scope.selectMapMember = function (member) {
+        $scope.mapMember.selected = member || null;
+        if (!member) {
+            $scope.memberMapCounts = null;
+            $scope.memberPlaceStats = null;
+            return;
+        }
+        var places = (placesByMember[member._id] || {}).places || {};
+        $scope.memberMapCounts = Object.keys(places).map(function (code) { return [code, places[code]]; });
+        $scope.memberPlaceStats = Object.keys(places).map(function (code) {
+            return {
+                code: code,
+                name: mapKind === 'state' ? UtilsService.getStateNameFromCode(code) : UtilsService.getCountryNameFromCode(code),
+                flag: mapKind === 'state' ? UtilsService.getStateFlag(code) : UtilsService.getCountryFlag(code),
+                count: places[code]
+            };
+        }).sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    };
+
+    // The table's counts open the race list for that place, and for the
+    // chosen member when there is one
+    $scope.goToPlaceResults = function (code) {
+        var query = mapKind === 'state' ? { states: [code] } : { countries: [code] };
+        if ($scope.mapMember.selected) query.members = [{ username: $scope.mapMember.selected.username }];
+        $scope.goToResultsWithQuery(query);
+    };
+
+    if (mapKind) loadMapMembers();
 
     // Initialize stats when controller loads
     $scope.statsInitialized = true;

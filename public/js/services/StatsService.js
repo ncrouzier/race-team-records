@@ -1,4 +1,4 @@
-angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsService', 'MembersService', 'UtilsService', '$q', 'MemoryCacheService', 'SystemService', function(DexieService, ResultsService, MembersService, UtilsService, $q, MemoryCacheService, SystemService) {
+angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsService', 'MembersService', 'UtilsService', '$q', 'MemoryCacheService', 'DataCacheService', function(DexieService, ResultsService, MembersService, UtilsService, $q, MemoryCacheService, DataCacheService) {
     var db = DexieService;
     
     // Cache names for MemoryCacheService
@@ -12,9 +12,10 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
     
     var self = this;
 
-    // Clear stale stats cache that was corrupted by the old stripFunctions
-    // (shared object references were incorrectly treated as circular refs)
-    try { db.statsCache.clear(); } catch(e) { /* ignore */ }
+    // Stored stats carry this; anything without it (written by the old
+    // stripFunctions, which treated shared object references as circular
+    // ones) is recomputed rather than trusted
+    var STATS_FORMAT = 2;
 
     function stripFunctions(obj) {
         // Deep-clone obj to a plain JSON-safe value.
@@ -49,46 +50,44 @@ angular.module('mcrrcApp').service('StatsService', ['DexieService', 'ResultsServ
         return deepClone(obj, new Set());
     }
 
-    this.getStats = async function(year) {
-        var sysinfo = await SystemService.getSystemInfo('mcrrc').then(function (sysinfo) {
-            return sysinfo;
-        }).catch(function(error) {
-            throw error;
-        });
-        var cachedStats = MemoryCacheService.get(CACHE_NAMES.STATS, year);
-        if (cachedStats) {
-            return $q.resolve(cachedStats);
-        }
-        
-        var loadingPromises = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, year);
-        if (loadingPromises) {
-            return loadingPromises;
-        }
-        
-        // Try IndexedDB       
-        var date = new Date(sysinfo.overallUpdate);        
-        var promise = db.statsCache.get(year).then(function(entry) {            
-            if (entry && date.getTime()  === new Date(entry.date).getTime()  && entry.stats) {
-                MemoryCacheService.set(CACHE_NAMES.STATS, year, entry.stats);
-                MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, year, null);
-                return entry.stats;
-            } else {
+    // A year's stats, computed from the race list this browser holds and
+    // kept against that list's stamp (in memory and IndexedDB): an out-of-date
+    // list answers with the stats that go with it, and both are replaced
+    // together once the new list is in.
+    this.getStats = function(year) {
+        return ResultsService.getRaceListEntry().then(function(list) {
+            var stamp = list.stamp;
+            var held = MemoryCacheService.get(CACHE_NAMES.STATS, year);
+            if (held && held.stamp === stamp) return held.stats;
+
+            var loadingKey = year + '|' + stamp;
+            var loading = MemoryCacheService.get(CACHE_NAMES.LOADING_PROMISES, loadingKey);
+            if (loading) return loading;
+
+            var keep = function(stats) {
+                MemoryCacheService.set(CACHE_NAMES.STATS, year, { stamp: stamp, stats: stats });
+                MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, loadingKey, null);
+                return stats;
+            };
+            var promise = $q.when(db.statsCache.get(year)).catch(function() {
+                return null;
+            }).then(function(entry) {
+                if (entry && entry.stats && entry.format === STATS_FORMAT && stamp &&
+                    DataCacheService.stampOf(entry.date) === stamp) {
+                    return keep(entry.stats);
+                }
                 return self.calculateStats(year).then(function(stats) {
-                    MemoryCacheService.set(CACHE_NAMES.STATS, year, stats);
-                    return db.statsCache.put({ year: year, date: date, stats: stripFunctions(stats) }).then(function() {
-                        MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, year, null);
-                        return stats;
-                    }).catch(function(err) {
-                        throw err;
-                    });
+                    $q.when(db.statsCache.put({ year: year, date: stamp, format: STATS_FORMAT, stats: stripFunctions(stats) }))
+                        .catch(angular.noop);
+                    return keep(stats);
                 });
-            }
-        }).catch(function(err) {
-            throw err;
+            }, function(err) {
+                MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, loadingKey, null);
+                throw err;
+            });
+            MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, loadingKey, promise);
+            return promise;
         });
-        
-        MemoryCacheService.set(CACHE_NAMES.LOADING_PROMISES, year, promise);
-        return promise;
     };
     
     // "Most Races Completed" for one kind of race. All surfaces count, and

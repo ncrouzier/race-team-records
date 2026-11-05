@@ -9,40 +9,36 @@ angular.module('mcrrcApp').directive('memberBestTimeChart', ['$timeout', functio
             <div class="chart-container">
                 <canvas id="bestTimeChart"></canvas>
             </div>
-            <div  style="text-align: center;">
-                 <label>Select Race Type:</label>
-                 <ui-select 
-                     ng-model="selectedRaceType" 
-                     theme="select2" 
-                     style="min-width: 300px; text-align: left;" 
-                     on-select="onRaceTypeSelect($item, $model)">
-                    <ui-select-match placeholder="Select a race type...">
-                        <span class="surface-track" ng-bind-html="selectedRaceType.formattedDisplayName"> </span>
-                    </ui-select-match>
-                                         <ui-select-choices repeat="racetype in availableRaceTypes | propsFilter: {name: $select.search, surface: $select.search}">
-                         <div ng-bind-html="racetype.formattedDisplayName | highlightignorespan: $select.search"></div>
-                     </ui-select-choices>
-                </ui-select>
-                <button class="btn btn-primary" ng-click="reloadChart()" style="margin-left: 10px;" uib-tooltip="Reload Graph" tooltip-placement="right">
-                    <i class="fa fa-refresh"></i>
-                </button>
-                <div class="chart-controls">
-                    <div class="age-grade-toggle">
-                        <label>
-                            <input type="checkbox" ng-model="showAgeGradeLines" ng-change="updateChart()" checked> 
-                            Show Age Grade Levels
-                        </label>
-                    </div>
-                    <div class="performance-mode-toggle">
-                        <label>
-                            <input type="radio" ng-model="performanceMode" value="best" ng-change="updateChart()">
-                            Best per Year
-                        </label>
-                        <label>
-                            <input type="radio" ng-model="performanceMode" value="all" ng-change="updateChart()">
-                            All Performances
-                        </label>
-                    </div>
+            <div class="best-time-chart-controls">
+                <div class="best-time-chart-race">
+                    <label>Race type</label>
+                    <ui-select
+                        ng-model="selectedRaceType"
+                        theme="select2"
+                        class="stats-year-select best-time-race-select"
+                        on-select="onRaceTypeSelect($item, $model)">
+                        <ui-select-match placeholder="Select a race type...">
+                            <span class="surface-track" ng-bind-html="selectedRaceType.formattedDisplayName"> </span>
+                        </ui-select-match>
+                        <ui-select-choices repeat="racetype in availableRaceTypes | propsFilter: {name: $select.search, surface: $select.search}">
+                            <div ng-bind-html="racetype.formattedDisplayName | highlightignorespan: $select.search"></div>
+                        </ui-select-choices>
+                    </ui-select>
+                    <button type="button" class="mcrrc-btn" ng-click="reloadChart()" uib-tooltip="Reload Graph" tooltip-placement="right">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                </div>
+                <div class="best-time-chart-options">
+                    <label class="best-time-chart-check">
+                        <input type="checkbox" ng-model="showAgeGradeLines" ng-change="updateChart()">
+                        Show Age Grade Levels
+                    </label>
+                    <span class="best-time-chart-mode">
+                        <button type="button" class="mcrrc-btn" ng-class="{'is-on': performanceMode === 'best'}"
+                            ng-click="performanceMode = 'best'; updateChart()">Best per Year</button>
+                        <button type="button" class="mcrrc-btn" ng-class="{'is-on': performanceMode === 'all'}"
+                            ng-click="performanceMode = 'all'; updateChart()">All Performances</button>
+                    </span>
                 </div>
             </div>`,
         link: function (scope, element, attrs) {

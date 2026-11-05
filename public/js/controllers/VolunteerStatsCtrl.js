@@ -1,5 +1,4 @@
-// Stats page tab: who volunteered, where and doing what. Logged-in users only
-// — the API refuses anyone else, and the tab is hidden from them.
+// Stats page tab: who volunteered, where and doing what. Open to everyone.
 angular.module('mcrrcApp.results').controller('VolunteerStatsController', ['$scope', '$timeout', 'AuthService', 'MembersService', function ($scope, $timeout, AuthService, MembersService) {
 
     var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -19,12 +18,7 @@ angular.module('mcrrcApp.results').controller('VolunteerStatsController', ['$sco
 
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
-        var hadUser = !!$scope.user;
         $scope.user = user;
-        // Load on arrival, and again if they log in while on the page
-        if (user && (!hadUser || !$scope.stats)) {
-            load();
-        }
     });
 
     $scope.toggle = function (row) {
@@ -54,7 +48,6 @@ angular.module('mcrrcApp.results').controller('VolunteerStatsController', ['$sco
     };
 
     function load() {
-        if (!$scope.user) return;
         $scope.loading = true;
         $scope.error = false;
         var year = $scope.filter.year === 'All Time' ? 'all' : $scope.filter.year;
@@ -128,4 +121,7 @@ angular.module('mcrrcApp.results').controller('VolunteerStatsController', ['$sco
             timelineChart = null;
         }
     });
+
+    // Open to everyone, so it loads on arrival
+    load();
 }]);

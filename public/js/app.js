@@ -65,6 +65,32 @@ app.config(['$httpProvider', function($httpProvider) {
                 if (header !== null && header !== undefined) {
                     $rootScope.unseenActivityCount = parseInt(header, 10) || 0;
                 }
+                // Same mechanism: race series with suggestions waiting for review
+                var pending = response.headers('X-Pending-Series-Count');
+                if (pending !== null && pending !== undefined) {
+                    $rootScope.pendingSeriesCount = parseInt(pending, 10) || 0;
+                }
+                // And members' correction requests waiting for an admin
+                var corrections = response.headers('X-Pending-Corrections-Count');
+                if (corrections !== null && corrections !== undefined) {
+                    $rootScope.pendingCorrectionsCount = parseInt(corrections, 10) || 0;
+                }
+                return response;
+            }
+        };
+    }]);
+
+    // A save went through: the cached data sets check whether it changed them
+    // (DataCacheService). Not for requests that write nothing the caches hold.
+    var NOT_EDITS = /(^|\/)api\/(heartbeat|login|logout|signup|forgot|reset|activitylogs|agegrade|extract)/;
+    $httpProvider.interceptors.push(['$injector', function($injector) {
+        return {
+            response: function(response) {
+                var config = response.config || {};
+                if (config.method && config.method !== 'GET' && /(^|\/)api\//.test(config.url || '') &&
+                    !NOT_EDITS.test(config.url)) {
+                    $injector.get('DataCacheService').localEdit();
+                }
                 return response;
             }
         };
@@ -144,6 +170,7 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         var title = PageTitleService.forTransition(transition);
         $timeout(function() {
             var location = window.location.href;
+            Analytics.setLocation(location);
             title.then(function(text) { Analytics.pageView(stateName, location, text); });
         }, 0, false);
     });
@@ -157,9 +184,17 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         Analytics.event('stats_drilldown', params);
     };
 
-    // Who is browsing, by role only (anonymous, user, captain, admin)
-    $rootScope.$watch(function() { return AuthService.isLoggedIn(); }, function(user) {
-        Analytics.setUser(user);
+    // Who is browsing, by role only (anonymous, user, captain, admin). The
+    // page tag already has the role the server saw (index.ejs); this follows
+    // a log in or out. Not before /api/login has answered: until then a
+    // signed-in visitor looks anonymous, and their first page view would
+    // count as one.
+    $rootScope.$watch(function() {
+        if (!$rootScope.authResolved) return undefined;
+        var user = AuthService.isLoggedIn();
+        return user && user.role ? user.role : 'anonymous';
+    }, function(role) {
+        if (role !== undefined) Analytics.setUser(AuthService.isLoggedIn());
     });
 
     // An admin who stays on one page for a while won't trigger a
@@ -179,25 +214,11 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$htt
     $scope.$state = $state;
 
     $scope.bannerStyle = {};
-    $scope.bannerTitleStyle = {};
-    $scope.bannerTitleTopStyle = {};
-    $scope.bannerTitleBottomStyle = {};
-    $scope.bannerTitleHidden = false;
-    $scope.toggleBannerTitle = function() {
-        $scope.bannerTitleHidden = !$scope.bannerTitleHidden;
-    };
+    // Which side of the photo the title sits on: away from the runner
+    $scope.bannerTitlePosition = 'right';
     function applyBanner(pick) {
         $scope.bannerStyle = { 'background-image': 'url("' + pick.url + '")' };
-        if (pick.titleTheme) {
-            var t = pick.titleTheme;
-            $scope.bannerTitleStyle = {
-                'background':              t.background     !== undefined ? t.background     : '',
-                'backdrop-filter':         t.backdropFilter !== undefined ? t.backdropFilter : '',
-                '-webkit-backdrop-filter': t.backdropFilter !== undefined ? t.backdropFilter : '',
-            };
-            $scope.bannerTitleTopStyle    = { 'color': t.topColor    || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
-            $scope.bannerTitleBottomStyle = { 'color': t.bottomColor || '', 'text-shadow': t.textShadow !== undefined ? t.textShadow : '' };
-        }
+        $scope.bannerTitlePosition = pick.titlePosition || 'right';
         $scope.bannerCopyright      = pick.copyright || null;
         $scope.bannerCopyrightStyle = (pick.copyright && pick.copyright.color) ? { color: pick.copyright.color } : {};
     }
@@ -222,13 +243,16 @@ angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$htt
     });
 
 
+        // Today's birthdays: the server matches day and month only. Asked
+        // fresh on each visit (a few members at most), not kept: a new day
+        // is a new question.
         var birthdayParams = {
-            "filters[dateofbirth]": moment().format('LLL'),//birthday today
+            "filters[dateofbirth]": moment().format('LL'),
             "filters[memberStatus]": 'current',
             sort: 'dateofbirth'
         };
 
-        MembersService.getMembersWithCacheSupport(birthdayParams).then(function(members) {
+        MembersService.getMembers(birthdayParams).then(function(members) {
             $scope.birthdays = members;
         });
 

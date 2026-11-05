@@ -1,4 +1,4 @@
-<div class="jumbotron">
+<div class="jumbotron race-results-page">
     <!-- Search and filters: same bar as "By result" -->
     <div class="results-filter-bar">
         <div class="results-search">
@@ -23,6 +23,8 @@
             <a class="active" role="tab" aria-selected="true" ui-sref="/results"><i class="fa fa-flag-checkered"></i> Race Results</a>
             <a role="tab" aria-selected="false" ui-sref="/individualresults"
                 track-event="view_switch" track-params="{from: 'race_results', to: 'individual_results', via: 'switch'}"><i class="fa fa-user"></i> Individual Results</a>
+            <a role="tab" aria-selected="false" ui-sref="/series"
+                track-event="view_switch" track-params="{from: 'race_results', to: 'race_series', via: 'switch'}"><i class="fa fa-calendar-check-o"></i> Race Series</a>
         </div>
     </div>
 
@@ -105,6 +107,7 @@
             </div>
     </div>
 
+    <div class="member-card race-results-card">
     <div class="row">
         <div class="col-md-12">
             <!-- Loading indicator -->
@@ -148,5 +151,6 @@
                 ng-options="size for size in resultSize"></select>
             per page
         </label>
+    </div>
     </div>
 </div>

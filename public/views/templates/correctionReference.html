@@ -1,0 +1,19 @@
+<!-- A member's correction request, above the result or race edit form it was
+     opened from (corrections page). For reference only: the form keeps the
+     current values, and nothing here changes them. -->
+<div class="crq-reference" ng-if="correctionRequest">
+    <div class="crq-reference-title">
+        Correction request from {{ correctionRequest.sender.member.firstname }} {{ correctionRequest.sender.member.lastname }},
+        {{ correctionRequest.createdAt | date:'MMM d, y' }}
+    </div>
+    <ul class="crq-reference-changes" ng-if="correctionRequest.changes.length">
+        <li ng-repeat="c in correctionRequest.changes">
+            {{ c | correctionChange }}<span class="crq-race-wide" ng-if="c.raceWide"> race-wide</span>
+        </li>
+    </ul>
+    <div class="crq-reference-note" ng-if="correctionRequest.note">"{{ correctionRequest.note }}"</div>
+    <label class="crq-keep-open">
+        <input type="checkbox" ng-model="correctionRequest.keepOpen"> Keep this request open
+        <span class="text-muted">(after saving; for a request that needs another edit)</span>
+    </label>
+</div>

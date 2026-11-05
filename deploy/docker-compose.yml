@@ -39,6 +39,19 @@ services:
       # appears to come from Caddy and the per-IP rate limits on login, signup
       # and the public application form pool all users into one bucket.
       TRUST_PROXY_HOPS: "1"
+      # Member bio photos (app/memberPhotos.js), in the host folder below
+      PHOTO_DIR: /app/uploads/photos
+      # Homepage banners (app/bannerFiles.js), made on the Banners admin page
+      BANNER_DIR: /app/uploads/banners
+    volumes:
+      # A host folder, not a Docker volume: /opt/mcrrc/uploads/photos, one
+      # <memberId>.jpg per member. Plain files on the droplet, so they survive
+      # image updates and are easy to back up (backup.sh) and copy. It must be
+      # owned by uid 1000, the container's `node` user — update.sh makes sure.
+      - ./uploads/photos:/app/uploads/photos
+      # The homepage banners, the same way: /opt/mcrrc/uploads/banners, one
+      # <name>.jpg per banner (plus .drafts/ while one is being framed).
+      - ./uploads/banners:/app/uploads/banners
     # No `ports:` — the app is only reachable through Caddy.
     expose:
       - "8090"

@@ -40,7 +40,7 @@
                 <!-- The row opens the race page; only the chevron expands the
                      results in place -->
                 <div style="cursor: pointer;" ng-click="showRaceModal(raceInfo)" title="Open race details">
-                    <div class="row">
+                    <div class="row race-list-row">
                         <div ng-class="user.role == 'admin' ?'col-sm-4' :'col-sm-5'" style="padding-left:30px">
                             <span class="race-expand-toggle"
                                 ng-click="$event.stopPropagation(); expand(raceInfo)"
@@ -83,15 +83,14 @@
                         <div class="col-sm-2" style="text-align: center;">
                             <race-achievements race="raceInfo"></race-achievements>
                         </div>
-                        <div ng-if="user.role == 'admin'" class="col-sm-1" style="text-align: center;">
-                            <i class="hoverhand fa fa-pencil" ng-show="user.role == 'admin'"
-                                ng-click="$event.stopPropagation(); editRace(raceInfo)" title="Edit race"></i>
-                            <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
-                                ng-click="$event.stopPropagation(); removeRace(raceInfo)" title="Remove race"></i>
-                            <i class="hoverhand fa  fa-plus-square" ng-show="user.role == 'admin'"
+                        <div ng-if="user.role == 'admin'" class="col-sm-1 site-admin-actions">
+                            <button type="button" class="mcrrc-btn site-icon-btn is-compact"
+                                ng-click="$event.stopPropagation(); editRace(raceInfo)" title="Edit race"><i class="fa fa-pencil"></i></button>
+                            <button type="button" class="mcrrc-btn site-icon-btn is-compact"
                                 ng-click="$event.stopPropagation(); showAddResultModal(raceInfo)"
-                                title="Add a result for this race"></i>
-
+                                title="Add a result for this race"><i class="fa fa-plus"></i></button>
+                            <button type="button" class="mcrrc-btn site-icon-btn is-compact is-danger"
+                                ng-click="$event.stopPropagation(); removeRace(raceInfo)" title="Remove race"><i class="fa fa-trash"></i></button>
                         </div>
 
                     </div>
@@ -196,17 +195,14 @@
                                                     title="view result"></i>
                                             </a>
                                         </div>
-                                        <div class="col-sm-2" ng-if="user.role == 'admin'" style="text-align: center;">
-                                            <span>
-                                                <i class="hoverhand fa fa-pencil-square-o"
-                                                    ng-show="user.role == 'admin'"
-                                                    ng-click="$event.stopPropagation(); retrieveResultForEdit(raceInfo,result)"
-                                                    title="edit result"></i>
-                                                <i class="hoverhand fa fa-trash" ng-show="user.role == 'admin'"
-                                                    ng-click="$event.stopPropagation(); removeResult(raceInfo, result)" title="remove result"></i>
-                                                <input type="checkbox" ng-model="result.selected" ng-click="$event.stopPropagation()"
-                                                    class="result-checkbox" style="margin-right: 10px;">
-                                            </span>
+                                        <div class="col-sm-2 site-admin-actions" ng-if="user.role == 'admin'">
+                                            <button type="button" class="mcrrc-btn site-icon-btn is-compact"
+                                                ng-click="$event.stopPropagation(); retrieveResultForEdit(raceInfo,result)"
+                                                title="Edit result"><i class="fa fa-pencil"></i></button>
+                                            <button type="button" class="mcrrc-btn site-icon-btn is-compact is-danger"
+                                                ng-click="$event.stopPropagation(); removeResult(raceInfo, result)" title="Remove result"><i class="fa fa-trash"></i></button>
+                                            <input type="checkbox" ng-model="result.selected" ng-click="$event.stopPropagation()"
+                                                class="result-checkbox" title="Select for bulk changes">
                                         </div>
                                     </div>
                                 </li>

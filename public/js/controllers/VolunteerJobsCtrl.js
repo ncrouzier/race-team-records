@@ -1,10 +1,21 @@
-angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function ($scope, AuthService, VolunteerJobsService, MembersService, dialogs) {
+angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scope', '$rootScope', '$state', 'AuthService', 'VolunteerJobsService', 'MembersService', 'dialogs', function ($scope, $rootScope, $state, AuthService, VolunteerJobsService, MembersService, dialogs) {
 
     // =====================================
     // AUTHENTICATION SETUP ================
     $scope.authService = AuthService;
     $scope.$watch('authService.isLoggedIn()', function (user) {
         $scope.user = user;
+    });
+
+    // Captains and admins only. Every member may read the job list (the race
+    // page uses it), so the server no longer keeps others off this page:
+    // once we know who is signed in, anyone else goes home.
+    $scope.$watch(function () {
+        if (!$rootScope.authResolved) return null;
+        var user = AuthService.isLoggedIn();
+        return user && (user.role === 'admin' || user.role === 'captain') ? 'allowed' : 'denied';
+    }, function (access) {
+        if (access === 'denied') $state.go('/', {}, { location: 'replace' });
     });
 
     // =====================================
@@ -60,8 +71,18 @@ angular.module('mcrrcApp.results').controller('VolunteerJobsController', ['$scop
         buildYearsList(jobs);
     });
 
+    // A volunteer's sex, for the icon by their name: from the members list,
+    // since the job list leaves it out
+    var membersById = {};
+    $scope.memberSex = function (job) {
+        var member = job.member && membersById[job.member._id];
+        return member ? member.sex : null;
+    };
+
     // Load members list (needed for modal member selection)
     MembersService.getMembersWithCacheSupport({}).then(function (members) {
+        membersById = {};
+        members.forEach(function (m) { membersById[m._id] = m; });
         // Sort members: current members first, then past members
         $scope.membersList = members.sort(function (a, b) {
             // Current members (no status or 'current') come before past members

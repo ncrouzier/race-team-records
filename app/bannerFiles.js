@@ -23,8 +23,6 @@ const sharp = require('sharp');
 const BANNER_DIR = path.resolve(process.env.BANNER_DIR || path.join(__dirname, '..', 'uploads', 'banners'));
 const DRAFT_DIR = path.join(BANNER_DIR, '.drafts');
 const URL_PREFIX = '/uploads/banners/';
-// The banners that shipped in the image before they moved here
-const LEGACY_DIR = path.join(__dirname, '..', 'public', 'images', 'banners');
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 const MAX_INPUT_PIXELS = 100 * 1000 * 1000;
@@ -199,7 +197,16 @@ async function createDraft(buffer, analyse) {
         throw bannerError('This image could not be read. Try saving it again as a JPEG.');
     }
 
-    const detected = await analyse(photo);
+    // Face detection failing (the model not loading, say) must not stop the
+    // banner: the editor then starts from the whole photo, framed by hand
+    let detected;
+    try {
+        detected = await analyse(photo);
+    } catch (err) {
+        console.error('Banners: face detection failed, framing by hand:', err);
+        const m = await sharp(photo).metadata();
+        detected = { width: m.width, height: m.height, kind: 'no-face', face: null, otherFaces: [], faceCount: 0, detectionFailed: true };
+    }
     const id = crypto.randomBytes(12).toString('hex');
     const files = draftFiles(id);
     await fs.promises.mkdir(DRAFT_DIR, { recursive: true });
@@ -266,41 +273,11 @@ async function checkWritable() {
     }
 }
 
-// One-time move of the banners that shipped in the image: when the folder
-// has no banners yet, copy public/images/banners/*.jpg into it and give
-// every entry its version (an entry for each file, created if missing).
-// Does nothing once the folder has banners. `Banner` is the model.
-async function seedFromImage(Banner) {
-    if (listFiles().length) return { copied: 0 };
-    let legacy;
-    try {
-        legacy = fs.readdirSync(LEGACY_DIR).filter((f) => FILE_PATTERN.test(f));
-    } catch (e) {
-        return { copied: 0 };
-    }
-    if (!legacy.length) return { copied: 0 };
-
-    await fs.promises.mkdir(BANNER_DIR, { recursive: true });
-    let copied = 0, created = 0;
-    for (const filename of legacy) {
-        const data = await fs.promises.readFile(path.join(LEGACY_DIR, filename));
-        await fs.promises.copyFile(path.join(LEGACY_DIR, filename), path.join(BANNER_DIR, filename));
-        copied++;
-        const version = versionOf(data);
-        const res = await Banner.updateOne({ filename }, { $set: { version } });
-        if (!res.matchedCount) {
-            await Banner.create({ filename, members: [], pinned: false, titlePosition: 'right', version });
-            created++;
-        }
-    }
-    return { copied, created };
-}
-
 module.exports = {
     BANNER_DIR, DRAFT_DIR, URL_PREFIX, MAX_UPLOAD_BYTES, ACCEPTED_TYPES, NAME_PATTERN, FILE_PATTERN, DRAFT_PATTERN,
     DRAFT_MAX_AGE_MS,
     cleanName, fileFor, listFiles, nameTaken, urlFor, versionOf,
     createBanner, replaceBanner, renameBanner, deleteBanner,
     createDraft, readDraft, draftPhotoPath, deleteDraft, sweepDrafts,
-    checkWritable, seedFromImage
+    checkWritable
 };

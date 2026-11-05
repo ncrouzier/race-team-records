@@ -34,10 +34,16 @@ function baseName(filename) {
     return String(filename || '').replace(/\.jpg$/i, '');
 }
 
+// These routes are for admins: an unexpected error says what it was (a
+// folder that cannot be written, say), so it can be fixed from the message
 function sendError(res, err, fallback) {
     if (err && err.bannerError) return res.status(err.status || 400).json({ error: err.message });
     console.error(fallback + ':', err);
-    res.status(500).json({ error: fallback });
+    let detail = (err && (err.code || err.message)) || 'unknown error';
+    if (err && (err.code === 'EACCES' || err.code === 'EROFS')) {
+        detail += ': the server cannot write to the banners folder (' + bannerFiles.BANNER_DIR + '). See deploy/update.sh';
+    }
+    res.status(500).json({ error: fallback + ' (' + String(detail).slice(0, 300) + ').' });
 }
 
 module.exports = function (app) {
@@ -215,7 +221,8 @@ module.exports = function (app) {
         const p = bannerRender.photoSettings(detected);
         const crop = bannerRender.automaticCrop(p, overlay);
         let notice = null;
-        if (detected.kind === 'no-face') notice = 'No face was found in this photo: the framing starts from the whole width. Move it so the runner is on the left.';
+        if (detected.detectionFailed) notice = 'Face detection is not working on the server right now: the framing starts from the whole width. Frame it by hand.';
+        else if (detected.kind === 'no-face') notice = 'No face was found in this photo: the framing starts from the whole width. Move it so the runner is on the left.';
         else if (detected.kind === 'group') notice = 'This looks like a group photo: check the framing, the title sits on the right.';
         else if (detected.kind === 'runner-right') notice = 'The runner seems to be on the right, behind the title: move the photo so they are on the left.';
         return {

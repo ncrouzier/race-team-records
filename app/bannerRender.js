@@ -1,11 +1,11 @@
 // Making a homepage banner from a photo: find the runner, frame them on the
 // left, and fade the photo to white along the title badge's 12° slant.
 //
-// Ported from scripts/lib/slant-banners-core.mjs, which the offline tools
-// (npm run banners, npm run banners:edit) used: the same geometry, limits
-// and render, so a banner made on the site matches one made offline. The
-// framing and fade settings that lived in config/banners/slant-banners.config.json
-// are the constants below, at the values that file had.
+// Ported from the offline banner tools this replaced (scripts/slant-banners.mjs
+// and its editor, removed since): the same geometry, limits and render, so
+// the banners made back then and those made on the site match. The framing
+// and fade settings are the constants below, at the values the offline
+// tools' config file had.
 const sharp = require('sharp');
 const { detectFaces } = require('./faceDetector');
 
@@ -233,7 +233,7 @@ function automaticCrop(p, overlay) {
 
 // Whether a crop is the photo's automatic one, give or take a pixel: then
 // the banner is rendered from the automatic placement itself, exactly as
-// `npm run banners` did, rather than from that placement turned into a crop
+// the offline tools did, rather than from that placement turned into a crop
 // (which the crop limits can nudge)
 function isAutomaticCrop(p, crop, overlay) {
     if (!crop || !p.face || p.kind !== 'runner-left') return false;

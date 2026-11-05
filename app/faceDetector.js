@@ -6,6 +6,26 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 
+// face-api's WASM build asks for the full @tensorflow/tfjs package, which is
+// only a devDependency (~230 MB with what it pulls in) and so is not in the
+// production image (npm prune --omit=dev). What face-api uses from it is the
+// core plus the chained tensor methods: while face-api loads,
+// '@tensorflow/tfjs' resolves to app/tfjsCore.js, which is exactly that.
+function requireFaceApi() {
+    const Module = require('module');
+    const resolve = Module._resolveFilename;
+    const core = require.resolve('./tfjsCore');
+    Module._resolveFilename = function (request) {
+        if (request === '@tensorflow/tfjs') return core;
+        return resolve.apply(this, arguments);
+    };
+    try {
+        return require('@vladmandic/face-api/dist/face-api.node-wasm.js');
+    } finally {
+        Module._resolveFilename = resolve;
+    }
+}
+
 // Loads exactly once, however many calls arrive concurrently — a second call
 // while the first is still loading gets the same in-flight promise. A failed
 // load is not cached, so the next call tries again instead of failing forever.
@@ -16,7 +36,7 @@ function initFaceDetector() {
             const tf = require('@tensorflow/tfjs-core');
             require('@tensorflow/tfjs-backend-wasm');
             const { setWasmPaths } = require('@tensorflow/tfjs-backend-wasm');
-            const faceapi = require('@vladmandic/face-api/dist/face-api.node-wasm.js');
+            const faceapi = requireFaceApi();
             setWasmPaths(path.join(root, 'node_modules/@tensorflow/tfjs-backend-wasm/dist/'));
             await tf.setBackend('wasm');
             await tf.ready();

@@ -170,6 +170,14 @@ describe('drafts', () => {
         expect(fs.existsSync(bannerFiles.DRAFT_DIR) ? fs.readdirSync(bannerFiles.DRAFT_DIR) : []).toEqual([]);
     });
 
+    test('a face detector that fails still gives a draft, framed by hand', async () => {
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => { });
+        const { id, detected } = await bannerFiles.createDraft(await photo(900, 600), async () => { throw new Error('model missing'); });
+        spy.mockRestore();
+        expect(detected).toMatchObject({ width: 900, height: 600, kind: 'no-face', face: null, detectionFailed: true });
+        await expect(bannerFiles.readDraft(id)).resolves.toBeTruthy();
+    });
+
     test('only draft ids name drafts', async () => {
         await expect(bannerFiles.readDraft('../../x')).rejects.toMatchObject({ status: 404 });
     });
@@ -184,33 +192,5 @@ describe('drafts', () => {
         expect(await bannerFiles.sweepDrafts(0)).toBe(2); // the fresh draft's .jpg and .json
         expect(bannerFiles.listFiles()).toEqual(['keep.jpg']);
         await expect(bannerFiles.readDraft(id)).rejects.toMatchObject({ status: 404 });
-    });
-});
-
-describe('the one-time copy of the banners in the image', () => {
-    beforeEach(clearDir);
-
-    function fakeBannerModel(known) {
-        const entries = known.map((filename) => ({ filename }));
-        return {
-            entries,
-            updateOne: async (q, u) => {
-                const e = entries.find((x) => x.filename === q.filename);
-                if (e) Object.assign(e, u.$set);
-                return { matchedCount: e ? 1 : 0 };
-            },
-            create: async (doc) => { entries.push(doc); return doc; }
-        };
-    }
-
-    const legacy = fs.readdirSync(path.join(__dirname, '..', 'public', 'images', 'banners')).filter((f) => /\.jpg$/.test(f));
-
-    (legacy.length ? test : test.skip)('copies them once, versions every entry, adds missing ones', async () => {
-        const Banner = fakeBannerModel(legacy.slice(1));
-        const first = await bannerFiles.seedFromImage(Banner);
-        expect(first).toEqual({ copied: legacy.length, created: 1 });
-        expect(bannerFiles.listFiles().sort()).toEqual(legacy.slice().sort());
-        expect(Banner.entries.every((e) => /^[a-f0-9]{12}$/.test(e.version))).toBe(true);
-        expect(await bannerFiles.seedFromImage(Banner)).toEqual({ copied: 0 });
     });
 });

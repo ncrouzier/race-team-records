@@ -270,16 +270,10 @@ service.startUpUpdate();
 require('./app/memberPhotos').checkWritable();
 
 // Banners live in BANNER_DIR (a host folder in production). At boot: say if
-// it cannot be written; the first time, copy in the banners that shipped in
-// the image; and every hour, drop editor drafts left for over a day.
+// it cannot be written; and every hour, drop editor drafts left for over a day.
 (function () {
     const bannerFiles = require('./app/bannerFiles');
-    bannerFiles.checkWritable()
-        .then(() => bannerFiles.seedFromImage(require('./app/models/banner')))
-        .then(({ copied, created }) => {
-            if (copied) console.log(`Banners: copied ${copied} banner(s) from the image into ${bannerFiles.BANNER_DIR}` + (created ? `, ${created} new entr${created === 1 ? 'y' : 'ies'}` : ''));
-        })
-        .catch(err => console.error('Banners: could not set up the banner folder:', err));
+    bannerFiles.checkWritable();
     const sweep = () => bannerFiles.sweepDrafts().catch(err => console.error('Banners: draft cleanup failed:', err));
     sweep();
     setInterval(sweep, 60 * 60 * 1000).unref();

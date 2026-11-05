@@ -59,17 +59,3 @@ you need, then **Save** on the card (or **Save all** at the top).
 - **Shown / Disabled:** a disabled banner is never shown, not even on a
   birthday. Use this to retire a banner but keep it.
 - **Delete (trash icon):** deletes the banner and its image, for good.
-
-## Moving from the offline tools
-
-Banners used to be made on a laptop (`npm run banners`, `npm run
-banners:edit`) from photos in `public/images/banners/source/`, and shipped in
-the Docker image. On its first start, the new version copies the banners from
-`public/images/banners/*.jpg` into the banners folder and gives every entry
-its version; after that it never looks there again.
-
-The offline tools still exist in this release but no longer affect the site.
-Once production is confirmed on the new folder, the next release deletes
-`public/images/banners/` (with `source/`), `config/banners/`, the scripts
-(`slant-banners.mjs`, `banner-editor.*`, `lib/slant-banners-core.mjs`,
-`seed-banners.js`, `app/bannerDefaults.js`) and the `banners*` npm scripts.

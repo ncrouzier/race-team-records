@@ -1,7 +1,7 @@
 // The banner editor's stage: the whole photo, dimmed outside the banner's
 // window, with the real title badge and fade over the window. Drag the photo
 // to move it, scroll or the slider to zoom, arrow keys to nudge (Shift: more).
-// Ported from the offline editor (scripts/banner-editor.html).
+// Ported from the offline banner editor this replaced.
 //
 //   <banner-stage draft="draft" crop="crop" preview-mode="mode" show-title="true"></banner-stage>
 //

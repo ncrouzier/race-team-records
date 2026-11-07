@@ -1000,13 +1000,14 @@ angular.module('mcrrcApp.members').controller('BioEditModalInstanceController', 
 }]);
 
 angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController', ['$scope', '$q', '$uibModalInstance', 'member', 'MembersService', function ($scope, $q, $uibModalInstance, member, MembersService) {
-    // Big photos are shrunk in the browser before upload, so phone photos stay
-    // under the server's 10 MB / 100 MP limits and upload quickly. 2000 px is
-    // twice what the server keeps (1000 px), so the server's own resize hides
-    // this step; a photo already within both limits is sent untouched.
-    var RESIZE_ABOVE_SIDE = 2000;
-    var RESIZE_ABOVE_BYTES = 8 * 1024 * 1024;
-    var MAX_BYTES = 10 * 1024 * 1024;
+    // A photo is sent as it is, so the server's resize (to 1000 px) works
+    // from the original and the photo is compressed once. Only one over the
+    // server's limits (20 MB, 100 megapixels, the same as banners) is shrunk
+    // here first, to RESIZE_TO px at high quality.
+    var RESIZE_TO = 6000;
+    var RESIZE_ABOVE_BYTES = 19.5 * 1024 * 1024;
+    var RESIZE_ABOVE_PIXELS = 100 * 1000 * 1000;
+    var MAX_BYTES = 20 * 1024 * 1024;
     var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
     $scope.memberName = member.firstname + ' ' + member.lastname;
@@ -1042,11 +1043,11 @@ angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController'
         if (!window.createImageBitmap) return $q.when(file);
         return $q.when(createImageBitmap(file, { imageOrientation: 'from-image' })).then(function (bitmap) {
             var longSide = Math.max(bitmap.width, bitmap.height);
-            if (longSide <= RESIZE_ABOVE_SIDE && file.size <= RESIZE_ABOVE_BYTES) {
+            if (file.size <= RESIZE_ABOVE_BYTES && bitmap.width * bitmap.height <= RESIZE_ABOVE_PIXELS) {
                 bitmap.close && bitmap.close();
                 return file;
             }
-            var scale = Math.min(1, RESIZE_ABOVE_SIDE / longSide);
+            var scale = Math.min(1, RESIZE_TO / longSide);
             var canvas = document.createElement('canvas');
             canvas.width = Math.round(bitmap.width * scale);
             canvas.height = Math.round(bitmap.height * scale);
@@ -1058,7 +1059,7 @@ angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController'
             ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
             bitmap.close && bitmap.close();
             return $q(function (resolve) {
-                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.92);
+                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.95);
             });
         }, function () {
             // The browser could not decode it: let the server judge (and explain)
@@ -1081,7 +1082,7 @@ angular.module('mcrrcApp.members').controller('PhotoEditModalInstanceController'
         $scope.busy = true;
         shrinkIfNeeded(file).then(function (blob) {
             if (blob.size > MAX_BYTES) {
-                $scope.error = 'This photo is over 10 MB. Try a smaller one.';
+                $scope.error = 'This photo is over 20 MB. Try a smaller one.';
                 return;
             }
             $scope.upload = blob;

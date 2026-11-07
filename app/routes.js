@@ -1246,7 +1246,7 @@ module.exports = async function (app, qs, passport, async, _) {
         next();
     }, photoUploadLimiter, function (req, res, next) {
         readPhotoBody(req, res, function (err) {
-            if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'The file is over 10 MB.' });
+            if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'The file is over 20 MB.' });
             if (err) return res.status(400).json({ error: 'The upload could not be read.' });
             next();
         });

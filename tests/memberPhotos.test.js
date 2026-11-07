@@ -22,7 +22,7 @@ function noisyImage(width, height, format, options) {
 afterAll(() => fs.rmSync(PHOTO_DIR, { recursive: true, force: true }));
 
 describe('processPhoto', () => {
-    test('a large photo comes out a JPEG of at most 1000 px and 200 KB', async () => {
+    test('a large photo comes out a JPEG of at most 1000 px, full colour resolution', async () => {
         const input = await noisyImage(2400, 3200, 'jpeg');
         expect(input.length).toBeLessThan(10 * 1024 * 1024);
         const out = await memberPhotos.processPhoto(input);
@@ -30,7 +30,7 @@ describe('processPhoto', () => {
         expect(meta.format).toBe('jpeg');
         expect(Math.max(meta.width, meta.height)).toBe(1000);
         expect(meta.width).toBe(750);
-        expect(out.length).toBeLessThanOrEqual(200 * 1024);
+        expect(meta.chromaSubsampling).toBe('4:4:4');
     });
 
     test('a small photo is not enlarged', async () => {
@@ -38,11 +38,15 @@ describe('processPhoto', () => {
         expect([meta.width, meta.height]).toEqual([400, 300]);
     });
 
-    test('a simple photo keeps a high quality, not just the size cap', async () => {
-        const flat = await sharp({ create: { width: 1200, height: 1600, channels: 3, background: '#3388cc' } }).jpeg().toBuffer();
-        const out = await memberPhotos.processPhoto(flat);
-        // Room to spare: the binary search goes up to the top quality
-        expect(out.length).toBeLessThan(60 * 1024);
+    test('the photo is kept at high quality, whatever its size', async () => {
+        // Photo-like detail: noise softened as a camera would, not pure noise
+        const input = await sharp(await noisyImage(800, 600, 'png')).blur(1.2).png().toBuffer();
+        const out = await memberPhotos.processPhoto(input);
+        const a = await sharp(input).raw().toBuffer(), b = await sharp(out).raw().toBuffer();
+        let sq = 0;
+        for (let i = 0; i < a.length; i++) sq += (a[i] - b[i]) * (a[i] - b[i]);
+        const psnr = 10 * Math.log10(255 * 255 / (sq / a.length));
+        expect(psnr).toBeGreaterThan(40);
     });
 
     test('metadata (EXIF, GPS...) is removed', async () => {
@@ -81,8 +85,8 @@ describe('processPhoto', () => {
         await expect(memberPhotos.processPhoto(await noisyImage(60, 60, 'png'))).rejects.toThrow(/too small/);
     });
 
-    test('a file over 10 MB is refused before decoding', async () => {
-        await expect(memberPhotos.processPhoto(Buffer.alloc(10 * 1024 * 1024 + 1))).rejects.toMatchObject({ status: 413 });
+    test('a file over 20 MB is refused before decoding', async () => {
+        await expect(memberPhotos.processPhoto(Buffer.alloc(20 * 1024 * 1024 + 1))).rejects.toMatchObject({ status: 413 });
     });
 
     test('an image declaring a huge size (decompression bomb) is refused', async () => {

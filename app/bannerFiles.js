@@ -4,9 +4,13 @@
 // the container (/opt/mcrrc/uploads/banners, see deploy/docker-compose.yml);
 // locally it defaults to ./uploads/banners.
 //
-// While a banner is being made, its photo is a draft in .drafts/: the photo
-// re-encoded (upright, at most DRAFT_MAX_SIDE px, no metadata) as <id>.jpg,
-// and what face detection found in it as <id>.json. The draft is deleted once
+// While a banner is being made, its photo is a draft in .drafts/: the
+// uploaded file itself, unchanged (<id>.src), so the banner is rendered from
+// the original pixels and compressed once, at the end; a small upright copy
+// for the editor to show (<id>.jpg); and what face detection found (<id>.json).
+// Only a photo too big to render comfortably is scaled down first, at high
+// quality. The original keeps its metadata while it is a draft — admins only,
+// never served — and the banner made from it has none. The draft is deleted once
 // the banner is saved — the source photo is not kept — or cancelled, and any
 // draft left behind is swept after DRAFT_MAX_AGE_MS.
 //
@@ -27,7 +31,11 @@ const URL_PREFIX = '/uploads/banners/';
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 const MAX_INPUT_PIXELS = 100 * 1000 * 1000;
 const MIN_SIDE = 400;
-const DRAFT_MAX_SIDE = 3000;
+// Above this, the draft is scaled down (to DRAFT_MAX_SIDE, at high quality)
+// before anything else: decoding it for every preview would strain the server
+const DRAFT_KEEP_PIXELS = 40 * 1000 * 1000;
+const DRAFT_MAX_SIDE = 8000;
+const PREVIEW_SIDE = 1600;
 const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ACCEPTED_FORMATS = ['jpeg', 'png', 'webp'];
@@ -159,7 +167,11 @@ function deleteBanner(name) {
 
 function draftFiles(id) {
     if (!DRAFT_PATTERN.test(String(id))) throw bannerError('No such draft', 404);
-    return { photo: path.join(DRAFT_DIR, id + '.jpg'), info: path.join(DRAFT_DIR, id + '.json') };
+    return {
+        source: path.join(DRAFT_DIR, id + '.src'),
+        preview: path.join(DRAFT_DIR, id + '.jpg'),
+        info: path.join(DRAFT_DIR, id + '.json')
+    };
 }
 
 // The uploaded photo checked and stored as a draft. `analyse` (from
@@ -184,14 +196,25 @@ async function createDraft(buffer, analyse) {
     if (!w || !h || w * h > MAX_INPUT_PIXELS) throw bannerError('This image is too large (over 100 megapixels).');
     if (Math.min(w, h) < MIN_SIDE) throw bannerError(`Too small (${w}×${h}): use a photo at least ${MIN_SIDE}px on each side.`);
 
-    let photo;
+    // The original as it is, unless it is huge; and the editor's small copy.
+    // Decoding all of it here also proves the whole file reads.
+    let source = buffer, preview;
+    let upright = { width: w, height: h };
     try {
-        photo = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
+        if (w * h > DRAFT_KEEP_PIXELS) {
+            source = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
+                .rotate()
+                .resize(DRAFT_MAX_SIDE, DRAFT_MAX_SIDE, { fit: 'inside', fastShrinkOnLoad: false })
+                .jpeg({ quality: 95, chromaSubsampling: '4:4:4', mozjpeg: true })
+                .toBuffer();
+            const m = await sharp(source).metadata();
+            upright = { width: m.width, height: m.height };
+        }
+        preview = await sharp(source, { limitInputPixels: MAX_INPUT_PIXELS })
             .rotate()
-            .resize(DRAFT_MAX_SIDE, DRAFT_MAX_SIDE, { fit: 'inside', withoutEnlargement: true })
+            .resize(PREVIEW_SIDE, PREVIEW_SIDE, { fit: 'inside', withoutEnlargement: true })
             .flatten({ background: '#ffffff' })
-            .toColourspace('srgb')
-            .jpeg({ quality: 92, mozjpeg: true })
+            .jpeg({ quality: 85, mozjpeg: true })
             .toBuffer();
     } catch (e) {
         throw bannerError('This image could not be read. Try saving it again as a JPEG.');
@@ -201,16 +224,16 @@ async function createDraft(buffer, analyse) {
     // banner: the editor then starts from the whole photo, framed by hand
     let detected;
     try {
-        detected = await analyse(photo);
+        detected = await analyse(source);
     } catch (err) {
         console.error('Banners: face detection failed, framing by hand:', err);
-        const m = await sharp(photo).metadata();
-        detected = { width: m.width, height: m.height, kind: 'no-face', face: null, otherFaces: [], faceCount: 0, detectionFailed: true };
+        detected = { width: upright.width, height: upright.height, kind: 'no-face', face: null, otherFaces: [], faceCount: 0, detectionFailed: true };
     }
     const id = crypto.randomBytes(12).toString('hex');
     const files = draftFiles(id);
     await fs.promises.mkdir(DRAFT_DIR, { recursive: true });
-    await fs.promises.writeFile(files.photo, photo, { mode: 0o600 });
+    await fs.promises.writeFile(files.source, source, { mode: 0o600 });
+    await fs.promises.writeFile(files.preview, preview, { mode: 0o600 });
     await fs.promises.writeFile(files.info, JSON.stringify(detected), { mode: 0o600 });
     return { id, detected };
 }
@@ -218,7 +241,7 @@ async function createDraft(buffer, analyse) {
 async function readDraft(id) {
     const files = draftFiles(id);
     try {
-        const [photo, info] = await Promise.all([fs.promises.readFile(files.photo), fs.promises.readFile(files.info, 'utf8')]);
+        const [photo, info] = await Promise.all([fs.promises.readFile(files.source), fs.promises.readFile(files.info, 'utf8')]);
         return { photo, detected: JSON.parse(info) };
     } catch (err) {
         if (err.code === 'ENOENT') throw bannerError('This photo is no longer here (it was saved, cancelled, or left for over a day). Upload it again.', 404);
@@ -226,13 +249,14 @@ async function readDraft(id) {
     }
 }
 
+// The editor's small copy of the draft
 function draftPhotoPath(id) {
-    return draftFiles(id).photo;
+    return draftFiles(id).preview;
 }
 
 async function deleteDraft(id) {
     const files = draftFiles(id);
-    await Promise.all([files.photo, files.info].map((f) =>
+    await Promise.all([files.source, files.preview, files.info].map((f) =>
         fs.promises.unlink(f).catch((err) => { if (err.code !== 'ENOENT') throw err; })));
 }
 

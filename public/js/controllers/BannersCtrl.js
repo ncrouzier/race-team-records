@@ -320,10 +320,12 @@ angular.module('mcrrcApp.admin').controller('BannersController', ['$scope', '$ro
 // and fade, name it, and save (step 2). The server keeps the photo as a draft
 // only while this is open: saving or cancelling deletes it.
 angular.module('mcrrcApp.admin').controller('BannerEditorModalController', ['$scope', '$http', '$q', '$uibModalInstance', 'replacing', function ($scope, $http, $q, $uibModalInstance, replacing) {
-    // Photos bigger than this are shrunk in the browser first: the server
-    // keeps at most 3000 px of them anyway, and it saves a slow upload
-    var SHRINK_ABOVE_SIDE = 4000;
-    var SHRINK_ABOVE_BYTES = 15 * 1024 * 1024;
+    // A photo is sent as it is: the banner is rendered from the original and
+    // compressed once. Only one over the server's limits (20 MB, 100
+    // megapixels) is shrunk here first, to SHRINK_TO px at high quality.
+    var SHRINK_TO = 6000;
+    var SHRINK_ABOVE_BYTES = 19.5 * 1024 * 1024;
+    var SHRINK_ABOVE_PIXELS = 100 * 1000 * 1000;
     var MAX_BYTES = 20 * 1024 * 1024;
     var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -343,11 +345,11 @@ angular.module('mcrrcApp.admin').controller('BannerEditorModalController', ['$sc
         if (!window.createImageBitmap) return $q.when(file);
         return $q.when(createImageBitmap(file, { imageOrientation: 'from-image' })).then(function (bitmap) {
             var longSide = Math.max(bitmap.width, bitmap.height);
-            if (longSide <= SHRINK_ABOVE_SIDE && file.size <= SHRINK_ABOVE_BYTES) {
+            if (file.size <= SHRINK_ABOVE_BYTES && bitmap.width * bitmap.height <= SHRINK_ABOVE_PIXELS) {
                 if (bitmap.close) bitmap.close();
                 return file;
             }
-            var scale = Math.min(1, SHRINK_ABOVE_SIDE / longSide);
+            var scale = Math.min(1, SHRINK_TO / longSide);
             var canvas = document.createElement('canvas');
             canvas.width = Math.round(bitmap.width * scale);
             canvas.height = Math.round(bitmap.height * scale);
@@ -356,7 +358,7 @@ angular.module('mcrrcApp.admin').controller('BannerEditorModalController', ['$sc
             ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
             if (bitmap.close) bitmap.close();
             return $q(function (resolve) {
-                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.92);
+                canvas.toBlob(function (blob) { resolve(blob || file); }, 'image/jpeg', 0.95);
             });
         }, function () { return file; });
     }

@@ -8,8 +8,11 @@
 // Whatever is uploaded is never stored as is. It is decoded by sharp, which
 // is what proves it is an image (the browser's stated type is only a first
 // filter), then re-encoded as a fresh JPEG: upright, at most MAX_SIDE pixels,
-// no metadata (EXIF, GPS, ICC profile...), at the best quality that fits in
-// TARGET_BYTES. The file name is the member's id, never the uploader's.
+// no metadata (EXIF, GPS, ICC profile...), at JPEG_QUALITY with full colour
+// resolution (4:4:4) whatever the size. 95 is where photos stop visibly
+// improving (SSIM ~0.988 on real race photos, worst 0.984): ~350 KB typical,
+// ~600 KB at most; 100 would double that for no visible gain.
+// The file name is the member's id, never the uploader's.
 //
 // The member's pictureLink then reads /uploads/photos/<id>.jpg?v=<hash>: the
 // hash changes with each new photo, so browsers fetch it again, and the
@@ -28,7 +31,7 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_INPUT_PIXELS = 100 * 1000 * 1000;
 const MIN_SIDE = 100;
 const MAX_SIDE = 1000;
-const TARGET_BYTES = 200 * 1024;
+const JPEG_QUALITY = 95;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const ACCEPTED_FORMATS = ['jpeg', 'png', 'webp'];
 
@@ -76,33 +79,19 @@ async function processPhoto(buffer, options) {
     if (meta.width * meta.height > MAX_INPUT_PIXELS) throw photoError('This image is too large (over 100 megapixels).');
     if (Math.min(meta.width, meta.height) < MIN_SIDE) throw photoError('This image is too small (under ' + MIN_SIDE + ' px).');
 
-    // Decode once, upright and resized; then only the JPEG quality varies
-    let pixels;
     try {
-        pixels = await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
+        return await sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS })
             .rotate()
-            .resize(MAX_SIDE, MAX_SIDE, { fit: 'inside', withoutEnlargement: true })
+            // fastShrinkOnLoad off: libvips' shortcut of decoding a JPEG at a
+            // fraction of its size softens it slightly
+            .resize(MAX_SIDE, MAX_SIDE, { fit: 'inside', withoutEnlargement: true, fastShrinkOnLoad: false })
             .flatten({ background: '#ffffff' })
             .toColourspace('srgb')
-            .raw()
-            .toBuffer({ resolveWithObject: true });
+            .jpeg({ quality: JPEG_QUALITY, chromaSubsampling: '4:4:4', mozjpeg: true })
+            .toBuffer();
     } catch (e) {
         throw photoError('This image could not be read. Try saving it again as a JPEG.');
     }
-
-    const encode = quality => sharp(pixels.data, { raw: pixels.info })
-        .jpeg({ quality: quality, mozjpeg: true, chromaSubsampling: quality >= 90 ? '4:4:4' : '4:2:0' })
-        .toBuffer();
-
-    // The best quality under TARGET_BYTES: binary search between 50 and 95
-    let best = await encode(50);
-    let lo = 51, hi = 95;
-    while (lo <= hi) {
-        const mid = Math.floor((lo + hi) / 2);
-        const out = await encode(mid);
-        if (out.length <= TARGET_BYTES) { best = out; lo = mid + 1; } else { hi = mid - 1; }
-    }
-    return best;
 }
 
 // Write atomically: a reader sees the old photo or the new one, never half

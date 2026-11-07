@@ -56,7 +56,10 @@ const FRAMING = { faceSize: 9, faceFromTop: 12, faceFromLeft: 20, maxFaceFromLef
 // The fade to white behind the title: startBeforeStripes and
 // endAfterNavyStrip in px on a 1140px banner; stops [position %, white %]
 const FADE = { startBeforeStripes: 70, endAfterNavyStrip: 0, stops: [[0, 0], [20, 8], [45, 32], [70, 66], [88, 90], [100, 100]] };
-const QUALITY = 90;
+// The banner is the only lossy step (made from the photo as uploaded): 95,
+// where it stops visibly improving, and full colour resolution (4:4:4):
+// ~155 KB a banner, ~320 KB at most (100 would double that)
+const QUALITY = 95;
 
 // A group shot: several faces about as big as the largest one
 const GROUP_MIN_FACES = 4;
@@ -73,14 +76,16 @@ function badgeEdge(designX, designY) {
 
 // ---------------------------------------------------------------------------
 // Analysis: the main runner's face (the largest one) and the kind of photo.
-// `buffer` is upright already (the stored drafts are).
+// `buffer` is the photo as uploaded: everything here works on it upright
+// (its EXIF orientation applied), as the render does.
 // ---------------------------------------------------------------------------
 
 async function analyse(buffer) {
     const meta = await sharp(buffer).metadata();
-    const width = meta.width, height = meta.height;
+    const sideways = (meta.orientation || 1) >= 5;
+    const width = sideways ? meta.height : meta.width, height = sideways ? meta.width : meta.height;
     // Detection runs on a copy at most 1200px on its long side
-    const { data, info } = await sharp(buffer)
+    const { data, info } = await sharp(buffer).rotate()
         .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
         .removeAlpha().raw().toBuffer({ resolveWithObject: true });
     const scale = width / info.width;
@@ -253,7 +258,9 @@ async function renderBanner(buffer, p, crop, overlay, quality) {
     const top = Math.max(0, Math.min(-pl.offsetY, scaledH - OUT_H));
     const photo = await sharp(buffer).rotate()
         .extract({ left: pl.cropLeft, top: 0, width: pl.cropW, height: p.height })
-        .resize({ width: scaledW, height: scaledH })
+        // fastShrinkOnLoad off: libvips' shortcut of decoding a JPEG at a
+        // fraction of its size softens it slightly
+        .resize({ width: scaledW, height: scaledH, fastShrinkOnLoad: false })
         .extract({ left, top, width: Math.min(scaledW - left, OUT_W), height: OUT_H })
         .toBuffer();
 
@@ -262,7 +269,7 @@ async function renderBanner(buffer, p, crop, overlay, quality) {
             { input: photo, left: 0, top: 0 },
             { input: overlay.svg, left: 0, top: 0 }
         ])
-        .jpeg({ quality: quality || QUALITY, mozjpeg: true })
+        .jpeg({ quality: quality || QUALITY, chromaSubsampling: '4:4:4', mozjpeg: true })
         .toBuffer();
 }
 

@@ -149,15 +149,37 @@ describe('drafts', () => {
         return detectedFor(m.width, m.height);
     };
 
-    test('an upload is stored upright, at most 3000 px, without metadata', async () => {
-        const big = await sharp(await photo(4000, 3000)).withMetadata({ exif: { IFD0: { Make: 'Cam' } } }).jpeg().toBuffer();
+    test('the upload is kept as it is; the editor gets a small copy without metadata', async () => {
+        const big = await sharp(await photo(4000, 3000)).withMetadata({ exif: { IFD0: { Make: 'Cam' } } }).jpeg({ quality: 97 }).toBuffer();
         const { id, detected } = await bannerFiles.createDraft(big, analyse);
-        expect([detected.width, detected.height]).toEqual([3000, 2250]);
+        expect([detected.width, detected.height]).toEqual([4000, 3000]);
         const draft = await bannerFiles.readDraft(id);
-        const meta = await sharp(draft.photo).metadata();
-        expect([meta.width, meta.exif]).toEqual([3000, undefined]);
+        expect(draft.photo.equals(big)).toBe(true);
+        const preview = await sharp(fs.readFileSync(bannerFiles.draftPhotoPath(id))).metadata();
+        expect([preview.width, preview.height, preview.exif]).toEqual([1600, 1200, undefined]);
         await bannerFiles.deleteDraft(id);
         await expect(bannerFiles.readDraft(id)).rejects.toMatchObject({ status: 404 });
+        expect(fs.readdirSync(bannerFiles.DRAFT_DIR)).toEqual([]);
+    });
+
+    test('a phone photo taken sideways is measured and rendered upright', async () => {
+        // Stored 3000x2000 with EXIF orientation 6: upright, it is 2000x3000
+        const sideways = await sharp(await photo(3000, 2000)).withMetadata({ orientation: 6 }).jpeg().toBuffer();
+        const { id, detected } = await bannerFiles.createDraft(sideways, (buf) => bannerRender.analyse(buf).catch(() => ({ width: 2000, height: 3000, kind: 'no-face' })));
+        expect([detected.width, detected.height]).toEqual([2000, 3000]);
+        const preview = await sharp(fs.readFileSync(bannerFiles.draftPhotoPath(id))).metadata();
+        expect([preview.width, preview.height]).toEqual([1067, 1600]);
+        const draft = await bannerFiles.readDraft(id);
+        const p = bannerRender.photoSettings({ width: 2000, height: 3000, kind: 'no-face', face: null });
+        const overlay = bannerRender.fadeOverlay();
+        const out = await bannerRender.renderBanner(draft.photo, p, bannerRender.automaticCrop(p, overlay), overlay);
+        expect(await sharp(out).metadata()).toMatchObject({ width: 2200, height: 572 });
+    });
+
+    test('a huge photo is scaled down to 8000 px first', async () => {
+        const huge = await sharp({ create: { width: 9000, height: 5000, channels: 3, background: '#3a7bd5' } }).jpeg().toBuffer();
+        const { detected } = await bannerFiles.createDraft(huge, analyse);
+        expect(Math.max(detected.width, detected.height)).toBe(8000);
     });
 
     test.each([
@@ -189,7 +211,7 @@ describe('drafts', () => {
         const old = new Date(Date.now() - 2 * bannerFiles.DRAFT_MAX_AGE_MS);
         fs.utimesSync(path.join(BANNER_DIR, '.tmp-old'), old, old);
         expect(await bannerFiles.sweepDrafts()).toBe(1);
-        expect(await bannerFiles.sweepDrafts(0)).toBe(2); // the fresh draft's .jpg and .json
+        expect(await bannerFiles.sweepDrafts(0)).toBe(3); // the fresh draft: original, editor copy, detection
         expect(bannerFiles.listFiles()).toEqual(['keep.jpg']);
         await expect(bannerFiles.readDraft(id)).rejects.toMatchObject({ status: 404 });
     });

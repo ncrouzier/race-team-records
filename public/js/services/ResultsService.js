@@ -254,6 +254,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                     backdrop: 'static',
                     resolve: {
                         correctionRequest: null,
+                        submission: null,
                         editmode: false,
                         result: function () {
                             return result;
@@ -273,6 +274,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                 backdrop: 'static',
                 resolve: {
                     correctionRequest: null,
+                    submission: null,
                     editmode: false,
                     result: function () {
                         return null;
@@ -284,6 +286,31 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
             }).result;
         }
         return modalPromise;
+    };
+
+    // A new result filled in from a runner's submission (the Result
+    // Submissions page), shown above the form for reference.
+    // ref: { submission, race (one already on the site to add it to, or null
+    // for the submission's own), addPhotoLink (ticked in the form) }.
+    // Resolves with the saved result.
+    factory.showAddResultFromSubmission = function (ref) {
+        return $uibModal.open({
+            templateUrl: 'views/modals/resultModal.html',
+            controller: 'ResultModalInstanceController',
+            windowClass: 'result-modal-class',
+            backdrop: 'static',
+            resolve: {
+                correctionRequest: null,
+                submission: function () {
+                    return ref;
+                },
+                editmode: false,
+                result: null,
+                onResultCreated: function () {
+                    return null;
+                }
+            }
+        }).result;
     };
 
     // options.request: a member's correction request, shown above the form
@@ -300,6 +327,7 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
                         correctionRequest: function () {
                             return options && options.request || null;
                         },
+                        submission: null,
                         editmode: true,
                         result: function () {
                             return result;

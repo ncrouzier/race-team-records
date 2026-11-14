@@ -2230,7 +2230,9 @@ module.exports = async function (app, qs, passport, async, _) {
                                     country: req.body.race.location.country,
                                     state: req.body.race.location.state
                                 },
-                                racetype: req.body.race.racetype
+                                racetype: req.body.race.racetype,
+                                // Ticked on the form, which offers it only for a new race
+                                clubRace: !!req.body.race.clubRace
                             }).then(async r => {
                                 // The series the admin picked for this race on the form, if any
                                 raceSeriesSync.raceAssigned(r._id, req.body.seriesChoice, req.user.username);
@@ -2474,7 +2476,9 @@ module.exports = async function (app, qs, passport, async, _) {
                         country: req.body.race.location.country,
                         state: req.body.race.location.state
                     },
-                    racetype: req.body.race.racetype
+                    racetype: req.body.race.racetype,
+                    // Ticked on the form, which offers it only for a new race
+                    clubRace: !!req.body.race.clubRace
                 });
 
 
@@ -2791,6 +2795,24 @@ module.exports = async function (app, qs, passport, async, _) {
     });
 
     // get a single race by ID
+    // Admins: the race a result with these details would be saved against, if
+    // it exists yet (the add-result form says so, and offers the club race
+    // flag only for a race it will create). Matched as saving matches.
+    app.post('/api/races/match', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const race = (req.body && req.body.race) || {};
+            const location = race.location || {};
+            if (!race.racename || !race.racedate || !location.country || !race.racetype || !race.racetype._id) {
+                return res.json({ complete: false, race: null });
+            }
+            const found = await Race.findOne(raceMatchFilter(race), 'racename racedate clubRace').lean();
+            res.json({ complete: true, race: found ? { _id: found._id, racename: found.racename, clubRace: !!found.clubRace } : null });
+        } catch (err) {
+            console.error('Race match error:', err);
+            res.status(500).json({ error: 'Could not look the race up' });
+        }
+    });
+
     app.get('/api/races/:race_id', function (req, res) {
         try {
             Race.findById(req.params.race_id).then(race => {
@@ -7162,7 +7184,9 @@ module.exports = async function (app, qs, passport, async, _) {
         '/tools/paceAdjustment': ['Pace Adjustment Calculator', 'Adjust your running pace for temperature and dew point.'],
         '/about-agegrading': ['About Age Grading', 'Where the MCRRC Racing Team\'s age grading standards come from, and which tables are in use.'],
         '/gallery': ['Gallery', 'Photos of MCRRC Racing Team members racing and volunteering.'],
-        '/contact': ['Contact', 'Contact the webmaster of the MCRRC Racing Team site with comments, questions or requests.']
+        '/contact': ['Contact', 'Contact the webmaster of the MCRRC Racing Team site with comments, questions or requests.'],
+        '/submit-result': ['Submit a Result', 'MCRRC Racing Team members: report your race results.'],
+        '/submit-volunteer': ['Report a Volunteer Job', 'MCRRC Racing Team members: report the volunteer jobs you did.']
     };
 
     function siteUrl() {

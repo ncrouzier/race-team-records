@@ -1,0 +1,246 @@
+<div class="jumbotron submit-page">
+    <div class="srf-wrap">
+
+        <div class="member-card srf-head">
+            <div class="member-card-header">
+                <h3><i class="fa fa-flag-checkered"></i> Submit a Result</h3>
+            </div>
+            <p class="srf-subtitle">Good racing! Tell us how your race went and we'll add it to the team's results.
+                Volunteered instead? <a ui-sref="/submit-volunteer">Report a volunteer job</a>.</p>
+        </div>
+
+        <div class="srf-state text-muted" ng-if="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</div>
+        <div class="alert alert-danger" ng-if="loadError">The form could not be loaded. Please reload the page.</div>
+
+        <!-- SUCCESS -->
+        <div class="member-card srf-success" ng-if="submitted">
+            <i class="fa fa-check-circle"></i>
+            <h3>Result received</h3>
+            <p>Thanks<span ng-if="firstName">, {{ firstName }}</span>! An admin will add it to the site soon.</p>
+            <div class="srf-success-actions">
+                <button type="button" class="member-primary-btn" ng-click="another()"><i class="fa fa-plus"></i> Submit another result</button>
+                <a class="mcrrc-btn" ui-sref="/results">See the team's results</a>
+            </div>
+        </div>
+
+        <!-- FORM -->
+        <form class="member-card srf-card" ng-if="data && !submitted" ng-submit="submit()" novalidate>
+
+            <!-- Runner -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-user"></i> Who ran? <span class="srf-required">*</span></h4>
+                <runner-picker runner="runner" members="members" error="errors.runner" on-change="runnerChanged()"></runner-picker>
+            </div>
+
+            <!-- Race -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-flag-checkered"></i> The race</h4>
+                <div class="form-group" ng-class="{'has-error': errors.racename}">
+                    <label class="srf-label" for="racename">Race name <span class="srf-required">*</span></label>
+                    <div class="srf-picker">
+                        <input type="text" class="form-control" id="racename" ng-model="form.racename" maxlength="300"
+                            ng-focus="raceUi.open = true" ng-change="raceTyped()" ng-keydown="raceKeydown($event)" ng-blur="raceBlurred()"
+                            placeholder="Start typing the race, e.g. Turkey Chase 10K" autocomplete="off"
+                            role="combobox" aria-controls="race-list" aria-expanded="{{ raceUi.open && raceMatches().length > 0 }}">
+                        <ul class="srf-picker-list srf-dist-list" id="race-list" role="listbox" ng-show="raceUi.open && raceMatches().length">
+                            <li class="srf-dist-header" role="presentation">{{ form.racename.trim() ? 'Races on the site' : 'Recent races' }}</li>
+                            <li role="option" class="srf-event-row" ng-repeat="r in raceMatches() track by r._id"
+                                aria-selected="{{ $index === raceUi.highlighted }}" ng-class="{'is-active': $index === raceUi.highlighted}"
+                                ng-mousedown="$event.preventDefault(); pickRace(r)" ng-mouseenter="raceUi.highlighted = $index">
+                                <span>{{ r.racename }}</span>
+                                <small class="srf-event-meta">{{ dayLabel(r.racedate) }}<span ng-if="r.distance"> · {{ r.distance }}</span><span ng-if="r.location.state || r.location.country"> · {{ r.location.state || r.location.country }}</span></small>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="help-block" ng-if="!form.raceId">A teammate's race already on the site? Pick it from the list. Otherwise, just type its name.</p>
+                    <div class="srf-linked" ng-if="form.raceId"><i class="fa fa-check-circle"></i> Race on the site, {{ dayLabel(form.raceDate) }}</div>
+                    <div class="srf-field-error" ng-if="errors.racename">{{ errors.racename }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 form-group" ng-class="{'has-error': errors.racedate}">
+                        <label class="srf-label" for="racedate">Date <span class="srf-required">*</span></label>
+                        <div class="srf-date-row">
+                            <input type="date" class="form-control" id="racedate" ng-model="form.racedate" ng-change="dateChanged()">
+                            <button type="button" class="mcrrc-btn srf-today" ng-class="{'is-on': isToday()}" aria-pressed="{{ isToday() }}" ng-click="setToday()">Today</button>
+                        </div>
+                        <div class="srf-field-error" ng-if="errors.racedate">{{ errors.racedate }}</div>
+                    </div>
+                    <div class="col-sm-6 form-group" ng-class="{'has-error': errors.country}">
+                        <label class="srf-label" for="country">Country <span class="srf-required">*</span></label>
+                        <select class="form-control" id="country" ng-model="form.country">
+                            <option value="USA">United States</option>
+                            <option ng-repeat="c in otherCountries track by c.code" value="{{ c.code }}">{{ c.name }}</option>
+                        </select>
+                        <div class="srf-field-error" ng-if="errors.country">{{ errors.country }}</div>
+                    </div>
+                </div>
+                <div class="form-group" ng-if="form.country === 'USA'" ng-class="{'has-error': errors.state}">
+                    <label class="srf-label" for="state">State <span class="srf-required">*</span></label>
+                    <div class="srf-state-row">
+                        <div class="srf-quick" role="group" aria-label="Nearby states">
+                            <button type="button" class="mcrrc-btn srf-quick-btn" ng-repeat="code in QUICK_STATES" ng-class="{'is-on': form.state === code}"
+                                aria-pressed="{{ form.state === code }}" ng-click="form.state = code">{{ code }}</button>
+                        </div>
+                        <select class="form-control srf-state-select" id="state" ng-model="form.state"
+                            ng-options="s.code as s.name for s in states">
+                            <option value="">Select…</option>
+                        </select>
+                    </div>
+                    <div class="srf-field-error" ng-if="errors.state">{{ errors.state }}</div>
+                </div>
+            </div>
+
+            <!-- Result -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-clock-o"></i> Your result</h4>
+                <div class="row">
+                    <div class="col-sm-6 form-group" ng-class="{'has-error': errors.distance && form.racetypeId !== 'other'}">
+                        <label class="srf-label" for="distance">Distance and surface <span class="srf-required">*</span></label>
+                        <div class="srf-dist">
+                            <button type="button" class="form-control srf-dist-toggle" id="distance" ng-click="toggleDistance()"
+                                ng-mousedown="dist.open && $event.preventDefault()" aria-haspopup="listbox" aria-expanded="{{ dist.open }}">
+                                <span ng-if="form.racetypeId" class="srf-dist-chosen">
+                                    {{ distanceName(form.racetypeId) }}
+                                    <span class="srf-surface" ng-if="distanceSurface(form.racetypeId)" ng-class="surfaceClass(distanceSurface(form.racetypeId))">{{ distanceSurface(form.racetypeId) }}</span>
+                                </span>
+                                <span ng-if="!form.racetypeId" class="srf-placeholder">Select…</span>
+                                <i class="fa fa-chevron-down srf-dist-caret"></i>
+                            </button>
+                            <div class="srf-dist-panel" ng-if="dist.open">
+                                <input type="text" class="form-control srf-dist-search" ng-model="dist.search" ng-change="distanceSearched()"
+                                    ng-keydown="distanceKeydown($event)" ng-blur="distanceBlurred()"
+                                    placeholder="Search: half, 10k, mile…" autocomplete="off" spellcheck="false"
+                                    aria-label="Search distances" aria-controls="distance-list">
+                                <ul class="srf-picker-list srf-dist-list" id="distance-list" role="listbox">
+                                    <li ng-repeat="item in distanceItems() track by item.key" data-n="{{ item.n }}"
+                                        role="{{ item.header ? 'presentation' : 'option' }}"
+                                        aria-selected="{{ !item.header && item.id === form.racetypeId }}"
+                                        ng-class="{'srf-dist-header': item.header, 'is-active': !item.header && item.n === dist.highlighted, 'srf-dist-other': item.other}"
+                                        ng-mousedown="$event.preventDefault(); item.header || pickDistance(item.id)"
+                                        ng-mouseenter="item.header || (dist.highlighted = item.n)">
+                                        <span>{{ item.label }}</span>
+                                        <span class="srf-surface" ng-if="item.surface" ng-class="surfaceClass(item.surface)">{{ item.surface }}</span>
+                                        <i class="fa fa-check srf-dist-check" ng-if="!item.header && item.id === form.racetypeId"></i>
+                                    </li>
+                                </ul>
+                                <div class="srf-picker-empty srf-dist-empty" ng-if="dist.search.trim() && distanceItems().length === 1">
+                                    No distance by that name: pick <strong>Other</strong> and describe it.
+                                </div>
+                            </div>
+                        </div>
+                        <p class="help-block">Not in the list? Pick <strong>Other</strong> and describe it.</p>
+                        <div class="srf-field-error" ng-if="errors.distance && form.racetypeId !== 'other'">{{ errors.distance }}</div>
+                    </div>
+                    <div class="col-sm-6 form-group" ng-class="{'has-error': errors.time}">
+                        <label class="srf-label" for="time">Finish time <span class="srf-required">*</span></label>
+                        <input type="text" class="form-control srf-time" id="time" ng-model="form.timeStr" ng-change="timeTyped()"
+                            placeholder="e.g. 35:54" inputmode="decimal" autocomplete="off" maxlength="12">
+                        <p class="help-block">Net (chip) time. Type the digits: <strong>3554</strong> becomes 35:54.</p>
+                        <div class="srf-field-error" ng-if="errors.time">{{ errors.time }}</div>
+                    </div>
+                </div>
+                <div ng-if="form.racetypeId === 'other'">
+                    <div class="form-group" ng-class="{'has-error': errors.distance}">
+                        <label class="srf-label" for="distance-text">What was the distance? <span class="srf-required">*</span></label>
+                        <input type="text" class="form-control" id="distance-text" ng-model="form.distanceText" maxlength="300"
+                            placeholder="e.g. Sprint triathlon, 7.2 mile trail race">
+                        <div class="srf-field-error" ng-if="errors.distance">{{ errors.distance }}</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="srf-label" for="splits">Splits <span class="srf-optional">optional</span></label>
+                        <input type="text" class="form-control" id="splits" ng-model="form.splits" maxlength="300"
+                            placeholder="e.g. swim 13:20, T1 1:30, bike 38:05, T2 0:55, run 21:10">
+                    </div>
+                </div>
+
+                <!-- Their result in the race they picked is in already -->
+                <div class="srf-note srf-note-found" ng-if="existing.inRace.length">
+                    <i class="fa fa-check-circle"></i>
+                    <div>
+                        <strong>This result is already on the site:</strong>
+                        <span class="srf-existing" ng-repeat="r in existing.inRace">
+                            <a ui-sref="/results/result({resultId: r._id})" target="_blank">{{ r.racename }}<span ng-if="r.distance">, {{ r.distance }}</span> in {{ r.time }}</a>
+                        </span>
+                        No need to send it again.
+                        <span ng-if="correction.role === 'can-send'">Something wrong with it?
+                            <button type="button" class="srf-link-btn srf-inline" ng-click="suggestCorrection()">Suggest a correction</button></span>
+                        <span ng-if="correction.role === 'own-pending'">You suggested a correction, waiting for an admin.
+                            <button type="button" class="srf-link-btn srf-inline" ng-click="suggestCorrection()">Update it</button></span>
+                        <span ng-if="correction.role === 'other-pending'">A teammate's correction to it is waiting for an admin.</span>
+                        <span ng-if="correction.role === 'signed-out'">Something wrong with it? <a ui-sref="/login">Log in</a> to suggest a correction.</span>
+                    </div>
+                </div>
+                <div class="srf-note srf-note-warn" ng-if="!existing.inRace.length && (existing.results.length || existing.pending)">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <div ng-if="existing.results.length">
+                        We already have a result for you on this day:
+                        <strong class="srf-existing" ng-repeat="r in existing.results">{{ r.racename }}<span ng-if="r.distance">, {{ r.distance }}</span> in {{ r.time }}</strong>
+                        If that's this race, there's no need to send it again.
+                    </div>
+                    <div ng-if="!existing.results.length && existing.pending">You already sent a result for this day. It's waiting to be added.</div>
+                </div>
+            </div>
+
+            <!-- Places -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-trophy"></i> Places <span class="srf-optional">optional</span></h4>
+                <p class="srf-hint">Proud of where you finished? You should be. Fill in what you know.</p>
+                <div class="srf-places">
+                    <div class="srf-place" ng-repeat="p in PLACES" ng-class="{'has-error': errors[p.rank]}">
+                        <span class="srf-place-label">{{ p.label }}</span>
+                        <input type="number" min="1" step="1" inputmode="numeric" class="form-control" aria-label="{{ p.label }} place"
+                            placeholder="place" ng-model="form.ranking[p.rank]">
+                        <span class="srf-place-of">of</span>
+                        <input type="number" min="1" step="1" inputmode="numeric" class="form-control" aria-label="{{ p.label }} finishers"
+                            placeholder="finishers" ng-model="form.ranking[p.total]">
+                        <div class="srf-field-error srf-place-error" ng-if="errors[p.rank]">{{ errors[p.rank] }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Links -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-link"></i> Links</h4>
+                <div class="form-group" ng-class="{'has-error': errors.resultlink}">
+                    <label class="srf-label" for="resultlink">Official results <span class="srf-required" ng-if="!form.noResultLink">*</span></label>
+                    <input type="text" class="form-control" id="resultlink" ng-model="form.resultlink" ng-disabled="form.noResultLink"
+                        placeholder="https://…" inputmode="url" autocomplete="off" spellcheck="false">
+                    <div class="checkbox srf-check">
+                        <label><input type="checkbox" ng-model="form.noResultLink" ng-change="noResultLinkChanged()"> No results online</label>
+                    </div>
+                    <div class="srf-field-error" ng-if="errors.resultlink">{{ errors.resultlink }}</div>
+                </div>
+                <div class="form-group" ng-class="{'has-error': errors.photoLink}">
+                    <label class="srf-label" for="photolink">Photo gallery <span class="srf-optional">optional</span></label>
+                    <input type="text" class="form-control" id="photolink" ng-model="form.photoLink"
+                        placeholder="https://…" inputmode="url" autocomplete="off" spellcheck="false">
+                    <p class="help-block">For races outside MCRRC: a link to the race's photos, to share on the site.</p>
+                    <div class="srf-field-error" ng-if="errors.photoLink">{{ errors.photoLink }}</div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-comment-o"></i> Anything to add? <span class="srf-optional">optional</span></h4>
+                <div class="form-group">
+                    <label class="srf-label" for="comments">Remarks</label>
+                    <textarea class="form-control" id="comments" rows="2" ng-model="form.comments" maxlength="1000"
+                        placeholder="e.g. Hot and hilly! First race back from injury."></textarea>
+                    <p class="help-block">Shown next to your result on the site.</p>
+                </div>
+                <div class="form-group">
+                    <label class="srf-label" for="highlight">Feature it in the Ins &amp; Outs highlights?</label>
+                    <textarea class="form-control" id="highlight" rows="2" ng-model="form.highlight" maxlength="1000"
+                        placeholder="What makes it special? A PR, a podium, a comeback…"></textarea>
+                    <p class="help-block">For the club newsletter. Not shown on the site.</p>
+                </div>
+            </div>
+
+            <div class="alert alert-danger srf-alert" ng-if="error">{{ error }}</div>
+
+            <button type="submit" class="member-primary-btn srf-submit" ng-disabled="submitting">
+                <i class="fa" ng-class="submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i> Submit Result
+            </button>
+        </form>
+    </div>
+</div>

@@ -19381,6 +19381,104 @@ h2 .club-mark {
     width: auto;
   }
 }
+.rsb-reference .rsb-reference-line {
+  margin-bottom: 4px;
+}
+.rsb-reference .rsb-reference-line .fa {
+  color: #008cba;
+  margin-right: 3px;
+}
+.rsb-reference .rsb-not-roster {
+  color: #F04124;
+  font-weight: 600;
+}
+.rsb-reference .rsb-link {
+  margin-left: 6px;
+  word-break: break-all;
+}
+.rsb-reference .crq-keep-open {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  color: #333;
+}
+.jumbotron.result-submissions-page .rsb-tag {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 0 5px;
+}
+.jumbotron.result-submissions-page .rsb-details td {
+  vertical-align: top;
+}
+.jumbotron.result-submissions-page .rsb-time {
+  font-size: 15px;
+  color: #006687;
+  font-variant-numeric: tabular-nums;
+}
+.jumbotron.result-submissions-page .rsb-splits {
+  margin-left: 10px;
+  color: #5b707a;
+}
+.jumbotron.result-submissions-page .rsb-place + .rsb-place {
+  margin-left: 16px;
+}
+.jumbotron.result-submissions-page .rsb-link {
+  word-break: break-all;
+}
+.jumbotron.result-submissions-page .rsb-outcome-actions {
+  margin-top: 4px;
+  font-size: 13px;
+}
+.jumbotron.result-submissions-page .rsb-outcome-actions .crq-dismiss-link {
+  padding: 0;
+}
+.jumbotron.result-submissions-page .rsb-warning {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff8e1;
+  border: 1px solid #f0d58a;
+  font-size: 13px;
+}
+.jumbotron.result-submissions-page .rsb-warning > .fa {
+  color: #b06a12;
+  margin-right: 4px;
+}
+.jumbotron.result-submissions-page .rsb-races {
+  margin-top: 12px;
+}
+.jumbotron.result-submissions-page .rsb-races-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+  margin-bottom: 6px;
+}
+.jumbotron.result-submissions-page .rsb-race {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+  border-top: 1px solid #edf1f3;
+}
+.jumbotron.result-submissions-page .rsb-race:first-of-type {
+  border-top: 0;
+}
+.jumbotron.result-submissions-page .rsb-race-name {
+  font-weight: 600;
+  color: #333;
+}
+.jumbotron.result-submissions-page .rsb-race-meta {
+  color: #5b707a;
+  font-size: 12px;
+}
+.jumbotron.result-submissions-page .rsb-race-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  font-size: 12px;
+}
 .crq-form .crq-count {
   font-weight: 400;
   font-size: 11px;
@@ -23606,4 +23704,542 @@ banner-stage {
 }
 .modal .site-modal.user-modal .user-member-select {
   width: 100%;
+}
+.container:has(.submit-page) {
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .container:has(.submit-page) {
+    width: auto;
+  }
+}
+.jumbotron.submit-page {
+  padding-bottom: 30px;
+  color: #333;
+}
+.jumbotron.submit-page .srf-wrap {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.jumbotron.submit-page .member-card-header h3 .fa {
+  color: #008cba;
+  font-size: 0.85em;
+  margin-right: 4px;
+}
+.jumbotron.submit-page .srf-subtitle {
+  margin: 10px 0 0;
+  color: #6b7f88;
+  font-size: 14px;
+}
+.jumbotron.submit-page .srf-state {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 15px;
+}
+.jumbotron.submit-page .srf-card {
+  padding: 0 0 22px;
+  overflow: visible;
+}
+.jumbotron.submit-page .srf-section {
+  padding: 20px 24px;
+  border-top: 1px solid #edf1f3;
+}
+.jumbotron.submit-page .srf-section:first-child {
+  border-top: 0;
+}
+.jumbotron.submit-page .srf-section-title {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #006687;
+}
+.jumbotron.submit-page .srf-section-title .fa {
+  color: #008cba;
+  margin-right: 4px;
+}
+.jumbotron.submit-page .srf-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+  display: block;
+  margin-bottom: 5px;
+}
+.jumbotron.submit-page .srf-required {
+  color: #F04124;
+}
+.jumbotron.submit-page .srf-optional {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8a9aa1;
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+.jumbotron.submit-page .srf-hint {
+  margin: -6px 0 12px;
+  color: #6b7f88;
+  font-size: 13px;
+}
+.jumbotron.submit-page .form-control {
+  border-radius: 8px;
+  height: 38px;
+}
+.jumbotron.submit-page textarea.form-control {
+  height: auto;
+}
+.jumbotron.submit-page .help-block {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #6b7f88;
+}
+.jumbotron.submit-page .srf-field-error {
+  margin-top: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #F04124;
+}
+.jumbotron.submit-page .srf-link-btn {
+  padding: 0;
+  margin-top: 6px;
+  border: 0;
+  background: none;
+  color: #008cba;
+  font-size: 13px;
+  font-weight: 600;
+}
+.jumbotron.submit-page .srf-link-btn:hover,
+.jumbotron.submit-page .srf-link-btn:focus {
+  text-decoration: underline;
+}
+.jumbotron.submit-page .srf-link-btn.srf-inline {
+  margin: 0 0 0 4px;
+  font-size: inherit;
+}
+.jumbotron.submit-page .srf-picker,
+.jumbotron.submit-page .srf-dist {
+  position: relative;
+}
+.jumbotron.submit-page .srf-picker-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d5e1e6;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 290px;
+  overflow-y: auto;
+}
+.jumbotron.submit-page .srf-picker-list li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #333;
+}
+.jumbotron.submit-page .srf-picker-list li.is-active {
+  background: #F7FBFC;
+  color: #006687;
+  box-shadow: inset 0 0 0 1px rgba(0, 140, 186, 0.2);
+}
+.jumbotron.submit-page .srf-picker-list li.srf-dist-header {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+  padding: 10px 12px 3px;
+  cursor: default;
+}
+.jumbotron.submit-page .srf-picker-list li.srf-dist-other {
+  margin: 4px 0;
+  border: 1px dashed #c8dbe4;
+  color: #006687;
+  font-weight: 600;
+}
+.jumbotron.submit-page .srf-picker-empty {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #6b7f88;
+}
+.jumbotron.submit-page .srf-runner-picked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1.5px solid #008cba;
+  border-radius: 10px;
+  background: #F7FBFC;
+}
+.jumbotron.submit-page .srf-runner-picked > .fa {
+  font-size: 22px;
+  color: #008cba;
+}
+.jumbotron.submit-page .srf-runner-picked .srf-runner-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #006687;
+}
+.jumbotron.submit-page .srf-runner-picked .srf-change {
+  margin: 0 0 0 auto;
+}
+.jumbotron.submit-page .srf-date-row {
+  display: flex;
+  gap: 6px;
+}
+.jumbotron.submit-page .srf-date-row .form-control {
+  flex: 1;
+  min-width: 0;
+}
+.jumbotron.submit-page .srf-state-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.jumbotron.submit-page .srf-quick {
+  display: flex;
+  gap: 4px;
+}
+.jumbotron.submit-page .srf-quick-btn {
+  min-width: 44px;
+}
+.jumbotron.submit-page .srf-state-select {
+  flex: 1 1 180px;
+  width: auto;
+  min-width: 0;
+}
+.jumbotron.submit-page .srf-dist-toggle {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  background: #fff;
+}
+.jumbotron.submit-page .srf-dist-chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.jumbotron.submit-page .srf-placeholder {
+  color: #8a9aa1;
+}
+.jumbotron.submit-page .srf-dist-caret {
+  margin-left: auto;
+  font-size: 11px;
+  color: #6b7f88;
+}
+.jumbotron.submit-page .srf-dist-panel {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  min-width: 240px;
+  margin-top: 4px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #d5e1e6;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.jumbotron.submit-page .srf-dist-panel .srf-dist-list {
+  position: static;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  max-height: 270px;
+}
+.jumbotron.submit-page .srf-dist-check {
+  margin-left: auto;
+  color: #008cba;
+}
+.jumbotron.submit-page .srf-dist-empty {
+  padding: 0 12px 6px;
+}
+.jumbotron.submit-page .srf-surface {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: #fff;
+  background: #6b7f88;
+}
+.jumbotron.submit-page .srf-surface-road {
+  background: #8AB5DB;
+  color: #12324d;
+}
+.jumbotron.submit-page .srf-surface-track {
+  background: #AD757F;
+}
+.jumbotron.submit-page .srf-surface-trail {
+  background: #84CC97;
+  color: #163d22;
+}
+.jumbotron.submit-page .srf-surface-ultra {
+  background: #8C895F;
+}
+.jumbotron.submit-page .srf-surface-other {
+  background: #9B59B6;
+}
+.jumbotron.submit-page .srf-surface-multiple {
+  background: #FFA500;
+  color: #4a2f00;
+}
+.jumbotron.submit-page .srf-surface-open-water {
+  background: #3498DB;
+}
+.jumbotron.submit-page .srf-surface-pool {
+  background: #E74C3C;
+}
+.jumbotron.submit-page .srf-time {
+  font-variant-numeric: tabular-nums;
+}
+.jumbotron.submit-page .srf-places {
+  display: grid;
+  gap: 8px;
+}
+.jumbotron.submit-page .srf-place {
+  display: grid;
+  grid-template-columns: 100px 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.jumbotron.submit-page .srf-place-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #006687;
+}
+.jumbotron.submit-page .srf-place-of {
+  color: #6b7f88;
+  font-size: 13px;
+}
+.jumbotron.submit-page .srf-place-error {
+  grid-column: 2 / -1;
+  margin-top: 0;
+}
+.jumbotron.submit-page .srf-check {
+  margin: 8px 0 0;
+}
+.jumbotron.submit-page .srf-event-row {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.jumbotron.submit-page .srf-event-meta {
+  color: #6b7f88;
+}
+.jumbotron.submit-page .srf-linked {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #43ac6a;
+}
+.jumbotron.submit-page .srf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.jumbotron.submit-page .srf-note {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.jumbotron.submit-page .srf-note > .fa {
+  margin-top: 3px;
+}
+.jumbotron.submit-page .srf-note-warn {
+  background: #fff8e1;
+  border: 1px solid #f0d58a;
+}
+.jumbotron.submit-page .srf-note-warn > .fa {
+  color: #b06a12;
+}
+.jumbotron.submit-page .srf-existing {
+  display: block;
+  margin: 2px 0;
+}
+.jumbotron.submit-page .srf-note-found {
+  background: #eaf6ee;
+  border: 1px solid #b9dfc4;
+}
+.jumbotron.submit-page .srf-note-found > .fa {
+  color: #43ac6a;
+}
+.jumbotron.submit-page .srf-note-found .srf-link-btn {
+  margin-top: 0;
+}
+.jumbotron.submit-page .srf-alert {
+  margin: 0 24px 16px;
+}
+.jumbotron.submit-page .srf-submit {
+  display: flex;
+  width: calc(100% - 48px);
+  margin: 4px 24px 0;
+  padding: 11px 16px;
+  font-size: 15px;
+}
+.jumbotron.submit-page .srf-success {
+  text-align: center;
+  padding: 36px 24px;
+}
+.jumbotron.submit-page .srf-success > .fa {
+  font-size: 48px;
+  color: #43ac6a;
+}
+.jumbotron.submit-page .srf-success h3 {
+  margin: 10px 0 6px;
+  color: #006687;
+  font-weight: 600;
+}
+.jumbotron.submit-page .srf-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.jumbotron.submit-page .srf-help {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7f88;
+}
+@media (max-width: 767px) {
+  .jumbotron.submit-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .jumbotron.submit-page .srf-section {
+    padding: 18px 16px;
+  }
+  .jumbotron.submit-page .srf-alert {
+    margin: 0 16px 14px;
+  }
+  .jumbotron.submit-page .srf-submit {
+    width: calc(100% - 32px);
+    margin: 4px 16px 0;
+  }
+  .jumbotron.submit-page .srf-place {
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .jumbotron.submit-page .srf-place-label,
+  .jumbotron.submit-page .srf-place-error {
+    grid-column: 1 / -1;
+  }
+  .jumbotron.submit-page .form-control {
+    font-size: 16px;
+  }
+  .jumbotron.submit-page .row > [class*="col-sm-"] {
+    float: none;
+    width: auto;
+  }
+}
+.new-race-club-flag {
+  display: flex;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: #F7FBFC;
+  border: 1px solid rgba(0, 140, 186, 0.2);
+  font-size: 13px;
+  color: #333;
+}
+.new-race-club-flag .fa {
+  color: #008cba;
+  margin-right: 4px;
+}
+.new-race-club-flag .site-tag {
+  margin-left: 8px;
+}
+.new-race-club-flag .nrc-new {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.new-race-club-flag .nrc-label {
+  font-weight: 600;
+  color: #006687;
+}
+.new-race-club-flag .nrc-check {
+  margin: 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+.new-race-club-flag .nrc-check input {
+  margin: 0 5px 0 0;
+  vertical-align: -1px;
+}
+.result-checks {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #fff8e1;
+  border: 1px solid #f0d58a;
+  font-size: 13px;
+  color: #333;
+}
+.result-checks .result-checks-title {
+  font-weight: 700;
+  color: #8a5a00;
+  margin-bottom: 4px;
+}
+.result-checks .result-checks-title .fa {
+  margin-right: 4px;
+}
+.result-checks ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.result-checks li {
+  margin: 3px 0;
+}
+.result-checks li.is-danger {
+  color: #F04124;
+  font-weight: 600;
+}
+.result-checks .result-checks-fix {
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.result-checks .result-checks-stale {
+  margin-top: 6px;
+  color: #6b7f88;
+  font-style: italic;
+}
+.jumbotron.result-submissions-page .rsb-checks {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff8e1;
+  border: 1px solid #f0d58a;
+  font-size: 13px;
+}
+.jumbotron.result-submissions-page .rsb-checks .rsb-checks-title {
+  font-weight: 700;
+  color: #8a5a00;
+}
+.jumbotron.result-submissions-page .rsb-checks ul {
+  margin: 3px 0 0;
+  padding-left: 18px;
+}
+.jumbotron.result-submissions-page .rsb-checks li.is-danger {
+  color: #F04124;
+  font-weight: 600;
 }

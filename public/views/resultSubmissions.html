@@ -1,0 +1,124 @@
+<div class="jumbotron corrections-page result-submissions-page">
+    <div class="member-card crq-page-head">
+        <div class="member-card-header">
+            <h3><i class="fa fa-inbox"></i> Result Submissions</h3>
+        </div>
+        <p class="crq-subtitle">Results runners sent from the <a ui-sref="/submit-result">submission page</a>.
+            Create result opens the result form filled in from the submission; saving it marks the submission added.</p>
+        <div class="crq-tabs" role="tablist">
+            <a role="tab" href="" ng-class="{active: tab === 'pending'}" aria-selected="{{ tab === 'pending' }}" ng-click="showTab('pending')">
+                <i class="fa fa-inbox"></i> To add<span class="crq-tab-count" ng-if="tab === 'pending' && submissions.length">{{ submissions.length }}</span></a>
+            <a role="tab" href="" ng-class="{active: tab === 'done'}" aria-selected="{{ tab === 'done' }}" ng-click="showTab('done')">
+                <i class="fa fa-check"></i> Done</a>
+        </div>
+    </div>
+
+    <div class="text-muted crq-state" ng-if="!submissions && !loadError"><i class="fa fa-spinner fa-spin"></i> Loading…</div>
+    <div class="alert alert-danger" ng-if="loadError">The submissions could not be loaded.</div>
+    <div class="crq-state crq-empty" ng-if="submissions && !submissions.length">
+        <i class="fa" ng-class="tab === 'pending' ? 'fa-check-circle' : 'fa-inbox'"></i>
+        {{ tab === 'pending' ? 'Nothing to add. All caught up.' : 'Nothing here yet.' }}
+    </div>
+
+    <div class="member-card crq-card" ng-repeat="s in submissions track by s._id">
+        <div class="crq-card-head">
+            <div class="crq-card-title">
+                <span class="crq-card-race">{{ s.racename }}</span>
+                <span class="crq-card-date">{{ s.racedate | date:'EEE, MMM d, y':'UTC' }}</span>
+                <div class="crq-card-meta">
+                    <span><i class="fa fa-user"></i> {{ s | submissionRunner }}
+                        <span class="site-tag site-tag-warning rsb-tag" ng-if="!s.member._id" uib-tooltip="Typed by the runner: pick the member in the form">not on the roster</span></span>
+                    <span><i class="fa fa-map-marker"></i> {{ s.location.state ? s.location.state + ', ' : '' }}{{ s.location.country }}</span>
+                    <span ng-if="s.race._id" uib-tooltip="Picked from the races on the site: Create result adds it to that race"><i class="fa fa-flag-checkered"></i> race on the site</span>
+                    <span><i class="fa fa-clock-o"></i> sent {{ s.createdAt | date:'MMM d' }}</span>
+                </div>
+            </div>
+            <!-- To add: what to do with it -->
+            <div class="crq-card-actions" ng-if="tab === 'pending' && dismissing.id !== s._id">
+                <button type="button" ng-class="s.existingResults.length ? 'mcrrc-btn' : 'member-primary-btn'" ng-click="addResult(s)">
+                    <i class="fa fa-plus"></i> Create result</button>
+                <!-- Prominent when the site already has something that day -->
+                <button type="button" ng-class="s.existingResults.length ? 'member-primary-btn' : 'mcrrc-btn'" ng-click="markAlready(s)"
+                    uib-tooltip="It's already on the site: mark it done without adding anything" tooltip-append-to-body="true">
+                    <i class="fa fa-check"></i> Already entered</button>
+                <button type="button" class="crq-dismiss-link" ng-click="startDismiss(s)">Dismiss</button>
+            </div>
+            <!-- Done: how it ended -->
+            <div class="crq-card-outcome" ng-if="tab === 'done'">
+                <span class="site-tag" ng-class="{added: 'site-tag-success', already: 'site-tag-info', dismissed: 'site-tag-danger'}[s.status]">{{ outcome(s) }}</span>
+                <div class="crq-card-meta"><span ng-if="s.closedBy.username">by {{ s.closedBy.username }}, </span>{{ s.closedAt | date:'MMM d, y' }}</div>
+                <div class="rsb-outcome-actions">
+                    <a ng-if="s.result" ui-sref="/results/result({resultId: s.result})">View result</a>
+                    <button type="button" class="crq-dismiss-link" ng-if="s.status === 'dismissed' || s.status === 'already'" ng-click="reopen(s)">Reopen</button>
+                </div>
+            </div>
+        </div>
+
+        <table class="crq-changes rsb-details">
+            <tr>
+                <td class="crq-change-label">Distance</td>
+                <td>{{ s | submissionDistance }}<span class="site-tag site-tag-info rsb-tag" ng-if="!s.racetype._id">pick the race type</span></td>
+            </tr>
+            <tr>
+                <td class="crq-change-label">Time</td>
+                <td><strong class="rsb-time">{{ s.time | submissionTime }}</strong><span class="rsb-splits" ng-if="s.splits">{{ s.splits }}</span></td>
+            </tr>
+            <tr ng-if="hasPlaces(s)">
+                <td class="crq-change-label">Places</td>
+                <td>
+                    <span class="rsb-place" ng-repeat="p in places" ng-if="s.ranking | submissionPlace:p.rank">
+                        {{ p.label }} <strong>{{ s.ranking | submissionPlace:p.rank }}</strong></span>
+                </td>
+            </tr>
+            <tr>
+                <td class="crq-change-label">Results</td>
+                <td>
+                    <a ng-if="s.resultlink" ng-href="{{ s.resultlink }}" target="_blank" rel="noopener noreferrer" class="rsb-link">{{ s.resultlink }}</a>
+                    <span ng-if="!s.resultlink" class="text-muted">None online</span>
+                </td>
+            </tr>
+            <tr ng-if="s.photoLink">
+                <td class="crq-change-label">Photos</td>
+                <td><a ng-href="{{ s.photoLink }}" target="_blank" rel="noopener noreferrer" class="rsb-link">{{ s.photoLink }}</a></td>
+            </tr>
+            <tr ng-if="s.comments">
+                <td class="crq-change-label">Remarks</td>
+                <td>{{ s.comments }}</td>
+            </tr>
+        </table>
+        <div class="crq-card-note" ng-if="s.highlight"><i class="fa fa-star"></i> <strong>Ins &amp; Outs:</strong> {{ s.highlight }}</div>
+        <div class="crq-card-note crq-card-reason" ng-if="s.dismissReason"><i class="fa fa-reply"></i> {{ s.dismissReason }}</div>
+
+        <!-- The checks the result form will run (app/resultChecks.js) -->
+        <div class="rsb-checks" ng-if="tab === 'pending' && s.checks.length">
+            <div class="rsb-checks-title"><i class="fa fa-exclamation-triangle"></i> Check before adding</div>
+            <ul>
+                <li ng-repeat="w in s.checks" ng-class="{'is-danger': w.level === 'danger'}">{{ w.message }}</li>
+            </ul>
+        </div>
+
+        <!-- What the site already has that day -->
+        <div class="rsb-warning" ng-if="tab === 'pending' && s.existingResults.length">
+            <i class="fa fa-exclamation-triangle"></i>
+            Already on the site for {{ s.member.firstname }} that day:
+            <span ng-repeat="r in s.existingResults">
+                <a ui-sref="/results/result({resultId: r._id})">{{ r.racename }}<span ng-if="r.distance">, {{ r.distance }}</span></a>
+                in {{ r.time | submissionTime }}{{ $last ? '' : ';' }}</span>
+        </div>
+        <div class="rsb-races" ng-if="tab === 'pending' && s.sameDayRaces.length && dismissing.id !== s._id">
+            <div class="rsb-races-title">Races on the site that day: a teammate may already be in it</div>
+            <div class="rsb-race" ng-repeat="race in s.sameDayRaces track by race._id">
+                <span class="rsb-race-name">{{ race.racename }}</span>
+                <span class="rsb-race-meta">{{ race.distanceName || race.racetype.name }} · {{ race.location.state ? race.location.state + ', ' : '' }}{{ race.location.country }}</span>
+                <button type="button" class="mcrrc-btn rsb-race-btn" ng-click="addResult(s, race)">
+                    <i class="fa fa-plus"></i> Add to this race</button>
+            </div>
+        </div>
+
+        <form class="crq-dismiss" ng-if="dismissing.id === s._id" ng-submit="confirmDismiss()">
+            <input type="text" class="form-control input-sm" ng-model="dismissing.reason" placeholder="Reason (optional, for your records)" maxlength="1000">
+            <button type="submit" class="mcrrc-btn is-danger">Dismiss</button>
+            <button type="button" class="mcrrc-btn" ng-click="cancelDismiss()">Cancel</button>
+        </form>
+    </div>
+</div>

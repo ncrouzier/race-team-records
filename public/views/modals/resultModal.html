@@ -7,6 +7,7 @@
 </div>
 <div class="modal-body" style="overflow: visible;">
     <div ng-include="'views/templates/correctionReference.html'"></div>
+    <div ng-include="'views/templates/submissionReference.html'"></div>
   <form name="formresult">
  
     <div class="row">
@@ -129,6 +130,12 @@
             <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='PA'">PA</button>
             <button class="btn btn-primary" ng-click="formData.race.location.country='USA'; formData.race.location.state='DE'">DE</button>
           </div>
+        </div>
+      </div>
+      <!-- Whether saving makes a new race, and if so, is it a club race -->
+      <div class="row">
+        <div class="col-md-12">
+          <new-race-club-flag race="formData.race" edit-mode="editmode"></new-race-club-flag>
         </div>
       </div>
       <!-- New results only: an edit keeps the race's series (app/raceSeriesSync.js) -->
@@ -340,14 +347,28 @@
           </div>
         </div>
       </div>
+      <!-- Checks before saving (app/resultChecks.js) -->
+      <div class="result-checks" ng-if="checks.warnings.length">
+        <div class="result-checks-title"><i class="fa fa-exclamation-triangle"></i> Please check before saving</div>
+        <ul>
+          <li ng-repeat="w in checks.warnings" ng-class="{'is-danger': w.level === 'danger'}">
+            {{ w.message }}
+            <button type="button" class="mcrrc-btn result-checks-fix" ng-if="w.race" ng-click="useRace(w.race)">
+              <i class="fa fa-flag-checkered"></i> Use this race</button>
+          </li>
+        </ul>
+        <div class="result-checks-stale" ng-if="checksStale()"><i class="fa fa-refresh"></i> Changed since: saving checks again.</div>
+      </div>
       <div class="modal-result-footer site-modal-footer">
         <button type="button" class="mcrrc-btn" ng-click="cancel()">Cancel</button>
         <span class="site-modal-footer-spacer"></span>
-        <button ng-show="!editmode" type="submit" class="mcrrc-btn" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">
+        <button type="button" class="mcrrc-btn is-danger" ng-if="checks.warnings.length && !checksStale()" ng-click="saveAnyway()" ng-disabled="isSaving">
+          <i class="fa fa-check"></i> Save anyway</button>
+        <button ng-show="!editmode && !submissionRef" type="submit" class="mcrrc-btn" ng-click="addResult(true)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving || isChecking">
           <i class="fa fa-plus"></i> Save and add another</button>
-        <button ng-show="!editmode" type="submit" class="member-primary-btn" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">
+        <button ng-show="!editmode" type="submit" class="member-primary-btn" ng-click="addResult(false)" ng-disabled="formresult.$invalid || !checkMembers() || isSaving || isChecking">
           <i class="fa fa-check"></i> Save result</button>
-        <button ng-show="editmode" type="submit" class="member-primary-btn" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers() || isSaving">
+        <button ng-show="editmode" type="submit" class="member-primary-btn" ng-click="editResult()" ng-disabled="formresult.$invalid || !checkMembers() || isSaving || isChecking">
           <i class="fa" ng-class="isSaving ? 'fa-spinner fa-spin' : 'fa-check'"></i> {{ isSaving ? 'Saving…' : 'Save changes' }}</button>
       </div>
   </form>

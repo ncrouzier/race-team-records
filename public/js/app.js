@@ -75,6 +75,16 @@ app.config(['$httpProvider', function($httpProvider) {
                 if (corrections !== null && corrections !== undefined) {
                     $rootScope.pendingCorrectionsCount = parseInt(corrections, 10) || 0;
                 }
+                // And results runners submitted, waiting to be added
+                var submissions = response.headers('X-Pending-Submissions-Count');
+                if (submissions !== null && submissions !== undefined) {
+                    $rootScope.pendingSubmissionsCount = parseInt(submissions, 10) || 0;
+                }
+                // And volunteer jobs members submitted
+                var volunteer = response.headers('X-Pending-Volunteer-Submissions-Count');
+                if (volunteer !== null && volunteer !== undefined) {
+                    $rootScope.pendingVolunteerSubmissionsCount = parseInt(volunteer, 10) || 0;
+                }
                 return response;
             }
         };
@@ -114,6 +124,19 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
     // badge and the Activity Log page itself share one live value — marking
     // logs as seen from either place clears the dot everywhere immediately.
     $rootScope.unseenActivityCount = 0;
+
+    // The Admin tools dot's tooltip: what is waiting ("2 result submissions,
+    // 1 correction request waiting")
+    $rootScope.adminWaitingText = function () {
+        var parts = [];
+        function add(count, word) {
+            if (count > 0) parts.push(count + ' ' + word + (count === 1 ? '' : 's'));
+        }
+        add($rootScope.pendingSubmissionsCount, 'result submission');
+        add($rootScope.pendingVolunteerSubmissionsCount, 'volunteer submission');
+        add($rootScope.pendingCorrectionsCount, 'correction request');
+        return parts.join(', ') + ' waiting';
+    };
 
     $rootScope.markActivityLogsSeen = function() {
         ActivityLogService.markAllSeen().then(function() {

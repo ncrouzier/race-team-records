@@ -14964,6 +14964,131 @@ h2 .club-mark {
     }
 }
 
+// A runner's submission above the "Add result" form it fills in
+// (views/templates/submissionReference.html), in the correction request's box
+.rsb-reference {
+    .rsb-reference-line {
+        margin-bottom: 4px;
+
+        .fa {
+            color: @brand-primary;
+            margin-right: 3px;
+        }
+    }
+
+    .rsb-not-roster {
+        color: @brand-danger;
+        font-weight: 600;
+    }
+
+    .rsb-link {
+        margin-left: 6px;
+        word-break: break-all;
+    }
+
+    // Not the modal's small-caps field labels: a sentence and a link
+    .crq-keep-open {
+        text-transform: none;
+        letter-spacing: normal;
+        font-size: 13px;
+        color: #333;
+    }
+}
+
+// The admin's result submissions page: the correction requests page's cards
+// (.corrections-page), with the submission's details and that day's races
+.jumbotron.result-submissions-page {
+    .rsb-tag {
+        margin-left: 6px;
+        font-size: 10px;
+        padding: 0 5px;
+    }
+
+    .rsb-details td {
+        vertical-align: top;
+    }
+
+    .rsb-time {
+        font-size: 15px;
+        color: @brand-primary-dark;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rsb-splits {
+        margin-left: 10px;
+        color: #5b707a;
+    }
+
+    .rsb-place + .rsb-place {
+        margin-left: 16px;
+    }
+
+    .rsb-link {
+        word-break: break-all;
+    }
+
+    .rsb-outcome-actions {
+        margin-top: 4px;
+        font-size: 13px;
+
+        .crq-dismiss-link {
+            padding: 0;
+        }
+    }
+
+    .rsb-warning {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #fff8e1;
+        border: 1px solid #f0d58a;
+        font-size: 13px;
+
+        > .fa {
+            color: #b06a12;
+            margin-right: 4px;
+        }
+    }
+
+    .rsb-races {
+        margin-top: 12px;
+    }
+
+    .rsb-races-title {
+        .site-label();
+        margin-bottom: 6px;
+    }
+
+    .rsb-race {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 10px;
+        padding: 6px 0;
+        border-top: 1px solid #edf1f3;
+
+        &:first-of-type {
+            border-top: 0;
+        }
+    }
+
+    .rsb-race-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rsb-race-meta {
+        color: #5b707a;
+        font-size: 12px;
+    }
+
+    .rsb-race-btn {
+        margin-left: auto;
+        padding: 3px 10px;
+        font-size: 12px;
+    }
+}
+
 // How much of a field's 500 characters are used
 .crq-form .crq-count {
     font-weight: 400;
@@ -19483,5 +19608,643 @@ banner-stage {
 
     .user-member-select {
         width: 100%;
+    }
+}
+
+// ============================================================
+// Submission pages: members report a result or a volunteer job
+// (views/submitResult.html, views/submitVolunteer.html,
+// views/templates/runnerPicker.html). Filled in on a phone after a race,
+// so unlike the rest of the site they work at phone width.
+// ============================================================
+
+.container:has(.submit-page) {
+    min-width: 0;
+
+    // Bootstrap's 750px "small" width applies from @screen-sm-min, which is
+    // 2px here: on a phone, the page fits the screen instead
+    @media (max-width: 767px) {
+        width: auto;
+    }
+}
+
+.jumbotron.submit-page {
+    padding-bottom: 30px;
+    color: #333;
+
+    .srf-wrap {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .member-card-header h3 .fa {
+        color: @brand-primary;
+        font-size: 0.85em;
+        margin-right: 4px;
+    }
+
+    .srf-subtitle {
+        margin: 10px 0 0;
+        color: #6b7f88;
+        font-size: 14px;
+    }
+
+    .srf-state {
+        padding: 24px 0;
+        text-align: center;
+        font-size: 15px;
+    }
+
+    // The form: one card, its sections split by thin rules
+    // No padding of its own (the sections have it), so the bottom is padded
+    // here: a margin on the last child would slip out of the card
+    .srf-card {
+        padding: 0 0 22px;
+        overflow: visible;
+    }
+
+    .srf-section {
+        padding: 20px 24px;
+        border-top: 1px solid #edf1f3;
+
+        &:first-child {
+            border-top: 0;
+        }
+    }
+
+    .srf-section-title {
+        margin: 0 0 14px;
+        font-size: 17px;
+        font-weight: 600;
+        color: @brand-primary-dark;
+
+        .fa {
+            color: @brand-primary;
+            margin-right: 4px;
+        }
+    }
+
+    .srf-label {
+        .site-label();
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .srf-required {
+        color: @brand-danger;
+    }
+
+    .srf-optional {
+        margin-left: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #8a9aa1;
+        text-transform: lowercase;
+        letter-spacing: 0;
+    }
+
+    .srf-hint {
+        margin: -6px 0 12px;
+        color: #6b7f88;
+        font-size: 13px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        height: 38px;
+    }
+
+    textarea.form-control {
+        height: auto;
+    }
+
+    .help-block {
+        margin: 5px 0 0;
+        font-size: 12px;
+        color: #6b7f88;
+    }
+
+    .srf-field-error {
+        margin-top: 5px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: @brand-danger;
+    }
+
+    .srf-link-btn {
+        padding: 0;
+        margin-top: 6px;
+        border: 0;
+        background: none;
+        color: @brand-primary;
+        font-size: 13px;
+        font-weight: 600;
+
+        &:hover,
+        &:focus {
+            text-decoration: underline;
+        }
+
+        &.srf-inline {
+            margin: 0 0 0 4px;
+            font-size: inherit;
+        }
+    }
+
+    // Runner: the roster search, its list, the picked name
+    .srf-picker,
+    .srf-dist {
+        position: relative;
+    }
+
+    .srf-picker-list {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        margin: 4px 0 0;
+        padding: 4px;
+        list-style: none;
+        background: #fff;
+        border: 1px solid #d5e1e6;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        max-height: 290px;
+        overflow-y: auto;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #333;
+
+            &.is-active {
+                background: @brand-primary-very-light;
+                color: @brand-primary-dark;
+                box-shadow: inset 0 0 0 1px fade(@brand-primary, 20%);
+            }
+        }
+
+        li.srf-dist-header {
+            .site-label();
+            padding: 10px 12px 3px;
+            cursor: default;
+        }
+
+        // "Other": set apart from the distances around it
+        li.srf-dist-other {
+            margin: 4px 0;
+            border: 1px dashed #c8dbe4;
+            color: @brand-primary-dark;
+            font-weight: 600;
+        }
+    }
+
+    .srf-picker-empty {
+        margin-top: 5px;
+        font-size: 13px;
+        color: #6b7f88;
+    }
+
+    .srf-runner-picked {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        border: 1.5px solid @brand-primary;
+        border-radius: 10px;
+        background: @brand-primary-very-light;
+
+        > .fa {
+            font-size: 22px;
+            color: @brand-primary;
+        }
+
+        .srf-runner-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: @brand-primary-dark;
+        }
+
+        .srf-change {
+            margin: 0 0 0 auto;
+        }
+    }
+
+    // Date: the picker, and Today beside it
+    .srf-date-row {
+        display: flex;
+        gap: 6px;
+
+        .form-control {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+
+    // State: nearby states as one-tap buttons, then the full list
+    .srf-state-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .srf-quick {
+        display: flex;
+        gap: 4px;
+    }
+
+    .srf-quick-btn {
+        min-width: 44px;
+    }
+
+    .srf-state-select {
+        flex: 1 1 180px;
+        width: auto;
+        min-width: 0;
+    }
+
+    // Distance: a select-looking button that opens a searchable list
+    .srf-dist-toggle {
+        display: flex;
+        align-items: center;
+        text-align: left;
+        background: #fff;
+    }
+
+    .srf-dist-chosen {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .srf-placeholder {
+        color: #8a9aa1;
+    }
+
+    .srf-dist-caret {
+        margin-left: auto;
+        font-size: 11px;
+        color: #6b7f88;
+    }
+
+    .srf-dist-panel {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        min-width: 240px;
+        margin-top: 4px;
+        padding: 6px;
+        background: #fff;
+        border: 1px solid #d5e1e6;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+        .srf-dist-list {
+            position: static;
+            margin: 6px 0 0;
+            padding: 0;
+            border: 0;
+            box-shadow: none;
+            max-height: 270px;
+        }
+    }
+
+    .srf-dist-check {
+        margin-left: auto;
+        color: @brand-primary;
+    }
+
+    .srf-dist-empty {
+        padding: 0 12px 6px;
+    }
+
+    // Surface tags, in the site's race type colours
+    .srf-surface {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 4px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        line-height: 1.5;
+        color: #fff;
+        background: #6b7f88;
+    }
+
+    .srf-surface-road { background: @racetype-road; color: #12324d; }
+    .srf-surface-track { background: @racetype-track; }
+    .srf-surface-trail { background: @racetype-crosscountry; color: #163d22; }
+    .srf-surface-ultra { background: @racetype-ultra; }
+    .srf-surface-other { background: @racetype-other; }
+    .srf-surface-multiple { background: @racetype-multiple; color: #4a2f00; }
+    .srf-surface-open-water { background: @racetype-open-water; }
+    .srf-surface-pool { background: @racetype-pool; }
+
+    .srf-time {
+        font-variant-numeric: tabular-nums;
+    }
+
+    // Places: "Overall  [3] of [400]" rows
+    .srf-places {
+        display: grid;
+        gap: 8px;
+    }
+
+    .srf-place {
+        display: grid;
+        grid-template-columns: 100px 1fr auto 1fr;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .srf-place-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: @brand-primary-dark;
+    }
+
+    .srf-place-of {
+        color: #6b7f88;
+        font-size: 13px;
+    }
+
+    .srf-place-error {
+        grid-column: 2 / -1;
+        margin-top: 0;
+    }
+
+    .srf-check {
+        margin: 8px 0 0;
+    }
+
+    // Volunteer: race suggestions, the linked race, job chips
+    .srf-event-row {
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .srf-event-meta {
+        color: #6b7f88;
+    }
+
+    .srf-linked {
+        margin-top: 5px;
+        font-size: 13px;
+        color: @brand-success;
+    }
+
+    .srf-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    // Already on the site, already sent
+    .srf-note {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+
+        > .fa {
+            margin-top: 3px;
+        }
+    }
+
+    .srf-note-warn {
+        background: #fff8e1;
+        border: 1px solid #f0d58a;
+
+        > .fa {
+            color: #b06a12;
+        }
+    }
+
+    .srf-existing {
+        display: block;
+        margin: 2px 0;
+    }
+
+    // The result they picked is on the site already
+    .srf-note-found {
+        background: #eaf6ee;
+        border: 1px solid #b9dfc4;
+
+        > .fa {
+            color: @brand-success;
+        }
+
+        .srf-link-btn {
+            margin-top: 0;
+        }
+    }
+
+    .srf-alert {
+        margin: 0 24px 16px;
+    }
+
+    .srf-submit {
+        display: flex;
+        width: calc(100% - 48px);
+        margin: 4px 24px 0;
+        padding: 11px 16px;
+        font-size: 15px;
+    }
+
+    // Sent: thanks, and the two ways on
+    .srf-success {
+        text-align: center;
+        padding: 36px 24px;
+
+        > .fa {
+            font-size: 48px;
+            color: @brand-success;
+        }
+
+        h3 {
+            margin: 10px 0 6px;
+            color: @brand-primary-dark;
+            font-weight: 600;
+        }
+    }
+
+    .srf-success-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .srf-help {
+        margin-top: 4px;
+        text-align: center;
+        font-size: 13px;
+        color: #6b7f88;
+    }
+
+    @media (max-width: 767px) {
+        padding-left: 10px;
+        padding-right: 10px;
+
+        .srf-section {
+            padding: 18px 16px;
+        }
+
+        .srf-alert {
+            margin: 0 16px 14px;
+        }
+
+        .srf-submit {
+            width: calc(100% - 32px);
+            margin: 4px 16px 0;
+        }
+
+        .srf-place {
+            grid-template-columns: 1fr auto 1fr;
+        }
+
+        .srf-place-label,
+        .srf-place-error {
+            grid-column: 1 / -1;
+        }
+
+        // 16px keeps iPhones from zooming into the field on focus
+        .form-control {
+            font-size: 16px;
+        }
+
+        // Side by side from @screen-sm-min, which is 2px here: one per row
+        .row > [class*="col-sm-"] {
+            float: none;
+            width: auto;
+        }
+    }
+}
+
+// The result form's new race / existing race line (newRaceClubFlag.js)
+.new-race-club-flag {
+    display: flex;
+    align-items: center;
+    margin: 0 0 12px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: @brand-primary-very-light;
+    border: 1px solid fade(@brand-primary, 20%);
+    font-size: 13px;
+    color: #333;
+
+    .fa {
+        color: @brand-primary;
+        margin-right: 4px;
+    }
+
+    .site-tag {
+        margin-left: 8px;
+    }
+
+    .nrc-new {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .nrc-label {
+        font-weight: 600;
+        color: @brand-primary-dark;
+    }
+
+    .nrc-check {
+        margin: 0;
+        font-weight: 600;
+        cursor: pointer;
+
+        input {
+            margin: 0 5px 0 0;
+            vertical-align: -1px;
+        }
+    }
+}
+
+// The result form's checks before saving (app/resultChecks.js)
+.result-checks {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 1px solid #f0d58a;
+    font-size: 13px;
+    color: #333;
+
+    .result-checks-title {
+        font-weight: 700;
+        color: #8a5a00;
+        margin-bottom: 4px;
+
+        .fa {
+            margin-right: 4px;
+        }
+    }
+
+    ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    li {
+        margin: 3px 0;
+
+        &.is-danger {
+            color: @brand-danger;
+            font-weight: 600;
+        }
+    }
+
+    .result-checks-fix {
+        margin-left: 8px;
+        padding: 2px 8px;
+        font-size: 12px;
+    }
+
+    .result-checks-stale {
+        margin-top: 6px;
+        color: #6b7f88;
+        font-style: italic;
+    }
+}
+
+// The same warnings on a Result Submissions card
+.jumbotron.result-submissions-page .rsb-checks {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 1px solid #f0d58a;
+    font-size: 13px;
+
+    .rsb-checks-title {
+        font-weight: 700;
+        color: #8a5a00;
+    }
+
+    ul {
+        margin: 3px 0 0;
+        padding-left: 18px;
+    }
+
+    li.is-danger {
+        color: @brand-danger;
+        font-weight: 600;
     }
 }

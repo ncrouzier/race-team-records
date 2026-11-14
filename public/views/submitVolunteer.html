@@ -1,0 +1,111 @@
+<div class="jumbotron submit-page">
+    <div class="srf-wrap">
+
+        <div class="member-card srf-head">
+            <div class="member-card-header">
+                <h3><i class="fa fa-hand-paper-o"></i> Report a Volunteer Job</h3>
+            </div>
+            <p class="srf-subtitle">Thank you for volunteering! Tell us where you helped out and we'll add it to the team's volunteer record.
+                Raced instead? <a ui-sref="/submit-result">Submit your result</a>.</p>
+        </div>
+
+        <div class="srf-state text-muted" ng-if="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</div>
+        <div class="alert alert-danger" ng-if="loadError">The form could not be loaded. Please reload the page.</div>
+
+        <!-- SUCCESS -->
+        <div class="member-card srf-success" ng-if="submitted">
+            <i class="fa fa-check-circle"></i>
+            <h3>Volunteer job received</h3>
+            <p>Thanks<span ng-if="firstName">, {{ firstName }}</span>! An admin will add it to the site soon.</p>
+            <div class="srf-success-actions">
+                <button type="button" class="member-primary-btn" ng-click="another()"><i class="fa fa-plus"></i> Report another job</button>
+                <a class="mcrrc-btn" ui-sref="/stats/volunteering">See the team's volunteering</a>
+            </div>
+        </div>
+
+        <!-- FORM -->
+        <form class="member-card srf-card" ng-if="data && !submitted" ng-submit="submit()" novalidate>
+
+            <!-- Volunteer -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-user"></i> Who volunteered? <span class="srf-required">*</span></h4>
+                <runner-picker runner="runner" members="members" error="errors.runner" on-change="check()"></runner-picker>
+            </div>
+
+            <!-- Event -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-flag-checkered"></i> Where and when</h4>
+                <div class="form-group" ng-class="{'has-error': errors.event}">
+                    <label class="srf-label" for="event">Race or event <span class="srf-required">*</span></label>
+                    <div class="srf-picker">
+                        <input type="text" class="form-control" id="event" ng-model="form.eventName" maxlength="300"
+                            ng-focus="event.open = true" ng-change="eventTyped()" ng-keydown="eventKeydown($event)" ng-blur="eventBlurred()"
+                            placeholder="Start typing the race, or name the event…" autocomplete="off"
+                            role="combobox" aria-controls="event-list" aria-expanded="{{ event.open && raceMatches().length > 0 }}">
+                        <ul class="srf-picker-list srf-dist-list" id="event-list" role="listbox" ng-show="event.open && raceMatches().length">
+                            <li class="srf-dist-header" role="presentation">{{ form.eventName.trim() ? 'Races on the site' : 'Recent races' }}</li>
+                            <li role="option" class="srf-event-row" ng-repeat="r in raceMatches() track by r._id"
+                                aria-selected="{{ $index === event.highlighted }}" ng-class="{'is-active': $index === event.highlighted}"
+                                ng-mousedown="$event.preventDefault(); pickRace(r)" ng-mouseenter="event.highlighted = $index">
+                                <span>{{ r.racename }}</span>
+                                <small class="srf-event-meta">{{ dayLabel(r.racedate) }}<span ng-if="r.state"> · {{ r.state }}</span></small>
+                            </li>
+                        </ul>
+                    </div>
+                    <p class="help-block" ng-if="!form.raceId">Pick the race from the list if it's there. Anything else (a clinic, a group run…): just type its name.</p>
+                    <div class="srf-linked" ng-if="form.raceId"><i class="fa fa-check-circle"></i> Race on the site, {{ dayLabel(form.raceDate) }}</div>
+                    <div class="srf-field-error" ng-if="errors.event">{{ errors.event }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-7 form-group" ng-class="{'has-error': errors.jobDate}">
+                        <label class="srf-label" for="jobdate">Date you volunteered <span class="srf-required">*</span></label>
+                        <div class="srf-date-row">
+                            <input type="date" class="form-control" id="jobdate" ng-model="form.jobDate" ng-change="check()">
+                            <button type="button" class="mcrrc-btn srf-today" ng-class="{'is-on': isToday()}" aria-pressed="{{ isToday() }}" ng-click="setToday()">Today</button>
+                        </div>
+                        <p class="help-block" ng-if="notRaceDay()">
+                            Not race day ({{ dayLabel(form.raceDate) }}). That's fine for set-up or packet pickup.
+                            <button type="button" class="srf-link-btn srf-inline" ng-click="useRaceDay()">Use race day</button>
+                        </p>
+                        <div class="srf-field-error" ng-if="errors.jobDate">{{ errors.jobDate }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job -->
+            <div class="srf-section">
+                <h4 class="srf-section-title"><i class="fa fa-hand-paper-o"></i> What did you do? <span class="srf-required">*</span></h4>
+                <div class="srf-chips" ng-if="data.commonJobs.length" role="group" aria-label="Common jobs">
+                    <button type="button" class="mcrrc-btn srf-chip" ng-repeat="job in data.commonJobs" ng-class="{'is-on': hasJob(job)}"
+                        aria-pressed="{{ hasJob(job) }}" ng-click="toggleJob(job)">{{ job }}</button>
+                </div>
+                <div class="form-group" ng-class="{'has-error': errors.description}">
+                    <label class="sr-only" for="description">What did you do?</label>
+                    <textarea class="form-control" id="description" rows="3" ng-model="form.description" maxlength="1000"
+                        placeholder="e.g. Course marshal at mile 2, then helped take down the finish line."></textarea>
+                    <p class="help-block">Tap a common job, or describe it in your own words.</p>
+                    <div class="srf-field-error" ng-if="errors.description">{{ errors.description }}</div>
+                </div>
+
+                <div class="srf-note srf-note-warn" ng-if="existing.jobs.length || existing.pending">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <div ng-if="existing.jobs.length">
+                        We already have a volunteer job for you on this day:
+                        <strong class="srf-existing" ng-repeat="j in existing.jobs">{{ j.eventName }}: {{ j.description }}</strong>
+                        If that's this one, there's no need to send it again.
+                    </div>
+                    <div ng-if="!existing.jobs.length && existing.pending">You already sent a volunteer job for this day. It's waiting to be added.</div>
+                </div>
+            </div>
+
+            <div class="alert alert-danger srf-alert" ng-if="error">{{ error }}</div>
+
+            <button type="submit" class="member-primary-btn srf-submit" ng-disabled="submitting">
+                <i class="fa" ng-class="submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i> Submit Volunteer Job
+            </button>
+        </form>
+
+        <p class="srf-help">A question or a change to a job already on the site? Message Nico on
+            <a href="https://bit.ly/signalnico" target="_blank" rel="noopener">Signal</a>.</p>
+    </div>
+</div>

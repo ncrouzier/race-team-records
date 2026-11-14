@@ -123,7 +123,8 @@ describe('requestRole', () => {
         expect(requestRole({ role: 'user' }, road5k, null)).toBe('none');
         expect(requestRole(null, road5k, null)).toBe('none');
         expect(requestRole(asUser(nico), road5k, null)).toBe('can-send');
-        expect(requestRole(asUser(liz), road5k, null)).toBe('none');
+        // Any member, not just its runners: a teammate may spot the mistake
+        expect(requestRole(asUser(liz), road5k, null)).toBe('can-send');
     });
 
     test('with a request open on the result', () => {

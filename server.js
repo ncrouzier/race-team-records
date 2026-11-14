@@ -181,7 +181,7 @@ app.use(flash()); // use connect-flash for flash messages stored in session
 // makes many API calls, and each used to count again. Any write (or data
 // change) forgets them, so a badge never lags behind what was just done.
 const ADMIN_COUNTS_MS = 5000;
-const adminCounts = new Map();     // user id → { at, activity, series, corrections }
+const adminCounts = new Map();     // user id → { at, activity, series, corrections, submissions, volunteerSubmissions }
 service.onDataChange(function () { adminCounts.clear(); });
 app.use(async function (req, res, next) {
     if (req.user && req.user.role === 'admin' && req.path.indexOf('/api/') === 0) {
@@ -193,17 +193,25 @@ app.use(async function (req, res, next) {
                 const RaceSeries = require('./app/models/raceseries');
                 // Members' correction requests waiting for an admin
                 const CorrectionRequest = require('./app/models/correctionrequest');
+                // Results runners submitted, waiting to be added
+                const ResultSubmission = require('./app/models/resultsubmission');
+                // And volunteer jobs members reported
+                const VolunteerSubmission = require('./app/models/volunteersubmission');
                 const found = await Promise.all([
                     service.getUnseenActivityLogCount(req.user),
                     RaceSeries.countDocuments({ 'races.status': 'suggested' }),
-                    CorrectionRequest.countDocuments({ status: 'open' })
+                    CorrectionRequest.countDocuments({ status: 'open' }),
+                    ResultSubmission.countDocuments({ status: 'pending' }),
+                    VolunteerSubmission.countDocuments({ status: 'pending' })
                 ]);
-                counts = { at: Date.now(), activity: found[0], series: found[1], corrections: found[2] };
+                counts = { at: Date.now(), activity: found[0], series: found[1], corrections: found[2], submissions: found[3], volunteerSubmissions: found[4] };
                 adminCounts.set(key, counts);
             }
             res.set('X-Unseen-Activity-Count', String(counts.activity));
             res.set('X-Pending-Series-Count', String(counts.series));
             res.set('X-Pending-Corrections-Count', String(counts.corrections));
+            res.set('X-Pending-Submissions-Count', String(counts.submissions));
+            res.set('X-Pending-Volunteer-Submissions-Count', String(counts.volunteerSubmissions));
         } catch (err) {
             console.error('Error setting unseen activity count header:', err);
         }
@@ -236,6 +244,18 @@ const applicationLimiter = rateLimit({
 });
 app.post('/api/team-applications', applicationLimiter);
 
+// The result submission page is public too. Roomier: a runner may send a
+// whole weekend of races, or a few teammates share a connection.
+const resultSubmissionLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour window
+    max: 20,
+    message: { error: 'Too many results submitted, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.post('/api/result-submissions', resultSubmissionLimiter);
+app.post('/api/volunteer-submissions', resultSubmissionLimiter);
+
 // The weather lookup is public and fans out to a third-party API, so cap it
 // per IP. Generous enough for real use (the tool fetches once per click).
 const weatherLimiter = rateLimit({
@@ -252,6 +272,9 @@ app.get('/api/weather/current', weatherLimiter);
 require('./app/bannerRoutes.js')(app);
 require('./app/raceSeriesRoutes.js')(app);
 require('./app/correctionRoutes.js')(app);
+require('./app/resultSubmissionRoutes.js')(app);
+require('./app/volunteerSubmissionRoutes.js')(app);
+require('./app/resultCheckRoutes.js')(app);
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 
 

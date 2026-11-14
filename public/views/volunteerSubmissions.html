@@ -1,0 +1,75 @@
+<div class="jumbotron corrections-page result-submissions-page">
+    <div class="member-card crq-page-head">
+        <div class="member-card-header">
+            <h3><i class="fa fa-hand-paper-o"></i> Volunteer Submissions</h3>
+        </div>
+        <p class="crq-subtitle">Volunteer jobs members sent from the <a ui-sref="/submit-volunteer">submission page</a>.
+            Create job opens the volunteer job form filled in from the submission; saving it marks the submission added.</p>
+        <div class="crq-tabs" role="tablist">
+            <a role="tab" href="" ng-class="{active: tab === 'pending'}" aria-selected="{{ tab === 'pending' }}" ng-click="showTab('pending')">
+                <i class="fa fa-inbox"></i> To add<span class="crq-tab-count" ng-if="tab === 'pending' && submissions.length">{{ submissions.length }}</span></a>
+            <a role="tab" href="" ng-class="{active: tab === 'done'}" aria-selected="{{ tab === 'done' }}" ng-click="showTab('done')">
+                <i class="fa fa-check"></i> Done</a>
+        </div>
+    </div>
+
+    <div class="text-muted crq-state" ng-if="!submissions && !loadError"><i class="fa fa-spinner fa-spin"></i> Loading…</div>
+    <div class="alert alert-danger" ng-if="loadError">The submissions could not be loaded.</div>
+    <div class="crq-state crq-empty" ng-if="submissions && !submissions.length">
+        <i class="fa" ng-class="tab === 'pending' ? 'fa-check-circle' : 'fa-inbox'"></i>
+        {{ tab === 'pending' ? 'Nothing to add. All caught up.' : 'Nothing here yet.' }}
+    </div>
+
+    <div class="member-card crq-card" ng-repeat="s in submissions track by s._id">
+        <div class="crq-card-head">
+            <div class="crq-card-title">
+                <a class="crq-card-race" ng-if="s.race._id" ui-sref="/races({raceId: s.race._id})">{{ s.eventName }}</a>
+                <span class="crq-card-race" ng-if="!s.race._id">{{ s.eventName }}</span>
+                <span class="crq-card-date">{{ s.jobDate | date:'EEE, MMM d, y':'UTC' }}</span>
+                <div class="crq-card-meta">
+                    <span><i class="fa fa-user"></i> {{ s | volunteerSubmissionRunner }}
+                        <span class="site-tag site-tag-warning rsb-tag" ng-if="!s.member._id" uib-tooltip="Typed by the volunteer: pick the member in the form">not on the roster</span></span>
+                    <span ng-if="s.race._id"><i class="fa fa-flag-checkered"></i> race on the site</span>
+                    <span ng-if="!s.race._id"><i class="fa fa-calendar-o"></i> other event</span>
+                    <span><i class="fa fa-clock-o"></i> sent {{ s.createdAt | date:'MMM d' }}</span>
+                </div>
+            </div>
+            <!-- To add: what to do with it -->
+            <div class="crq-card-actions" ng-if="tab === 'pending' && dismissing.id !== s._id">
+                <button type="button" ng-class="s.existingJobs.length ? 'mcrrc-btn' : 'member-primary-btn'" ng-click="createJob(s)"
+                    ng-disabled="!membersLoaded()">
+                    <i class="fa fa-plus"></i> Create job</button>
+                <!-- Prominent when the site already has something that day -->
+                <button type="button" ng-class="s.existingJobs.length ? 'member-primary-btn' : 'mcrrc-btn'" ng-click="markAlready(s)"
+                    uib-tooltip="It's already on the site: mark it done without adding anything" tooltip-append-to-body="true">
+                    <i class="fa fa-check"></i> Already entered</button>
+                <button type="button" class="crq-dismiss-link" ng-click="startDismiss(s)">Dismiss</button>
+            </div>
+            <!-- Done: how it ended -->
+            <div class="crq-card-outcome" ng-if="tab === 'done'">
+                <span class="site-tag" ng-class="{added: 'site-tag-success', already: 'site-tag-info', dismissed: 'site-tag-danger'}[s.status]">{{ outcome(s) }}</span>
+                <div class="crq-card-meta"><span ng-if="s.closedBy.username">by {{ s.closedBy.username }}, </span>{{ s.closedAt | date:'MMM d, y' }}</div>
+                <div class="rsb-outcome-actions">
+                    <a ng-if="s.status === 'added'" ui-sref="/volunteer-jobs">Volunteer jobs</a>
+                    <button type="button" class="crq-dismiss-link" ng-if="s.status === 'dismissed' || s.status === 'already'" ng-click="reopen(s)">Reopen</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="crq-card-note"><i class="fa fa-quote-left"></i> {{ s.description }}</div>
+        <div class="crq-card-note crq-card-reason" ng-if="s.dismissReason"><i class="fa fa-reply"></i> {{ s.dismissReason }}</div>
+
+        <!-- What the site already has that day -->
+        <div class="rsb-warning" ng-if="tab === 'pending' && s.existingJobs.length">
+            <i class="fa fa-exclamation-triangle"></i>
+            Already on the site for {{ s.member.firstname }} that day:
+            <span ng-repeat="j in s.existingJobs">{{ j.eventName }}, {{ j.description }}{{ $last ? '' : ';' }}</span>
+        </div>
+
+        <form class="crq-dismiss" ng-if="dismissing.id === s._id" ng-submit="confirmDismiss()">
+            <input type="text" class="form-control input-sm" ng-model="dismissing.reason" placeholder="Reason (optional, for your records)" maxlength="1000">
+            <button type="submit" class="mcrrc-btn is-danger">Dismiss</button>
+            <button type="button" class="mcrrc-btn" ng-click="cancelDismiss()">Cancel</button>
+        </form>
+    </div>
+</div>

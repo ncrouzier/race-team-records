@@ -1,0 +1,14 @@
+<!-- A member's volunteer submission, above the "Add Volunteer Jobs" form it
+     fills in (Volunteer Submissions page). For reference: the form starts with
+     these values, and nothing here changes it afterwards. -->
+<div class="crq-reference rsb-reference" ng-if="submission">
+    <div class="crq-reference-title">
+        Submitted by {{ submission | volunteerSubmissionRunner }}<span ng-if="!submission.member._id" class="rsb-not-roster"> (not on the roster: pick the member)</span>,
+        {{ submission.createdAt | date:'MMM d, y' }}
+    </div>
+    <div class="rsb-reference-line">
+        {{ submission.eventName }} · {{ submission.jobDate | date:'MMM d, y':'UTC' }}
+        <span ng-if="!submission.race._id"> · not a race on the site</span>
+    </div>
+    <div class="crq-reference-note">"{{ submission.description }}"</div>
+</div>

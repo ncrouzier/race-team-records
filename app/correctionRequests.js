@@ -1,4 +1,5 @@
-// Correction requests: a member suggests fixes to one of their own results,
+// Correction requests: a member suggests fixes to a result (any result: a
+// teammate may spot the wrong time before the runner does),
 // and an admin applies them through the usual edit modals. Every rule lives
 // here: who may send one, which fields are on offer, what changed (old → new),
 // and how saving an edit closes the request.
@@ -235,8 +236,6 @@
         if (user.role === 'admin') return 'admin';
         var me = idOf(user.member);
         if (!me) return 'none';
-        var ran = (result.members || []).some(function (m) { return idOf(m) === me; });
-        if (!ran) return 'none';
         if (openRequest) {
             var sender = openRequest.sender && openRequest.sender.member;
             return idOf(sender) === me ? 'own-pending' : 'other-pending';

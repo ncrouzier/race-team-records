@@ -187,6 +187,11 @@ number in `@brand-primary-dark` bold, caption in the small blue label style.
 - `@screen-sm-min` is **2px** in this project's `variables.less`, so
   `@media (min-width: @screen-sm-min)` does nothing — use explicit widths or
   `@member-phone-max` (767px) for phone rules.
+- The same 2px breakpoint gives `.container` Bootstrap's fixed **750px**
+  width and keeps `col-sm-*` columns side by side on every screen. A page
+  that must work on a phone (the submission pages, `.submit-page`) lifts
+  both itself: `.container:has(.submit-page) { min-width: 0; width: auto }`
+  under 767px, and `col-sm-*` back to full width.
 
 ## Checklist for restyling a page
 

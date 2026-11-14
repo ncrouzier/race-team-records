@@ -173,8 +173,17 @@ angular.module('mcrrcApp.results').controller('VolunteerJobAddModalInstanceContr
         jobDate: prefillData && prefillData.jobDate ? new Date(prefillData.jobDate) : new Date()
     };
 
-    // Dynamic rows
-    $scope.rows = [
+    // A member's submission this was opened from, shown above the form
+    // (views/templates/volunteerSubmissionReference.html)
+    $scope.submission = prefillData && prefillData.submission || null;
+
+    // Dynamic rows: given ones (a submission's volunteer and job), or one empty
+    $scope.rows = prefillData && prefillData.rows ? prefillData.rows.map(function (row) {
+        return {
+            member: membersList.find(function (m) { return m._id === row.memberId; }) || null,
+            description: row.description || ''
+        };
+    }) : [
         { member: null, description: '' }
     ];
 

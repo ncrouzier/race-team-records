@@ -388,7 +388,7 @@ angular.module('mcrrcApp.results').controller('ResultDetailController', ['$scope
         }, angular.noop);
     };
 
-    // A runner of this result (not an admin) may suggest corrections to it
+    // Any member (not an admin) may suggest corrections to it
     // (CorrectionService): what they may do once both the user and the result
     // are known, again after the form closes
     $scope.correction = null;

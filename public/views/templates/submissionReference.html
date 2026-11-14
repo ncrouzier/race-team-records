@@ -1,0 +1,24 @@
+<!-- A runner's submission, above the new result it fills in (Result
+     Submissions page). For reference: the form starts with these values, and
+     nothing here changes it afterwards. -->
+<div class="crq-reference rsb-reference" ng-if="submissionRef" ng-init="s = submissionRef.submission">
+    <div class="crq-reference-title">
+        Submitted by {{ s | submissionRunner }}<span ng-if="!s.member._id" class="rsb-not-roster"> (not on the roster: pick the member)</span>,
+        {{ s.createdAt | date:'MMM d, y' }}
+    </div>
+    <div class="rsb-reference-line">
+        {{ s.racename }} · {{ s.racedate | date:'MMM d, y':'UTC' }} · {{ s | submissionDistance }} · <strong>{{ s.time | submissionTime }}</strong>
+        <span ng-if="s.splits"> · splits: {{ s.splits }}</span>
+    </div>
+    <div class="rsb-reference-line" ng-if="submissionRef.race">
+        <i class="fa fa-flag-checkered"></i> Adding to the race already on the site: <strong>{{ submissionRef.race.racename }}</strong>
+    </div>
+    <div class="rsb-reference-line" ng-if="!s.racetype._id && !submissionRef.race">
+        <i class="fa fa-exclamation-circle"></i> Distance given as "{{ s.distanceText }}": pick the race type.
+    </div>
+    <div class="crq-reference-note" ng-if="s.highlight">Ins &amp; Outs: "{{ s.highlight }}"</div>
+    <label class="crq-keep-open" ng-if="s.photoLink">
+        <input type="checkbox" ng-model="submissionRef.addPhotoLink"> Add the photo gallery link to the race
+        <a ng-href="{{ s.photoLink }}" target="_blank" rel="noopener noreferrer" class="rsb-link">{{ s.photoLink }}</a>
+    </label>
+</div>

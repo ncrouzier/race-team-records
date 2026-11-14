@@ -24,10 +24,11 @@ const libFiles = [
     'public/libs/moment/min/moment.min.js',
     'public/libs/nouislider/dist/nouislider.js',
     'config/teamRequirements.js',
+    'config/locations.js',
     // Shared with the server: pure stats the pages also run on cached data
     'app/raceSeriesStats.js',
     'app/memberRaceCounts.js',
-    'app/resultStanding.js', 'app/correctionRequests.js',
+    'app/resultStanding.js', 'app/correctionRequests.js', 'app/resultSubmissions.js',
 ];
 
 // App files via glob (same patterns as old Gruntfile)

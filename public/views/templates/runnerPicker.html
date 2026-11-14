@@ -1,0 +1,35 @@
+<!-- The submission pages' "Who?" field (runnerPicker, directives/submitDirectives.js) -->
+<div class="srf-runner" ng-class="{'has-error': error}">
+    <!-- Picked from the roster -->
+    <div class="srf-runner-picked" ng-if="runner.memberId && !runner.notListed">
+        <i class="fa fa-user-circle"></i>
+        <span class="srf-runner-name">{{ memberName() }}</span>
+        <button type="button" class="srf-link-btn srf-change" ng-click="change()">Change</button>
+    </div>
+
+    <!-- Searching the roster -->
+    <div class="srf-picker" ng-if="!runner.memberId && !runner.notListed">
+        <label class="srf-label" for="runner-search">Your name</label>
+        <input type="text" class="form-control srf-runner-search" id="runner-search" ng-model="ui.text"
+            ng-focus="ui.open = true" ng-change="typed()" ng-keydown="keydown($event)" ng-blur="blurred()"
+            placeholder="Start typing your name…" autocomplete="off" spellcheck="false"
+            role="combobox" aria-controls="runner-list" aria-expanded="{{ ui.open && matches().length > 0 }}">
+        <ul class="srf-picker-list" id="runner-list" role="listbox" ng-show="ui.open && ui.text.trim() && matches().length">
+            <li role="option" ng-repeat="m in matches() track by m._id" aria-selected="{{ $index === ui.highlighted }}"
+                ng-class="{'is-active': $index === ui.highlighted}" ng-mousedown="$event.preventDefault(); pick(m)"
+                ng-mouseenter="ui.highlighted = $index">{{ m.name }}</li>
+        </ul>
+        <div class="srf-picker-empty" ng-show="ui.open && ui.text.trim().length > 1 && !matches().length">No team member by that name.</div>
+        <button type="button" class="srf-link-btn" ng-click="setNotListed(true)">I'm not on the list</button>
+    </div>
+
+    <!-- Not on the roster: type the name -->
+    <div ng-if="runner.notListed">
+        <label class="srf-label" for="runner-name">Your full name</label>
+        <input type="text" class="form-control srf-runner-name-input" id="runner-name" ng-model="runner.runnerName"
+            autocomplete="name" maxlength="300">
+        <p class="help-block">New on the team? No problem, an admin will match it up.</p>
+        <button type="button" class="srf-link-btn" ng-click="setNotListed(false)">Pick my name from the list instead</button>
+    </div>
+    <div class="srf-field-error" ng-if="error">{{ error }}</div>
+</div>

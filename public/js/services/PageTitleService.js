@@ -57,15 +57,17 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/gallery': 'Gallery',
         '/contact': 'Contact',
         '/mcrrcreport': 'MCRRC Report',
-        '/submitresult': 'Submit a Result',
-        '/submitvolunteer': 'Submit a Volunteer Job',
         '/instagram': 'Instagram',
         '/notacult': 'Not a Cult',
         '/comp-race-forms': 'Competitive Race Forms',
         '/comp-race-forms/detail': 'Competitive Race Form',
         '/applications': 'Team Applications',
         '/hosted-pages': 'Hosted Pages',
-        '/corrections': 'Correction Requests'
+        '/corrections': 'Correction Requests',
+        '/submit-result': 'Submit a Result',
+        '/submit-volunteer': 'Report a Volunteer Job',
+        '/result-submissions': 'Result Submissions',
+        '/volunteer-submissions': 'Volunteer Submissions'
     };
 
     // A member's pages: "<name>" plus what the page shows. member2 is the

@@ -340,11 +340,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/mcrrcreport?from&to",
             templateUrl: "views/mcrrcreport.html",
             controller: 'TableReportController'
-        }).state('/submitresult', {
-            url: "https://forms.gle/upXaECBdjt17WhwR9"
-        })
-        .state('/submitvolunteer', {
-            url: "https://forms.gle/iqZVhUjg6WpgG8D97"
         })
         .state('/instagram', {
             url: "https://www.instagram.com/mcrrc_racing"
@@ -401,6 +396,32 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             params: { tab: { value: 'open', dynamic: true, squash: true } },
             templateUrl: "views/corrections.html",
             controller: 'CorrectionsController'
+        })
+        // Members report a result or a volunteer job; admins add them from
+        // the Result / Volunteer Submissions pages below
+        .state('/submit-result', {
+            url: "/submit-result",
+            templateUrl: "views/submitResult.html",
+            controller: 'SubmitResultController'
+        })
+        .state('/submit-volunteer', {
+            url: "/submit-volunteer",
+            templateUrl: "views/submitVolunteer.html",
+            controller: 'SubmitVolunteerController'
+        })
+        // Admin: results runners submitted (app/resultSubmissionRoutes.js)
+        .state('/result-submissions', {
+            url: "/result-submissions?tab",
+            params: { tab: { value: 'pending', dynamic: true, squash: true } },
+            templateUrl: "views/resultSubmissions.html",
+            controller: 'ResultSubmissionsController'
+        })
+        // Admin: volunteer jobs members submitted (app/volunteerSubmissionRoutes.js)
+        .state('/volunteer-submissions', {
+            url: "/volunteer-submissions?tab",
+            params: { tab: { value: 'pending', dynamic: true, squash: true } },
+            templateUrl: "views/volunteerSubmissions.html",
+            controller: 'VolunteerSubmissionsController'
         })
         // Admin: the same race across editions (see app/raceSeriesRoutes.js)
         .state('/race-series', {

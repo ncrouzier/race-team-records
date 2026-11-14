@@ -971,10 +971,13 @@ angular.module('mcrrcApp.results').controller('ResultsController', ['$scope', 'A
 
 }]);
 
-angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', 'correctionRequest', function($scope, $uibModalInstance, $filter,editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated, correctionRequest) {
+angular.module('mcrrcApp.results').controller('ResultModalInstanceController', ['$scope', '$uibModalInstance', '$filter', '$http', 'editmode', 'result', 'MembersService', 'ResultsService', 'localStorageService','UtilsService','$timeout', 'onResultCreated', 'correctionRequest', 'submission', function($scope, $uibModalInstance, $filter, $http, editmode, result, MembersService, ResultsService, localStorageService,UtilsService,$timeout, onResultCreated, correctionRequest, submission) {
     // A member's correction request this edit was opened from, shown above
     // the form for reference (views/templates/correctionReference.html)
     $scope.correctionRequest = correctionRequest;
+    // Or a runner's submission this new result is filled in from
+    // (views/templates/submissionReference.html): { submission, race, addPhotoLink }
+    $scope.submissionRef = submission;
 
     
     $scope.isOlderDateCheck = function(date){       
@@ -1004,6 +1007,12 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     }).then(function(members) {
         $scope.membersList = members;
 
+        // The runner the submission names, as the list's entry
+        var runner = submission && submission.submission.member;
+        if (runner && runner._id) {
+            var picked = members.find(function(m) { return m._id === runner._id; });
+            if (picked) $scope.formData.members[0] = picked;
+        }
     });
 
     ResultsService.getRaceTypes({
@@ -1016,6 +1025,14 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
                 $scope.multisportRacetype = r;
             }
         });
+
+        // The submission's distance, as the list's entry. Not when joining a
+        // race already on the site: its own copy may hold a variable distance.
+        var racetype = submission && !submission.race && $scope.formData.race.racetype;
+        if (racetype && racetype._id) {
+            var listed = racetypes.find(function(r) { return r._id === racetype._id; });
+            if (listed) $scope.formData.race.racetype = listed;
+        }
     });
 
     $scope.sportList = ['swim','bike','run'];
@@ -1093,7 +1110,23 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
     }else{        
       //new result
       $scope.editmode = false;
-      if (result){ //duplicated result
+      if (submission){ //from a runner's submission (ResultSubmissions rules)
+        var values = window.ResultSubmissions.formValues(submission.submission, submission.race);
+        $scope.formData = {
+          isRecordEligible: true,
+          race: values.race,
+          resultlink: values.resultlink,
+          comments: values.comments,
+          ranking: values.ranking,
+          members: [{}],
+          customOptions: []
+        };
+        if (!$scope.formData.race.location.country) {
+          $scope.formData.race.location.country = 'USA';
+        }
+        $scope.nbOfMembers = 1;
+        $scope.time = values.time;
+      } else if (result){ //duplicated result
         const originalResult = JSON.parse(JSON.stringify(result));   
         $scope.formData = {};
         $scope.formData.isRecordEligible = originalResult.isRecordEligible;        
@@ -1249,6 +1282,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           });
         }
 
+        checkThen(function () {
         $scope.isSaving = true;
         ResultsService.createResult($scope.formData).then(function(savedResult) {
             if (!savedResult) return; // Or handle error
@@ -1269,6 +1303,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
             }
         }).finally(function() {
             $scope.isSaving = false;
+        });
         });
     };
 
@@ -1328,6 +1363,7 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
           });
         }
 
+        checkThen(function () {
         $scope.isSaving = true;
         ResultsService.editResult($scope.formData).then(function(savedResult) {
             // A failed save has already said so (ResultsService); the form
@@ -1336,6 +1372,85 @@ angular.module('mcrrcApp.results').controller('ResultModalInstanceController', [
         }).finally(function() {
             $scope.isSaving = false;
         });
+        });
+    };
+
+    // =====================================
+    // CHECKS BEFORE SAVING (app/resultChecks.js): obvious mistakes in the
+    // time, places, dates, race or runners. Warnings, never a block: they
+    // show above the buttons, and "Save anyway" saves what was checked. Any
+    // change to the form checks again on the next save.
+    $scope.checks = null;   // { warnings, signature, save }
+
+    // The time as typed (the form adds it up only when saving)
+    function typedTime() {
+        var t = $scope.time || {};
+        var n = function (v) { return Number(v) || 0; };
+        return n(t.hours) * 360000 + n(t.minutes) * 6000 + n(t.seconds) * 100 + n(t.centiseconds);
+    }
+
+    function checkPayload() {
+        var f = $scope.formData;
+        return {
+            resultId: $scope.editmode ? f._id : null,
+            // The series picked (or None): the editions the checks compare with
+            seriesChoice: f.seriesChoice || null,
+            result: {
+                race: f.race,
+                members: (f.members || []).filter(function (m) { return m && m._id; }).map(function (m) { return { _id: m._id }; }),
+                time: typedTime(),
+                ranking: f.ranking,
+                legs: f.legs
+            }
+        };
+    }
+
+    function checkThen(save) {
+        var payload = checkPayload();
+        var signature = angular.toJson(payload);
+        if ($scope.checks && $scope.checks.signature === signature && $scope.checks.acknowledged) {
+            return save();
+        }
+        $scope.isChecking = true;
+        $http.post('/api/results/checks', payload).then(function (res) {
+            var warnings = (res.data && res.data.warnings) || [];
+            if (!warnings.length) {
+                $scope.checks = null;
+                return save();
+            }
+            $scope.checks = { warnings: warnings, signature: signature, save: save };
+        }, function () {
+            // The checks are a help: when they fail, saving goes ahead
+            $scope.checks = null;
+            save();
+        }).finally(function () {
+            $scope.isChecking = false;
+        });
+    }
+
+    $scope.saveAnyway = function () {
+        if (!$scope.checks) return;
+        $scope.checks.acknowledged = true;
+        $scope.checks.save();
+    };
+
+    $scope.checksStale = function () {
+        return !!$scope.checks && angular.toJson(checkPayload()) !== $scope.checks.signature;
+    };
+
+    // A race of this name and date already on the site: take its details,
+    // so the result joins it instead of making a near copy
+    $scope.useRace = function (race) {
+        var r = $scope.formData.race;
+        r.racename = race.racename;
+        r.racedate = new Date(race.racedate);
+        r.location = { country: race.location && race.location.country, state: race.location && race.location.state };
+        var listed = ($scope.racetypesList || []).find(function (rt) { return race.racetype && rt._id === race.racetype._id; });
+        r.racetype = race.racetype && race.racetype.isVariable ? race.racetype : (listed || race.racetype);
+        r.distanceName = race.distanceName;
+        r.isMultisport = !!race.isMultisport;
+        r.order = race.order;
+        $scope.checks = null;
     };
 
     // Custom options management for result modal

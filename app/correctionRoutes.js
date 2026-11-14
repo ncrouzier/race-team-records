@@ -1,4 +1,4 @@
-// Correction requests: members suggest fixes to their own results, admins
+// Correction requests: members suggest fixes to results (any result), admins
 // review them (docs/superpowers/specs/2026-10-16-result-correction-requests-design.md).
 // The rules are in app/correctionRequests.js, shared with the member's form.
 
@@ -120,8 +120,8 @@ module.exports = function (app) {
             return res.json(open);
         }
 
-        const me = String(req.user.member._id || req.user.member);
-        const member = result.members.find(m => String(m._id) === me);
+        // The sender: a member, but not necessarily one of its runners
+        const member = req.user.member;
         const request = await CorrectionRequest.create({
             result: result._id,
             race: { _id: result.race._id, racename: result.race.racename, racedate: result.race.racedate },

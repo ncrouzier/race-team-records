@@ -196,3 +196,21 @@ describe('labels', () => {
         expect(placeText({}, 'genderrank')).toBe('');
     });
 });
+
+describe('submitter (activity log)', () => {
+    const { submitter } = require('../app/resultSubmissionRoutes');
+    const forRobert = { member: { _id: 'm1', firstname: 'Robert', lastname: 'Palmer' } };
+
+    test('not signed in: someone, for the runner they named', () => {
+        expect(submitter(null, forRobert)).toMatchObject({ who: 'Someone (not signed in)', own: false, runner: 'Robert Palmer', signedIn: false });
+        expect(submitter(null, { runnerName: 'New Runner' }).runner).toBe('New Runner (typed, not on the roster)');
+    });
+
+    test('signed in: their own, or a teammate\'s', () => {
+        const robert = { username: 'rpalmer', member: { _id: 'm1', firstname: 'Robert', lastname: 'Palmer' } };
+        const nico = { username: 'nico', member: { _id: 'm9', firstname: 'Nicolas', lastname: 'Crouzier' } };
+        expect(submitter(robert, forRobert)).toMatchObject({ who: 'Robert Palmer', own: true });
+        expect(submitter(nico, forRobert)).toMatchObject({ who: 'Nicolas Crouzier', own: false, runner: 'Robert Palmer' });
+        expect(submitter({ username: 'adminonly' }, forRobert)).toMatchObject({ who: 'adminonly', own: false });
+    });
+});

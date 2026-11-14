@@ -24,8 +24,9 @@ angular.module('mcrrcApp.results').controller('SubmitVolunteerController', ['$sc
     $http.get('/api/volunteer-submissions/form').then(function (res) {
         $scope.data = res.data;
         $scope.members = res.data.members;
+        $scope.pastMembers = res.data.pastMembers || [];
         $scope.EARLIEST = res.data.earliestDate;
-        $scope.runner = pages.startingRunner(res.data.members, res.data.myMemberId);
+        $scope.runner = pages.startingRunner($scope.members.concat($scope.pastMembers), res.data.myMemberId);
         $scope.loading = false;
     }, function () {
         $scope.loadError = true;
@@ -183,7 +184,7 @@ angular.module('mcrrcApp.results').controller('SubmitVolunteerController', ['$sc
         $scope.submitting = true;
         $http.post('/api/volunteer-submissions', payload).then(function () {
             pages.remember($scope.runner);
-            $scope.firstName = pages.name($scope.runner, $scope.members).split(' ')[0];
+            $scope.firstName = pages.name($scope.runner, $scope.members.concat($scope.pastMembers)).split(' ')[0];
             $scope.submitted = true;
             Analytics.event('volunteer_submit', { at_race: !!f.raceId, on_roster: !$scope.runner.notListed });
             window.scrollTo({ top: 0, behavior: 'smooth' });

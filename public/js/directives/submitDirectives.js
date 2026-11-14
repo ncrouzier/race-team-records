@@ -78,36 +78,58 @@ angular.module('mcrrcApp').factory('SubmitPagesService', [function () {
     return factory;
 }]);
 
-// The "Who?" field: search the roster ("nic cro" finds Nicolas Crouzier), or
-// type a name when not on it.
-// <runner-picker runner="runner" members="members" error="errors.runner" on-change="check()">
+// The "Who?" field: search the current roster ("nic cro" finds Nicolas
+// Crouzier); not on it, search the past team members; not there either, type
+// the name.
+// <runner-picker runner="runner" members="members" past-members="pastMembers" error="errors.runner" on-change="check()">
 angular.module('mcrrcApp').directive('runnerPicker', ['$timeout', function ($timeout) {
     return {
         restrict: 'E',
         scope: {
             runner: '=',
             members: '<',
+            pastMembers: '<',
             error: '=',
             onChange: '&'
         },
         templateUrl: 'views/templates/runnerPicker.html',
         link: function (scope, element) {
-            // One object: the template's ng-if scopes write through to it
-            scope.ui = { text: '', open: false, highlighted: 0 };
+            // One object: the template's ng-if scopes write through to it.
+            // past: searching the past members instead of the current ones
+            scope.ui = { text: '', open: false, highlighted: 0, past: false };
+
+            function find(list, memberId) {
+                return (list || []).find(function (x) { return x._id === memberId; });
+            }
 
             // Every word typed starts a word of the name
             scope.matches = function () {
                 var words = scope.ui.text.toLowerCase().split(/\s+/).filter(Boolean);
                 if (!words.length) return [];
-                return (scope.members || []).filter(function (m) {
+                return ((scope.ui.past ? scope.pastMembers : scope.members) || []).filter(function (m) {
                     var parts = m.name.toLowerCase().split(/[\s-]+/);
                     return words.every(function (w) { return parts.some(function (p) { return p.indexOf(w) === 0; }); });
                 }).slice(0, 8);
             };
 
             scope.memberName = function () {
-                var m = (scope.members || []).find(function (x) { return x._id === scope.runner.memberId; });
+                var m = find(scope.members, scope.runner.memberId) || find(scope.pastMembers, scope.runner.memberId);
                 return m ? m.name : '';
+            };
+
+            scope.isPastMember = function () {
+                return !!find(scope.pastMembers, scope.runner.memberId);
+            };
+
+            // Not on the current team: the past members next (on: true), or
+            // back to the current ones
+            scope.setPast = function (on) {
+                scope.ui.past = on;
+                scope.ui.text = '';
+                scope.ui.highlighted = 0;
+                scope.runner.notListed = false;
+                scope.error = '';
+                focus('.srf-runner-search');
             };
 
             scope.typed = function () {
@@ -151,6 +173,7 @@ angular.module('mcrrcApp').directive('runnerPicker', ['$timeout', function ($tim
             }
 
             scope.change = function () {
+                scope.ui.past = scope.isPastMember();
                 scope.runner.memberId = '';
                 scope.onChange();
                 focus('.srf-runner-search');
@@ -158,6 +181,7 @@ angular.module('mcrrcApp').directive('runnerPicker', ['$timeout', function ($tim
 
             scope.setNotListed = function (on) {
                 scope.runner.notListed = on;
+                if (!on) scope.ui.past = false;
                 scope.error = '';
                 scope.onChange();
                 focus(on ? '.srf-runner-name-input' : '.srf-runner-search');

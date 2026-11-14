@@ -1,7 +1,7 @@
 // Create Report (admin): the team's results between two dates, in three forms —
 // a JSON document for an LLM (a Claude skill writes the team highlights from
 // it), an inline-styled HTML table for email, and plain text.
-angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$filter', '$timeout', '$window', 'AuthService', 'ResultsService', 'NotificationService', function($scope, $filter, $timeout, $window, AuthService, ResultsService, NotificationService) {
+angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$filter', '$timeout', '$window', '$http', '$q', 'AuthService', 'ResultsService', 'NotificationService', function($scope, $filter, $timeout, $window, $http, $q, AuthService, ResultsService, NotificationService) {
 
     var SITE_URL = 'https://raceteam.mcrrc.org';
     var AG_LEVELS = [
@@ -76,13 +76,19 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
 
     $scope.getReports = function() {
         $scope.loading = true;
-        ResultsService.getRacesInfos({
+        // The runners' own Ins & Outs notes from the submission form; the
+        // report goes ahead without them if they can't be loaded
+        var notes = $http.get('/api/result-submissions/highlights', {
+            params: { from: pickedDay($scope.datefrom), to: pickedDay($scope.dateto) }
+        }).then(function(res) { return res.data || []; }, function() { return []; });
+        $q.all([ResultsService.getRacesInfos({
             filters: { dateFrom: utcDay($scope.datefrom), dateTo: utcDay($scope.dateto) },
             sort: '-race.racedate -race.order race.racename'
-        }).then(function(raceInfosList) {
+        }), notes]).then(function(loaded) {
+            var raceInfosList = loaded[0];
             $scope.raceInfosList = raceInfosList;
             $scope.numberOfResults = raceInfosList.reduce(function(n, r) { return n + r.results.length; }, 0);
-            $scope.llmReport = JSON.stringify(buildLlmReport(raceInfosList), null, 2);
+            $scope.llmReport = JSON.stringify(buildLlmReport(raceInfosList, loaded[1]), null, 2);
             $scope.report = buildText(raceInfosList);
             $scope.reportHTLM = buildHtml(raceInfosList);
         }).finally(function() {
@@ -92,7 +98,19 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
 
     // ---------- LLM document ----------
 
-    function buildLlmReport(raceInfosList) {
+    // The runners' Ins & Outs notes for this result: from the submissions it
+    // was added from, and from those found already entered (same runner, same
+    // day: they point at no result)
+    function noteFor(notes, race, result) {
+        var ids = result.members.map(function(m) { return m._id; });
+        return notes.filter(function(n) {
+            if (n.resultId) return n.resultId === result._id;
+            return n.memberId && ids.indexOf(n.memberId) !== -1 && n.racedate === ymd(race.racedate);
+        });
+    }
+
+    function buildLlmReport(raceInfosList, notes) {
+        notes = notes || [];
         var runners = {};
         var highlights = {
             podiums: [],
@@ -101,7 +119,8 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
             raceCountMilestones: [],
             birthdayRaces: [],
             firstTeamRaceInLocation: [],
-            topAgeGrades: []
+            topAgeGrades: [],
+            runnerNotes: []
         };
         var totalMiles = 0;
         var gradedResults = [];
@@ -156,6 +175,9 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     officialResultsLink: result.resultlink || undefined,
                     resultUrl: SITE_URL + '/results/' + result._id
                 };
+                var own = noteFor(notes, race, result);
+                own.forEach(function(n) { n.used = true; });
+                if (own.length) entry.insAndOutsNote = own.map(function(n) { return n.note; }).join(' / ');
 
                 result.members.forEach(function(m) {
                     var k = m._id;
@@ -175,6 +197,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     else if (a.name === 'raceCount') highlights.raceCountMilestones.push(angular.extend({ teamRaceNumber: a.value && a.value.raceCount }, h));
                     else if (a.name === 'birthday') highlights.birthdayRaces.push(h);
                 });
+                if (entry.insAndOutsNote) highlights.runnerNotes.push(angular.extend({ note: entry.insAndOutsNote }, where));
                 if (result.agegrade) gradedResults.push(angular.extend({ ageGradePercent: result.agegrade, level: agLevel(result.agegrade), distance: race.racetype && race.racetype.name }, where));
 
                 return entry;
@@ -195,6 +218,13 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                 raceAchievements: (race.achievements || []).map(function(a) { return { type: a.name, text: a.text }; }),
                 results: results
             };
+        });
+
+        // Notes with no result in the report to go on (marked already entered,
+        // but no result that day; a runner who typed their name): listed
+        // anyway, so a runner's own words are never left out
+        notes.filter(function(n) { return !n.used; }).forEach(function(n) {
+            highlights.runnerNotes.push({ note: n.note, runner: n.runner, race: n.racename, date: n.racedate, resultUrl: null, resultOnSite: false });
         });
 
         gradedResults.sort(function(a, b) { return b.ageGradePercent - a.ageGradePercent; });
@@ -222,6 +252,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                 totalMilesRaced: round2(totalMiles),
                 resultsWithAPodium: Object.keys(podiumResults).length,
                 personalBests: highlights.personalBests.length,
+                runnerNotes: highlights.runnerNotes.length,
                 teamRecords: highlights.teamRecords.length,
                 locations: Object.keys(locations)
             },
@@ -240,6 +271,7 @@ angular.module('mcrrcApp.results').controller('ReportController', ['$scope', '$f
                     birthday: 'Raced on their birthday.',
                     newLocation: 'First team race ever in that state or country.'
                 },
+                insAndOutsNote: 'The runner\'s own Ins & Outs note, sent with the result on the team site\'s submission form. List all the Ins & Outs notes in the report (highlights.runnerNotes has every one).',
                 isTeamOrRelayResult: 'One result shared by several runners (relay or team event). Its miles is the whole relay distance; milesPerRunner is an equal share of it.',
                 totals: 'results = sum of races[].teamResultCount. runnerResults counts each runner of a shared result once (= sum of runnersInPeriod[].races). totalMilesRaced = sum of results[].miles, each result once: a relay or team result covers its distance once, however many runners shared it. runnersInPeriod[].miles credits each runner of a shared result an equal share (milesPerRunner), so it sums to totalMilesRaced give or take 0.01 of rounding. Miles are rounded to 2 decimals.',
                 highlightLists: 'podiums has one entry per podium placing, so a result can appear up to three times (overall, gender, age group); resultsWithAPodium counts each result once. topAgeGrades is only the 10 best. Every other highlight list is complete.'

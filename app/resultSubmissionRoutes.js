@@ -113,14 +113,36 @@ function dayKey(memberId, date) {
     return String(memberId) + '|' + new Date(date).toISOString().slice(0, 10);
 }
 
-// The roster the pages' "Who?" picker offers: current members, plus the
-// signed-in member if they are not one
-function rosterFor(members, user) {
-    const me = user && user.member;
-    if (me && me._id && !members.some(m => String(m._id) === String(me._id))) {
-        members.push({ _id: me._id, firstname: me.firstname, lastname: me.lastname });
+// The rosters the pages' "Who?" picker offers: the current members (plus
+// the signed-in member, on the team or not), and the past ones, searched
+// next by someone not on the current list
+async function rosters(user) {
+    const fields = 'firstname lastname memberStatus';
+    const all = await Member.find({}, fields).sort({ firstname: 1, lastname: 1 }).lean();
+    const entry = m => ({ _id: String(m._id), name: ((m.firstname || '') + ' ' + (m.lastname || '')).trim() });
+    const me = user && user.member && user.member._id ? String(user.member._id) : '';
+    const current = all.filter(m => m.memberStatus === 'current' || String(m._id) === me);
+    const past = all.filter(m => m.memberStatus !== 'current' && String(m._id) !== me);
+    return { members: current.map(entry), pastMembers: past.map(entry) };
+}
+
+// Who sent a submission, for the activity log: the signed-in user, who may
+// be sending it for a teammate, or someone not signed in, who could be anyone
+// (not necessarily the runner they name). Returns the log entry's username,
+// the sentence's subject ("Liz Ozeki", "Someone (not signed in)"), whether it
+// is the runner's own (`own`), and the runner as the sentence names them.
+function submitter(user, submission) {
+    const runner = submission.member && submission.member._id
+        ? ((submission.member.firstname || '') + ' ' + (submission.member.lastname || '')).trim()
+        : (submission.runnerName || '') + ' (typed, not on the roster)';
+    if (!user) {
+        return { username: 'not signed in', who: 'Someone (not signed in)', own: false, runner: runner, signedIn: false };
     }
-    return members.map(m => ({ _id: String(m._id), name: (m.firstname + ' ' + m.lastname).trim() }));
+    const me = user.member;
+    const name = me && me.firstname ? (me.firstname + ' ' + (me.lastname || '')).trim() : user.username;
+    const own = !!(me && me._id && submission.member && submission.member._id &&
+        String(me._id) === String(submission.member._id));
+    return { username: user.username, who: name, own: own, runner: runner, signedIn: true };
 }
 
 function myMemberId(user) {
@@ -148,8 +170,8 @@ module.exports = function (app) {
     // roster, the distances (the most raced first) and the signed-in member
     app.get('/api/result-submissions/form', route(async (req, res) => {
         const from = new Date(Date.now() - RECENT_RACE_DAYS * 86400000);
-        const [members, racetypes, popularIds, races] = await Promise.all([
-            Member.find({ memberStatus: 'current' }).select('firstname lastname').sort({ firstname: 1, lastname: 1 }).lean(),
+        const [roster, racetypes, popularIds, races] = await Promise.all([
+            rosters(req.user),
             // Variable race types (multisport, odd distances) need details the
             // admin fills in: the runner picks "Other" and describes it
             RaceType.find({ isVariable: { $ne: true } }).select('name surface meters miles').sort({ meters: 1 }).lean(),
@@ -159,7 +181,8 @@ module.exports = function (app) {
         ]);
         const offered = new Set(racetypes.map(rt => String(rt._id)));
         res.json({
-            members: rosterFor(members, req.user),
+            members: roster.members,
+            pastMembers: roster.pastMembers,
             racetypes,
             popularRacetypeIds: popularIds.filter(id => offered.has(id)).slice(0, POPULAR_COUNT),
             // The recent races, for the race name box: picking one fills in
@@ -203,11 +226,14 @@ module.exports = function (app) {
         if (error) return res.status(400).json({ error, field });
 
         const submission = new ResultSubmission(values);
+        let runnerUsername = null;
         if (values.memberId) {
             const member = mongoose.isValidObjectId(values.memberId) &&
-                await Member.findById(values.memberId).select('firstname lastname').lean();
+                await Member.findById(values.memberId).select('firstname lastname username').lean();
             if (!member) return res.status(400).json({ error: 'Please pick your name from the list.', field: 'runner' });
             submission.member = { _id: member._id, firstname: member.firstname, lastname: member.lastname };
+            // The log links the runner's page (not for a name typed in)
+            runnerUsername = member.username;
         }
         if (values.raceId) {
             // Gone meanwhile: the race is just named, as typed
@@ -234,15 +260,23 @@ module.exports = function (app) {
         await submission.save();
 
         notifyAdmin(submission);
+        // Who sent it, and for whom: not signed in, it could be anyone
+        const by = submitter(req.user, submission);
         service.logActivity({
             userId: req.user && req.user._id,
-            username: req.user && req.user.username,
+            username: by.username,
             action: 'result_submitted',
-            description: rules.runnerName(submission) + ' submitted a result for ' + submission.racename,
+            description: by.who + (by.own ? ' submitted their result for ' : ' submitted a result for ' + by.runner + ': ') + submission.racename,
             targetType: 'resultsubmission',
             targetId: submission._id.toString(),
             targetName: rules.runnerName(submission),
             metadata: {
+                runner: rules.runnerName(submission),
+                // A member picked from the list: the log links their page
+                targetUsername: runnerUsername || undefined,
+                submittedBy: by.signedIn ? by.who : null,
+                signedIn: by.signedIn,
+                ownResult: by.own,
                 racename: submission.racename,
                 racedate: submission.racedate,
                 distance: rules.distanceLabel(submission),
@@ -297,6 +331,29 @@ module.exports = function (app) {
                 .sort((a, b) => sameType(b) - sameType(a));
         });
         res.json(submissions);
+    }));
+
+    // Admins: the runners' Ins & Outs notes for races in a period (the Create
+    // Report page puts them in the highlights document for Claude). From
+    // submissions that made it onto the site: added from here (`result`), or
+    // found already entered (matched to a result by runner and day there).
+    app.get('/api/result-submissions/highlights', service.isAdminLoggedIn, route(async (req, res) => {
+        const from = rules.parseDay(req.query.from);
+        const to = rules.parseDay(req.query.to);
+        if (!from || !to) return res.status(400).json({ error: 'from and to (YYYY-MM-DD) are required' });
+        const submissions = await ResultSubmission.find({
+            status: { $in: ['added', 'already'] },
+            highlight: { $nin: [null, ''] },
+            racedate: { $gte: from, $lt: new Date(to.getTime() + 86400000) }
+        }, 'member runnerName racename racedate highlight result status').lean();
+        res.json(submissions.map(s => ({
+            resultId: s.result ? String(s.result) : null,
+            memberId: s.member && s.member._id ? String(s.member._id) : null,
+            runner: rules.runnerName(s),
+            racename: s.racename,
+            racedate: new Date(s.racedate).toISOString().slice(0, 10),
+            note: s.highlight
+        })));
     }));
 
     // An admin saved a result from it. With addPhotoLink, the runner's photo
@@ -370,5 +427,6 @@ module.exports = function (app) {
     }));
 };
 
-module.exports.rosterFor = rosterFor;
+module.exports.rosters = rosters;
+module.exports.submitter = submitter;
 module.exports.myMemberId = myMemberId;

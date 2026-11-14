@@ -14,7 +14,10 @@ angular.module('mcrrcApp.admin').controller('ActivityLogController', [
         $scope.targetLinkType = function (log) {
             if (!log || !log.targetName) return null;
             var metadata = log.metadata || {};
-            if (log.targetType === 'member' && metadata.targetUsername) return 'member';
+            // A member, or a submission for one picked from the list (a name
+            // typed in has no page, and no targetUsername)
+            if ((log.targetType === 'member' || log.targetType === 'resultsubmission' || log.targetType === 'volunteersubmission') &&
+                metadata.targetUsername) return 'member';
             if ((log.targetType === 'compraceform' || log.targetType === 'compraceform_response') &&
                 (log.targetId || metadata.formId)) return 'compraceform';
             if (log.targetType === 'teamapplication') return 'application';

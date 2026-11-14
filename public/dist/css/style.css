@@ -23891,6 +23891,20 @@ banner-stage {
 .jumbotron.submit-page .srf-runner-picked .srf-change {
   margin: 0 0 0 auto;
 }
+.jumbotron.submit-page .srf-runner-picked .srf-past-tag {
+  font-size: 10px;
+}
+.jumbotron.submit-page .srf-picker-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.jumbotron.submit-page .srf-link-muted {
+  color: #6b7f88;
+}
+.jumbotron.submit-page .srf-past-hint {
+  margin: -2px 0 6px;
+}
 .jumbotron.submit-page .srf-date-row {
   display: flex;
   gap: 6px;

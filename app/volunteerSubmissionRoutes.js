@@ -12,7 +12,7 @@ const VolunteerJob = require('./models/volunteerjob');
 const VolunteerSubmission = require('./models/volunteersubmission');
 const rules = require('./volunteerSubmissions');
 const { EARLIEST_DATE, MAX_TEXT, parseDay } = require('./resultSubmissions');
-const { rosterFor, myMemberId } = require('./resultSubmissionRoutes');
+const { rosters, myMemberId, submitter } = require('./resultSubmissionRoutes');
 
 // The races the event box suggests: the recent ones, where nearly every job
 // is (and a few days ahead, for set-up and packet pickup)
@@ -90,13 +90,14 @@ module.exports = function (app) {
     app.get('/api/volunteer-submissions/form', route(async (req, res) => {
         const from = new Date(Date.now() - RECENT_RACE_DAYS * 86400000);
         const to = new Date(Date.now() + 7 * 86400000);
-        const [members, races, jobs] = await Promise.all([
-            Member.find({ memberStatus: 'current' }).select('firstname lastname').sort({ firstname: 1, lastname: 1 }).lean(),
+        const [roster, races, jobs] = await Promise.all([
+            rosters(req.user),
             Race.find({ racedate: { $gte: from, $lte: to } }).select('racename racedate location').sort({ racedate: -1 }).lean(),
             commonJobList()
         ]);
         res.json({
-            members: rosterFor(members, req.user),
+            members: roster.members,
+            pastMembers: roster.pastMembers,
             races: races.map(r => ({
                 _id: String(r._id),
                 racename: r.racename,
@@ -133,11 +134,14 @@ module.exports = function (app) {
             jobDate: values.jobDate,
             description: values.description
         });
+        let runnerUsername = null;
         if (values.memberId) {
             const member = mongoose.isValidObjectId(values.memberId) &&
-                await Member.findById(values.memberId).select('firstname lastname').lean();
+                await Member.findById(values.memberId).select('firstname lastname username').lean();
             if (!member) return res.status(400).json({ error: 'Please pick your name from the list.', field: 'runner' });
             submission.member = { _id: member._id, firstname: member.firstname, lastname: member.lastname };
+            // The log links the runner's page (not for a name typed in)
+            runnerUsername = member.username;
         }
         if (values.raceId) {
             const race = mongoose.isValidObjectId(values.raceId) &&
@@ -164,15 +168,27 @@ module.exports = function (app) {
         await submission.save();
 
         notifyAdmin(submission);
+        // Who sent it, and for whom: not signed in, it could be anyone
+        const by = submitter(req.user, submission);
         service.logActivity({
             userId: req.user && req.user._id,
-            username: req.user && req.user.username,
+            username: by.username,
             action: 'volunteer_submitted',
-            description: rules.runnerName(submission) + ' reported a volunteer job at ' + submission.eventName,
+            description: by.who + (by.own ? ' reported their volunteer job at ' : ' reported a volunteer job for ' + by.runner + ' at ') + submission.eventName,
             targetType: 'volunteersubmission',
             targetId: submission._id.toString(),
             targetName: rules.runnerName(submission),
-            metadata: { eventName: submission.eventName, jobDate: submission.jobDate, description: submission.description },
+            metadata: {
+                volunteer: rules.runnerName(submission),
+                // A member picked from the list: the log links their page
+                targetUsername: runnerUsername || undefined,
+                submittedBy: by.signedIn ? by.who : null,
+                signedIn: by.signedIn,
+                ownJob: by.own,
+                eventName: submission.eventName,
+                jobDate: submission.jobDate,
+                description: submission.description
+            },
             ipAddress: req.ip
         });
         res.status(201).json({ success: true });

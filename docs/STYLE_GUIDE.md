@@ -182,16 +182,51 @@ number in `@brand-primary-dark` bold, caption in the small blue label style.
 
 ## Responsive notes
 
-- The SPA is desktop-locked (`.container { min-width: 992px }`); member pages
-  lift it with `.container:has(member-header)`.
+Desktop (768px and up) is the reference design and must not change. Phones
+(under 768px) get their own rules, all in the **Phones** sections at the end
+of `mcrrc.less`, under `@media @phone` (`@phone: ~"(max-width: 767px)"`).
+
 - `@screen-sm-min` is **2px** in this project's `variables.less`, so
-  `@media (min-width: @screen-sm-min)` does nothing — use explicit widths or
-  `@member-phone-max` (767px) for phone rules.
-- The same 2px breakpoint gives `.container` Bootstrap's fixed **750px**
-  width and keeps `col-sm-*` columns side by side on every screen. A page
-  that must work on a phone (the submission pages, `.submit-page`) lifts
-  both itself: `.container:has(.submit-page) { min-width: 0; width: auto }`
-  under 767px, and `col-sm-*` back to full width.
+  `@media (min-width: @screen-sm-min)` (and `@screen-xs-max`, 1px) do
+  nothing — use `@phone` for phone rules.
+- On desktop `.container` keeps `min-width: 992px`. On phones the global
+  rules lift it, and `col-sm-*` columns stack one per row (a column that also
+  has `col-xs-N` keeps that width). `.table-responsive` scrolls sideways.
+- **Menu:** the navbar is hidden on phones; `views/partials/mobileNav.ejs`
+  draws a bottom tab bar (Home, Results, Members, Records, More, and Account
+  or Log in). More opens a sheet with every other menu link, for the same roles
+  as the navbar (submit, stats, tools, captain tools, admin with badges);
+  Account opens a small sheet (My Page, My Account, Log out). A new page in the
+  navbar menu needs its link in the sheet too.
+- **Tables → cards (`pc-table`):** add `pc-table` to the table (and `pc-wrap`
+  to its `.table-responsive`). Each row becomes a card: `.pc-main` (the name)
+  with `.pc-side` (time, date, status) on its right, then `.pc-detail` cells
+  labelled with `data-label`, `.pc-line` cells on a line of their own,
+  `.pc-actions` last. `th.pc-sortable` header links stay as a sort strip; a
+  header without any is hidden. `.pc-empty` hides a cell, `.pc-hide` a
+  column, `.pc-phone-only` / `.pc-phone-inline` show something on phones
+  only. Nothing changes on desktop.
+- Tab rows (`.nav-tabs`) are one row that swipes sideways: each tab an icon
+  (`<i class="fa … nav-tab-icon">`, phone-only) over its label, the current
+  one underlined and scrolled into view, a ‹ / › over a fade at each end that
+  has more (added by the `navTabs` directive). The Stats pages' row lives in
+  their shared frame (`views/stats/shell.html`, the `/stats` parent state):
+  it stays while the pages change, its underline glides to the tab opened,
+  and on a phone the page under it follows a sideways swipe, the next tab's
+  page (as last seen) or a placeholder behind it. A new Stats page is a child
+  state of `/stats` with no tab row of its own.
+- Wide grids that can't become cards (records by age/year, the pace table)
+  scroll sideways with a "Swipe sideways" hint. The racing calendar instead
+  turns on its side on a phone (`.cal-grid-phone`: a column per month, a row
+  per day), so the whole year fits.
+- Stat tiles go two to a row; form fields are 16px (iOS zooms otherwise).
+- Admin and captain pages follow the same rules (their tables are cards
+  too). Forms in modals stack their fields; `.site-modal-footer` buttons
+  wrap. Very wide tools (the result extractor's tables, the age-grading
+  standards, the email template source) scroll sideways instead.
+- Helpers for cards: `pc-ranked` (a rank, checkbox or swatch before the
+  name: `.pc-side` stays beside the name, details start a new line) and
+  `pc-stack` (the name takes its whole line).
 
 ## Checklist for restyling a page
 
@@ -201,4 +236,4 @@ number in `@brand-primary-dark` bold, caption in the small blue label style.
 3. Tabs → menu; buttons → `.mcrrc-btn`; pickers → `stats-year-select`.
 4. Tables → framed inside the card (rows unchanged for results lists).
 5. Check that open dropdowns are not clipped.
-6. Rebuild CSS/JS and look at the page at 1280px (and 375px for member pages).
+6. Rebuild CSS/JS and look at the page at 1280px and at 390px (phone).

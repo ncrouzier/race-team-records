@@ -4,6 +4,17 @@
 <head>
 	<base href="/">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Add to Home Screen: opens as its own app (standalone), with this icon,
+	     name and bar colour. On an iPhone it keeps its own login, apart from
+	     Safari's: the login email carries a code to type there, as the link
+	     opens in Safari (app/loginCodes.js). -->
+	<link rel="manifest" href="/manifest.webmanifest">
+	<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="apple-mobile-web-app-title" content="MCRRC Team">
+	<meta name="theme-color" content="#006687">
 	<title><%= ogTitle || 'MCRRC Racing Team' %></title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">
@@ -45,7 +56,7 @@
 	<link rel="image_src" href="<%= ogImage %>" />
 </head>
 
-<body ng-controller="MainController">
+<body ng-controller="MainController" ng-class="{'mobile-more-open': mobileMore.open}">
 	<div class="container">
 
 		<div ng-style="bannerStyle" class="row navimg">
@@ -465,6 +476,9 @@
 				</div>
 			</div>
 		</footer>
+
+		<!-- Phones: the bottom tab bar and the rest of the menu -->
+		<%- include('partials/mobileNav') %>
 	</div>
 
 </body>

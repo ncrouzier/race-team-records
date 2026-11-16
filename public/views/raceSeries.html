@@ -45,8 +45,8 @@
                     <i class="fa fa-check text-success"></i> Nothing to review{{ filters.text || filters.onlyFlagged ? ' with these filters' : '' }}.
                 </p>
 
-                <div class="table-responsive" ng-if="toReview().length">
-                    <table class="table member-table rs-table">
+                <div class="table-responsive pc-wrap" ng-if="toReview().length">
+                    <table class="table member-table rs-table pc-table">
                         <thead>
                             <tr>
                                 <th>Series</th>
@@ -58,23 +58,23 @@
                         </thead>
                         <tbody>
                             <tr dir-paginate="s in toReview() | itemsPerPage: 25" pagination-id="review">
-                                <td>
+                                <td class="pc-main">
                                     <a ui-sref="/race-series-detail({seriesId: s._id})"><strong>{{ s.name }}</strong></a>
                                     <div class="text-muted rs-meta">
                                         {{ s.racetype.name }}<span ng-if="s.location"> · {{ s.location }}</span> · {{ years(s) }}
                                         <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="s.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
                                     </div>
                                 </td>
-                                <td class="rs-names">
+                                <td class="rs-names pc-line" data-label="Names used:">
                                     <span ng-repeat="n in s.names | limitTo: 4">{{ n }}<br></span>
                                     <span class="text-muted" ng-if="s.names.length > 4">+ {{ s.names.length - 4 }} more</span>
                                 </td>
-                                <td>{{ s.pending }} to review<span class="text-muted" ng-if="s.total > s.pending"> of {{ s.total }}</span></td>
-                                <td>
+                                <td class="pc-detail">{{ s.pending }} to review<span class="text-muted" ng-if="s.total > s.pending"> of {{ s.total }}</span></td>
+                                <td class="pc-detail" ng-class="{'pc-empty': !s.flagged}">
                                     <span class="site-tag site-tag-warning" ng-if="s.flagged"
                                         uib-tooltip="Different distance or state: worth a look before confirming" tooltip-append-to-body="true">{{ s.flagged }} flagged</span>
                                 </td>
-                                <td class="text-right rs-actions">
+                                <td class="text-right rs-actions pc-actions">
                                     <button class="member-primary-btn rs-btn-sm" ng-click="confirmAll(s)" ng-disabled="s.busy || !s.pending"
                                         uib-tooltip="Confirm every suggested edition" tooltip-append-to-body="true">
                                         <i class="fa" ng-class="s.busy ? 'fa-spinner fa-spin' : 'fa-check'"></i>
@@ -96,8 +96,8 @@
                     <label class="checkbox-inline"><input type="checkbox" ng-model="filters.clubOnly"> MCRRC club races only</label>
                     <span class="member-results-count rs-toolbar-end">{{ allSeries().length }} series</span>
                 </div>
-                <div class="table-responsive">
-                    <table class="table member-table rs-table">
+                <div class="table-responsive pc-wrap">
+                    <table class="table member-table rs-table pc-table pc-stack">
                         <thead>
                             <tr>
                                 <th>Series</th>
@@ -110,19 +110,19 @@
                         </thead>
                         <tbody>
                             <tr dir-paginate="s in allSeries() | itemsPerPage: 50" pagination-id="all">
-                                <td>
+                                <td class="pc-main">
                                     <a ui-sref="/race-series-detail({seriesId: s._id})"><strong>{{ s.name }}</strong></a>
                                 </td>
-                                <td>{{ s.racetype.name }}</td>
-                                <td>{{ s.location }}</td>
-                                <td>{{ years(s) }}</td>
-                                <td>
+                                <td class="pc-detail">{{ s.racetype.name }}</td>
+                                <td class="pc-detail">{{ s.location }}</td>
+                                <td class="pc-detail">{{ years(s) }}</td>
+                                <td class="pc-detail" data-label="Editions">
                                     {{ s.total }}
                                     <span class="site-tag site-tag-warning" ng-if="s.pending">{{ s.pending }} to review</span>
                                     <span class="text-muted" ng-if="s.offDistance" uib-tooltip="Editions run at another distance" tooltip-append-to-body="true">
                                         · {{ s.offDistance }} off-distance</span>
                                 </td>
-                                <td class="text-center rs-club-cell">
+                                <td class="text-center rs-club-cell pc-detail" data-label="Club race">
                                     <input type="checkbox" ng-checked="s.clubRace" ng-click="setClubRace(s)" ng-disabled="s.busy"
                                         aria-label="MCRRC club race"
                                         uib-tooltip="{{ s.clubRace ? 'Unmark every edition' : 'Mark every edition as a club race' }}" tooltip-append-to-body="true">
@@ -169,15 +169,15 @@
                 </div>
 
                 <p class="text-muted" ng-if="ungroupedLoading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
-                <div class="table-responsive" ng-if="ungrouped.races.length">
-                    <table class="table member-table rs-table">
+                <div class="table-responsive pc-wrap" ng-if="ungrouped.races.length">
+                    <table class="table member-table rs-table pc-table pc-ranked">
                         <tbody>
                             <tr ng-repeat="race in ungrouped.races track by race._id" ng-class="{info: selected[race._id]}">
                                 <td class="rs-check"><input type="checkbox" ng-model="selected[race._id]" ng-change="toggleRace(race)"></td>
-                                <td class="text-muted rs-date">{{ race.racedate | date:'MMM d, y' : 'UTC' }}</td>
-                                <td><a ui-sref="/races({raceId: race._id})" target="_blank">{{ race.racename }}</a></td>
-                                <td class="text-muted">{{ race.racetype.name }}</td>
-                                <td class="text-muted">{{ race.location }}</td>
+                                <td class="text-muted rs-date pc-side">{{ race.racedate | date:'MMM d, y' : 'UTC' }}</td>
+                                <td class="pc-main"><a ui-sref="/races({raceId: race._id})" target="_blank">{{ race.racename }}</a></td>
+                                <td class="text-muted pc-detail">{{ race.racetype.name }}</td>
+                                <td class="text-muted pc-detail">{{ race.location }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -194,16 +194,16 @@
                 <div class="alert alert-danger" ng-if="mergesError">{{ mergesError }}</div>
                 <p class="text-muted" ng-if="merges && !merges.length"><i class="fa fa-check text-success"></i> No similar names left.</p>
 
-                <div class="table-responsive" ng-if="merges.length">
-                    <table class="table member-table rs-table">
+                <div class="table-responsive pc-wrap" ng-if="merges.length">
+                    <table class="table member-table rs-table pc-table pc-stack">
                         <tbody>
                             <tr ng-repeat="pair in merges">
-                                <td>
+                                <td class="pc-main">
                                     <a ui-sref="/race-series-detail({seriesId: pair.first._id})"><strong>{{ pair.first.name }}</strong></a>
                                     <span class="text-muted">({{ pair.first.count }} races)</span>
                                 </td>
-                                <td class="rs-arrow"><i class="fa fa-arrows-h text-muted"></i></td>
-                                <td>
+                                <td class="rs-arrow pc-hide"><i class="fa fa-arrows-h text-muted"></i></td>
+                                <td class="pc-line" data-label="Same race as">
                                     <span ng-if="pair.second.type === 'series'">
                                         <a ui-sref="/race-series-detail({seriesId: pair.second._id})"><strong>{{ pair.second.name }}</strong></a>
                                         <span class="text-muted">({{ pair.second.count }} races)</span>
@@ -215,7 +215,7 @@
                                     <div class="text-muted rs-meta">{{ pair.distance }} · {{ pair.why }}</div>
                                     <div class="text-danger rs-meta" ng-if="pair.error">{{ pair.error }}</div>
                                 </td>
-                                <td class="text-right rs-actions">
+                                <td class="text-right rs-actions pc-actions">
                                     <button class="member-primary-btn rs-btn-sm" ng-click="mergePair(pair)" ng-disabled="pair.busy">
                                         {{ pair.second.type === 'series' ? 'Merge into ' + pair.first.name : 'Add to series' }}
                                     </button>

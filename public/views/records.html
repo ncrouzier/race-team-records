@@ -57,7 +57,7 @@
     <div class="member-card records-list-card" ng-show="resultsList.length > 0">
         <div>
             <ul class="results-list records-list list-group">
-                <li class="list-group-item text-left resultlistheader" ng-show="resultsList.length >0">
+                <li class="list-group-item text-left resultlistheader records-list-head" ng-show="resultsList.length >0">
                     <div class="row">
                         <div class="col-sm-1" >
                             <span class="listheader hoverhand" title="Rank">#</span>
@@ -93,26 +93,26 @@
                     ng-click="goToResult(result)" title="Open this result" style="cursor: pointer;">
                     <!-- The row opens the result; the runner and race names, the
                          official-result link and the admin icons do their own thing -->
-                    <div class="row" style="display: flex; align-items: center;">
-                        <div class="col-sm-1" title="{{::result.tied ? 'Tied' : 'Open this result'}}">
+                    <div class="row records-row" style="display: flex; align-items: center;">
+                        <div class="col-sm-1 rc-rank" title="{{::result.tied ? 'Tied' : 'Open this result'}}">
                             {{::rankLabel(result)}}
                         </div>
-                        <div class="col-sm-3" style="font-size: 16px;">
+                        <div class="col-sm-3 rc-name" style="font-size: 16px;">
                             <result-members-names result="::result"></result-members-names>
                         </div>
-                        <div class="col-sm-4" style="line-height: 1.1;">
+                        <div class="col-sm-4 rc-race" style="line-height: 1.1;">
                             <span class="hoverhandandunderline resultEvent" title="view race results" ng-click="$event.stopPropagation(); showRaceModal(result.race)">{{::result.race.racename}}</span><i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter" ng-show="::!!result.comments" uib-tooltip-html="result.comments"></i>
                             <result-icon result="::result" race="::result.race"></result-icon>
                             <br>
                             <small>{{::result.race.racedate | date:'longDate':'UTC'}} <span ng-if="::result.race.location.state !== null" ng-bind-html="::'-- ' + result.race.location.state"></span><span ng-if="::result.race.location.state === null" ng-bind-html="::'-- ' + result.race.location.country"></span></small>
                         </div>
-                        <div class="col-sm-1" style=" text-align: center;">
+                        <div class="col-sm-1 rc-pace" style=" text-align: center;">
                             <result-pace race="::result.race" result="::result"></result-pace>
                         </div>
-                        <div ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style=" text-align: left;">
+                        <div class="rc-time" ng-class="user.role == 'admin' ?'col-sm-2' :'col-sm-3'" style=" text-align: left;">
                             <span class= "resultTime">{{::result.time | secondsToTimeString}}</span> <span class="timediff" ng-show="::!!result.gap">+{{::result.gap | secondsToTimeDiff}}</span> <a ng-show="::!!result.resultlink" ng-href="{{::result.resultlink}}" target="_blank" ng-click="$event.stopPropagation()"><i class="fa fa-link" title="view result"></i></a> <i class="fa fa-list-ol red hoverhand" tooltip-trigger="$root.tapTooltipTrigger" ng-click="$event.stopPropagation()" ng-show="::(result.ranking.agerank !== undefined && result.ranking.agerank !== '') || (result.ranking.genderrank !== undefined && result.ranking.genderrank !== '') || (result.ranking.overallrank !== undefined && result.ranking.overallrank !== '')" uib-tooltip-html="'<span>{{::result.ranking | rankTooltip}}</span>'"></i>
                         </div>
-                        <div class="col-sm-1 site-admin-actions" ng-show="user.role == 'admin'">
+                        <div class="col-sm-1 site-admin-actions rc-admin" ng-show="user.role == 'admin'">
                             <button type="button" class="mcrrc-btn site-icon-btn is-compact" ng-click="$event.stopPropagation(); retrieveResultForEdit(result)" title="Edit result"><i class="fa fa-pencil"></i></button>
                             <button type="button" class="mcrrc-btn site-icon-btn is-compact is-danger" ng-click="$event.stopPropagation(); removeResult(result)" title="Remove result"><i class="fa fa-trash"></i></button>
                         </div>

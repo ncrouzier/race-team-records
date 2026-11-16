@@ -1,18 +1,34 @@
 <div class="jumbotron auth-page">
     <div class="member-card auth-card">
         <h2 class="auth-title">Email me a login link</h2>
-        <p class="auth-subtitle">No password needed: we'll email you a link that logs you in.</p>
+        <p class="auth-subtitle">No password needed: we'll email you a link that logs you in, and a code you can type instead.</p>
 
         <div ng-show="message" class="alert" ng-class="{'alert-success': success, 'alert-danger': !success}">
             {{message}}
         </div>
+        <div ng-show="codeError && !success" class="alert alert-danger">{{codeError}}</div>
 
-        <form name="form" ng-submit="requestLink(email)" ng-hide="success">
+        <form name="form" ng-submit="requestLink(login.email)" ng-hide="success">
             <div class="form-group">
                 <label for="linkEmail">Email address</label>
-                <input id="linkEmail" type="email" class="form-control" name="email" ng-model="email" autocomplete="email" required auto-focus>
+                <input id="linkEmail" type="email" class="form-control" name="email" ng-model="login.email" autocomplete="email" required auto-focus>
             </div>
             <button ng-disabled="!form.$valid" type="submit" class="member-primary-btn auth-submit">Send login link</button>
+        </form>
+
+        <!-- The code from the same email: typed here when the link would open
+             somewhere else (the site saved to a phone's home screen) -->
+        <form name="codeForm" class="auth-code-form" ng-submit="submitCode()" ng-show="success">
+            <div class="form-group">
+                <label for="loginCode">Or type the code from the email</label>
+                <input id="loginCode" type="text" class="form-control auth-code-input" name="code" ng-model="login.code"
+                    inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 -]*" maxlength="8" placeholder="123456" required>
+            </div>
+            <div ng-show="codeError" class="alert alert-danger">{{codeError}}</div>
+            <button ng-disabled="!codeForm.$valid || checking" type="submit" class="member-primary-btn auth-submit">
+                <i class="fa" ng-class="checking ? 'fa-spinner fa-spin' : 'fa-sign-in'"></i> Log in with the code
+            </button>
+            <p class="auth-code-resend"><a href="" ng-click="success = false; message = ''">Send a new email</a></p>
         </form>
 
         <p class="auth-footer"><a ui-sref="/login"><i class="fa fa-arrow-left"></i> Back to log in</a></p>

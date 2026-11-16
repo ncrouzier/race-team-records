@@ -44,6 +44,19 @@ angular.module('mcrrcApp.results').controller('VolunteerSubmissionsController', 
         load();
     };
 
+    // Done: each one collapsed to its heading; a click on the heading opens
+    // it (not one on its links and buttons: View result, Reopen...)
+    $scope.opened = {};
+    $scope.isOpen = function (s) {
+        return $scope.tab !== 'done' || !!$scope.opened[s._id];
+    };
+    $scope.toggleOpen = function (s, $event) {
+        if ($scope.tab !== 'done') return;
+        var target = $event && $event.target;
+        if (target && target.closest && target.closest('a, button')) return;
+        $scope.opened[s._id] = !$scope.opened[s._id];
+    };
+
     $scope.membersLoaded = function () {
         return !!membersList;
     };

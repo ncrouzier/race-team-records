@@ -1,31 +1,4 @@
 <div class="jumbotron racing-stats-page admin-stats-page">
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Racing Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/awards">Awards</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
 
     <!-- Team Members Stats Header -->
     <div class="members-header">
@@ -150,12 +123,12 @@
                     <h4><i class="fa fa-list"></i> {{ statusChoiceLabel() }} Team Members</h4>
                 </div>
                 <div class="panel-body admin-table-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover members-table">
+                    <div class="table-responsive pc-wrap">
+                        <table class="table table-hover members-table pc-table">
                             <thead>
                                 <tr class="table-header">
                                     <th class="rank-column">#</th>
-                                    <th class="member-column">
+                                    <th class="member-column pc-sortable">
                                         <a href="" ng-click="field='firstname'; reverseSort = !reverseSort"
                                             class="sortable-header">
                                             <i class="fa fa-user"></i> Member
@@ -164,7 +137,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="age-column">
+                                    <th class="age-column pc-sortable">
                                         <a href="" ng-click="field='age'; reverseSort = !reverseSort"
                                             class="sortable-header">
                                             <i class="fa fa-birthday-cake"></i> Age
@@ -173,7 +146,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="dob-column">
+                                    <th class="dob-column pc-sortable">
                                         <a href="" ng-click="field='dateofbirth'; reverseSort = !reverseSort"
                                             class="sortable-header">
                                             <i class="fa fa-calendar"></i> Date of Birth
@@ -182,7 +155,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="days-column">
+                                    <th class="days-column pc-sortable">
                                         <a href="" ng-click="field='daysonteam'; reverseSort = !reverseSort"
                                             class="sortable-header">
                                             <i class="fa fa-clock-o"></i> Days on Team
@@ -200,7 +173,7 @@
                                     <td class="rank-cell">
                                         <span class="rank-number">{{$index+1}}</span>
                                     </td>
-                                    <td class="member-cell">
+                                    <td class="member-cell pc-main">
 
 
                                         <a ui-sref="/members/member({ member: m.username })"
@@ -210,14 +183,14 @@
                                             {{m.firstname}} {{m.lastname}}
                                         </a>
                                     </td>
-                                    <td class="age-cell">
+                                    <td class="age-cell pc-detail" data-label="Age">
                                         <span class="age-value">{{m | memberAgeFilter}}</span>
                                     </td>
-                                    <td class="dob-cell">
+                                    <td class="dob-cell pc-detail" data-label="Born">
                                         <span class="dob-value">{{m.dateofbirth | date:'yyyy-MM-dd': 'UTC' }}</span>
                                     </td>
-                                    <td class="days-cell">
-                                        <span class="days-value">{{m | daysOnTeamFilter | number}}</span>
+                                    <td class="days-cell pc-detail" data-label="On team">
+                                        <span class="days-value">{{m | daysOnTeamFilter | number}}</span><span class="pc-phone-inline"> days</span>
                                     </td>
                                 </tr>
                             </tbody>

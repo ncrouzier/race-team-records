@@ -30,8 +30,8 @@
                         </button>
                     </div>
 
-                    <div class="table-responsive rt-table-wrap">
-                        <table class="table member-table rt-table">
+                    <div class="table-responsive rt-table-wrap pc-wrap">
+                        <table class="table member-table rt-table pc-table">
                             <thead>
                                 <tr>
                                     <th>Name</th>
@@ -43,13 +43,13 @@
                             </thead>
                             <tbody>
                                 <tr ng-repeat="racetype in racetypesList | orderBy:'meters'">
-                                    <td class="rt-name">{{racetype.name}}</td>
-                                    <td><span class="rt-surface" ng-class="getSurfaceClass(racetype.surface)">{{racetype.surface}}</span></td>
-                                    <td class="rt-distance">
+                                    <td class="rt-name pc-main">{{racetype.name}}</td>
+                                    <td class="pc-side"><span class="rt-surface" ng-class="getSurfaceClass(racetype.surface)">{{racetype.surface}}</span></td>
+                                    <td class="rt-distance pc-detail">
                                         <span ng-if="racetype.isVariable" class="text-muted">varies</span>
                                         <span ng-if="!racetype.isVariable && racetype.meters">{{racetype.meters | number}} m</span>
                                     </td>
-                                    <td>
+                                    <td class="pc-detail">
                                         <span class="site-tag" ng-class="{
                                                 'site-tag-success': racetype.hasAgeGradedInfo === true,
                                                 'site-tag-muted': racetype.hasAgeGradedInfo === false,
@@ -59,7 +59,7 @@
                                             {{getAgeGradeText(racetype.hasAgeGradedInfo)}}
                                         </span>
                                     </td>
-                                    <td ng-if="user.role == 'admin'" class="text-right nowrap">
+                                    <td ng-if="user.role == 'admin'" class="text-right nowrap pc-actions">
                                         <button class="mcrrc-btn site-icon-btn" ng-click="retrieveRaceTypeForEdit(racetype)" title="Edit race type">
                                             <i class="fa fa-pencil"></i>
                                         </button>

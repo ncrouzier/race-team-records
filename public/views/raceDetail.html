@@ -189,21 +189,24 @@
                     No team results recorded for this race.
                 </div>
 
-                <div class="table-responsive" ng-if="raceinfo.results.length > 0">
-                    <table class="table rd-results-table">
+                <div class="table-responsive pc-wrap" ng-if="raceinfo.results.length > 0">
+                    <table class="table rd-results-table pc-table">
                         <thead>
                             <tr>
                                 <th>RACER</th>
                                 <th class="text-center">AGE</th>
                                 <th class="text-center">GENDER</th>
                                 <th class="text-center">OVERALL</th>
+                                <th class="text-center pc-sortable pc-phone-only" ng-if="!raceinfo.isMultisport && raceinfo.results[0].agegrade">
+                                    <span class="rd-phone-sort hoverhand" ng-click="sortBy('agegrade')">AGE GRADE</span>
+                                </th>
                                 <th class="text-center" ng-if="!raceinfo.isMultisport">
                                     PACE
                                     <i ng-if="raceinfo.results[0].agegrade" ng-click="sortBy('agegrade')"
                                         title="Sort by age grading" class="hoverhand agesort fa fa-star"></i>
                                 </th>
                                 <th class="text-center" ng-if="raceinfo.isMultisport">LEGS</th>
-                                <th class="text-right">
+                                <th class="text-right pc-sortable">
                                     <span class="hoverhand" ng-click="sortBy('time')" title="Sort by net time">NET
                                         TIME</span>
                                 </th>
@@ -214,51 +217,51 @@
                             <tr ng-repeat="result in getFilteredResults()"
                                 ng-class="{'rd-my-result': isMyResult(result)}"
                                 ng-click="goToResult(result)" title="Open this result" class="rd-clickable-row">
-                                <td>
+                                <td class="pc-main">
                                     <result-members-names-full result="result"
                                         race="raceinfo"></result-members-names-full>
                                     <result-icon result="result" race="raceinfo" race-display="true"></result-icon>
                                     <i class="fa fa-comment-o hoverhand" tooltip-trigger="mouseenter"
                                         ng-if="result.comments" uib-tooltip-html="result.comments"></i>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center pc-detail" data-label="Age" ng-class="{'pc-empty': !result.ranking.agerank}">
                                     <span class="hoverhand" ng-if="result.ranking.agerank"
                                         ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
                                         ng-bind-html="result.ranking.agerank | inline_ordinal_suffix_of:true:'red' | unsafe"
                                         uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
                                         tooltip-append-to-body="true"></span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center pc-detail" data-label="Gender" ng-class="{'pc-empty': !result.ranking.genderrank}">
                                     <span class="hoverhand" ng-if="result.ranking.genderrank"
                                         ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
                                         ng-bind-html="result.ranking.genderrank | inline_ordinal_suffix_of:true:'red' | unsafe"
                                         uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
                                         tooltip-append-to-body="true"></span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center pc-detail" data-label="Overall" ng-class="{'pc-empty': !result.ranking.overallrank}">
                                     <span class="hoverhand" ng-if="result.ranking.overallrank"
                                         ng-click="$event.stopPropagation()" tooltip-trigger="$root.tapTooltipTrigger"
                                         ng-bind-html="result.ranking.overallrank | inline_ordinal_suffix_of:true:'red' | unsafe"
                                         uib-tooltip-html="'<span>{{result.ranking | rankTooltip}}</span>'"
                                         tooltip-append-to-body="true"></span>
                                 </td>
-                                <td class="text-center" ng-if="!raceinfo.isMultisport">
+                                <td class="text-center pc-detail" ng-if="!raceinfo.isMultisport">
                                     <!-- A tap on the pace (or a rank) shows its tooltip rather than
                                          opening the result, which matters on a phone -->
                                     <result-pace race="raceinfo" result="result"></result-pace>
                                 </td>
-                                <td class="text-center" ng-if="raceinfo.isMultisport">
+                                <td class="text-center pc-detail" ng-if="raceinfo.isMultisport">
                                     <span class="hoverhandandunderline" title="View leg breakdown"
                                         ng-click="$event.stopPropagation(); showResultDetailsModal(result)">View details</span>
                                 </td>
-                                <td class="text-right">
+                                <td class="text-right pc-side">
                                     <span class="resultTime">{{result.time | secondsToTimeString}}</span>
                                     <a ng-if="result.resultlink" ng-href="{{result.resultlink}}" target="_blank"
                                         ng-click="$event.stopPropagation()">
                                         <i class="fa fa-link hoverhand" title="View official result"></i>
                                     </a>
                                 </td>
-                                <td ng-if="user.role === 'admin'" class="text-right rd-admin-cell">
+                                <td ng-if="user.role === 'admin'" class="text-right rd-admin-cell pc-actions">
                                     <button type="button" class="mcrrc-btn site-icon-btn"
                                         ng-click="$event.stopPropagation(); editResult(result)" title="Edit result">
                                         <i class="fa fa-pencil"></i>

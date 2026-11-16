@@ -88,8 +88,8 @@
         <div class="panel panel-default rd-panel">
             <div class="panel-heading">Editions</div>
             <div class="panel-body rd-table-body">
-                <div class="table-responsive">
-                    <table class="table rd-results-table">
+                <div class="table-responsive pc-wrap">
+                    <table class="table rd-results-table pc-table">
                         <thead>
                             <tr>
                                 <th>DATE</th>
@@ -102,25 +102,25 @@
                         </thead>
                         <tbody>
                             <tr dir-paginate="e in stats.editions | itemsPerPage: 20" pagination-id="editions">
-                                <td>{{ e.race.racedate | date:'MMM d, y':'UTC' }}</td>
-                                <td>
+                                <td class="pc-detail pc-order-2">{{ e.race.racedate | date:'MMM d, y':'UTC' }}</td>
+                                <td class="pc-main">
                                     <a ui-sref="/races({raceId: e.race._id})" track-event="select_content" track-params="{content_type: 'race', item_id: e.race._id, source: 'series_editions'}">{{ e.race.racename }}</a>
                                     <img class="club-mark" src="/images/mcrrc_logo_256.png" alt="MCRRC club race" ng-if="e.race.clubRace && !series.clubRace" uib-tooltip="MCRRC club race" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
                                     <span class="sd-aside" ng-if="e.offDistance"
                                         uib-tooltip="Run at another distance: not counted for times"
                                         tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ e.race.racetype.isVariable && e.race.distanceName ? e.race.distanceName : e.race.racetype.name }})</span>
                                 </td>
-                                <td class="text-center">{{ e.results }}</td>
-                                <td ng-if="stats.summary.teamSeries">
+                                <td class="text-center pc-side">{{ e.results }}<span class="pc-phone-inline"> {{ e.results === 1 ? 'result' : 'results' }}</span></td>
+                                <td ng-if="stats.summary.teamSeries" class="pc-line" data-label="Fastest" ng-class="{'pc-empty': !e.fastest}">
                                     <span ng-if="e.fastest">{{ e.fastest.time | secondsToTimeString }}
                                         <span class="text-muted" ng-if="!e.fastest.team" ng-class="{'sd-me': isMe(e.fastest.members[0])}">{{ e.fastest.members[0].firstname }} {{ e.fastest.members[0].lastname }}</span>
                                         <span class="text-muted" ng-if="e.fastest.team" ng-class="{'sd-me': includesMe(e.fastest.members)}">{{ names(e.fastest.members) }}</span></span>
                                 </td>
-                                <td ng-if="!stats.summary.teamSeries">
+                                <td ng-if="!stats.summary.teamSeries" class="pc-line" data-label="Men" ng-class="{'pc-empty': !e.fastestMan}">
                                     <span ng-if="e.fastestMan">{{ e.fastestMan.time | secondsToTimeString }}
                                         <span class="text-muted" ng-class="{'sd-me': isMe(e.fastestMan.member)}">{{ e.fastestMan.member.firstname }} {{ e.fastestMan.member.lastname }}</span></span>
                                 </td>
-                                <td ng-if="!stats.summary.teamSeries">
+                                <td ng-if="!stats.summary.teamSeries" class="pc-line" data-label="Women" ng-class="{'pc-empty': !e.fastestWoman}">
                                     <span ng-if="e.fastestWoman">{{ e.fastestWoman.time | secondsToTimeString }}
                                         <span class="text-muted" ng-class="{'sd-me': isMe(e.fastestWoman.member)}">{{ e.fastestWoman.member.firstname }} {{ e.fastestWoman.member.lastname }}</span></span>
                                 </td>
@@ -174,34 +174,34 @@
                 <input class="form-control input-sm sd-member-search" ng-model="memberFilter.text" placeholder="Find a member">
             </div>
             <div class="panel-body rd-table-body">
-                <div class="table-responsive">
-                    <table class="table rd-results-table sd-members-table">
+                <div class="table-responsive pc-wrap">
+                    <table class="table rd-results-table sd-members-table pc-table">
                         <thead>
                             <tr>
                                 <!-- Click a heading to sort; again to reverse -->
-                                <th class="hoverhand sd-sortable" ng-click="sortMembers('name')">MEMBER <i class="fa" ng-class="memberSortIcon('name')"></i></th>
-                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('count')">EDITIONS <i class="fa" ng-class="memberSortIcon('count')"></i></th>
-                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('years')">YEARS <i class="fa" ng-class="memberSortIcon('years')"></i></th>
-                                <th class="hoverhand sd-sortable text-center" ng-click="sortMembers('best')">BEST TIME <i class="fa" ng-class="memberSortIcon('best')"></i></th>
-                                <th ng-if="stats.summary.hasAgeGrades" class="hoverhand sd-sortable text-center" ng-click="sortMembers('ageGrade')">BEST AGE GRADE <i class="fa" ng-class="memberSortIcon('ageGrade')"></i></th>
+                                <th class="hoverhand sd-sortable pc-sortable" ng-click="sortMembers('name')">MEMBER <i class="fa" ng-class="memberSortIcon('name')"></i></th>
+                                <th class="hoverhand sd-sortable text-center pc-sortable" ng-click="sortMembers('count')">EDITIONS <i class="fa" ng-class="memberSortIcon('count')"></i></th>
+                                <th class="hoverhand sd-sortable text-center pc-sortable" ng-click="sortMembers('years')">YEARS <i class="fa" ng-class="memberSortIcon('years')"></i></th>
+                                <th class="hoverhand sd-sortable text-center pc-sortable" ng-click="sortMembers('best')">BEST TIME <i class="fa" ng-class="memberSortIcon('best')"></i></th>
+                                <th ng-if="stats.summary.hasAgeGrades" class="hoverhand sd-sortable text-center pc-sortable" ng-click="sortMembers('ageGrade')">BEST AGE GRADE <i class="fa" ng-class="memberSortIcon('ageGrade')"></i></th>
                             </tr>
                         </thead>
                         <tbody dir-paginate="m in memberRows | itemsPerPage: MEMBERS_PER_PAGE" current-page="memberPage.current" pagination-id="members">
                             <tr class="hoverhand" ng-click="toggle(m)" ng-class="{'sd-mine': isMe(m.member)}">
-                                <td>
+                                <td class="pc-main">
                                     <i class="fa fa-fw text-muted" ng-class="open[m.member._id] ? 'fa-caret-down' : 'fa-caret-right'"></i>
                                     <a ui-sref="/members/member({member: m.member.username})" ng-click="$event.stopPropagation()">{{ m.member.firstname }} {{ m.member.lastname }}</a>
                                 </td>
-                                <td class="text-center">{{ m.count }}</td>
-                                <td class="text-center">{{ m.firstYear === m.lastYear ? m.firstYear : m.firstYear + '–' + m.lastYear }}</td>
-                                <td class="text-center">{{ m.best ? (m.best.time | secondsToTimeString) : '—' }}<span class="sd-aside" ng-if="m.best.team && !stats.summary.teamSeries"
+                                <td class="text-center pc-detail pc-order-2" data-label="Editions">{{ m.count }}</td>
+                                <td class="text-center pc-detail pc-order-2">{{ m.firstYear === m.lastYear ? m.firstYear : m.firstYear + '–' + m.lastYear }}</td>
+                                <td class="text-center pc-side">{{ m.best ? (m.best.time | secondsToTimeString) : '—' }}<span class="sd-aside" ng-if="m.best.team && !stats.summary.teamSeries"
                                         uib-tooltip="With a team, such as a relay" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">(team)</span></td>
-                                <td class="text-center" ng-if="stats.summary.hasAgeGrades">{{ m.bestAgeGrade ? (m.bestAgeGrade | number:2) + '%' : '—' }}</td>
+                                <td class="text-center pc-detail pc-order-2" data-label="Best AG" ng-if="stats.summary.hasAgeGrades">{{ m.bestAgeGrade ? (m.bestAgeGrade | number:2) + '%' : '—' }}</td>
                             </tr>
                             <!-- Every time this member ran it, newest first -->
-                            <tr class="sd-history" ng-if="open[m.member._id]">
+                            <tr class="sd-history pc-block" ng-if="open[m.member._id]">
                                 <td colspan="{{ stats.summary.hasAgeGrades ? 5 : 4 }}">
-                                    <table class="table table-condensed sd-history-table">
+                                    <table class="table table-condensed sd-history-table pc-table">
                                         <thead>
                                             <tr>
                                                 <th>DATE</th>
@@ -215,8 +215,8 @@
                                         </thead>
                                         <tbody>
                                             <tr ng-repeat="h in m.history">
-                                                <td class="sd-nowrap">{{ h.date | date:'MMM d, y':'UTC' }}</td>
-                                                <td>
+                                                <td class="sd-nowrap pc-detail pc-order-2">{{ h.date | date:'MMM d, y':'UTC' }}</td>
+                                                <td class="pc-main">
                                                     <a ui-sref="/results/result({resultId: h.resultId})" title="Open this result"
                                                         track-event="select_content" track-params="{content_type: 'result', item_id: h.resultId, source: 'series_member_history'}">{{ h.racename }}</a>
                                                     <!-- In a team series every row is a team's: say who with.
@@ -233,22 +233,22 @@
                                                         tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">({{ h.distance }})</span>
                                                 </td>
                                                 <!-- Every value sits in the same box, so shading the best moves nothing -->
-                                                <td class="text-right sd-num sd-time">
+                                                <td class="text-right sd-num sd-time pc-side">
                                                     <span class="sd-val" ng-class="{'sd-val-best': h.bestTime}" ng-if="h.time > 0"
                                                         uib-tooltip="Best time here" tooltip-enable="h.bestTime"
                                                         tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">{{ h.time | secondsToTimeString }}</span>
                                                 </td>
-                                                <td class="text-right sd-num text-muted">
+                                                <td class="text-right sd-num text-muted pc-detail pc-order-2">
                                                     <span ng-if="h.behindBest > 0">+{{ h.behindBest | secondsToTimeString }}</span>
                                                     <span ng-if="h.bestTime">best</span>
                                                 </td>
-                                                <td class="text-right sd-num">{{ paceText(h.pace) }}</td>
-                                                <td class="text-right sd-num" ng-if="stats.summary.hasAgeGrades">
+                                                <td class="text-right sd-num pc-detail pc-order-2">{{ paceText(h.pace) }}</td>
+                                                <td class="text-right sd-num pc-detail pc-order-2" ng-if="stats.summary.hasAgeGrades">
                                                     <span class="sd-val" ng-class="{'sd-val-best': h.bestAgeGrade}" ng-if="h.agegrade"
                                                         uib-tooltip="Best age grade here" tooltip-enable="h.bestAgeGrade"
                                                         tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">{{ h.agegrade | number:2 }}%</span>
                                                 </td>
-                                                <td class="text-right sd-num">
+                                                <td class="text-right sd-num pc-detail pc-order-2" data-label="Place">
                                                     <span ng-if="h.place" uib-tooltip="{{ placeTip(h.place) }}" tooltip-trigger="$root.tapTooltipTrigger" tooltip-append-to-body="true">
                                                         <span ng-if="h.place.overallrank">{{ h.place.overallrank }}<small ng-if="h.place.overalltotal">/{{ h.place.overalltotal }}</small></span>
                                                         <span ng-if="!h.place.overallrank && h.place.genderrank">{{ h.place.genderrank }}<small ng-if="h.place.gendertotal">/{{ h.place.gendertotal }}</small> <small>(gender)</small></span>

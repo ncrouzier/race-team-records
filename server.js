@@ -233,6 +233,7 @@ app.post('/api/signup', authLimiter);
 app.post('/api/forgot', authLimiter);
 app.use('/api/reset', authLimiter);
 app.use('/api/login/magic', authLimiter);
+app.post('/api/login/magic-code', authLimiter);
 
 // The team application form is public — cap submissions per IP
 const applicationLimiter = rateLimit({

@@ -80,8 +80,8 @@
                 </div>
 
                 <!-- Editions -->
-                <div class="table-responsive">
-                    <table class="table member-table rs-table">
+                <div class="table-responsive pc-wrap">
+                    <table class="table member-table rs-table pc-table pc-ranked">
                         <thead>
                             <tr>
                                 <th></th>
@@ -99,28 +99,28 @@
                             <tr ng-repeat="link in series.races track by link.race._id"
                                 ng-class="{info: selected[link.race._id], 'rs-pending': link.status === 'suggested'}">
                                 <td class="rs-check"><input type="checkbox" ng-model="selected[link.race._id]"></td>
-                                <td class="rs-date">{{ link.race.racedate | date:'MMM d, y' : 'UTC' }}</td>
-                                <td><a ui-sref="/races({raceId: link.race._id})" target="_blank">{{ link.race.racename }}</a></td>
-                                <td>
+                                <td class="rs-date pc-side">{{ link.race.racedate | date:'MMM d, y' : 'UTC' }}</td>
+                                <td class="pc-main"><a ui-sref="/races({raceId: link.race._id})" target="_blank">{{ link.race.racename }}</a></td>
+                                <td class="pc-detail">
                                     {{ link.race.racetype.name }}
                                     <button type="button" class="site-tag site-tag-toggle rs-offdistance" ng-click="toggleOffDistance(link)"
                                         ng-class="link.offDistance ? 'site-tag-warning' : 'site-tag-muted'"
                                         uib-tooltip="{{ link.offDistance ? 'Left out of time comparisons. Click to count it.' : 'Click to mark as run at another distance' }}" tooltip-append-to-body="true">
                                         {{ link.offDistance ? 'off-distance' : 'same distance' }}</button>
                                 </td>
-                                <td>{{ link.race.location }}</td>
-                                <td>{{ link.results }}</td>
-                                <td class="text-center">
+                                <td class="pc-detail">{{ link.race.location }}</td>
+                                <td class="pc-detail" data-label="Results">{{ link.results }}</td>
+                                <td class="text-center pc-detail" data-label="Club">
                                     <input type="checkbox" ng-checked="link.race.clubRace"
                                         ng-click="setClub(!link.race.clubRace, [link.race._id])" aria-label="MCRRC club race">
                                 </td>
-                                <td>
+                                <td class="pc-line">
                                     <span class="site-tag" ng-class="link.status === 'confirmed' ? 'site-tag-success' : 'site-tag-warning'">
                                         {{ link.status === 'confirmed' ? 'Confirmed' : 'To review' }}</span>
                                     <div class="text-muted rs-meta" ng-if="link.status === 'suggested'">{{ link.reason }}</div>
                                     <div class="text-muted rs-meta" ng-if="link.status === 'confirmed' && link.confirmedBy">by {{ link.confirmedBy }}</div>
                                 </td>
-                                <td class="text-right rs-actions">
+                                <td class="text-right rs-actions pc-actions">
                                     <button class="mcrrc-btn site-icon-btn" ng-if="link.status === 'suggested'"
                                         ng-click="confirm([link.race._id])" uib-tooltip="Confirm" tooltip-append-to-body="true"><i class="fa fa-check"></i></button>
                                     <button class="mcrrc-btn site-icon-btn is-danger" ng-click="reject([link.race._id])"
@@ -137,14 +137,14 @@
                 <h4 class="rs-section-title">Add races</h4>
                 <input class="form-control input-sm rs-search" ng-model="add.text" ng-change="searchUngrouped()"
                     ng-model-options="{debounce: 300}" placeholder="Search races that are in no series">
-                <table class="table table-condensed rs-table" ng-if="add.results.races.length">
+                <table class="table table-condensed rs-table pc-table pc-ranked" ng-if="add.results.races.length">
                     <tbody>
                         <tr ng-repeat="race in add.results.races | limitTo: 30 track by race._id">
                             <td class="rs-check"><input type="checkbox" ng-model="add.selected[race._id]"></td>
-                            <td class="rs-date">{{ race.racedate | date:'MMM d, y' : 'UTC' }}</td>
-                            <td>{{ race.racename }}</td>
-                            <td class="text-muted">{{ race.racetype.name }}</td>
-                            <td class="text-muted">{{ race.location }}</td>
+                            <td class="rs-date pc-side">{{ race.racedate | date:'MMM d, y' : 'UTC' }}</td>
+                            <td class="pc-main">{{ race.racename }}</td>
+                            <td class="text-muted pc-detail">{{ race.racetype.name }}</td>
+                            <td class="text-muted pc-detail">{{ race.location }}</td>
                         </tr>
                     </tbody>
                 </table>

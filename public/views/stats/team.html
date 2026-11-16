@@ -1,31 +1,4 @@
 <div class="jumbotron racing-stats-page">
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Racing Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/awards">Awards</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
 
     <!-- Team Stats Content -->
     <div class="row text-left">
@@ -588,6 +561,28 @@
                                                        day.count ? 'cal-clickable' : '']"
                                             uib-tooltip="{{day.title}}" tooltip-class="cal-tooltip"
                                                 tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120" ng-click="trackDrill('team_calendar'); goToCalendarDay(day)"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <!-- Phones: the same year turned on its side, a column per month and a
+                                 row per day, so all of it fits without scrolling sideways -->
+                            <table class="cal-grid cal-grid-phone">
+                                <thead>
+                                    <tr>
+                                        <th class="cal-day-label"></th>
+                                        <th ng-repeat="month in raceCalendar.months track by month.short">{{month.short}}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="n in raceCalendar.dayNumbers track by n">
+                                        <th class="cal-day-label">{{n}}</th>
+                                        <td ng-repeat="month in raceCalendar.months track by month.short" class="cal-cell"
+                                            ng-class="[month.days[n - 1] ? (month.days[n - 1].count ? 'cal-level-' + month.days[n - 1].level : 'cal-blank') : 'cal-pad',
+                                                       month.days[n - 1].isBusiest ? 'cal-busiest' : '',
+                                                       month.days[n - 1].count ? 'cal-clickable' : '']"
+                                            uib-tooltip="{{month.days[n - 1].title}}" tooltip-class="cal-tooltip"
+                                            tooltip-placement="top" tooltip-append-to-body="true" tooltip-popup-delay="120"
+                                            ng-click="trackDrill('team_calendar'); goToCalendarDay(month.days[n - 1])"></td>
                                     </tr>
                                 </tbody>
                             </table>

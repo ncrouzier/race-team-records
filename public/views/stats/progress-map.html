@@ -1,31 +1,4 @@
 <div class="jumbotron racing-stats-page progress-stats-page">
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Racing Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/awards">Awards</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
 
     <!-- Header -->
     <div class="row text-left" style="margin-top: 15px;">
@@ -191,7 +164,7 @@
             </div>
             <div class="panel-body">
                 <!-- Race segments -->
-                <table ng-if="view.mapMode !== 'members'" class="table member-table">
+                <table ng-if="view.mapMode !== 'members'" class="table member-table pc-table pc-ranked">
                     <thead>
                         <tr>
                             <th style="width: 30px;">#</th>
@@ -211,17 +184,17 @@
                             <td><a class="hoverhandandunderline" ng-click="centerOnSegment(seg)"><span
                                         style="display:inline-block;width:14px;height:14px;background:{{seg.color}};border-radius:2px;"></span></a>
                             </td>
-                            <td>
+                            <td class="pc-main">
                                 <a class="hoverhandandunderline resultEvent" ng-click="showRaceModal(seg.race)">
                                     {{seg.raceName}}
                                 </a>
                             </td>
-                            <td>{{seg.raceDate | date:'M/d/yyyy':'UTC'}}</td>
-                            <td>{{seg.raceTypeName}}</td>
-                            <td>{{seg.memberCount}}</td>
-                            <td>{{seg.teamMiles | number:1}}</td>
-                            <td>{{seg.endMile | number:1}}</td>
-                            <td>
+                            <td class="pc-side">{{seg.raceDate | date:'M/d/yyyy':'UTC'}}</td>
+                            <td class="pc-detail">{{seg.raceTypeName}}</td>
+                            <td class="pc-detail" data-label="Members">{{seg.memberCount}}</td>
+                            <td class="pc-detail" data-label="Team miles">{{seg.teamMiles | number:1}}</td>
+                            <td class="pc-detail" data-label="Cumulative">{{seg.endMile | number:1}}</td>
+                            <td class="pc-line" ng-class="{'pc-empty': !seg.waypointsReached.length}">
                                 <span ng-if="seg.waypointsReached.length > 0">
                                     <i class="fa fa-map-marker" style="color: #28a745;"></i>
                                     <span ng-repeat="wp in seg.waypointsReached"><a class="hoverhandandunderline"
@@ -233,7 +206,7 @@
                     </tbody>
                 </table>
                 <!-- Member segments -->
-                <table ng-if="view.mapMode === 'members'" class="table member-table">
+                <table ng-if="view.mapMode === 'members'" class="table member-table pc-table pc-ranked">
                     <thead>
                         <tr>
                             <th style="width: 30px;">#</th>
@@ -253,16 +226,16 @@
                             <td><a class="hoverhandandunderline" ng-click="centerOnSegment(seg)"><span
                                         style="display:inline-block;width:14px;height:14px;background:{{seg.color}};border-radius:2px;"></span></a>
                             </td>
-                            <td>
+                            <td class="pc-main">
                                 <a ui-sref="/members/member/bio({ member: seg.username })">
                                     {{seg.memberName}}
                                 </a>
                             </td>
-                            <td>{{seg.raceCount}}</td>
-                            <td>{{seg.teamMiles | number:1}}</td>
-                            <td>{{seg.teamMiles / totalTeamMiles * 100 | number:1}}%</td>
-                            <td>{{seg.endMile | number:1}}</td>
-                            <td>
+                            <td class="pc-detail" data-label="Races">{{seg.raceCount}}</td>
+                            <td class="pc-side">{{seg.teamMiles | number:1}} <span class="pc-phone-inline">mi</span></td>
+                            <td class="pc-detail" data-label="Share">{{seg.teamMiles / totalTeamMiles * 100 | number:1}}%</td>
+                            <td class="pc-detail" data-label="Cumulative">{{seg.endMile | number:1}}</td>
+                            <td class="pc-line" ng-class="{'pc-empty': !seg.waypointsReached.length}">
                                 <span ng-if="seg.waypointsReached.length > 0">
                                     <i class="fa fa-map-marker" style="color: #28a745;"></i>
                                     <span ng-repeat="wp in seg.waypointsReached"><a class="hoverhandandunderline"
@@ -282,7 +255,7 @@
                 <h4 style="margin: 0;"><i class="fa fa-map-marker"></i> Route Waypoints</h4>
             </div>
             <div class="panel-body">
-                <table class="table member-table">
+                <table class="table member-table pc-table pc-ranked">
                     <thead>
                         <tr>
                             <th style="width: 30px;">#</th>
@@ -298,11 +271,11 @@
                             ng-class="{'success': wp.reached, 'my-member-row': view.mapMode === 'members' && user.member.username && wp.reachedByMemberUsername === user.member.username}"
                             ng-if="!wp.isStart">
                             <td>{{wp.order}}</td>
-                            <td>
+                            <td class="pc-main">
                                 <a class="hoverhandandunderline" ng-click="centerOnWaypoint(wp)">{{wp.name}}</a>
                             </td>
-                            <td>{{wp.mileMarker | number:0}}</td>
-                            <td>
+                            <td class="pc-detail" data-label="Mile">{{wp.mileMarker | number:0}}</td>
+                            <td class="pc-side">
                                 <span ng-if="wp.reached" class="label label-success">
                                     <i class="fa fa-check"></i> Reached
                                 </span>
@@ -310,7 +283,7 @@
                                     Not yet
                                 </span>
                             </td>
-                            <td>
+                            <td class="pc-detail" ng-class="{'pc-empty': !wp.reached}" data-label="{{view.mapMode === 'members' ? 'Reached by' : 'Reached on'}}">
                                 <span ng-if="wp.reached && view.mapMode !== 'members' && wp.reachedByRaceDate"
                                     tooltip-append-to-body="true" tooltip-placement="right"
                                     uib-tooltip-html="wp.reachedByRaceName" class="hoverhand">
@@ -322,7 +295,7 @@
                                 </span>
                                 <span ng-if="!wp.reached" class="text-muted">-</span>
                             </td>
-                            <td>
+                            <td class="pc-detail" ng-class="{'pc-empty': wp.reached}" data-label="Remaining">
                                 <span ng-if="!wp.reached">{{wp.milesRemaining | number:0}} mi</span>
                                 <span ng-if="wp.reached" class="text-muted">-</span>
                             </td>

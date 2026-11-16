@@ -1,0 +1,35 @@
+<!-- The Stats pages' shared frame: their tab row, and the page under it
+     (views/stats/*.html, child states of /stats in appRoutes.js). The tabs
+     stay while the pages change; on a phone the page follows a sideways
+     swipe to the next tab (navTabs, otherDirectives.js). Laid out to match
+     the top of a page's .jumbotron, which continues under it. -->
+<div class="stats-shell">
+    <ul class="nav nav-tabs">
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/team"><i class="fa fa-bar-chart nav-tab-icon" aria-hidden="true"></i>Racing Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/volunteering"><i class="fa fa-heart nav-tab-icon" aria-hidden="true"></i>Volunteering Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/us-map"><span class="nav-tab-icon nav-tab-icon-usa" aria-hidden="true"></span>US Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/world-map"><i class="fa fa-globe nav-tab-icon" aria-hidden="true"></i>World Races Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/progress-map"><i class="fa fa-road nav-tab-icon" aria-hidden="true"></i>Progress Map</a>
+        </li>
+        <li role="presentation" ui-sref-active="active">
+            <a ui-sref="/stats/awards"><i class="fa fa-trophy nav-tab-icon" aria-hidden="true"></i>Awards</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
+            <a ui-sref="/stats/participation"><i class="fa fa-line-chart nav-tab-icon" aria-hidden="true"></i>Participation Stats</a>
+        </li>
+        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
+            <a ui-sref="/stats/members"><i class="fa fa-users nav-tab-icon" aria-hidden="true"></i>Team Members Stats</a>
+        </li>
+    </ul>
+    <!-- A wrapper that stays: the ui-view inside is replaced on each page -->
+    <div class="stats-view"><div ui-view></div></div>
+</div>

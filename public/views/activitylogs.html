@@ -29,8 +29,8 @@
                     <span class="member-results-count">{{totalItems}} entries</span>
                 </div>
                 <!-- Table -->
-                <div class="table-responsive">
-                <table class="table member-table">
+                <div class="table-responsive pc-wrap">
+                <table class="table member-table pc-table activity-log-table">
                     <thead>
                         <tr>
                             <th style="width: 140px;">Date</th>
@@ -43,22 +43,22 @@
                     </thead>
                     <tbody>
                         <tr ng-if="!logsList || logsList.length === 0">
-                            <td colspan="6" class="text-center text-muted" style="padding: 40px;">
+                            <td colspan="6" class="text-center text-muted pc-line" style="padding: 40px;">
                                 <i class="fa fa-info-circle"></i> No activity logs found.
                             </td>
                         </tr>
                         <tr ng-repeat="log in logsList" ng-class="{'crf-row-unseen': log.unseen}">
-                            <td style="white-space: nowrap;">
+                            <td class="pc-side" style="white-space: nowrap;">
                                 <span ng-if="log.unseen" class="crf-nav-dot" title="Unseen"></span>
                                 {{log.createdAt | date:'yyyy-MM-dd HH:mm'}}
                             </td>
-                            <td>{{log.username}}</td>
-                            <td>
+                            <td class="pc-detail" data-label="By">{{log.username}}</td>
+                            <td class="pc-main">
                                 <span class="label label-info"
                                     style="display: inline-block; min-width: 75px; text-align: center;">{{log.action}}</span>
                             </td>
-                            <td>{{log.description}}</td>
-                            <td>
+                            <td class="pc-line al-desc">{{log.description}}</td>
+                            <td class="pc-detail" ng-class="{'pc-empty': !log.targetName}" data-label="Target">
                                 <a ng-if="targetLinkType(log) === 'member'"
                                     ui-sref="/members/member/bio({member: log.metadata.targetUsername})">{{log.targetName}}</a>
                                 <a ng-if="targetLinkType(log) === 'compraceform'"
@@ -68,7 +68,7 @@
                                 <span ng-if="log.targetName && !targetLinkType(log)">{{log.targetName}}</span>
                                 <span ng-if="!log.targetName" class="text-muted">-</span>
                             </td>
-                            <td class="text-center" style="white-space: nowrap;">
+                            <td class="text-center pc-actions" style="white-space: nowrap;">
                                 <i class="fa fa-eye hoverhand" ng-click="viewLogDetail(log)" title="View details" style="margin-right: 8px;"></i>
                                 <i class="fa fa-trash hoverhand" ng-click="deleteLog(log)" title="Delete entry"></i>
                             </td>

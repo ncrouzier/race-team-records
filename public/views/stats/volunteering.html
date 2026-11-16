@@ -1,31 +1,4 @@
 <div class="jumbotron volunteer-stats-page racing-stats-page">
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Racing Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/awards">Awards</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
 
     <div>
         <div class="row vs-toolbar">
@@ -90,7 +63,7 @@
                             <h4><i class="fa fa-heart"></i> Volunteers</h4>
                         </div>
                         <div class="panel-body vs-flush">
-                            <table class="table vs-table member-table">
+                            <table class="table vs-table member-table pc-table">
                                 <thead>
                                     <tr>
                                         <th class="vs-rank">#</th>
@@ -104,25 +77,25 @@
                                     <tr class="vs-row" ng-click="toggle(row)"
                                         title="{{expanded[row.member._id] ? 'Hide jobs' : 'Show jobs'}}">
                                         <td class="vs-rank">{{$index + 1}}</td>
-                                        <td class="vs-nowrap">
+                                        <td class="vs-nowrap pc-main">
                                             <i class="fa vs-chevron"
                                                 ng-class="expanded[row.member._id] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                                             <a ui-sref="/members/member({ member: row.member.username })"
                                                 ng-click="$event.stopPropagation()">{{row.member.firstname}}
                                                 {{row.member.lastname}}</a>
                                         </td>
-                                        <td class="vs-bar-col">
+                                        <td class="vs-bar-col pc-line">
                                             <div class="vs-bar">
                                                 <div class="vs-bar-fill"
                                                     ng-style="{width: barWidth(row.jobCount, stats.volunteers, 'jobCount') + '%'}"></div>
                                                 <span class="vs-bar-value">{{row.jobCount}}</span>
                                             </div>
                                         </td>
-                                        <td class="text-center">{{row.eventCount}}</td>
-                                        <td class="text-right vs-muted vs-nowrap">{{row.lastDate | date:'MMM d, y':'UTC'}}</td>
+                                        <td class="text-center pc-detail" data-label="Events">{{row.eventCount}}</td>
+                                        <td class="text-right vs-muted vs-nowrap pc-detail" data-label="Last job">{{row.lastDate | date:'MMM d, y':'UTC'}}</td>
                                     </tr>
-                                    <tr ng-if="expanded[row.member._id]" class="vs-jobs-row">
-                                        <td></td>
+                                    <tr ng-if="expanded[row.member._id]" class="vs-jobs-row pc-block">
+                                        <td class="pc-hide"></td>
                                         <td colspan="4">
                                             <ul class="vs-jobs">
                                                 <li ng-repeat="job in row.jobs">

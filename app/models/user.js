@@ -25,6 +25,9 @@ var userSchema = mongoose.Schema({
     resetPasswordExpires: Date,
     magicLoginTokenHash: String,
     magicLoginTokenExpires: Date,
+    // The code sent with the link (app/loginCodes.js): same expiry
+    magicLoginCodeHash: String,
+    magicLoginCodeAttempts: Number,
     lastSeenActivityLogAt: Date,
     runnerStyle: {
         male: runnerStylePrefSchema,

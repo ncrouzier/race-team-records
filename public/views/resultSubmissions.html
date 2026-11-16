@@ -20,8 +20,8 @@
         {{ tab === 'pending' ? 'Nothing to add. All caught up.' : 'Nothing here yet.' }}
     </div>
 
-    <div class="member-card crq-card" ng-repeat="s in submissions track by s._id">
-        <div class="crq-card-head">
+    <div class="member-card crq-card" ng-repeat="s in submissions track by s._id" ng-class="{'crq-card-collapsible': tab === 'done', 'crq-card-collapsed': !isOpen(s)}">
+        <div class="crq-card-head" ng-click="toggleOpen(s, $event)" ng-attr-aria-expanded="{{ tab === 'done' ? isOpen(s) : undefined }}">
             <div class="crq-card-title">
                 <span class="crq-card-race">{{ s.racename }}</span>
                 <span class="crq-card-date">{{ s.racedate | date:'EEE, MMM d, y':'UTC' }}</span>
@@ -52,7 +52,11 @@
                     <button type="button" class="crq-dismiss-link" ng-if="s.status === 'dismissed' || s.status === 'already'" ng-click="reopen(s)">Reopen</button>
                 </div>
             </div>
+            <i class="fa crq-card-chevron" ng-if="tab === 'done'" ng-class="isOpen(s) ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i>
         </div>
+
+        <!-- Done ones show only their heading until opened -->
+        <div class="crq-card-body" ng-if="isOpen(s)">
 
         <table class="crq-changes rsb-details">
             <tr>
@@ -120,5 +124,6 @@
             <button type="submit" class="mcrrc-btn is-danger">Dismiss</button>
             <button type="button" class="mcrrc-btn" ng-click="cancelDismiss()">Cancel</button>
         </form>
+        </div>
     </div>
 </div>

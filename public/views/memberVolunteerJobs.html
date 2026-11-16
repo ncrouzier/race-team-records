@@ -86,8 +86,8 @@
                         <span class="member-results-count">{{getFilteredCount()}} jobs</span>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="table member-table">
+                    <div class="table-responsive pc-wrap">
+                        <table class="table member-table pc-table">
                             <thead>
                                 <tr>
                                     <th>Event Name</th>
@@ -97,7 +97,7 @@
                             </thead>
                             <tbody>
                                 <tr ng-if="getFilteredCount() === 0">
-                                    <td colspan="3" class="text-center text-muted member-table-empty">
+                                    <td colspan="3" class="text-center text-muted member-table-empty pc-line">
                                         <i class="fa fa-info-circle"></i>
                                         <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded
                                             yet.</span>
@@ -107,9 +107,9 @@
                                 </tr>
                                 <tr
                                     ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
-                                    <td><volunteer-event-name job="job"></volunteer-event-name></td>
-                                    <td class="member-table-date">{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
-                                    <td>{{job.description}}</td>
+                                    <td class="pc-main"><volunteer-event-name job="job"></volunteer-event-name></td>
+                                    <td class="member-table-date pc-side">{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
+                                    <td class="pc-line">{{job.description}}</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -14,6 +14,7 @@ const teamRequirements = require('../config/teamRequirements');
 const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const profileThumbnails = require('./profileThumbnails');
 const memberPhotos = require('./memberPhotos');
+const loginCodes = require('./loginCodes');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
@@ -738,7 +739,7 @@ module.exports = async function (app, qs, passport, async, _) {
         var User = require('./models/user');
 
         // Always return the same message to prevent email enumeration
-        var genericResponse = { message: 'If an account with that email exists, a login link has been sent.' };
+        var genericResponse = { message: 'If an account with that email exists, a login link and a code have been sent to it.' };
 
         User.findOne({ email: new RegExp('^' + escapeRegex(req.body.email.trim()) + '$', 'i') }).then(function (user) {
             if (!user) {
@@ -754,6 +755,11 @@ module.exports = async function (app, qs, passport, async, _) {
             var hashedToken = crypto.createHash('sha256').update(token).digest('hex');
             user.magicLoginTokenHash = hashedToken;
             user.magicLoginTokenExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+            // A code to type instead, where the link would open in another
+            // browser (a site saved to an iPhone's home screen)
+            var code = loginCodes.makeCode();
+            user.magicLoginCodeHash = loginCodes.hashCode(user._id, code);
+            user.magicLoginCodeAttempts = 0;
 
             user.save().then(function () {
                 var loginUrl = process.env.SITE_URL + '/magic-login/' + token;
@@ -771,7 +777,9 @@ module.exports = async function (app, qs, passport, async, _) {
                     text: 'You are receiving this because you (or someone else) asked to log in to your MCRRC Racing Team account with an email link.\n\n' +
                         'Please click on the following link, or paste it into your browser to log in:\n\n' +
                         loginUrl + '\n\n' +
-                        'This link will expire in 15 minutes and can only be used once.\n\n' +
+                        'Or type this code on the login page:\n\n' +
+                        code + '\n\n' +
+                        'The link and the code expire in 15 minutes and can only be used once.\n\n' +
                         'If you did not request this, please ignore this email — your account is unaffected.\n'
                 }, function (error, response) {
                     if (error) {
@@ -806,9 +814,11 @@ module.exports = async function (app, qs, passport, async, _) {
                 return res.status(403).json({ message: 'Your account is pending approval by an administrator.' });
             }
 
-            // Single use — clear the token before establishing the session
+            // Single use — clear the token (and its code) before establishing the session
             user.magicLoginTokenHash = undefined;
             user.magicLoginTokenExpires = undefined;
+            user.magicLoginCodeHash = undefined;
+            user.magicLoginCodeAttempts = undefined;
 
             var nowdate = new Date();
             user.lastLogin = nowdate;
@@ -825,6 +835,64 @@ module.exports = async function (app, qs, passport, async, _) {
             });
         }).catch(function (err) {
             console.error('Error in magic login verify:', err);
+            res.status(500).json({ message: 'An error occurred. Please try again later.' });
+        });
+    });
+
+    // Log in with the code from the login email (app/loginCodes.js): the
+    // email it was sent to and the code. A wrong code uses up one of the
+    // tries; too many cancel it (and the link) so a new one must be asked for.
+    app.post('/api/login/magic-code', function (req, res) {
+        var email = (req.body && req.body.email || '').trim();
+        var invalid = { message: 'This code is not right, or it has expired. Check the email, or ask for a new one.' };
+        if (!email || !req.body.code) {
+            return res.status(400).json({ message: 'Enter your email address and the code from the email.' });
+        }
+        var User = require('./models/user');
+
+        User.findOne({ email: new RegExp('^' + escapeRegex(email) + '$', 'i') }).then(function (user) {
+            if (!user) return res.status(400).json(invalid);
+            var result = loginCodes.checkCode(user, req.body.code);
+            if (result === 'expired') return res.status(400).json(invalid);
+            if (result === 'locked' || result === 'wrong') {
+                user.magicLoginCodeAttempts = (user.magicLoginCodeAttempts || 0) + 1;
+                var cancelled = result === 'locked' || user.magicLoginCodeAttempts >= loginCodes.MAX_ATTEMPTS;
+                if (cancelled) {
+                    user.magicLoginTokenHash = undefined;
+                    user.magicLoginTokenExpires = undefined;
+                    user.magicLoginCodeHash = undefined;
+                    user.magicLoginCodeAttempts = undefined;
+                }
+                return user.save().then(function () {
+                    res.status(400).json(cancelled
+                        ? { message: 'Too many wrong codes: this one is cancelled. Ask for a new login email.', cancelled: true }
+                        : invalid);
+                });
+            }
+            if (!user.enabled) {
+                return res.status(403).json({ message: 'Your account is pending approval by an administrator.' });
+            }
+
+            // Single use — clear the code and its link before the session
+            user.magicLoginTokenHash = undefined;
+            user.magicLoginTokenExpires = undefined;
+            user.magicLoginCodeHash = undefined;
+            user.magicLoginCodeAttempts = undefined;
+            var nowdate = new Date();
+            user.lastLogin = nowdate;
+            user.lastActive = nowdate;
+
+            return user.save().then(function () {
+                req.logIn(user, function (err) {
+                    if (err) {
+                        console.error('Error logging in with a login code:', err);
+                        return res.status(500).json({ message: 'An error occurred. Please try again later.' });
+                    }
+                    res.status(200).json({ user: req.user });
+                });
+            });
+        }).catch(function (err) {
+            console.error('Error in login code verify:', err);
             res.status(500).json({ message: 'An error occurred. Please try again later.' });
         });
     });
@@ -4899,7 +4967,7 @@ module.exports = async function (app, qs, passport, async, _) {
     // Get all users
     app.get('/api/users', service.isAdminLoggedIn, function (req, res) {
         try {
-            User.find({}, '-password').populate('member', 'firstname lastname username sex memberStatus').sort('username').lean().then(function (users) {
+            User.find({}, '-password -magicLoginTokenHash -magicLoginCodeHash').populate('member', 'firstname lastname username sex memberStatus').sort('username').lean().then(function (users) {
                 users.forEach(function (user) {
                     var cached = lastActiveCache[user._id.toString()];
                     if (cached) {

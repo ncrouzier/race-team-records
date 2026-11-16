@@ -98,12 +98,18 @@ app.directive('teamRequirements', ['TeamRequirementsConfig', function (TeamRequi
 // limit are left open, so the toggle never hides just a line or two.
 // `show-more-watch` names the expression whose change means new content
 // (e.g. another member's bio), which re-measures and collapses again.
+// `show-more-phone`, optional: the limit on phones (under 768px).
 app.directive('showMore', ['$timeout', function ($timeout) {
     var SLACK = 80;
     return {
         restrict: 'A',
         link: function (scope, element, attrs) {
             var limit = parseInt(attrs.showMore, 10) || 500;
+            // show-more-phone: a shorter limit under 768px, where a desktop
+            // limit fills the screen
+            if (attrs.showMorePhone && window.matchMedia && window.matchMedia('(max-width: 767px)').matches) {
+                limit = parseInt(attrs.showMorePhone, 10) || limit;
+            }
             var expanded = false;
             var toggle = angular.element('<button type="button" class="btn btn-link show-more-toggle ng-hide"></button>');
             element.addClass('show-more').after(toggle);

@@ -148,6 +148,319 @@ angular.module('mcrrcApp').directive('tapTooltip', ['$rootScope', '$document', '
   };
 }]);
 
+// On a touch screen (no hover), a tooltip on something that is not itself a
+// link or button opens on tap, like tooltip-trigger="$root.tapTooltipTrigger"
+// (the "?" beside a figure, a badge). Tooltips with their own trigger, and
+// those on or inside anything tappable (a tap there keeps doing what it does;
+// see tap-tooltip for icons in clickable rows), are left as they are.
+function tapByDefault() {
+  var noHover = window.matchMedia && window.matchMedia('(hover: none)').matches;
+  return {
+    restrict: 'A',
+    priority: 1,
+    compile: function (element, attrs) {
+      if (!noHover || attrs.tooltipTrigger) return;
+      if (element[0].closest && element[0].closest('a, button, label, input, select, textarea, [ng-click], [ui-sref], [href]')) return;
+      attrs.tooltipTrigger = "'outsideClick'";
+    }
+  };
+}
+angular.module('mcrrcApp').directive('uibTooltip', tapByDefault);
+angular.module('mcrrcApp').directive('uibTooltipHtml', tapByDefault);
+
+// A row of tabs (class="nav-tabs") swipes sideways on a phone (mcrrc.less).
+// There it opens with the current tab in view, and shows a ‹ / › at each end
+// that has more tabs past it (tap: scroll a screenful); the row's classes
+// nav-tabs-more-left / -right say which. The arrows are always added and
+// only shown on a phone, so the row follows a window resized either way.
+//
+// The Stats pages' row, in their shared frame (views/stats/shell.html), does
+// more on a phone: its underline glides to the tab being opened, and the page
+// under it (the frame's ui-view) follows a sideways swipe, the next or
+// previous tab behind it: a copy of that page as last seen (statsCopies),
+// or a placeholder until it has been opened once.
+var SWIPE_IGNORE = 'input, textarea, select, canvas, svg, .leaflet-container, .noUi-target, .nav-tabs, .modal';
+
+// The Stats pages as last seen, by state name: taken as each is left, so a
+// swipe back shows it as it was. Charts (canvases) become images; ids go.
+var statsCopies = {
+  pages: {},
+
+  take: function (name, pageEl) {
+    if (!name || !pageEl) return;
+    var clone = pageEl.cloneNode(true);
+    var canvases = pageEl.querySelectorAll('canvas');
+    var cloneCanvases = clone.querySelectorAll('canvas');
+    Array.prototype.forEach.call(canvases, function (canvas, i) {
+      try {
+        var img = document.createElement('img');
+        var box = canvas.getBoundingClientRect();
+        img.src = canvas.toDataURL();
+        img.style.width = box.width + 'px';
+        img.style.height = box.height + 'px';
+        cloneCanvases[i].parentNode.replaceChild(img, cloneCanvases[i]);
+      } catch (e) { /* a tainted canvas: left out */ }
+    });
+    clone.removeAttribute('id');
+    Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (el) { el.removeAttribute('id'); });
+    this.pages[name] = clone;
+  }
+};
+
+angular.module('mcrrcApp').directive('navTabs', ['$timeout', '$window', '$transitions', function ($timeout, $window, $transitions) {
+  var phone = $window.matchMedia ? $window.matchMedia('(max-width: 767px)') : null;
+  function isPhone() { return !!(phone && phone.matches); }
+
+  // Something under the finger that scrolls sideways itself (a wide table)
+  function scrollsSideways(el, stop) {
+    for (; el && el !== stop; el = el.parentElement) {
+      var overflow = $window.getComputedStyle(el).overflowX;
+      if ((overflow === 'auto' || overflow === 'scroll') && el.scrollWidth > el.clientWidth + 2) return true;
+    }
+    return false;
+  }
+
+  return {
+    restrict: 'C',
+    link: function (scope, element) {
+      var row = element[0];
+
+      // ---- The arrows ----
+      function arrow(side, label, icon) {
+        var li = angular.element('<li class="nav-tabs-arrow nav-tabs-arrow-' + side + '" role="presentation">' +
+          '<button type="button" aria-label="' + label + '"><i class="fa ' + icon + '"></i></button></li>');
+        li.find('button').on('click', function () {
+          var step = row.clientWidth * 0.7 * (side === 'left' ? -1 : 1);
+          if (row.scrollBy) row.scrollBy({ left: step, behavior: 'smooth' });
+          else row.scrollLeft += step;
+        });
+        return li;
+      }
+      element.prepend(arrow('left', 'Previous tabs', 'fa-chevron-left'));
+      element.append(arrow('right', 'More tabs', 'fa-chevron-right'));
+
+      function update() {
+        var max = row.scrollWidth - row.clientWidth;
+        element.toggleClass('nav-tabs-more-left', isPhone() && row.scrollLeft > 4);
+        element.toggleClass('nav-tabs-more-right', isPhone() && row.scrollLeft < max - 4);
+      }
+
+      // The row scrolled to centre this tab
+      function scrollTo(li, smooth) {
+        if (!isPhone() || !li || row.scrollWidth <= row.clientWidth) return;
+        var left = Math.max(0, Math.min(li.offsetLeft - (row.clientWidth - li.offsetWidth) / 2, row.scrollWidth - row.clientWidth));
+        if (smooth && row.scrollTo) row.scrollTo({ left: left, behavior: 'smooth' });
+        else row.scrollLeft = left;
+      }
+
+      function onBreakpoint() { scrollTo(row.querySelector('li.active'), false); placeBar(row.querySelector('li.active'), false); update(); }
+      element.on('scroll', update);
+      angular.element($window).on('resize', update);
+      if (phone && phone.addEventListener) phone.addEventListener('change', onBreakpoint);
+      $timeout(function () { scrollTo(row.querySelector('li.active'), false); update(); }, 100, false);
+
+      var shell = element.parent();
+      var inShell = shell.hasClass('stats-shell');
+      var slot = inShell ? row.nextElementSibling : null; // around the pages' ui-view: stays
+
+      // ---- The gliding underline (the Stats row, on a phone) ----
+      var bar = null;
+      function placeBar(li, animate, fromLi, progress) {
+        if (!inShell) return;
+        if (!isPhone() || !li) {
+          element.removeClass('nav-tabs-glide');
+          if (bar) { bar.remove(); bar = null; }
+          return;
+        }
+        if (!bar) {
+          bar = angular.element('<span class="nav-tabs-indicator" aria-hidden="true"></span>');
+          element.append(bar);
+        }
+        element.addClass('nav-tabs-glide');
+        var from = fromLi || li;
+        var p = progress === undefined ? 1 : progress;
+        bar[0].style.transition = animate ? 'left 0.25s ease-out, width 0.25s ease-out' : 'none';
+        bar[0].style.left = (from.offsetLeft + (li.offsetLeft - from.offsetLeft) * p) + 'px';
+        bar[0].style.width = (from.offsetWidth + (li.offsetWidth - from.offsetWidth) * p) + 'px';
+      }
+
+      function tabFor(stateName) {
+        var a = row.querySelector('a[ui-sref="' + stateName + '"]');
+        return a && a.parentNode;
+      }
+
+      if (inShell) {
+        $timeout(function () { placeBar(row.querySelector('li.active'), false); }, 100, false);
+
+        // Leaving a page: keep a copy of it; opening one: the underline
+        // glides there at once, before the page has loaded
+        var offStart = $transitions.onStart({}, function (trans) {
+          var from = trans.from().name;
+          var leaving = slot && slot.querySelector('[ui-view] > .jumbotron');
+          if (leaving && tabFor(from)) statsCopies.take(from, leaving);
+          var target = tabFor(trans.to().name);
+          if (target) {
+            placeBar(target, true);
+            scrollTo(target, true);
+          }
+        });
+        var offSuccess = $transitions.onSuccess({}, function () {
+          $timeout(function () { placeBar(row.querySelector('li.active'), false); update(); }, 0, false);
+        });
+      }
+
+      // ---- Swipe between the Stats pages ----
+      var drag = null;
+      var cover = null; // the panel left over the page while its tab opens
+
+      function links() {
+        return Array.prototype.slice.call(row.querySelectorAll('li:not(.nav-tabs-arrow) > a'));
+      }
+
+      // The tab past this one, that way (-1: previous, 1: next)
+      function neighbour(direction) {
+        var all = links();
+        var current = all.indexOf(row.querySelector('li.active > a'));
+        return current === -1 ? null : all[current + direction] || null;
+      }
+
+      function setX(el, x, animate) {
+        el.style.transition = animate ? 'transform 0.22s ease-out' : 'none';
+        el.style.transform = x ? 'translateX(' + x + 'px)' : '';
+      }
+
+      // The destination behind the page: its copy, or a placeholder (its
+      // icon and name over empty cards) until it has been opened once
+      function makePanel(link) {
+        var copy = statsCopies.pages[link.getAttribute('ui-sref')];
+        var panel = angular.element('<div class="stats-swipe-panel" aria-hidden="true"></div>');
+        if (copy) {
+          panel.addClass('stats-swipe-panel-copy');
+          panel[0].appendChild(copy.cloneNode(true));
+        } else {
+          panel.html('<div class="stats-swipe-placeholder"><div class="stats-swipe-placeholder-name"></div>' +
+            '<div class="stats-swipe-placeholder-card"></div><div class="stats-swipe-placeholder-card"></div>' +
+            '<div class="stats-swipe-placeholder-card"></div></div>');
+          panel[0].querySelector('.stats-swipe-placeholder-name').innerHTML = link.innerHTML;
+          panel.css('min-height', slot.offsetHeight + 'px');
+        }
+        panel.css('top', slot.offsetTop + 'px');
+        shell.append(panel);
+        return panel;
+      }
+
+      function onTouchStart(e) {
+        drag = null;
+        if (!isPhone() || e.touches.length !== 1 || cover) return;
+        var target = e.target;
+        if (target.closest && target.closest(SWIPE_IGNORE)) return;
+        if (scrollsSideways(target, slot)) return;
+        drag = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), mode: null, dx: 0 };
+      }
+
+      function onTouchMove(e) {
+        if (!drag || drag.mode === 'scroll') return;
+        var dx = e.touches[0].clientX - drag.x;
+        var dy = e.touches[0].clientY - drag.y;
+        if (!drag.mode) {
+          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+          if (Math.abs(dy) > Math.abs(dx)) { drag.mode = 'scroll'; return; }
+          drag.mode = 'swipe';
+        }
+        e.preventDefault();
+        var direction = dx < 0 ? 1 : -1;
+        if (drag.direction !== direction) {
+          drag.direction = direction;
+          drag.link = neighbour(direction);
+          if (drag.panel) { drag.panel.remove(); drag.panel = null; }
+          if (drag.link) drag.panel = makePanel(drag.link);
+        }
+        var width = slot.offsetWidth;
+        // No tab that way: the page only gives a little
+        drag.dx = drag.link ? dx : dx * 0.25;
+        setX(slot, drag.dx);
+        if (drag.panel) setX(drag.panel[0], drag.dx + direction * width);
+        placeBar(drag.link ? drag.link.parentNode : row.querySelector('li.active'), false,
+          row.querySelector('li.active'), drag.link ? Math.min(1, Math.abs(drag.dx) / width) : 0);
+      }
+
+      function onTouchEnd() {
+        if (!drag || drag.mode !== 'swipe') { drag = null; return; }
+        var d = drag;
+        drag = null;
+        var width = slot.offsetWidth;
+        var fast = Date.now() - d.t < 300 && Math.abs(d.dx) > 40;
+        if (d.link && (Math.abs(d.dx) > width * 0.3 || fast)) {
+          // Committed: the destination slides in, its tab opens under it
+          setX(slot, -d.direction * width, true);
+          setX(d.panel[0], 0, true);
+          placeBar(d.link.parentNode, true);
+          cover = d.panel;
+          $timeout(function () { d.link.click(); }, 220, false);
+          $timeout(uncover, 4000, false); // in case the new page never comes
+        } else {
+          setX(slot, 0, true);
+          placeBar(row.querySelector('li.active'), true);
+          if (d.panel) {
+            setX(d.panel[0], d.direction * width, true);
+            $timeout(function () { d.panel.remove(); }, 250, false);
+          }
+        }
+      }
+
+      // The new page is in: back in place under the panel, which goes once
+      // the page has loaded (no spinner showing), at most 1.5s later
+      function uncover() {
+        if (!cover) return;
+        var panel = cover;
+        cover = null;
+        panel.addClass('stats-swipe-panel-out');
+        $timeout(function () { panel.remove(); }, 160, false);
+      }
+
+      function busy() {
+        return Array.prototype.some.call(slot.querySelectorAll('.fa-spin'), function (el) {
+          return el.offsetParent !== null;
+        });
+      }
+
+      if (inShell && slot) {
+        slot.addEventListener('touchstart', onTouchStart);
+        slot.addEventListener('touchmove', onTouchMove, { passive: false });
+        slot.addEventListener('touchend', onTouchEnd);
+        slot.addEventListener('touchcancel', onTouchEnd);
+        var offArrive = $transitions.onSuccess({}, function () {
+          if (!cover) return;
+          setX(slot, 0);
+          var waited = 0;
+          (function check() {
+            if (!cover) return;
+            if (busy() && waited < 1500) { waited += 100; $timeout(check, 100, false); return; }
+            $timeout(uncover, 60, false);
+          })();
+        });
+      }
+
+      scope.$on('$destroy', function () {
+        angular.element($window).off('resize', update);
+        if (phone && phone.removeEventListener) phone.removeEventListener('change', onBreakpoint);
+        if (inShell) {
+          offStart();
+          offSuccess();
+        }
+        if (inShell && slot) {
+          offArrive();
+          slot.removeEventListener('touchstart', onTouchStart);
+          slot.removeEventListener('touchmove', onTouchMove);
+          slot.removeEventListener('touchend', onTouchEnd);
+          slot.removeEventListener('touchcancel', onTouchEnd);
+          if (cover) cover.remove();
+        }
+      });
+    }
+  };
+}]);
+
 angular.module('mcrrcApp').directive('raceAchievements', ['UtilsService', function (UtilsService) {
   return {
     restrict: 'E',
@@ -330,10 +643,13 @@ app.directive('d3PieChart', function () {
           return;
         }
 
+        // The viewBox matches the size (nothing changes on a desktop); on a
+        // phone the CSS lets the chart shrink to the card's width
         svg = d3.select(svgContainer)
           .append('svg')
           .attr('width', width)
           .attr('height', height)
+          .attr('viewBox', '0 0 ' + width + ' ' + height)
           .style('overflow', 'visible')
           .append('g')
           .attr('transform', 'translate(' + width / 2 + ',' + (height / 2) + ')');
@@ -491,7 +807,7 @@ app.directive('d3PieChart', function () {
 
         // Update SVG height to match
         var svgElement = d3.select(svgContainer).select('svg');
-        svgElement.attr('height', finalHeight);
+        svgElement.attr('height', finalHeight).attr('viewBox', '0 0 ' + width + ' ' + finalHeight);
 
         var legendDiv = d3.select(legendContainer)
           .style('display', 'flex')

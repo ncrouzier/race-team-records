@@ -1,0 +1,171 @@
+<%# Phone navigation: the bottom tab bar, the "More" sheet that holds the
+    rest of the menu, and the account sheet (a Log in tab when signed out).
+    Shown below 768px only (.mobile-tabbar in mcrrc.less), where the desktop
+    navbar is hidden. Every page of the desktop menu is here, for the same
+    roles. %>
+<nav class="mobile-tabbar" aria-label="Main" ng-cloak>
+	<a ui-sref="/" ng-class="{active: !mobileMore.open && $state.is('/')}" ng-click="closeMore()">
+		<i class="fa fa-home"></i><span>Home</span></a>
+	<a ui-sref="/results" ng-click="closeMore()"
+		ng-class="{active: !mobileMore.open && ($state.includes('/results') || $state.includes('/races') || $state.includes('/individualresults') || $state.includes('/series') || $state.includes('/series-detail'))}">
+		<i class="fa fa-list"></i><span>Results</span></a>
+	<a ui-sref="/members" ng-click="closeMore()" ng-class="{active: !mobileMore.open && $state.includes('/members')}">
+		<i class="fa fa-users"></i><span>Members</span></a>
+	<a ui-sref="/records" ng-click="closeMore()" ng-class="{active: !mobileMore.open && $state.includes('/records')}">
+		<i class="fa fa-trophy"></i><span>Records</span></a>
+	<button type="button" ng-click="toggleMore('more')" ng-class="{active: mobileMore.open && mobileMore.sheet === 'more'}"
+		aria-haspopup="dialog" aria-expanded="{{ mobileMore.open && mobileMore.sheet === 'more' }}">
+		<i class="fa" ng-class="mobileMore.open && mobileMore.sheet === 'more' ? 'fa-times' : 'fa-bars'"></i><span>More</span>
+		<% if (user && user.role === 'admin') { %>
+		<span class="mobile-tab-dot" ng-if="pendingCorrectionsCount > 0 || pendingSubmissionsCount > 0 || pendingVolunteerSubmissionsCount > 0 || unseenActivityCount > 0"></span>
+		<% } %>
+	</button>
+	<% if (user) { %>
+	<button type="button" class="mobile-tab-account" ng-click="toggleMore('account')"
+		ng-class="{active: mobileMore.open ? mobileMore.sheet === 'account' : $state.includes('/profile')}"
+		aria-haspopup="dialog" aria-expanded="{{ mobileMore.open && mobileMore.sheet === 'account' }}">
+		<%- include('navAvatar') %><span>Account</span>
+	</button>
+	<% } else { %>
+	<a ui-sref="/login" ng-click="closeMore()" ng-class="{active: !mobileMore.open && ($state.includes('/login') || $state.includes('/signup'))}">
+		<i class="fa fa-sign-in"></i><span>Log in</span></a>
+	<% } %>
+</nav>
+
+<% if (user) { %>
+<div class="mobile-more" ng-if="mobileMore.open && mobileMore.sheet === 'account'" ng-cloak>
+	<div class="mobile-more-backdrop" ng-click="closeMore()"></div>
+	<div class="mobile-more-sheet" role="dialog" aria-label="Account">
+		<div class="mobile-more-head">
+			<div class="mobile-more-user">
+				<%- include('navAvatar') %><span><%= user.username %></span>
+			</div>
+			<button type="button" class="mobile-more-close" ng-click="closeMore()" aria-label="Close"><i class="fa fa-times"></i></button>
+		</div>
+		<div class="mobile-more-links mobile-more-account">
+			<% if (user.member) { %>
+			<a ui-sref="/members/member({member: '<%= user.member.username %>'})" ng-click="closeMore()"><i class="fa fa-user"></i> My Page</a>
+			<% } %>
+			<a ui-sref="/profile" ng-click="closeMore()"><i class="fa fa-cog"></i> My Account</a>
+			<a href="" ng-click="logout()"><i class="fa fa-sign-out"></i> Log out</a>
+		</div>
+	</div>
+</div>
+<% } %>
+
+<div class="mobile-more" ng-if="mobileMore.open && mobileMore.sheet === 'more'" ng-cloak>
+	<div class="mobile-more-backdrop" ng-click="closeMore()"></div>
+	<div class="mobile-more-sheet" role="dialog" aria-label="Menu">
+		<div class="mobile-more-head">
+			<div class="mobile-more-title">Menu</div>
+			<button type="button" class="mobile-more-close" ng-click="closeMore()" aria-label="Close menu"><i class="fa fa-times"></i></button>
+		</div>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-plus-circle"></i> Submit</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/submit-result" ng-click="closeMore()">Submit a Result</a>
+				<a ui-sref="/submit-volunteer" ng-click="closeMore()">Submit a Volunteer Job</a>
+			</div>
+		</div>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-list"></i> Results</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/results" ng-click="closeMore()">Team Results</a>
+				<a ui-sref="/individualresults" ui-sref-opts="{inherit: false}" ng-click="closeMore()">Individual Results</a>
+				<a ui-sref="/series" ng-click="closeMore()">Race Series</a>
+			</div>
+		</div>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-trophy"></i> Records</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/records" ng-click="closeMore()">Best Performances</a>
+				<a ui-sref="/records/age" ng-click="closeMore()">Records by Age</a>
+				<a ui-sref="/records/year" ng-click="closeMore()">Records by Year</a>
+			</div>
+		</div>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-bar-chart"></i> Stats</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/stats/team" ng-click="closeMore()">Racing Stats</a>
+				<a ui-sref="/stats/volunteering" ng-click="closeMore()">Volunteering</a>
+				<a ui-sref="/stats/participation" ng-click="closeMore()">Participation</a>
+				<a ui-sref="/stats/members" ng-click="closeMore()">Members</a>
+				<a ui-sref="/stats/awards" ng-click="closeMore()">Awards</a>
+				<a ui-sref="/stats/us-map" ng-click="closeMore()">US Map</a>
+				<a ui-sref="/stats/world-map" ng-click="closeMore()">World Map</a>
+				<a ui-sref="/stats/progress-map" ng-click="closeMore()">Progress Map</a>
+			</div>
+		</div>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-wrench"></i> Tools</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/tools/agegrade" ng-click="closeMore()">Age Grade</a>
+				<a ui-sref="/tools/paceAdjustment" ng-click="closeMore()">Temperature + Dew Point adjustment</a>
+				<a ui-sref="/about-agegrading" ng-click="closeMore()">About Age Grading</a>
+			</div>
+		</div>
+
+		<% if (user && user.role === 'captain') { %>
+		<div class="mobile-more-group">
+			<div class="mobile-more-heading"><i class="fa fa-users"></i> Captain tools</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/volunteer-jobs" ng-click="closeMore()">Volunteer Jobs</a>
+				<a ui-sref="/stats/requirements" ng-click="closeMore()">Team Requirements</a>
+				<a ui-sref="/comp-race-forms" ng-click="closeMore()">Comp Race Forms</a>
+				<a ui-sref="/applications" ng-click="closeMore()">Team Applications</a>
+			</div>
+		</div>
+		<% } %>
+
+		<% if (user && user.role === 'admin') { %>
+		<div class="mobile-more-group mobile-more-admin">
+			<div class="mobile-more-heading"><i class="fa fa-flag-checkered"></i> Admin: results &amp; races</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/result-submissions" ng-click="closeMore()">Result Submissions
+					<span ng-if="pendingSubmissionsCount > 0" class="crf-unseen-badge">{{pendingSubmissionsCount}}</span></a>
+				<a ui-sref="/tools/resultExtractor" ng-click="closeMore()">Result Extractor</a>
+				<a ui-sref="/racetypes" ng-click="closeMore()">Race Types</a>
+				<a ui-sref="/race-series" ng-click="closeMore()">Race Series
+					<span ng-if="pendingSeriesCount > 0" class="crf-unseen-badge">{{pendingSeriesCount}}</span></a>
+				<a ui-sref="/corrections" ng-click="closeMore()">Correction Requests
+					<span ng-if="pendingCorrectionsCount > 0" class="crf-unseen-badge">{{pendingCorrectionsCount}}</span></a>
+				<a ui-sref="/agegrading-tables" ng-click="closeMore()">Age Grading Tables</a>
+			</div>
+			<div class="mobile-more-heading"><i class="fa fa-users"></i> Admin: team</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/applications" ng-click="closeMore()">Team Applications</a>
+				<a ui-sref="/stats/requirements" ng-click="closeMore()">Team Requirements</a>
+				<a ui-sref="/comp-race-forms" ng-click="closeMore()">Comp Race Forms</a>
+				<a ui-sref="/volunteer-jobs" ng-click="closeMore()">Volunteer Jobs</a>
+				<a ui-sref="/volunteer-submissions" ng-click="closeMore()">Volunteer Submissions
+					<span ng-if="pendingVolunteerSubmissionsCount > 0" class="crf-unseen-badge">{{pendingVolunteerSubmissionsCount}}</span></a>
+			</div>
+			<div class="mobile-more-heading"><i class="fa fa-globe"></i> Admin: site</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/hosted-pages" ng-click="closeMore()">Hosted Pages</a>
+				<a ui-sref="/banners" ng-click="closeMore()">Banners</a>
+				<a ui-sref="/users" ng-click="closeMore()">Users</a>
+			</div>
+			<div class="mobile-more-heading"><i class="fa fa-file-text-o"></i> Admin: reports &amp; logs</div>
+			<div class="mobile-more-links">
+				<a ui-sref="/report" ng-click="closeMore()">Create Report</a>
+				<a ui-sref="/pdf" ng-click="closeMore()">Create PDF Report</a>
+				<a ui-sref="/activitylogs" ng-click="closeMore()">Activity Log
+					<span ng-if="unseenActivityCount > 0" class="crf-unseen-badge">{{unseenActivityCount}}</span></a>
+			</div>
+		</div>
+		<% } %>
+
+		<div class="mobile-more-group">
+			<div class="mobile-more-links mobile-more-external">
+				<a ui-sref="/instagram" target="_blank"><img ng-src="/images/instagramicon.svg" width="14" height="14" alt=""> Instagram</a>
+				<a href="https://www.mcrrc.org" target="_blank" rel="noopener">MCRRC</a>
+			</div>
+		</div>
+	</div>
+</div>

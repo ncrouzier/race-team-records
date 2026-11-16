@@ -1,31 +1,4 @@
 <div class="jumbotron racing-stats-page admin-stats-page">
-    <!-- Navigation -->
-    <ul class="nav nav-tabs">
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/team">Racing Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/volunteering">Volunteering Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/us-map">US Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/world-map">World Races Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/progress-map">Progress Map</a>
-        </li>
-        <li role="presentation" ui-sref-active="active">
-            <a ui-sref="/stats/awards">Awards</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
-            <a ui-sref="/stats/participation">Participation Stats</a>
-        </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
-            <a ui-sref="/stats/members">Team Members Stats</a>
-        </li>
-    </ul>
 
     <!-- Participation Stats Header -->
     <div class="participation-header">
@@ -115,12 +88,12 @@
                     <h4><i class="fa fa-list"></i> Member Participation Rankings</h4>
                 </div>
                 <div class="panel-body admin-table-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover participation-table">
+                    <div class="table-responsive pc-wrap">
+                        <table class="table table-hover participation-table pc-table">
                             <thead>
                                 <tr class="table-header">
                                     <th class="rank-column">#</th>
-                                    <th class="member-column">
+                                    <th class="member-column pc-sortable">
                                         <a href=""
                                             ng-click="fieldParticipation='firstname'; reverseSortParticipation = !reverseSortParticipation"
                                             class="sortable-header">
@@ -130,7 +103,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="age-column">
+                                    <th class="age-column pc-sortable">
                                         <a href=""
                                             ng-click="fieldParticipation='age'; reverseSortParticipation = !reverseSortParticipation"
                                             class="sortable-header">
@@ -140,7 +113,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="races-column">
+                                    <th class="races-column pc-sortable">
                                         <a href=""
                                             ng-click="fieldParticipation='numberofraces'; reverseSortParticipation = !reverseSortParticipation"
                                             class="sortable-header">
@@ -150,7 +123,7 @@
                                                 class="fa sort-icon"></i>
                                         </a>
                                     </th>
-                                    <th class="agegrade-column">
+                                    <th class="agegrade-column pc-sortable">
                                         <a href=""
                                             ng-click="fieldParticipation='maxage'; reverseSortParticipation = !reverseSortParticipation"
                                             class="sortable-header">
@@ -169,19 +142,19 @@
                                     <td class="rank-cell">
                                         <span class="rank-number">{{$index+1}}</span>
                                     </td>
-                                    <td class="member-cell">
+                                    <td class="member-cell pc-main">
                                         <a ng-class="r.memberStatus === 'past' ? 'past-member-link' : 'active-member-link'"
                                             class="member-link"
                                             ui-sref="/members/member({ member: r.username })">{{r.firstname}}
                                             {{r.lastname}}</a>
                                     </td>
-                                    <td class="age-cell">
+                                    <td class="age-cell pc-detail" data-label="Age">
                                         <span class="age-value">{{r | memberAgeFilter}}</span>
                                     </td>
-                                    <td class="races-cell">
-                                        <span class="races-count">{{r.numberofraces}}</span>
+                                    <td class="races-cell pc-side">
+                                        <span class="races-count">{{r.numberofraces}}</span><span class="pc-phone-inline"> races</span>
                                     </td>
-                                    <td class="agegrade-cell">
+                                    <td class="agegrade-cell pc-detail" data-label="Best AG">
                                         <span class="agegrade-value hoverhandandunderline resultEvent"
                                             ng-click="trackDrill('participation_race'); showRaceFromRaceIdModal(r.maxRaceId)">
                                             {{r.max}}%

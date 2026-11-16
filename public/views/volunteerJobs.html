@@ -27,8 +27,8 @@
                 <span class="member-results-count">{{(volunteerJobsList | filter:volunteerJobFilter).length}} jobs</span>
             </div>
 
-            <div class="table-responsive">
-                <table class="table member-table vj-table">
+            <div class="table-responsive pc-wrap">
+                <table class="table member-table vj-table pc-table">
                     <thead>
                         <tr>
                             <th>Member</th>
@@ -40,7 +40,7 @@
                     </thead>
                     <tbody>
                         <tr ng-if="(volunteerJobsList | filter:volunteerJobFilter).length === 0">
-                            <td colspan="5" class="text-center text-muted member-table-empty">
+                            <td colspan="5" class="text-center text-muted member-table-empty pc-line">
                                 <i class="fa fa-info-circle"></i>
                                 <span ng-if="volunteerJobsList.length === 0">No volunteer jobs recorded yet.
                                     <span ng-if="user.role == 'admin'">Click "Add Volunteer Job" to create the first one.</span>
@@ -48,18 +48,18 @@
                                 <span ng-if="volunteerJobsList.length > 0">No volunteer jobs match the current filters.</span>
                             </td>
                         </tr>
-                        <tr ng-repeat="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate'">
-                            <td class="nowrap">
+                        <tr dir-paginate="job in volunteerJobsList | filter:volunteerJobFilter | orderBy:'-jobDate' | itemsPerPage: 25" pagination-id="volunteer-jobs">
+                            <td class="nowrap pc-main">
                                 <a class="vj-member" ui-sref="/members({member: job.member.username})">
                                     {{job.member.firstname}} {{job.member.lastname}}
                                 </a>
                                 <i ng-show="memberSex(job) == 'Male'" class="fa fa-mars vj-sex" title="Men"></i>
                                 <i ng-show="memberSex(job) == 'Female'" class="fa fa-venus vj-sex" title="Women"></i>
                             </td>
-                            <td><volunteer-event-name job="job"></volunteer-event-name></td>
-                            <td class="member-table-date">{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
-                            <td>{{job.description}}</td>
-                            <td ng-if="user.role == 'admin'" class="text-right nowrap">
+                            <td class="pc-line vj-event"><volunteer-event-name job="job"></volunteer-event-name></td>
+                            <td class="member-table-date pc-side">{{job.jobDate | date:'yyyy-MM-dd':'UTC'}}</td>
+                            <td class="pc-line">{{job.description}}</td>
+                            <td ng-if="user.role == 'admin'" class="text-right nowrap pc-actions">
                                 <button class="mcrrc-btn site-icon-btn" ng-click="retrieveVolunteerJobForEdit(job)"
                                     title="Edit volunteer job"><i class="fa fa-pencil"></i></button>
                                 <button class="mcrrc-btn site-icon-btn" ng-click="duplicateVolunteerJob(job)"
@@ -71,6 +71,7 @@
                     </tbody>
                 </table>
             </div>
+            <dir-pagination-controls pagination-id="volunteer-jobs"></dir-pagination-controls>
         </div>
     </div>
 </div>

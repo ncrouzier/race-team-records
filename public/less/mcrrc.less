@@ -3830,7 +3830,7 @@ footer {
 
 
 // Extra small screens (phones)
-@media (max-width: @screen-xs-max) {
+@media @phone {
     .modal {
         .modal-dialog {
             margin: 5px;
@@ -13601,7 +13601,7 @@ footer {
 
     // Three tabs do not fit a phone's width with their icons: a full row of
     // equal tabs, labels only
-    @media (max-width: @screen-xs-max) {
+    @media @phone {
         display: flex;
         width: 100%;
         margin-left: 0;
@@ -14248,16 +14248,7 @@ advanced-filter-panel {
     }
 
 
-    @media (max-width: @screen-xs-max) {
-        .sl-row {
-            grid-template-columns: 28px minmax(120px, 1fr) 70px 64px 56px;
-        }
-
-        // Years go on phones: the series page has them
-        .sl-row > span:nth-child(4) {
-            display: none;
-        }
-    }
+    // Phones: rows become cards (Race Series list, in the Phones section)
 }
 
 .series-page {
@@ -15391,48 +15382,50 @@ h2 .club-mark {
 
 // Racing Stats page: white cards, underlined titles and menu tabs, matching
 // the member pages
-.racing-stats-page {
-    > .nav-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        border-bottom: 1px solid fade(@brand-primary, 25%);
-        margin-bottom: 18px;
+// The Stats pages' tab row: in the shared frame (views/stats/shell.html)
+.racing-stats-page > .nav-tabs,
+.stats-shell > .nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 1px solid fade(@brand-primary, 25%);
+    margin-bottom: 18px;
 
-        > li {
-            float: none;
-            margin-bottom: -1px;
+    > li {
+        float: none;
+        margin-bottom: -1px;
 
-            > a {
-                margin: 0;
-                border: 0;
-                border-bottom: 3px solid transparent;
-                border-radius: 0;
-                background: transparent;
-                color: #5b707a;
-                font-weight: 600;
-                padding: 10px 14px 9px;
-                transition: color 0.15s, border-color 0.15s;
+        > a {
+            margin: 0;
+            border: 0;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            background: transparent;
+            color: #5b707a;
+            font-weight: 600;
+            padding: 10px 14px 9px;
+            transition: color 0.15s, border-color 0.15s;
 
-                &:hover,
-                &:focus {
-                    background: transparent;
-                    color: @brand-primary-dark;
-                    border-bottom-color: fade(@brand-primary, 35%);
-                }
-            }
-
-            &.active > a,
-            &.active > a:hover,
-            &.active > a:focus {
-                border: 0;
-                border-bottom: 3px solid @brand-primary;
+            &:hover,
+            &:focus {
                 background: transparent;
                 color: @brand-primary-dark;
+                border-bottom-color: fade(@brand-primary, 35%);
             }
         }
-    }
 
+        &.active > a,
+        &.active > a:hover,
+        &.active > a:focus {
+            border: 0;
+            border-bottom: 3px solid @brand-primary;
+            background: transparent;
+            color: @brand-primary-dark;
+        }
+    }
+}
+
+.racing-stats-page {
     .panel {
         .site-card-surface();
         // visible, so open dropdowns can hang outside the card
@@ -19618,14 +19611,10 @@ banner-stage {
 // so unlike the rest of the site they work at phone width.
 // ============================================================
 
+// On a phone the page fits the screen like every other page (the Phones
+// section at the end); above that, the form keeps its own width
 .container:has(.submit-page) {
     min-width: 0;
-
-    // Bootstrap's 750px "small" width applies from @screen-sm-min, which is
-    // 2px here: on a phone, the page fits the screen instead
-    @media (max-width: 767px) {
-        width: auto;
-    }
 }
 
 .jumbotron.submit-page {
@@ -20265,5 +20254,2465 @@ banner-stage {
     li.is-danger {
         color: @brand-danger;
         font-weight: 600;
+    }
+}
+
+// ============================================================
+// Phones (below 768px)
+//
+// The site was built for desktop: the container keeps 992px (min-width), and
+// Bootstrap's small breakpoint is 2px (variables.less), so Bootstrap's
+// col-sm-* columns never stack and its small-screen width never ends. Below
+// 768px this lifts both, and swaps the navbar for a bottom tab bar
+// (views/partials/mobileNav.ejs). Pages adapt in their own blocks, in the
+// same @phone query.
+//
+// Desktop is untouched: everything here is inside @phone, except the tab bar
+// and its sheet being hidden by default.
+// ============================================================
+@phone: ~"(max-width: 767px)";
+
+.mobile-tabbar,
+.mobile-more {
+    display: none;
+}
+
+@media @phone {
+    body {
+        padding-top: 0;
+        // Room for the tab bar (and the iPhone home indicator under it)
+        padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.mobile-more-open {
+        overflow: hidden;
+    }
+
+    .container {
+        min-width: 0;
+        width: auto;
+        min-height: 0;
+        padding-left: 0;
+        padding-right: 0;
+
+        > .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .jumbotron {
+            min-height: 0;
+            margin-bottom: 0;
+            padding: 12px 15px 18px;
+        }
+    }
+
+    // A page without the padded .jumbotron wrapper: its rows' negative
+    // margins would stick out past the screen
+    [ui-view] > div:not(.jumbotron) > .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    // Bootstrap's small columns: one per row, as Bootstrap means them to be
+    // below 768px (unless they have an extra-small width: col-xs-6...)
+    [class*="col-sm-"]:not([class*="col-xs-"]) {
+        float: none;
+        width: auto;
+    }
+
+    // ...whose width @screen-sm-min (2px here) would otherwise override
+    .phone-xs-cols(@i) when (@i > 0) {
+        .col-xs-@{i}[class*="col-sm-"] {
+            width: percentage((@i / @grid-columns));
+        }
+        .phone-xs-cols(@i - 1);
+    }
+    .phone-xs-cols(@grid-columns);
+
+    [class*="col-sm-offset-"] {
+        margin-left: 0;
+    }
+
+    [class*="col-sm-push-"],
+    [class*="col-sm-pull-"] {
+        left: auto;
+        right: auto;
+    }
+
+    // The desktop navbar gives way to the tab bar
+    .container > .navbar {
+        display: none;
+    }
+
+    // A shorter banner: the title scales with its width
+    .navimg {
+        height: 150px;
+    }
+
+    .modal-dialog {
+        width: auto;
+        margin: 10px;
+    }
+
+    // Page links: smaller, so a row of them fits
+    .pagination > li > a,
+    .pagination > li > span {
+        padding: 6px 9px;
+    }
+
+    // Cards: less padding, more room for what is in them
+    .member-card {
+        padding: 14px 12px 16px;
+        margin-bottom: 14px;
+    }
+
+    footer {
+        padding: 12px 15px 10px;
+        text-align: center;
+
+        .text-left,
+        .text-right {
+            text-align: center;
+        }
+
+        .row > div + div {
+            margin-top: 6px;
+        }
+    }
+
+    // ---------- The tab bar ----------
+    .mobile-tabbar {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        background: #fff;
+        border-top: 1px solid #d5e1e6;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+
+        > a,
+        > button {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 58px;
+            padding: 0;
+            border: 0;
+            background: none;
+            color: #5b707a;
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+
+            .fa {
+                font-size: 20px;
+                color: #8aa0aa;
+            }
+
+            &.active {
+                color: @brand-primary-dark;
+                box-shadow: inset 0 3px 0 @brand-primary;
+
+                .fa {
+                    color: @brand-primary;
+                }
+            }
+
+            &:focus {
+                outline: 0;
+            }
+
+            &:focus-visible {
+                outline: 2px solid @brand-primary;
+                outline-offset: -4px;
+            }
+        }
+    }
+
+    .mobile-tab-dot {
+        position: absolute;
+        top: 9px;
+        left: calc(50% + 7px);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: @brand-danger;
+    }
+
+    // ---------- The "More" sheet ----------
+    .mobile-more {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+        z-index: 1029;
+    }
+
+    .mobile-more-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(10, 30, 40, 0.4);
+    }
+
+    .mobile-more-sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: calc(100% - 24px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 14px 16px 18px;
+        background: #fff;
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.15);
+        animation: mobile-more-up 0.18s ease-out;
+    }
+
+    .mobile-more-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid @brand-primary;
+        margin-bottom: 4px;
+    }
+
+    .mobile-more-user {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        color: @brand-primary-dark;
+    }
+
+    .mobile-more-user .nav-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .mobile-more-title {
+        font-weight: 700;
+        font-size: 17px;
+        color: @brand-primary-dark;
+    }
+
+    // The account tab: the photo (or initials) in place of an icon
+    .mobile-tabbar > .mobile-tab-account {
+        .nav-avatar {
+            width: 24px;
+            height: 24px;
+            margin: 0;
+            font-size: 10px;
+            border: 2px solid transparent;
+        }
+
+        &.active .nav-avatar {
+            border-color: @brand-primary;
+        }
+    }
+
+    .mobile-more-close {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: @brand-primary-very-light;
+        color: @brand-primary-dark;
+        font-size: 16px;
+    }
+
+    .mobile-more-group {
+        padding: 10px 0 4px;
+        border-bottom: 1px solid #edf1f3;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .mobile-more-heading {
+        .site-label();
+        margin: 4px 0 6px;
+
+        .fa {
+            width: 16px;
+            margin-right: 3px;
+        }
+    }
+
+    // Two per row, big enough to tap
+    .mobile-more-links {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 6px;
+
+        > a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 42px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: @brand-primary-very-light;
+            border: 1px solid fade(@brand-primary, 15%);
+            color: @brand-primary-dark;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.25;
+            text-decoration: none;
+
+            &:active {
+                background: fade(@brand-primary, 18%);
+            }
+
+            .crf-unseen-badge {
+                margin-left: auto;
+            }
+        }
+    }
+
+    .mobile-more-account {
+        grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+        padding: 10px 0 0;
+
+        > a {
+            justify-content: center;
+            text-align: center;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 12px;
+
+            .fa {
+                font-size: 17px;
+                color: @brand-primary;
+            }
+        }
+    }
+
+    .mobile-more-external > a {
+        background: #fff;
+    }
+}
+
+@keyframes mobile-more-up {
+    from {
+        transform: translateY(30px);
+        opacity: 0.4;
+    }
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+// ---------- Race list (directives/raceList.html: home, Team Results) ----------
+.rl-phone-only {
+    display: none;
+}
+
+@media @phone {
+    .rl-phone-only {
+        display: inline;
+    }
+
+    // The header: the sort buttons, in a strip
+    .race-list-head,
+    .result-list-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 14px;
+        margin: 0;
+
+        > div {
+            width: auto;
+            padding: 0;
+            text-align: left !important;
+        }
+
+        .listheader {
+            font-size: 11px;
+        }
+    }
+
+    .race-list-head {
+        .rl-time,
+        .rl-ach,
+        .rl-admin {
+            display: none;
+        }
+    }
+
+    .result-list-head {
+        .rr-name,
+        .rr-place,
+        .rr-admin {
+            display: none;
+        }
+    }
+
+    // A race: name and date over distance, racers and achievements, the
+    // best time on the right
+    .race-list-row {
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 2px;
+        margin: 0;
+        padding: 0 12px 8px 0;
+
+        > div {
+            width: auto;
+            padding: 0;
+            text-align: left !important;
+        }
+
+        .rl-name {
+            grid-column: 1 / 4;
+            grid-row: 1;
+            padding-left: 30px !important;
+        }
+
+        .rl-time {
+            grid-column: 4;
+            grid-row: 1;
+            text-align: right !important;
+        }
+
+        .rl-dist,
+        .rl-count,
+        .rl-ach {
+            grid-row: 2;
+            font-size: 12px;
+            color: #5b707a;
+        }
+
+        .rl-dist {
+            grid-column: 1;
+            padding-left: 35px !important;
+        }
+
+        .rl-count {
+            grid-column: 2;
+        }
+
+        .rl-ach {
+            grid-column: 3;
+        }
+
+        .rl-admin {
+            grid-column: 4;
+            grid-row: 2;
+            justify-content: flex-end;
+        }
+    }
+
+    // An opened race's row is dark blue: its small print follows its text
+    .resultlistrow.expanded .race-list-row {
+        .rl-dist,
+        .rl-count,
+        .rl-ach {
+            color: inherit;
+            opacity: 0.85;
+        }
+    }
+
+    // The results inside an opened race
+    .results-section {
+        padding: 8px !important;
+    }
+
+    .result-list-row {
+        display: grid !important;
+        grid-template-columns: auto auto auto minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 3px;
+        margin: 0;
+
+        > div {
+            width: auto;
+            padding: 0;
+            text-align: left !important;
+        }
+
+        .rr-name {
+            grid-column: 1 / 5;
+            grid-row: 1;
+        }
+
+        .rr-time {
+            grid-column: 5;
+            grid-row: 1;
+            text-align: right !important;
+            white-space: nowrap;
+        }
+
+        .rr-place {
+            grid-row: 2;
+            font-size: 12px;
+            white-space: nowrap;
+
+            &::before {
+                content: attr(data-label) " ";
+                color: #8aa0aa;
+                font-size: 11px;
+            }
+
+            &.rr-empty {
+                display: none;
+            }
+        }
+
+        // The pace under the time
+        .rr-pace {
+            grid-column: 5;
+            grid-row: 2;
+            font-size: 12px;
+            white-space: nowrap;
+            text-align: right !important;
+        }
+
+        .rr-admin {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            justify-content: flex-end;
+        }
+    }
+}
+
+// Only on phones (a sort link the desktop header gives some other way)
+.pc-phone-only {
+    display: none;
+}
+
+// ---------- Tables as cards on phones (class="pc-table") ----------
+// Each row becomes a card: .pc-main (the runner, the race...) with .pc-side
+// on its right (usually the time); then the .pc-detail cells, labelled with
+// their data-label, wrapping as they need; .pc-line cells take a line of
+// their own; .pc-actions (admin buttons) go last, on the right. The header
+// keeps only its sort links (th.pc-sortable), as a strip. A row that is not a
+// result (an opened history, say: tr.pc-block) stays one block.
+@media @phone {
+    .table-responsive.pc-wrap {
+        overflow: visible;
+        border: 0;
+        margin-bottom: 0;
+    }
+
+    table.pc-table {
+        display: block;
+        width: 100%;
+
+        > thead,
+        > tbody {
+            display: block;
+        }
+
+        // No sort links: no header at all
+        > thead:not(:has(.pc-sortable)) {
+            display: none;
+        }
+
+        > thead > tr {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+            padding: 6px 12px;
+
+            > th {
+                display: none;
+                width: auto !important;
+                min-width: 0 !important;
+                padding: 0 !important;
+                border: 0 !important;
+                text-align: left !important;
+                white-space: nowrap;
+
+                &.pc-sortable {
+                    display: block;
+                    max-width: none !important;
+                    overflow: visible !important;
+                }
+            }
+        }
+
+        > tbody > tr {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 12px;
+            row-gap: 3px;
+            padding: 10px 12px;
+            border-top: 1px solid #edf1f3;
+
+            > td {
+                display: block;
+                padding: 0 !important;
+                border: 0 !important;
+                text-align: left !important;
+            }
+
+            &.pc-block {
+                display: block;
+                padding: 0 0 6px;
+
+                > td {
+                    display: block;
+                }
+            }
+        }
+
+        .pc-main {
+            flex: 1 1 calc(100% - 100px);
+            min-width: 0;
+        }
+
+        .pc-side {
+            margin-left: auto;
+            text-align: right !important;
+        }
+
+        .pc-detail,
+        .pc-line {
+            font-size: 12px;
+
+            &[data-label]::before {
+                content: attr(data-label) " ";
+                color: #8aa0aa;
+                font-size: 11px;
+            }
+
+            &.pc-empty {
+                display: none;
+            }
+        }
+
+        .pc-detail {
+            white-space: nowrap;
+        }
+
+        .pc-line {
+            flex: 1 1 100%;
+        }
+
+        // (a desktop width on the cell would let its buttons overflow)
+        .pc-actions {
+            flex: 0 0 auto;
+            width: auto !important;
+            margin-left: auto;
+            text-align: right !important;
+            white-space: nowrap;
+        }
+    }
+}
+
+// ---------- Individual Results (directives/individualResults.html) ----------
+@media @phone {
+    .individual-results {
+        // The header: its sort links, as a strip
+        .ir-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            padding: 8px 10px;
+
+            > span {
+                overflow: visible;
+            }
+
+            > span.ir-h-count,
+            > span.ir-h-distance,
+            > span:empty {
+                display: none;
+            }
+        }
+
+        // A result: runner and time, race and place, then the details
+        .resultlistrow.ir-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 8px;
+            row-gap: 2px;
+            padding: 9px 10px;
+            font-size: 13px;
+
+            > span {
+                text-align: left;
+            }
+
+            .ir-position {
+                display: none;
+            }
+
+            .ir-name {
+                order: 1;
+                flex: 1 1 calc(100% - 100px);
+                font-weight: 600;
+            }
+
+            .ir-time {
+                order: 2;
+                margin-left: auto;
+                font-size: 15px;
+                text-align: right;
+            }
+
+            .ir-race {
+                order: 3;
+                flex: 1 1 calc(100% - 80px);
+            }
+
+            .ir-place {
+                order: 4;
+                min-width: 62px;
+                margin-left: auto;
+                text-align: right;
+            }
+
+            .ir-date,
+            .ir-distance,
+            .ir-age,
+            .ir-pace,
+            .ir-ag,
+            .ir-flags {
+                font-size: 12px;
+                color: @gray;
+            }
+
+            .ir-date {
+                order: 5;
+            }
+
+            .ir-distance {
+                order: 6;
+            }
+
+            .ir-age {
+                order: 7;
+
+                &:not(:empty)::before {
+                    content: "age ";
+                    color: @gray-light;
+                }
+            }
+
+            .ir-pace {
+                order: 8;
+            }
+
+            .ir-ag {
+                order: 9;
+            }
+
+            .ir-flags {
+                order: 10;
+            }
+
+            .ir-admin {
+                order: 11;
+                margin-left: auto;
+            }
+        }
+    }
+}
+
+// ---------- Race Series list (series.html; built on Individual Results) ----------
+@media @phone {
+    .individual-results.series-list .resultlistrow.sl-row {
+        .sl-name {
+            order: 1;
+            flex: 1 1 100%;
+            font-weight: 600;
+        }
+
+        .ir-distance,
+        .ir-date,
+        .sl-editions,
+        .sl-results {
+            order: 2;
+            margin-left: 0;
+            font-size: 12px;
+            font-weight: 400;
+            color: @gray;
+            text-align: left;
+        }
+
+        .sl-editions::after {
+            content: " editions";
+        }
+
+        .sl-results::after {
+            content: " results";
+        }
+    }
+}
+
+// pc-table helpers: shown on phones only, inline; cells moved after the
+// main line (a date that comes first on desktop)
+.pc-phone-inline {
+    display: none;
+}
+
+@media @phone {
+    .pc-phone-inline {
+        display: inline;
+    }
+
+    table.pc-table > tbody > tr {
+        > .pc-main {
+            order: 0;
+        }
+
+        > .pc-side {
+            order: 1;
+        }
+
+        > .pc-order-2,
+        > .pc-detail {
+            order: 2;
+        }
+
+        > .pc-line {
+            order: 3;
+        }
+
+        > .pc-actions {
+            order: 4;
+        }
+    }
+
+    // The series list's sort strip: no "#"
+    .individual-results.series-list .ir-head > span:first-child {
+        display: none;
+    }
+}
+
+// ---------- Best Performances (records.html) ----------
+@media @phone {
+    .jumbotron.records-page {
+        .records-filter-card {
+            flex-wrap: wrap;
+            gap: 12px 16px;
+            padding: 14px 12px 16px;
+
+            > [class*="col-"]:first-child {
+                flex: 1 1 100%;
+                max-width: none;
+            }
+        }
+
+        // Nothing to sort here: the column names go
+        .records-list-head {
+            display: none;
+        }
+
+        // A record: rank and runner, the time on the right; the race and
+        // pace underneath
+        .records-row {
+            display: grid !important;
+            grid-template-columns: 30px 1fr auto;
+            align-items: center;
+            column-gap: 8px;
+            row-gap: 2px;
+            margin: 0;
+
+            > div {
+                width: auto;
+                padding: 0;
+                text-align: left !important;
+            }
+
+            .rc-rank {
+                grid-column: 1;
+                grid-row: 1 / 4;
+                font-weight: 700;
+                color: @brand-primary-dark;
+            }
+
+            .rc-name {
+                grid-column: 2;
+                grid-row: 1;
+                font-size: 15px !important;
+            }
+
+            // The time, then the gap to first and the links, stacked
+            .rc-time {
+                grid-column: 3;
+                grid-row: 1 / 4;
+                align-self: start;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                align-items: center;
+                column-gap: 5px;
+                max-width: 104px;
+                text-align: right !important;
+
+                .resultTime {
+                    flex-basis: 100%;
+                    text-align: right;
+                    font-size: 16px;
+                }
+
+                .timediff {
+                    font-size: 11px;
+                }
+            }
+
+            .rc-race {
+                grid-column: 2;
+                grid-row: 2;
+                font-size: 13px;
+            }
+
+            .rc-pace {
+                grid-column: 2;
+                grid-row: 3;
+                font-size: 12px;
+                white-space: nowrap;
+
+                br {
+                    display: none;
+                }
+            }
+
+            .rc-admin {
+                grid-column: 2 / 4;
+                grid-row: 4;
+                justify-content: flex-end;
+            }
+        }
+    }
+}
+
+// ---------- Records by Age / by Year (ageRecords.html, yearRecords.html) ----------
+// A grid of distances: it scrolls sideways, the age (or year) column pinned
+@media @phone {
+    .age-records-container::before {
+        content: "\2190  Swipe sideways for more distances  \2192";
+        display: block;
+        padding: 6px 0 8px;
+        text-align: center;
+        font-size: 11px;
+        color: #6b7f88;
+    }
+
+    .age-records-table {
+        th.age-col-header,
+        td.age-col {
+            width: 46px;
+            max-width: 46px;
+            min-width: 46px;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+    }
+}
+
+// ---------- Team Members (memberList.html) ----------
+@media @phone {
+    .jumbotron.members-list-page {
+        .members-filter-card {
+            flex-wrap: wrap;
+        }
+
+        // Search on its own line, then the two groups of buttons, wrapping
+        .members-filter-main {
+            flex-wrap: wrap;
+            gap: 10px 14px;
+
+            .members-filter {
+                flex: 1 1 100%;
+                flex-wrap: wrap;
+                row-gap: 6px;
+            }
+        }
+
+        .members-search {
+            flex: 1 1 100%;
+            max-width: none;
+        }
+
+        // The view tabs and the count on one line
+        .members-view-switch > a {
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        .members-list-card .member-results-count {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 2px 8px;
+        }
+
+        .members-label-full {
+            display: none;
+        }
+
+        .members-label-compact {
+            display: inline;
+        }
+
+        .members-list-card .member-card-header {
+            flex-wrap: wrap;
+            row-gap: 6px;
+        }
+
+        // Two columns of names; one column of cards and letters
+        .members-names {
+            columns: 2;
+            column-gap: 10px;
+        }
+
+        .members-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .members-az {
+            columns: 1;
+        }
+    }
+}
+
+// ---------- A member's pages: header and tabs (memberDetail.html & co.) ----------
+@media @phone {
+    // The photo: a fair share of the screen, not all of it
+    img.member-picture {
+        max-height: 340px;
+        width: 100%;
+        object-fit: cover;
+        object-position: center 25%;
+    }
+
+    // The results' search and race type: one under the other
+    .member-results-filters {
+        flex-wrap: wrap;
+
+        .input-wrapper {
+            flex: 1 1 100%;
+        }
+    }
+
+    // EVENT sorts by date: it stays in the sort strip
+    .result-list-head .rr-sorthead {
+        display: block !important;
+    }
+
+    // Bio, Statistics, Head-to-Head (and Volunteer Jobs): one row of equal
+    // tabs, the icon over the label
+    .member-navigation-buttons {
+        margin-left: 0;
+        margin-right: 0;
+
+        .btn-group {
+            margin: 0;
+            gap: 0;
+
+            > .btn {
+                flex: 1 1 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 3px;
+                min-width: 0;
+                padding: 8px 2px 7px;
+                margin: 0 0 -1px !important;
+                font-size: 11.5px;
+                line-height: 1.15;
+                white-space: normal;
+
+                .fa {
+                    margin: 0;
+                    font-size: 15px;
+                }
+            }
+        }
+    }
+}
+
+// ---------- A member's Statistics and Head-to-Head (memberStats.html, memberHeadToHead.html) ----------
+@media @phone {
+    // Stat tiles two to a row, the same height, the numbers smaller
+    .row:has(> [class*="col-sm-"] > .stat-box),
+    .row:has(> [class*="col-sm-"] > .parkrun-stat-box) {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin: 0 0 8px;
+
+        // Bootstrap's clearfix would take a grid cell
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        > [class*="col-sm-"] {
+            float: none;
+            width: auto;
+            padding: 0;
+        }
+
+        .stat-box,
+        .parkrun-stat-box {
+            height: 100%;
+            margin: 0;
+        }
+
+        .parkrun-stat-box {
+            padding: 14px 8px;
+
+            h2 {
+                font-size: 26px;
+            }
+
+            p {
+                font-size: 11px;
+            }
+        }
+    }
+
+    // In the activity carousel, a page's tiles flow through one grid,
+    // whatever rows they sit in on a desktop (rows of three would leave gaps)
+    .stat-carousel .stat-carousel-page {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        align-content: start;
+
+        .row,
+        > div:not(.row) {
+            display: contents !important;
+        }
+
+        [class*="col-sm-"] {
+            float: none;
+            width: auto;
+            padding: 0;
+        }
+
+        .stat-box {
+            height: 100%;
+            margin: 0;
+        }
+    }
+
+    .stat-box {
+        padding: 10px 6px;
+        margin-bottom: 8px;
+
+        .stat-number {
+            font-size: 1.7em;
+            line-height: 1.15;
+        }
+
+        .stat-label {
+            font-size: 10px;
+        }
+    }
+
+    // The pie chart shrinks to the card (its SVG has a viewBox)
+    .d3-pie-svg svg {
+        max-width: 100%;
+        height: auto;
+    }
+
+    // The best-time chart's controls: one per line
+    .best-time-chart-race {
+        flex: 1 1 100%;
+        min-width: 0;
+
+        .best-time-race-select {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+    }
+
+    .best-time-chart-options {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    canvas {
+        max-width: 100%;
+    }
+
+    .head-to-head-page {
+        .h2h-member-select,
+        .h2h-year-select {
+            min-width: 0;
+            width: 100%;
+            margin: 4px 0;
+        }
+    }
+}
+
+@media @phone {
+    // pc-table: a cell left out on phones; line breaks inside a cell's pieces
+    table.pc-table > tbody > tr > td.pc-hide {
+        display: none;
+    }
+
+    table.pc-table .pc-line {
+        > div,
+        > div > * {
+            display: inline;
+        }
+
+        br {
+            display: none;
+        }
+
+        small {
+            margin-left: 4px;
+        }
+    }
+
+    // Head-to-head: the two runners side by side, VS between them
+    .h2h-record-row {
+        display: flex;
+        align-items: flex-start;
+        margin: 0;
+
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        > [class*="col-"] {
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 0 2px;
+        }
+
+        > [class*="col-"]:nth-child(2) {
+            flex: 0 0 52px;
+            align-self: center;
+        }
+
+        member-avatar {
+            zoom: 0.7;
+        }
+
+        h3 {
+            font-size: 15px;
+            margin: 6px 0 2px;
+        }
+
+        .win-count h2 {
+            font-size: 34px;
+            margin: 2px 0 0;
+        }
+
+        .vs-section h2 {
+            font-size: 20px;
+            margin: 0;
+        }
+    }
+
+    // The comparison: statistic and the two values; the winner shows as the
+    // highlighted value (the Winner column goes)
+    .h2h-compare-table {
+        font-size: 13px;
+
+        th,
+        td {
+            padding: 6px 4px !important;
+        }
+
+        th:nth-child(4),
+        td:nth-child(4) {
+            display: none;
+        }
+
+        // The desktop's column widths (shared with the races table) are wider
+        // than a phone
+        th,
+        td {
+            width: auto !important;
+            min-width: 0 !important;
+        }
+    }
+
+    .table-responsive.head-to-head-tables {
+        border: 0;
+    }
+}
+
+// ---------- Racing calendar (stats/team.html, memberStats.html) ----------
+// On a phone the year turns on its side (.cal-grid-phone): a column per
+// month, a row per day, the full width of the card, nothing to scroll
+.cal-grid-phone {
+    display: none;
+}
+
+@media @phone {
+    .cal-grid-wrap {
+        overflow-x: visible;
+
+        > .cal-grid:not(.cal-grid-phone) {
+            display: none;
+        }
+    }
+
+    .cal-panel .cal-grid.cal-grid-phone,
+    .cal-grid.cal-grid-phone {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        border-spacing: 3px 2px;
+
+        thead th {
+            font-size: 10px;
+            font-weight: 700;
+            color: @gray;
+            padding-bottom: 2px;
+        }
+
+        .cal-day-label {
+            width: 20px;
+            padding: 0 3px 0 0;
+            font-size: 9px;
+            font-weight: 600;
+            color: @gray-light;
+            text-align: right;
+        }
+
+        .cal-cell {
+            width: auto;
+            height: 16px;
+        }
+    }
+}
+
+// ---------- Volunteering stats (stats/volunteering.html) ----------
+@media @phone {
+    // One tbody per volunteer (row + its jobs): no 2px rule between them
+    table.pc-table > tbody + tbody {
+        border-top: 0;
+    }
+
+    // The job count bar right under the name, then events and last job
+    .vs-table.pc-table > tbody > tr > .vs-bar-col {
+        order: 1;
+        flex-basis: 100%;
+    }
+
+    .vs-table.pc-table .vs-rank {
+        width: auto;
+        min-width: 18px;
+    }
+
+    .vs-table.pc-table .vs-jobs {
+        padding: 4px 12px 6px;
+    }
+}
+
+// ---------- Progress map (stats/progress-map.html) ----------
+@media @phone {
+    // The figures, two then three to a row (their col-xs widths)
+    .progress-figure {
+        margin-bottom: 10px;
+
+        .panel-body {
+            padding: 10px 4px;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        p {
+            font-size: 10px;
+        }
+    }
+}
+
+// ---------- Members and Participation stats (stats/members.html, participation.html) ----------
+@media @phone {
+    // The title, the status toggle and the count, centred under each other
+    .members-header,
+    .participation-header {
+        padding: 16px;
+        text-align: center;
+
+        .text-right {
+            text-align: center;
+        }
+    }
+
+    // A birthday: the gift, the name, then the age and day on the right
+    .birthdays-panel .panel-body .birthdays-list .birthday-item {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 10px;
+        text-align: left;
+
+        .birthday-info {
+            margin-left: auto;
+            font-size: 13px;
+        }
+    }
+
+    // The members (and participation) lists as cards: the whole name, never cut short
+    .members-table-container .members-table.pc-table,
+    .participation-table-container .participation-table.pc-table {
+        .member-row > td.member-cell {
+            width: auto !important;
+            max-width: none !important;
+
+            .member-link {
+                white-space: normal;
+                overflow: visible;
+            }
+        }
+
+        .member-row > td.rank-cell {
+            order: 0;
+        }
+
+        // The name fills its line beside the rank; the details go under it
+        // (participation: beside the rank and the race count)
+        .member-row > td.member-cell {
+            flex-basis: calc(100% - 40px);
+        }
+
+        &.participation-table .member-row > td.member-cell {
+            flex-basis: calc(100% - 120px);
+        }
+
+        .table-header > th,
+        .member-row > td:not(.rank-cell) {
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            overflow: visible !important;
+        }
+
+        .table-header > th {
+            font-size: 11px;
+        }
+    }
+}
+
+// ---------- US and World race maps (stats/us-map.html, world-map.html) ----------
+// The map scales to the width; its 700px desktop height left it floating in
+// a tall empty card
+@media @phone {
+    .map-card > [usa-map],
+    .map-card > [world-map] {
+        min-height: 0 !important;
+        height: 70vw;
+    }
+}
+
+// ---------- Wide tables (.table-responsive) ----------
+// Bootstrap scrolls these sideways below @screen-xs-max, which is 1px here:
+// on phones they were cut off instead. Card tables (.pc-wrap) don't need it.
+@media @phone {
+    .table-responsive:not(.pc-wrap) {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+// ---------- Pace adjustment tool (tempAdjustment.html) ----------
+@media @phone {
+    .temp-adjustment-tool.jumbotron {
+        // Temperature, dew point and pace side by side, labels above
+        .form-inline {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            align-items: end;
+
+            .form-group {
+                display: block;
+                margin: 0;
+            }
+
+            label {
+                font-size: 10px;
+            }
+
+            .input-group,
+            .form-control {
+                width: 100% !important;
+            }
+        }
+
+        .weather-locate-note {
+            display: block;
+            margin-top: 6px;
+        }
+
+        // The grid scrolls sideways; the dew point column stays in view
+        .table-responsive::before {
+            content: "\2190  Swipe sideways for hotter temperatures  \2192";
+            position: sticky;
+            left: 0;
+            display: block;
+            padding: 0 0 6px;
+            text-align: center;
+            font-size: 11px;
+            color: #6b7f88;
+        }
+
+        .table > thead > tr > th:first-child,
+        .table > tbody > tr > th:first-child,
+        .table > tr > th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            width: auto !important;
+            background: #f4f7f9;
+            font-size: 12px;
+        }
+    }
+}
+
+// ---------- About age grading: the versions table (about.html) ----------
+@media @phone {
+    .about-ag-table {
+        font-size: 13px;
+
+        > thead > tr > th,
+        > tbody > tr > td {
+            padding: 8px 6px;
+        }
+
+        // The notes get a readable width; the other columns stay tight
+        > thead > tr > th:last-child,
+        > tbody > tr > td:last-child {
+            width: 40%;
+            font-size: 12px;
+        }
+    }
+}
+
+// ---------- Form fields on phones ----------
+// iOS zooms the page into any field under 16px when it's focused
+@media @phone {
+    input.form-control,
+    select.form-control,
+    textarea.form-control,
+    .ui-select-search {
+        font-size: 16px;
+    }
+}
+
+// pc-table with a rank (or a colour) before the name: the name leaves room on
+// its line for .pc-side, and the details always start a line of their own
+// (a short one would otherwise squeeze in after .pc-side)
+@media @phone {
+    table.pc-table.pc-ranked {
+        .pc-main {
+            flex-basis: calc(100% - 170px);
+        }
+
+        > tbody > tr::after {
+            content: "";
+            order: 1;
+            flex-basis: 100%;
+            height: 0;
+        }
+    }
+}
+
+// ---------- Comp race forms and team applications lists ----------
+// (compRaceForms.html, teamApplications.html) The action chips go under the
+// name instead of crushing it
+@media @phone {
+    .crf-list-page .feed-row:has(> .crf-actions) {
+        flex-wrap: wrap;
+
+        .feed-body {
+            flex-basis: calc(100% - 60px) !important;
+        }
+
+        .crf-actions {
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            margin: 8px 0 0;
+        }
+    }
+}
+
+// =====================================================================
+// Admin and captain pages on phones
+// =====================================================================
+// Same pattern as the public pages: tables as cards (pc-table), headers and
+// filter rows that wrap. Desktop is untouched.
+
+// ---------- Users (users.html) ----------
+@media @phone {
+    // (.jumbotron.users-page: as specific as the desktop rules)
+    .jumbotron.users-page .users-table.pc-table {
+        .users-time {
+            display: inline;
+            margin-left: 4px;
+        }
+
+        // The email right under the name
+        > tbody > tr > .pc-line {
+            order: 1;
+            font-size: 12px;
+            color: #5f7680;
+        }
+    }
+}
+
+// ---------- Activity log (activitylogs.html) ----------
+// The action and its date, then what happened, then who and on what
+@media @phone {
+    .activity-log-table.pc-table {
+        // The action tag is short: the date fits beside it
+        .pc-main {
+            flex-basis: auto;
+        }
+
+        > tbody > tr > .al-desc {
+            order: 1;
+            font-size: 13px;
+        }
+
+        .pc-actions .fa {
+            padding: 6px;
+            font-size: 16px;
+        }
+    }
+}
+
+// ---------- Volunteer jobs (volunteerJobs.html) ----------
+@media @phone {
+    .vj-table.pc-table .vj-event {
+        font-size: 13px;
+        font-weight: 600;
+    }
+}
+
+// ---------- Hosted pages (hostedPages.html) ----------
+@media @phone {
+    .hp-table.pc-table .hp-updated > div {
+        display: inline;
+        margin-left: 4px;
+    }
+}
+
+// ---------- Comp race forms: one form (compRaceFormDetail.html) ----------
+@media @phone {
+    .jumbotron.crf-detail-page {
+        // Comps, discounts, the legend and the email buttons wrap
+        .crf-allocation-row {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .crf-allocation-legend {
+            flex-wrap: wrap;
+            margin-left: 0;
+        }
+
+        // Search, then the sort picker, full width
+        .crf-responses-toolbar {
+            flex-wrap: wrap;
+            width: 100%;
+
+            .crf-toolbar-search,
+            .crf-toolbar-sort {
+                flex: 1 1 100%;
+                width: 100%;
+                max-width: none;
+            }
+
+            .crf-sort-select {
+                flex: 1 1 auto;
+                width: auto;
+                min-width: 0;
+            }
+        }
+
+        .feed-card-header-row {
+            flex-wrap: wrap;
+        }
+    }
+
+    // A response: rank, member and projected AG; the recent race; the rest
+    .crf-detail-table.pc-table {
+        .crf-td-rownum {
+            white-space: nowrap;
+        }
+
+        // The recent race, whole, right under the member
+        > tbody > tr > td.crf-td-race {
+            order: 1;
+            max-width: none;
+            white-space: normal;
+        }
+
+        > tbody > tr > td.crf-td-action {
+            width: auto;
+        }
+
+        .crf-td-proj-ag br,
+        .pc-detail br {
+            display: none;
+        }
+
+        .crf-td-proj-ag .crf-td-num,
+        .pc-detail .crf-td-num {
+            margin-left: 4px;
+        }
+
+        .crf-submitted-time {
+            margin-left: 4px;
+        }
+    }
+}
+
+// ---------- Banners (banners.html) ----------
+@media @phone {
+    // The title, then New / Reset / Save all on a row of their own
+    .banner-header-card .member-card-header {
+        flex-wrap: wrap;
+        row-gap: 8px;
+
+        > .banner-chip-row {
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+        }
+    }
+}
+
+// pc-table whose .pc-main takes its whole line (no .pc-side beside it)
+@media @phone {
+    table.pc-table.pc-stack .pc-main {
+        flex-basis: 100%;
+    }
+}
+
+// ---------- Result form (modals/resultModal.html) ----------
+@media @phone {
+    .result-modal {
+        // Hours, minutes, seconds, hundredths: four to a row, inside the
+        // form's edges (their row shares no margin with the racer column)
+        .row:has(> .time-entry) {
+            margin-left: 0;
+            margin-right: 0;
+
+            > [class*="col-md-"]:not(.time-entry) {
+                padding-left: 0;
+                padding-right: 0;
+            }
+        }
+
+        .time-entry {
+            float: left;
+            width: 25%;
+            padding-left: 3px;
+            padding-right: 3px;
+
+            label {
+                font-size: 9px;
+                white-space: nowrap;
+            }
+        }
+
+        // Age group, gender, overall: label, place, out of
+        .row > .col-md-4:has(> input[ng-model^="formData.ranking"]) {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+
+            > label {
+                flex: 0 0 90px;
+                margin: 0;
+            }
+
+            > input {
+                flex: 1 1 0;
+                width: auto !important;
+                min-width: 0;
+            }
+        }
+    }
+
+    // Every form's buttons: the main one last, all wrapping to fit
+    .site-modal-footer {
+        flex-wrap: wrap;
+
+        .site-modal-footer-spacer {
+            display: none;
+        }
+
+        > .mcrrc-btn,
+        > .member-primary-btn,
+        > .btn {
+            flex: 1 1 auto;
+        }
+    }
+}
+
+// ---------- Member form (modals/memberModal.html) ----------
+@media @phone {
+    // A membership's start and end dates share the row and shrink to fit
+    // (stacked, the columns get back the padding the row's margins expect)
+    .member-modal .daterangecol {
+        padding-right: 15px;
+    }
+
+    .member-modal .daterangeoptioncol {
+        padding-left: 15px;
+    }
+
+    .member-modal .daterangecol .input-group {
+        display: flex;
+
+        > .form-control {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        > .input-group-btn {
+            width: auto;
+        }
+    }
+}
+
+// ---------- Pagers (results.html, records...) ----------
+// The page numbers on a row of their own; the count and the page size under
+@media @phone {
+    .records-pager {
+        grid-template-columns: 1fr auto;
+        row-gap: 6px;
+
+        > dir-pagination-controls {
+            order: -1;
+            grid-column: 1 / -1;
+            text-align: center;
+
+            .pagination {
+                margin: 0;
+
+                > li > a,
+                > li > span {
+                    padding: 6px 7px;
+                }
+            }
+        }
+
+        .results-page-size {
+            margin-left: auto;
+            white-space: nowrap;
+        }
+    }
+}
+
+// ---------- Race form (modals/raceEditModal.html) ----------
+@media @phone {
+    // "Achievements (0)" and its Add button: wrap rather than squeeze
+    .race-edit-modal-class .section-header {
+        flex-wrap: wrap;
+        gap: 6px;
+
+        h4 {
+            font-size: 18px;
+        }
+    }
+
+    .race-edit-modal-class .modern-modal-body {
+        padding: 16px;
+    }
+}
+
+// ---------- Race and series pages: the header (raceDetail.html, seriesDetail.html) ----------
+@media @phone {
+    .race-detail-page {
+        .rd-racemeta .rd-meta-item {
+            margin-right: 12px;
+        }
+
+        // Previous edition · the series · next edition: a line of its own
+        .rd-racemeta .rd-series-nav {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            width: 100%;
+            margin: 3px 0;
+
+            > a:not(.rd-series-step) {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            > .rd-series-step {
+                flex: 0 0 auto;
+                padding: 2px 8px;
+            }
+        }
+
+        // The figures: even tiles, two to a row (a last odd one takes the row)
+        .rd-hero-figures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+
+        .rd-figure {
+            min-width: 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #f3f7f9;
+
+            &:last-child:nth-child(odd) {
+                grid-column: 1 / -1;
+            }
+        }
+
+        // The race page: fastest man and woman (with their photos) first
+        .rd-hero-race .rd-figure:not(:has(.rd-figure-who)) {
+            order: 1;
+        }
+
+        .rd-figure-value {
+            font-size: 24px;
+        }
+
+        .rd-figure-label {
+            font-size: 10px;
+        }
+
+        .rd-figure-detail {
+            overflow-wrap: anywhere;
+        }
+
+        // Podiums and the rest: chips that fill their rows
+        .rd-highlights {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .rd-highlight {
+            flex: 1 1 auto;
+            margin: 0;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+        }
+    }
+}
+
+// ---------- A member's page: the awards (memberDetail.html) ----------
+// On a desktop they float at the top right; on a phone that covers the name.
+// Here they join the page under the name and dates, as a row of badges.
+@media @phone {
+    .detailscontainer:has(> .member-awards) {
+        display: flex;
+        flex-direction: column;
+
+        > * {
+            order: 2;
+        }
+
+        > .member-page-header {
+            order: 0;
+        }
+
+        > .member-awards {
+            order: 1;
+        }
+    }
+
+    .member-awards {
+        position: static;
+        max-width: none;
+        margin: 0 0 14px;
+        padding: 0;
+        background: none;
+        box-shadow: none;
+
+        .member-awards-title {
+            display: none;
+        }
+
+        .member-awards-list {
+            gap: 6px;
+        }
+
+        // A badge: the small icon, then its caption
+        .member-award {
+            flex-direction: row;
+            gap: 6px;
+            padding: 3px 10px 3px 3px;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .member-award-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+
+            img {
+                height: 20px;
+            }
+
+            .fa {
+                font-size: 14px;
+            }
+        }
+
+        .member-award-caption {
+            font-size: 12px;
+        }
+    }
+}
+
+// ---------- Home: the welcome card's requirements (home.html) ----------
+// Races and best age grade side by side, not one under the other
+@media @phone {
+    .row.dashboard-section-body:has(> .requirement-block) {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 0;
+
+        // Bootstrap's clearfix would take a grid cell
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        > .requirement-block {
+            gap: 8px;
+            margin: 0;
+            padding: 8px 10px;
+        }
+
+        .requirement-icon {
+            font-size: 18px;
+        }
+
+        .requirement-value {
+            font-size: 18px;
+        }
+
+        .requirement-label {
+            font-size: 10px;
+        }
+    }
+}
+
+// ---------- Email login: the code from the email (email-login.html) ----------
+.auth-code-form {
+    margin-top: 6px;
+
+    .auth-code-input {
+        height: 52px;
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.3em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .auth-code-resend {
+        margin: 10px 0 0;
+        text-align: center;
+        font-size: 13px;
+    }
+}
+
+.auth-code-hint {
+    margin: 14px 0 0;
+    font-size: 12px;
+    color: #6b7f88;
+    text-align: center;
+}
+
+// ---------- Tab rows (.nav-tabs: the Stats pages, Race Series...) ----------
+// On a phone: one row that swipes sideways, each tab its icon over its label
+// and the current one underlined, like a member's page tabs. A ‹ / › over a
+// fade marks each end with more past it (navTabs, otherDirectives.js, adds
+// them and the nav-tabs-more-* classes). Icons and arrows are phone-only.
+.nav-tab-icon,
+.nav-tabs > li.nav-tabs-arrow {
+    display: none;
+}
+
+@media @phone {
+    .nav-tabs,
+    .racing-stats-page > .nav-tabs,
+    .stats-shell > .nav-tabs {
+        --tabs-bg: #fff;
+        position: relative; // tabs' offsets (scrolling, the swipe underline) are from the row
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-bottom: 1px solid fade(@brand-primary, 25%);
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        // Bootstrap's clearfix would take a flex cell
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        > li {
+            float: none;
+            flex: 0 0 auto;
+            margin: 0;
+
+            > a,
+            > a:hover,
+            > a:focus {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 3px;
+                margin: 0;
+                padding: 8px 12px 7px;
+                border: 0;
+                border-bottom: 3px solid transparent;
+                border-radius: 0;
+                background: transparent;
+                color: #5b707a;
+                font-size: 11.5px;
+                font-weight: 600;
+                line-height: 1.15;
+                white-space: nowrap;
+            }
+
+            &.active > a,
+            &.active > a:hover,
+            &.active > a:focus {
+                border: 0;
+                border-bottom: 3px solid @brand-primary;
+                background: transparent;
+                color: @brand-primary-dark;
+            }
+        }
+
+        .nav-tab-icon {
+            display: block;
+            font-size: 16px;
+            color: #8aa0aa;
+        }
+
+        > li.active .nav-tab-icon {
+            color: @brand-primary;
+        }
+
+        // The lower 48 (images/usa-shape.svg), in the icon's colour
+        .nav-tab-icon-usa {
+            width: 22px;
+            height: 16px;
+            background-color: currentColor;
+            -webkit-mask: url("/images/usa-shape.svg") center / contain no-repeat;
+            mask: url("/images/usa-shape.svg") center / contain no-repeat;
+        }
+
+        // The arrows stay pinned to the row's ends while it scrolls. They
+        // take no room (negative margins as wide as they are) and only show
+        // where there is more: the tabs never shift under them.
+        > li.nav-tabs-arrow {
+            position: sticky;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            width: 44px;
+            padding: 0;
+            visibility: hidden;
+
+            button {
+                width: 26px;
+                height: 26px;
+                padding: 0;
+                border: 1px solid fade(@brand-primary, 30%);
+                border-radius: 50%;
+                background: #fff;
+                color: @brand-primary;
+                font-size: 11px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+            }
+        }
+
+        > li.nav-tabs-arrow-left {
+            left: 0;
+            justify-content: flex-start;
+            margin-right: -44px;
+            background: linear-gradient(to right, var(--tabs-bg) 50%, transparent);
+        }
+
+        > li.nav-tabs-arrow-right {
+            right: 0;
+            justify-content: flex-end;
+            margin-left: -44px;
+            background: linear-gradient(to left, var(--tabs-bg) 50%, transparent);
+        }
+
+        &.nav-tabs-more-left > li.nav-tabs-arrow-left,
+        &.nav-tabs-more-right > li.nav-tabs-arrow-right {
+            visibility: visible;
+        }
+    }
+
+    // On the page's blue-grey ground (the Stats pages) rather than in a card
+    .jumbotron > .nav-tabs,
+    .stats-shell > .nav-tabs {
+        --tabs-bg: #d3dfe4;
+    }
+}
+
+// ---------- Ranked lists: one line per entry (stats/team.html, notacult.html) ----------
+// Name (and its small detail) on the left, the figure on the right, rather
+// than the figure alone on a second line: the top-10 lists half as tall
+@media @phone {
+    .list-group-item > .row:has(> [class*="col-sm-"]:first-child + .text-right:last-child),
+    .parkrun-list-item > .row:has(> [class*="col-sm-"]:first-child + .text-right:last-child) {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin: 0;
+
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        > :first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding: 0;
+        }
+
+        // The figure stays whole ("601 results (56 members)"); the name wraps
+        > .text-right {
+            flex: 0 0 auto;
+            max-width: 62%;
+            padding: 0;
+            white-space: nowrap;
+        }
+    }
+
+    // A tighter row: twelve lists of ten
+    .racing-stats-page .list-group-item {
+        padding: 7px 14px;
+    }
+}
+
+// ---------- Racing Stats: the distances pie (stats/team.html) ----------
+@media @phone {
+    .racing-stats-page .d3-pie-svg svg {
+        max-height: 190px;
+    }
+}
+
+// ---------- A member's Statistics: long figures (memberStats.html) ----------
+// "9d 1h 23m 29s" on one line in its half-width tile
+@media @phone {
+    // (the same line height as its neighbours' 1.7em numbers: tiles line up)
+    .stat-box .stat-number.stat-number-long {
+        font-size: 1.15em;
+        white-space: nowrap;
+        line-height: (1.7 * 1.15 / 1.15);
+    }
+}
+
+
+
+
+// ---------- The Stats pages' shared frame (views/stats/shell.html) ----------
+// The top of a page's box (.container .jumbotron): its ground and padding,
+// around the tab row; the page's own box continues under it with no top
+// padding, so the two read as one, as when each page had its own tabs
+.stats-shell {
+    background-color: #D3DFE4;
+    padding-top: 15px;
+
+    // The box's side padding, around the tabs only (the page has its own)
+    > .nav-tabs {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    > .stats-view > [ui-view] > .jumbotron {
+        padding-top: 0;
+        min-height: 654px; // the box's 730px, less the 76px of the frame above it
+    }
+}
+
+@media @phone {
+    .stats-shell {
+        padding-top: 12px;
+
+        > .nav-tabs {
+            margin-left: 15px;
+            margin-right: 15px;
+        }
+        // The page sliding sideways under a swipe stays inside; clip, unlike
+        // hidden, leaves sticky things in the page working
+        overflow-x: hidden;
+        overflow-x: clip;
+
+        > .stats-view > [ui-view] > .jumbotron {
+            min-height: 0;
+        }
+    }
+}
+
+// ---------- The Stats pages on a phone: gliding underline, swipe panel ----------
+// (navTabs, otherDirectives.js)
+@media @phone {
+    .stats-shell {
+        position: relative;
+    }
+
+    // One underline for the row, gliding to the tab being opened
+    .nav-tabs.nav-tabs-glide {
+        > li.active > a,
+        > li.active > a:hover,
+        > li.active > a:focus {
+            border-bottom-color: transparent;
+        }
+    }
+
+    .nav-tabs-indicator {
+        position: absolute;
+        bottom: 0;
+        height: 3px;
+        background: @brand-primary;
+        pointer-events: none;
+    }
+
+    // Beside the page during a swipe: the next tab's page as last seen, or a
+    // placeholder; it stays over the new page until that has loaded
+    .stats-swipe-panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        background: #d3dfe4;
+        pointer-events: none;
+        transition: opacity 0.15s ease-out;
+
+        &.stats-swipe-panel-out {
+            opacity: 0;
+        }
+
+        // As it sits in the frame: no top padding of its own
+        > .jumbotron {
+            margin: 0;
+            padding-top: 0;
+            min-height: 0;
+        }
+    }
+
+    // Not opened yet: its icon and name over empty cards
+    .stats-swipe-placeholder {
+        position: sticky;
+        top: 0;
+        padding: 18px 15px;
+    }
+
+    .stats-swipe-placeholder-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        color: @brand-primary-dark;
+        font-size: 20px;
+        font-weight: 700;
+
+        .nav-tab-icon {
+            display: block;
+            font-size: 20px;
+            color: @brand-primary;
+        }
+
+        .nav-tab-icon-usa {
+            width: 28px;
+            height: 20px;
+            background-color: currentColor;
+            -webkit-mask: url("/images/usa-shape.svg") center / contain no-repeat;
+            mask: url("/images/usa-shape.svg") center / contain no-repeat;
+        }
+    }
+
+    .stats-swipe-placeholder-card {
+        height: 150px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+        background: linear-gradient(#eef3f5 0 0) 18px 22px / 45% 14px no-repeat,
+            linear-gradient(#eef3f5 0 0) 18px 56px / 75% 10px no-repeat,
+            linear-gradient(#eef3f5 0 0) 18px 78px / 60% 10px no-repeat,
+            #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+}
+
+// ---------- Result and volunteer submissions: done ones collapse ----------
+// (resultSubmissions.html, volunteerSubmissions.html) Each shows only its
+// heading until clicked; the chevron says which way it goes.
+.jumbotron.corrections-page {
+    .crq-card-collapsible > .crq-card-head {
+        cursor: pointer;
+    }
+
+    .crq-card-chevron {
+        align-self: center;
+        margin-left: 4px;
+        color: @gray-light;
+        font-size: 13px;
+    }
+
+    .crq-card-collapsible:hover .crq-card-chevron {
+        color: @brand-primary;
+    }
+
+    // Collapsed: a compact row, no rule under its heading
+    .crq-card-collapsed {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        margin-bottom: 10px;
+
+        > .crq-card-head {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
     }
 }

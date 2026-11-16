@@ -102,8 +102,8 @@
                     No pages yet. Upload an HTML file to host it at its own address.
                 </p>
 
-                <div class="table-responsive" ng-if="pages.length">
-                    <table class="table member-table hp-table">
+                <div class="table-responsive pc-wrap" ng-if="pages.length">
+                    <table class="table member-table hp-table pc-table">
                         <thead>
                             <tr>
                                 <th>Page</th>
@@ -116,26 +116,26 @@
                         </thead>
                         <tbody>
                             <tr ng-repeat="page in pages track by page._id">
-                                <td>
+                                <td class="pc-main">
                                     <a ng-href="/pages/{{ page.slug }}" target="_blank" rel="noopener"><strong>{{ page.title }}</strong></a>
                                     <div class="hp-address">/pages/{{ page.slug }}</div>
                                 </td>
-                                <td>
+                                <td class="pc-detail">
                                     <i class="fa fa-fw hp-access-icon" ng-class="accessLevel(page.access).icon"></i> {{ accessLevel(page.access).label }}
                                 </td>
-                                <td class="nowrap">
+                                <td class="nowrap pc-side">
                                     <span class="site-tag" ng-class="page.published ? 'site-tag-success' : 'site-tag-muted'">
                                         {{ page.published ? 'Published' : 'Draft' }}
                                     </span>
                                     <span class="site-tag site-tag-warning" ng-if="page.trusted"
                                         uib-tooltip="Runs as part of the site, not sandboxed">Trusted</span>
                                 </td>
-                                <td class="member-table-date">{{ formatSize(page.size) }}</td>
-                                <td class="member-table-date">
+                                <td class="member-table-date pc-detail" data-label="Size">{{ formatSize(page.size) }}</td>
+                                <td class="member-table-date pc-detail hp-updated" data-label="Updated">
                                     {{ page.updatedAt | date:'MMM d, y' }}
                                     <div ng-if="page.updatedBy.username">by {{ page.updatedBy.username }}</div>
                                 </td>
-                                <td class="text-right nowrap">
+                                <td class="text-right nowrap pc-actions">
                                     <button class="mcrrc-btn site-icon-btn" ng-click="copyLink(page)" uib-tooltip="Copy link">
                                         <i class="fa" ng-class="page.copied ? 'fa-check' : 'fa-link'"></i>
                                     </button>

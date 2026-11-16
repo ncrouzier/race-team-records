@@ -32,46 +32,46 @@
                 <span class="member-results-count">{{(usersList | filter:userFilter).length}} users</span>
             </div>
 
-            <div class="table-responsive">
-                <table class="table member-table users-table">
+            <div class="table-responsive pc-wrap">
+                <table class="table member-table users-table pc-table">
                     <thead>
                         <tr>
-                            <th ng-click="setSortBy('username')">
+                            <th class="pc-sortable" ng-click="setSortBy('username')">
                                 Name
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'username' && !sortReverse, 'fa-sort-down': sortBy === 'username' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('email')">
+                            <th class="pc-sortable" ng-click="setSortBy('email')">
                                 Email
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'email' && !sortReverse, 'fa-sort-down': sortBy === 'email' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('role')">
+                            <th class="pc-sortable" ng-click="setSortBy('role')">
                                 Role
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'role' && !sortReverse, 'fa-sort-down': sortBy === 'role' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('member.lastname')">
+                            <th class="pc-sortable" ng-click="setSortBy('member.lastname')">
                                 Member
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'member.lastname' && !sortReverse, 'fa-sort-down': sortBy === 'member.lastname' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('enabled')">
+                            <th class="pc-sortable" ng-click="setSortBy('enabled')">
                                 Status
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'enabled' && !sortReverse, 'fa-sort-down': sortBy === 'enabled' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('createdAt')">
+                            <th class="pc-sortable" ng-click="setSortBy('createdAt')">
                                 Created
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'createdAt' && !sortReverse, 'fa-sort-down': sortBy === 'createdAt' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('lastLogin')">
+                            <th class="pc-sortable" ng-click="setSortBy('lastLogin')">
                                 Last Login
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'lastLogin' && !sortReverse, 'fa-sort-down': sortBy === 'lastLogin' && sortReverse}"></i>
                             </th>
-                            <th ng-click="setSortBy('lastActive')">
+                            <th class="pc-sortable" ng-click="setSortBy('lastActive')">
                                 Last Active
                                 <i class="fa"
                                     ng-class="{'fa-sort-up': sortBy === 'lastActive' && !sortReverse, 'fa-sort-down': sortBy === 'lastActive' && sortReverse}"></i>
@@ -81,44 +81,44 @@
                     </thead>
                     <tbody>
                         <tr ng-if="(usersList | filter:userFilter).length === 0">
-                            <td colspan="9" class="text-center text-muted member-table-empty">
+                            <td colspan="9" class="text-center text-muted member-table-empty pc-line">
                                 <i class="fa fa-info-circle"></i>
                                 <span ng-if="usersList.length === 0">No users found.</span>
                                 <span ng-if="usersList.length > 0">No users match the current filters.</span>
                             </td>
                         </tr>
                         <tr ng-repeat="u in usersList | filter:userFilter | orderBy:sortFn:sortReverse">
-                            <td class="users-name">{{u.username}}</td>
-                            <td>{{u.email}}</td>
-                            <td>
+                            <td class="users-name pc-main">{{u.username}}</td>
+                            <td class="pc-line">{{u.email}}</td>
+                            <td class="pc-side">
                                 <span class="site-tag"
                                     ng-class="{'site-tag-danger': u.role === 'admin', 'site-tag-warning': u.role === 'captain', 'site-tag-muted': u.role === 'user'}">
                                     {{u.role}}
                                 </span>
                             </td>
-                            <td>
+                            <td class="pc-detail" ng-class="{'pc-empty': !u.member}" data-label="Member">
                                 <a ng-if="u.member" ui-sref="/members({member: u.member.username})">
                                     {{u.member.firstname}} {{u.member.lastname}}
                                 </a>
                                 <span ng-if="!u.member" class="text-muted">-</span>
                             </td>
-                            <td>
+                            <td class="pc-detail">
                                 <!-- Changed in the edit modal, which can also email the user -->
                                 <span class="site-tag" ng-class="u.enabled ? 'site-tag-success' : 'site-tag-muted'">
                                     <i class="fa" ng-class="u.enabled ? 'fa-check' : 'fa-ban'"></i>
                                     {{u.enabled ? 'enabled' : 'disabled'}}
                                 </span>
                             </td>
-                            <td class="member-table-date">{{u.createdAt | date:'yyyy-MM-dd'}}</td>
-                            <td class="member-table-date">
+                            <td class="member-table-date pc-detail" data-label="Created">{{u.createdAt | date:'yyyy-MM-dd'}}</td>
+                            <td class="member-table-date pc-detail" data-label="Last login">
                                 <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd'}}<span class="users-time">{{u.lastLogin | date:'HH:mm'}}</span></span>
                                 <span ng-if="!u.lastLogin">-</span>
                             </td>
-                            <td class="member-table-date">
+                            <td class="member-table-date pc-detail" data-label="Last active">
                                 <span ng-if="u.lastActive">{{u.lastActive | date:'yyyy-MM-dd'}}<span class="users-time">{{u.lastActive | date:'HH:mm'}}</span></span>
                                 <span ng-if="!u.lastActive">-</span>
                             </td>
-                            <td class="text-right nowrap">
+                            <td class="text-right nowrap pc-actions">
                                 <button class="mcrrc-btn site-icon-btn" ng-click="editUser(u)" title="Edit user">
                                     <i class="fa fa-pencil"></i>
                                 </button>

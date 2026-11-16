@@ -263,38 +263,49 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             templateUrl: "views/yearRecords.html",
             controller: 'YearRecordsController'
         }).state('/stats', {
+            // The Stats pages' shared frame: their tab row stays while the
+            // pages under it change (views/stats/shell.html)
             url: "/stats",
+            templateUrl: "views/stats/shell.html",
             redirectTo: '/stats/team'
         }).state('/stats/team', {
-            url: "/stats/team",
+            parent: '/stats',
+            url: "/team",
             templateUrl: "views/stats/team.html",
             controller: 'StatsController'
         }).state('/stats/volunteering', {
-            url: "/stats/volunteering",
+            parent: '/stats',
+            url: "/volunteering",
             templateUrl: "views/stats/volunteering.html",
             controller: 'VolunteerStatsController'
         }).state('/stats/us-map', {
-            url: "/stats/us-map",
+            parent: '/stats',
+            url: "/us-map",
             templateUrl: "views/stats/us-map.html",
             controller: 'StatsController'
         }).state('/stats/world-map', {
-            url: "/stats/world-map",
+            parent: '/stats',
+            url: "/world-map",
             templateUrl: "views/stats/world-map.html",
             controller: 'StatsController'
         }).state('/stats/participation', {
-            url: "/stats/participation",
+            parent: '/stats',
+            url: "/participation",
             templateUrl: "views/stats/participation.html",
             controller: 'StatsController'
         }).state('/stats/members', {
-            url: "/stats/members",
+            parent: '/stats',
+            url: "/members",
             templateUrl: "views/stats/members.html",
             controller: 'StatsController'
         }).state('/stats/progress-map', {
-            url: "/stats/progress-map",
+            parent: '/stats',
+            url: "/progress-map",
             templateUrl: "views/stats/progress-map.html",
             controller: 'ProgressMapController'
         }).state('/stats/awards', {
-            url: "/stats/awards",
+            parent: '/stats',
+            url: "/awards",
             templateUrl: "views/stats/awards.html",
             controller: 'StatsController'
         }).state('/tools', {

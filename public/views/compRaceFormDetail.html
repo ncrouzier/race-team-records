@@ -386,26 +386,26 @@
 
             <!-- Table -->
             <div ng-if="responses.length > 0" style="overflow-x:auto;">
-                <table class="table table-hover crf-detail-table">
+                <table class="table table-hover crf-detail-table pc-table pc-ranked">
                     <thead>
                         <tr>
                             <th class="crf-td-rownum">#</th>
-                            <th class="crf-th-sortable" ng-click="setColSort('member')">Member <i class="fa"
+                            <th class="pc-sortable crf-th-sortable" ng-click="setColSort('member')">Member <i class="fa"
                                     ng-class="colSortIcon('member')"></i></th>
-                            <th class="crf-th-sortable" ng-click="setColSort('race')">Recent Race <i class="fa"
+                            <th class="pc-sortable crf-th-sortable" ng-click="setColSort('race')">Recent Race <i class="fa"
                                     ng-class="colSortIcon('race')"></i></th>
-                            <th class="crf-th-sortable text-center" ng-click="setColSort('recentTime')">Time <i
+                            <th class="pc-sortable crf-th-sortable text-center" ng-click="setColSort('recentTime')">Time <i
                                     class="fa" ng-class="colSortIcon('recentTime')"></i></th>
-                            <th class="crf-th-sortable text-center" ng-click="setColSort('recentAg')">AG% <i class="fa"
+                            <th class="pc-sortable crf-th-sortable text-center" ng-click="setColSort('recentAg')">AG% <i class="fa"
                                     ng-class="colSortIcon('recentAg')"></i></th>
-                            <th class="crf-th-sortable text-center" ng-click="setColSort('projTime')">Proj. Time <i
+                            <th class="pc-sortable crf-th-sortable text-center" ng-click="setColSort('projTime')">Proj. Time <i
                                     class="fa" ng-class="colSortIcon('projTime')"></i></th>
-                            <th class="crf-th-sortable text-center" ng-click="setColSort('projAg')">Proj. AG% <i
+                            <th class="pc-sortable crf-th-sortable text-center" ng-click="setColSort('projAg')">Proj. AG% <i
                                     class="fa" ng-class="colSortIcon('projAg')"></i></th>
                             <th class="text-center" ng-if="formData.race.linkedRace">Actual Time</th>
                             <th class="text-center" ng-if="formData.race.linkedRace">Actual AG%</th>
                             <th class="text-center"><i class="fa fa-comment" style="color:#aaa;"></i></th>
-                            <th class="crf-th-sortable text-right" ng-click="setColSort('submitted')">Submitted <i
+                            <th class="pc-sortable crf-th-sortable text-right" ng-click="setColSort('submitted')">Submitted <i
                                     class="fa" ng-class="colSortIcon('submitted')"></i></th>
                             <th></th>
                         </tr>
@@ -436,7 +436,7 @@
                                             stroke-linejoin="round" />
                                     </svg></span>
                             </td>
-                            <td class="crf-td-name">
+                            <td class="crf-td-name pc-main">
                                 <a ng-if="r.member" ng-href="/members/{{ r.member.username }}" target="_blank">{{
                                     r.member.firstname }} {{ r.member.lastname }}</a>
                                 <span
@@ -446,7 +446,7 @@
                                 <span ng-if="!r.member && r.user">{{ r.user.username }}</span>
                                 <span ng-if="!r.member && !r.user" class="text-muted">—</span>
                             </td>
-                            <td class="crf-td-race">
+                            <td class="crf-td-race pc-line" data-label="Recent race">
                                 <span ng-if="r.recentResult && r.recentResult.race"
                                     uib-tooltip="{{ r.recentResult.race.racename }} — {{ r.recentResult.race.racedate | date:'mediumDate':'UTC' }}"
                                     tooltip-placement="top">
@@ -457,23 +457,23 @@
                                 </span>
                                 <span ng-if="!r.recentResult" class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-num">
+                            <td class="text-center crf-td-num pc-detail" data-label="Time">
                                 <span ng-if="r.recentResult" class="time">{{ centisToString(r.recentResult.time)
                                     }}</span>
                                 <span ng-if="!r.recentResult" class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-num">
+                            <td class="text-center crf-td-num pc-detail" data-label="AG">
                                 <span ng-if="r.recentResult && r.recentResult.agegrade != null" class="crf-ag-value">{{
                                     formatAg(r.recentResult.agegrade) }}</span>
                                 <span ng-if="!r.recentResult || r.recentResult.agegrade == null"
                                     class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-num">
+                            <td class="text-center crf-td-num pc-detail" data-label="Projected">
                                 <strong class="time" ng-if="r.projectedTimeCentiseconds">{{
                                     centisToString(r.projectedTimeCentiseconds) }}</strong>
                                 <span ng-if="!r.projectedTimeCentiseconds" class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-num">
+                            <td class="text-center crf-td-num pc-side crf-td-proj-ag">
                                 <span ng-if="r.projectedAgeGrade != null" class="crf-ag-value crf-ag-proj">{{
                                     formatAg(r.projectedAgeGrade) }}</span><br>
                                 <span class="text-center crf-td-num" ng-init="diff = agDiff(r)">
@@ -484,7 +484,7 @@
                                     <span ng-if="diff == null" class="text-muted">—</span>
                                 </span>
                             </td>
-                            <td class="text-center crf-td-num" ng-if="formData.race.linkedRace">
+                            <td class="text-center crf-td-num pc-detail" data-label="Actual" ng-if="formData.race.linkedRace">
                                 <strong class="time" ng-if="r.actualResult">{{ centisToString(r.actualResult.time)
                                     }}</strong><br>
                                 <span class="text-center crf-td-num" ng-if="formData.race.linkedRace"
@@ -497,7 +497,7 @@
                                 </span>
                                 <span ng-if="!r.actualResult" class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-num" ng-if="formData.race.linkedRace">
+                            <td class="text-center crf-td-num pc-detail" data-label="Actual AG" ng-if="formData.race.linkedRace">
                                 <span ng-if="r.actualResult && r.actualResult.agegrade != null" class="crf-ag-value">{{
                                     formatAg(r.actualResult.agegrade) }}<br>
                                     <span class="text-center crf-td-num" ng-if="formData.race.linkedRace"
@@ -512,19 +512,19 @@
                                 <span ng-if="!r.actualResult || r.actualResult.agegrade == null"
                                     class="text-muted">—</span>
                             </td>
-                            <td class="text-center crf-td-comments">
+                            <td class="text-center crf-td-comments pc-detail" ng-class="{'pc-empty': !r.comments}">
                                 <i ng-if="r.comments" class="fa fa-comment crf-comment-icon"
                                     uib-tooltip="{{ r.comments }}" tooltip-placement="top"
                                     tooltip-trigger="'mouseenter click'" tooltip-class="crf-comment-tooltip"
                                     tooltip-append-to-body="true"></i>
                                 <span ng-if="!r.comments" class="text-muted">—</span>
                             </td>
-                            <td class="crf-td-num text-right crf-td-submitted">
+                            <td class="crf-td-num text-right crf-td-submitted pc-detail" data-label="Sent">
                                 <span ng-if="r.submittedAt">{{ r.submittedAt | date:'M/d/yy' }}<br><span
                                         class="crf-submitted-time">{{ r.submittedAt | date:'h:mm a' }}</span></span>
                                 <span ng-if="!r.submittedAt" class="text-muted">—</span>
                             </td>
-                            <td class="crf-td-action">
+                            <td class="crf-td-action pc-actions">
                                 <button class="crf-chip crf-chip-danger" ng-click="deleteResponse(r)"
                                     uib-tooltip="Delete">
                                     <i class="fa fa-trash"></i>

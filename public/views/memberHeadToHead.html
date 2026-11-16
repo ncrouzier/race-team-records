@@ -192,12 +192,12 @@
                                                 </div>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="table-responsive head-to-head-tables">
-                                                    <table class="table">
+                                                <div class="table-responsive head-to-head-tables pc-wrap">
+                                                    <table class="table pc-table">
                                                         <thead>
                                                             <tr>
                                                                 <th ng-click="sortTeamMembersBy('firstname')"
-                                                                    class="hoverhand">
+                                                                    class="hoverhand pc-sortable">
                                                                     Team Member
                                                                     <i ng-if="teamMemberSortCriteria === 'firstname'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -205,7 +205,7 @@
                                                                         class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th ng-click="sortTeamMembersBy('count')"
-                                                                    class="hoverhand text-center">
+                                                                    class="hoverhand text-center pc-sortable">
                                                                     Races Together
                                                                     <i ng-if="teamMemberSortCriteria === 'count'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -213,7 +213,7 @@
                                                                         class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th ng-click="sortTeamMembersBy('wins')"
-                                                                    class="hoverhand member-1-color text-center">
+                                                                    class="hoverhand member-1-color text-center pc-sortable">
                                                                     {{member1.firstname}} Wins
                                                                     <i ng-if="teamMemberSortCriteria === 'wins'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -221,7 +221,7 @@
                                                                         class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th ng-click="sortTeamMembersBy('losses')"
-                                                                    class="hoverhand member-2-color text-center">
+                                                                    class="hoverhand member-2-color text-center pc-sortable">
                                                                     {{member1.firstname}} Losses
                                                                     <i ng-if="teamMemberSortCriteria === 'losses'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -229,7 +229,7 @@
                                                                         class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th ng-click="sortTeamMembersBy('ties')"
-                                                                    class="hoverhand text-center">
+                                                                    class="hoverhand text-center pc-sortable">
                                                                     Ties
                                                                     <i ng-if="teamMemberSortCriteria === 'ties'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -237,7 +237,7 @@
                                                                         class="fa fa-sort"></i>
                                                                 </th>
                                                                 <th ng-click="sortTeamMembersBy('winRate')"
-                                                                    class="hoverhand text-center">
+                                                                    class="hoverhand text-center pc-sortable">
                                                                     Win Rate
                                                                     <i ng-if="teamMemberSortCriteria === 'winRate'"
                                                                         class="fa fa-sort-{{teamMemberSortDirection ? 'asc' : 'desc'}}"></i>
@@ -250,7 +250,7 @@
                                                         <tbody>
                                                             <tr
                                                                 ng-repeat="member in getFilteredTeamMembers() track by member._id">
-                                                                <td>
+                                                                <td class="pc-main">
                                                                     <span
                                                                         ng-class="{'past-member' : member.memberStatus === 'past'}"
                                                                         class="hoverhand h2h-member-cell"
@@ -259,21 +259,21 @@
                                                                         {{member.memberStatus === 'past' ? '(past)' :
                                                                         ''}}</span>
                                                                 </td>
-                                                                <td class="text-center">{{member.count}}</td>
-                                                                <td class="text-center member-1-color">
+                                                                <td class="text-center pc-detail" data-label="Races">{{member.count}}</td>
+                                                                <td class="text-center member-1-color pc-detail" data-label="Wins">
                                                                     <strong>{{member.headToHeadRecord.wins}}</strong>
                                                                 </td>
-                                                                <td class="text-center member-2-color">
+                                                                <td class="text-center member-2-color pc-detail" data-label="Losses">
                                                                     <strong>{{member.headToHeadRecord.losses}}</strong>
                                                                 </td>
-                                                                <td class="text-center text-warning">
+                                                                <td class="text-center text-warning pc-detail" data-label="Ties">
                                                                     <strong>{{member.headToHeadRecord.ties}}</strong>
                                                                 </td>
-                                                                <td class="text-center">
+                                                                <td class="text-center pc-side">
                                                                     <strong>{{member.headToHeadRecord.winRate |
                                                                         number:1}}%</strong>
                                                                 </td>
-                                                                <td class="text-center">
+                                                                <td class="text-center pc-actions">
                                                                     <button class="btn member-edit-btn"
                                                                         ng-click="loadComparison(member)"
                                                                         title="Compare head-to-head">
@@ -316,7 +316,7 @@
                                                 </h4>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="row text-center" ng-if="sharedRaces.length > 0">
+                                                <div class="row text-center h2h-record-row" ng-if="sharedRaces.length > 0">
                                                     <!-- Member 1 -->
                                                     <div class="col-md-4">
                                                         <member-avatar class="h2h-photo h2h-photo-1" member="member1" size="88"></member-avatar>
@@ -412,7 +412,7 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="table-responsive head-to-head-tables">
-                                                    <table class="table">
+                                                    <table class="table h2h-compare-table">
                                                         <thead>
                                                             <tr>
                                                                 <th>Statistic</th>
@@ -742,8 +742,8 @@
                                                 </h4>
                                             </div>
                                             <div class="panel-body">
-                                                <div class="table-responsive head-to-head-tables">
-                                                    <table class="table">
+                                                <div class="table-responsive head-to-head-tables pc-wrap">
+                                                    <table class="table pc-table h2h-races-table">
                                                         <thead>
                                                             <tr>
                                                                 <th>#</th>
@@ -760,17 +760,17 @@
                                                         <tbody>
                                                             <tr ng-repeat="race in sharedRaces track by $index"
                                                                 ng-class="race.winner === 'member1' ? 'member-1-bg' : (race.winner === 'member2' ? 'member-2-bg' : 'member-tie-bg')">
-                                                                <td>{{sharedRaces.length - $index}}</td>
-                                                                <td>{{formatDate(race.race.racedate)}}</td>
-                                                                <td>
+                                                                <td class="pc-hide">{{sharedRaces.length - $index}}</td>
+                                                                <td class="pc-detail">{{formatDate(race.race.racedate)}}</td>
+                                                                <td class="pc-main">
                                                                     <a ng-click="trackDrill('h2h_race'); showRaceModal(race.race)"
                                                                         class="hoverhand">
                                                                         {{race.race.racename}}
                                                                     </a>
                                                                 </td>
-                                                                <td>{{race.race.distanceName ||
+                                                                <td class="pc-detail">{{race.race.distanceName ||
                                                                     race.race.racetype.name}}</td>
-                                                                <td>
+                                                                <td class="pc-line member-1-color" data-label="{{member1.firstname}}">
                                                                     <div ng-if="!ageGradeMode">
                                                                         <strong
                                                                             class="time">{{formatTime(race.member1Result.time)}}</strong>
@@ -789,7 +789,7 @@
                                                                         <small>{{formatTime(race.member1Result.time)}}</small>
                                                                     </div>
                                                                 </td>
-                                                                <td>
+                                                                <td class="pc-line member-2-color" data-label="{{member2.firstname}}">
                                                                     <div ng-if="!ageGradeMode">
                                                                         <strong
                                                                             class="time">{{formatTime(race.member2Result.time)}}</strong>
@@ -808,7 +808,7 @@
                                                                         <small>{{formatTime(race.member2Result.time)}}</small>
                                                                     </div>
                                                                 </td>
-                                                                <td>
+                                                                <td class="pc-detail" data-label="{{ ageGradeMode ? 'Diff' : 'Margin' }}">
                                                                     <span ng-if="!race.isTie" class="time"
                                                                         ng-class="{'ranking-tiebreaker': race.timeDifference === 0}"
                                                                         uib-tooltip="{{race.timeDifference === 0 ? ('Rankings: ' + member1.firstname + ': ' + (race.member1Result.ranking ? (race.member1Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A') + ', ' + member2.firstname + ': ' + (race.member2Result.ranking ? (race.member2Result.ranking.overallrank | inline_ordinal_suffix_of) : 'N/A')) : ''}}"
@@ -821,7 +821,7 @@
                                                                     </span>
                                                                     <span ng-if="race.isTie">-</span>
                                                                 </td>
-                                                                <td>
+                                                                <td class="pc-side">
                                                                     <span ng-if="race.winner === 'member1'"
                                                                         class="member-1-color">
                                                                         <i class="fa fa-trophy"></i>

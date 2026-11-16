@@ -233,8 +233,24 @@ app.factory('MyCachingRestService', function(Restangular) {
 });
 
 
-angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$http', 'AuthService', '$state', 'ResultsService','MembersService','localStorageService', 'StatsService', function($scope, $http, AuthService, $state, ResultsService,MembersService,localStorageService, StatsService) {
+angular.module('mcrrcApp.results').controller('MainController', ['$scope', '$http', 'AuthService', '$state', '$transitions', 'ResultsService','MembersService','localStorageService', 'StatsService', function($scope, $http, AuthService, $state, $transitions, ResultsService,MembersService,localStorageService, StatsService) {
     $scope.$state = $state;
+
+    // Phones: the bottom tab bar's sheets (views/partials/mobileNav.ejs):
+    // 'more' (the rest of the menu) or 'account'. Any page change closes them.
+    $scope.mobileMore = { open: false, sheet: 'more' };
+    $scope.toggleMore = function(sheet) {
+        sheet = sheet || 'more';
+        var same = $scope.mobileMore.open && $scope.mobileMore.sheet === sheet;
+        $scope.mobileMore.open = !same;
+        $scope.mobileMore.sheet = sheet;
+    };
+    $scope.closeMore = function() {
+        $scope.mobileMore.open = false;
+    };
+    $transitions.onSuccess({}, function() {
+        $scope.mobileMore.open = false;
+    });
 
     $scope.bannerStyle = {};
     // Which side of the photo the title sits on: away from the runner

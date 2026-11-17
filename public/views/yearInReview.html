@@ -1,0 +1,320 @@
+<!-- A year in review (YearInReviewCtrl.js): a member's year, or the team's
+     (a Stats tab). Figures from app/yearInReview.js. -->
+<div class="jumbotron racing-stats-page yir-page" ng-class="{'yir-team': isTeam}">
+
+    <div ng-if="loading" class="text-muted yir-state"><i class="fa fa-spinner fa-spin"></i> Loading the year…</div>
+    <div ng-if="notFound" class="yir-state">
+        <p>No year in review here.</p>
+        <a ui-sref="/members">Team members</a>
+    </div>
+    <div ng-if="loadError" class="alert alert-danger">The year could not be loaded. Please try again.</div>
+
+    <div ng-if="y">
+        <!-- The heading: whose year, which year, sharing -->
+        <div class="member-card yir-hero">
+            <a class="yir-back" ng-if="!isTeam" ui-sref="/members/member/stats({member: y.member.username})">
+                <i class="fa fa-arrow-left"></i> {{ y.member.firstname }}'s page</a>
+            <div class="yir-hero-main">
+                <member-avatar ng-if="!isTeam" member="y.member" size="88"></member-avatar>
+                <img ng-if="isTeam" class="yir-hero-logo" src="/images/mcrrc_logo_256.png" alt="">
+                <div class="yir-hero-text">
+                    <div class="yir-kicker">Year in review</div>
+                    <h2 class="yir-title">{{ isTeam ? 'The team' : y.member.firstname + ' ' + y.member.lastname }}
+                        <span class="yir-title-year">in {{ y.year }}</span></h2>
+                    <div class="yir-sub" ng-if="y.partial">So far this year, to {{ today | date:'MMMM d' }}</div>
+                    <div class="yir-sub" ng-if="!isTeam && y.firstYear">Their first year with the team</div>
+                </div>
+            </div>
+            <div class="yir-hero-actions">
+                <select class="form-control input-sm yir-year" ng-model="yearPicker.year" ng-change="pickYear()"
+                    ng-options="yr as yr for yr in years" aria-label="Year"></select>                
+            </div>
+        </div>
+
+        <div class="member-card yir-empty" ng-if="!isTeam && !y.totals.races">
+            No races with the team in {{ y.year }}<span ng-if="y.volunteerJobs">, but {{ y.volunteerJobs }} volunteer job{{ y.volunteerJobs === 1 ? '' : 's' }}: thank you!</span><span ng-if="!y.volunteerJobs">.</span>
+        </div>
+
+        <!-- The big numbers -->
+        <div class="yir-figures" ng-if="y.totals.races || y.totals.results">
+            <div class="yir-figure" ng-if="!isTeam">
+                <div class="yir-figure-value">{{ y.totals.races | number }}</div>
+                <div class="yir-figure-label">race{{ y.totals.races === 1 ? '' : 's' }}</div>
+                <div class="yir-figure-change" ng-if="y.lastYear">{{ change(y.totals.races, y.lastYear.races) }}</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam">
+                <div class="yir-figure-value">{{ y.totals.results | number }}</div>
+                <div class="yir-figure-label">results</div>
+                <div class="yir-figure-change" ng-if="y.lastYear">{{ change(y.totals.results, y.lastYear.results) }}</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam">
+                <div class="yir-figure-value">{{ y.totals.runners | number }}</div>
+                <div class="yir-figure-label">members raced</div>
+                <div class="yir-figure-change" ng-if="y.lastYear">{{ change(y.totals.runners, y.lastYear.runners) }}</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam && (y.totals.newMembers || y.totals.returning)" title="{{ joinedTitle }}">
+                <div class="yir-figure-value">{{ y.totals.newMembers + y.totals.returning }}</div>
+                <div class="yir-figure-label">new or returning</div>
+                <div class="yir-figure-change">{{ y.totals.newMembers }} new {{ y.totals.returning === 0 ? '' : '· ' + y.totals.returning + ' returning' }} </div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam">
+                <div class="yir-figure-value">{{ y.totals.races | number }}</div>
+                <div class="yir-figure-label">races</div>
+            </div>
+            <div class="yir-figure">
+                <div class="yir-figure-value">{{ y.totals.miles | number:0 }}</div>
+                <div class="yir-figure-label">miles raced</div>
+                <div class="yir-figure-change" ng-if="y.lastYear">{{ change(y.totals.miles, y.lastYear.miles) }}</div>
+            </div>
+            <div class="yir-figure">
+                <div class="yir-figure-value">{{ hoursRacing(y.totals.time) }}</div>
+                <div class="yir-figure-label">racing</div>
+            </div>
+            <div class="yir-figure">
+                <div class="yir-figure-value">{{ places }}</div>
+                <div class="yir-figure-label">state{{ places === 1 ? '' : 's' }} &amp; countries</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam">
+                <div class="yir-figure-value">{{ y.totals.pbs | number }}</div>
+                <div class="yir-figure-label">personal bests</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam">
+                <div class="yir-figure-value">{{ y.teamRecords.length }}</div>
+                <div class="yir-figure-label">team records</div>
+            </div>
+            <div class="yir-figure" ng-if="!isTeam && y.volunteerJobs">
+                <div class="yir-figure-value">{{ y.volunteerJobs }}</div>
+                <div class="yir-figure-label">volunteer job{{ y.volunteerJobs === 1 ? '' : 's' }}</div>
+            </div>
+            <div class="yir-figure" ng-if="isTeam && y.volunteer.jobs">
+                <div class="yir-figure-value">{{ y.volunteer.jobs }}</div>
+                <div class="yir-figure-label">volunteer job{{ y.volunteer.jobs === 1 ? '' : 's' }}</div>
+                <div class="yir-figure-change">by {{ y.volunteer.volunteers }} member{{ y.volunteer.volunteers === 1 ? '' : 's' }}</div>
+            </div>
+        </div>
+
+        <div class="row yir-columns" ng-if="y.totals.races || y.totals.results">
+            <div class="col-md-7">
+
+                <!-- The fun side: comparisons and bests -->
+                <div class="member-card yir-card yir-fun" ng-if="y.fun.miles || y.fun.stats.length">
+                    <div class="member-card-header"><h3>Fun facts</h3></div>
+                    <ul class="yir-list">
+                        <li ng-if="isTeam && y.fun.miles"><span class="yir-emoji">👟</span>
+                            <span>{{ y.totals.miles | number:0 }} miles: that's <strong>{{ y.fun.miles.count | number }} {{ y.fun.miles.text }}</strong></span></li>
+                        <li ng-repeat="st in y.fun.stats" ng-class="{'is-picked': st.key === picks.stat}">
+                            <span class="yir-emoji">{{ statIcons[st.key] }}</span>
+                            <span>{{ st.key === 'miles' ? '' : st.label + ': ' }}<strong>{{ st.text }}</strong></span></li>
+                        <li ng-if="!isTeam && picked.race"><span class="yir-emoji">🏁</span>
+                            <span>Best race: <strong>{{ picked.placeText }}</strong> at
+                                <a ui-sref="/results/result({resultId: picked.race.resultId})">{{ picked.race.racename }}</a>
+                                in {{ picked.race.time | secondsToTimeString }}
+                                <span class="yir-muted">({{ picked.race.racedate | date:'MMM d':'UTC' }})</span></span></li>
+                        <li ng-if="y.fun.fastestPace"><span class="yir-emoji">⚡</span>
+                            <span>Fastest pace: <strong>{{ paceText(y.fun.fastestPace.pace) }}</strong> at
+                                <a ui-sref="/results/result({resultId: y.fun.fastestPace.resultId})">{{ y.fun.fastestPace.racename }}</a>
+                                <span class="yir-muted">({{ y.fun.fastestPace.distance }})</span></span></li>
+                        <li ng-if="y.fun.mostRaces"><span class="yir-emoji">🏃</span>
+                            <span>Most races: <a ui-sref="/members/member/year-in-review({member: y.fun.mostRaces.username, year: y.year})">{{ y.fun.mostRaces.name }}</a><span ng-repeat="o in y.fun.mostRaces.others"> &amp; {{ o }}</span>,
+                                <strong>{{ y.fun.mostRaces.races }} races</strong></span></li>
+                        <li ng-if="y.fun.ace"><span class="yir-emoji">⚡</span>
+                            <span>Age grade of the year: <a ui-sref="/members/member/year-in-review({member: y.fun.ace.username, year: y.year})">{{ y.fun.ace.name }}</a>,
+                                <strong>{{ y.fun.ace.agegrade | number:2 }}%</strong></span></li>
+                        <li ng-if="y.fun.turnout"><span class="yir-emoji">🎉</span>
+                            <span>Biggest turnout: <a ui-sref="/races({raceId: y.fun.turnout.raceId})">{{ y.fun.turnout.racename }}</a>,
+                                {{ y.fun.turnout.runners }} members</span></li>
+                        <li ng-if="!isTeam && picked.food.count"><span class="yir-emoji">🔥</span>
+                            <span>Fuel burned racing: about <strong>{{ picked.food.count | number }} {{ picked.food.text }}</strong></span></li>
+                    </ul>
+                </div>
+
+                <!-- A member's highlights -->
+                <div class="member-card yir-card" ng-if="!isTeam && hasHighlights(y)">
+                    <div class="member-card-header"><h3> Highlights</h3></div>
+                    <ul class="yir-list">
+                        <li ng-repeat="a in y.awards" class="yir-highlight-gold">
+                            <i class="fa fa-trophy"></i> <span><strong>{{ a.text || a.name }}</strong></span></li>
+                        <li ng-if="y.bestAgeGrade"><i class="fa fa-line-chart"></i>
+                            <span>Best age grade <strong>{{ y.bestAgeGrade.agegrade | number:2 }}%</strong> at
+                                <a ui-sref="/results/result({resultId: y.bestAgeGrade.resultId})">{{ y.bestAgeGrade.racename }}</a>
+                                <span class="yir-muted">({{ y.bestAgeGrade.distance }})</span>
+                                <span class="yir-muted" ng-if="y.lastYear.bestAgeGrade">· {{ y.lastYear.bestAgeGrade | number:2 }}% in {{ y.year - 1 }}</span></span></li>
+                        <li ng-repeat="r in y.teamRecords" class="yir-highlight-red"><span class="yir-emoji">🔥</span>
+                            <span>{{ r.text }} <a ui-sref="/results/result({resultId: r.resultId})">{{ r.time | secondsToTimeString }}</a>
+                                <span class="yir-muted">at {{ r.racename }}, {{ r.racedate | date:'MMM d':'UTC' }}</span></span></li>
+                        <li ng-if="y.ranking.wins"><i class="fa fa-flag-checkered"></i>
+                            <span><strong>{{ y.ranking.wins }}</strong> race win{{ y.ranking.wins === 1 ? '' : 's' }}</span></li>
+                        <li ng-if="y.ranking.overallPodiums || y.ranking.genderPodiums"><i class="fa fa-trophy"></i>
+                            <span><strong>{{ y.ranking.genderPodiums }}</strong> gender podium{{ y.ranking.genderPodiums === 1 ? '' : 's' }}<span ng-if="y.ranking.overallPodiums">, <strong>{{ y.ranking.overallPodiums }}</strong> overall</span></span></li>
+                        <li ng-if="y.ranking.ageWins"><i class="fa fa-certificate"></i>
+                            <span><strong>{{ y.ranking.ageWins }}</strong> age-group win{{ y.ranking.ageWins === 1 ? '' : 's' }}</span></li>
+                        <li ng-repeat="m in y.milestones"><i class="fa fa-flag"></i>
+                            <span>{{ m.count }}th race with the team, at <a ui-sref="/results/result({resultId: m.resultId})">{{ m.racename }}</a></span></li>
+                        <li ng-if="y.totals.newPlaces.length"><i class="fa fa-map-marker"></i>
+                            <span>First race{{ y.totals.newPlaces.length === 1 ? '' : 's' }} in <strong>{{ y.totals.newPlaces.join(', ') }}</strong></span></li>
+                        <li ng-repeat="b in y.birthdayRaces"><span class="yir-emoji">🎂</span>
+                            <span>Raced on their birthday: <a ui-sref="/results/result({resultId: b.resultId})">{{ b.racename }}</a></span></li>
+                        <li ng-if="y.firstYear"><i class="fa fa-user-plus"></i> <span>First year racing with the team</span></li>
+                    </ul>
+                </div>
+
+                <!-- A member's personal bests -->
+                <div class="member-card yir-card" ng-if="!isTeam && y.pbs.length">
+                    <div class="member-card-header">
+                        <h3>Personal bests <small class="yir-h3-note">while on the team</small></h3>
+                        <span class="member-results-count">{{ y.pbs.length }}</span>
+                    </div>
+                    <ul class="yir-list yir-rows">
+                        <li ng-repeat="pb in y.pbs">
+                            <span class="yir-row-main">{{ pb.distance }} <span class="yir-muted">{{ pb.racename }}, {{ pb.racedate | date:'MMM d':'UTC' }}</span></span>
+                            <a class="yir-row-value" ui-sref="/results/result({resultId: pb.resultId})">{{ pb.time | secondsToTimeString }}</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- The team's leaders -->
+                <div class="member-card yir-card" ng-if="isTeam">
+                    <div class="member-card-header"><h3><i class="fa fa-trophy"></i> Leaders</h3></div>
+                    <div class="yir-leaders">
+                        <div class="yir-leader-list" ng-repeat="board in boards">
+                            <div class="yir-leader-title">{{ board.title }}</div>
+                            <ol>
+                                <li ng-repeat="l in board.list">
+                                    <member-avatar member="l" size="28"></member-avatar>
+                                    <a ui-sref="/members/member/year-in-review({member: l.username, year: y.year})">{{ l.name }}</a>
+                                    <span class="yir-row-value">{{ board.unit === '%' ? (l.value | number:2) + '%' : (l.value | number) + ' ' + board.unit }}</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- The team's records -->
+                <div class="member-card yir-card" ng-if="isTeam && y.teamRecords.length">
+                    <div class="member-card-header">
+                        <h3><span class="yir-emoji">🔥</span> Team records</h3>
+                        <span class="member-results-count">{{ y.teamRecords.length }}</span>
+                    </div>
+                    <ul class="yir-list yir-rows">
+                        <li ng-repeat="r in y.teamRecords">
+                            <span class="yir-row-main">{{ r.text.replace('New team record: ', '').replace('!', '') }}
+                                <span class="yir-muted">{{ r.racedate | date:'MMM d':'UTC' }} · {{ r.names }}, {{ r.racename }}</span></span>
+                            <a class="yir-row-value" ui-sref="/results/result({resultId: r.resultId})">{{ r.time | secondsToTimeString }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <!-- Month by month -->
+                <div class="member-card yir-card">
+                    <div class="member-card-header"><h3>Month by month</h3></div>
+                    <div class="yir-months" role="img" aria-label="Races each month">
+                        <div class="yir-month" ng-repeat="n in y.months track by $index"
+                            ng-class="{'yir-month-top': y.busiestMonth.index === $index}" title="{{ monthNames[$index] }}: {{ n }}">
+                            <span class="yir-month-count">{{ n || '' }}</span>
+                            <span class="yir-month-bar" ng-style="{height: (n / maxMonth * 100) + '%'}"></span>
+                            <span class="yir-month-name">{{ monthNames[$index].charAt(0) }}</span>
+                        </div>
+                    </div>
+                    <ul class="yir-list yir-facts">
+                        <li ng-if="y.busiestMonth"><span>Busiest month</span>
+                            <strong>{{ y.busiestMonth.month }} <span class="yir-muted">({{ y.busiestMonth.count }} {{ isTeam ? 'results' : (y.busiestMonth.count === 1 ? 'race' : 'races') }})</span></strong></li>
+                        <li ng-if="!isTeam && y.mostRun"><span>Most raced</span>
+                            <strong>{{ y.mostRun.name }} <span class="yir-muted">({{ y.mostRun.count }})</span></strong></li>
+                        <li ng-if="!isTeam && y.longest"><span>Longest race</span>
+                            <strong><a ui-sref="/results/result({resultId: y.longest.resultId})">{{ y.longest.racename }}</a></strong></li>
+                        <li ng-if="isTeam && y.ranking.wins"><span>Race wins</span><strong>{{ y.ranking.wins }}</strong></li>
+                        <li ng-if="isTeam && y.ranking.ageWins"><span>Age-group wins</span><strong>{{ y.ranking.ageWins }}</strong></li>
+                        <li ng-if="isTeam && y.totals.newPlaces.length"><span>New places</span>
+                            <strong>{{ y.totals.newPlaces.join(', ') }}</strong></li>
+                    </ul>
+                </div>
+
+                <!-- Where -->
+                <div class="member-card yir-card" ng-if="places">
+                    <div class="member-card-header"><h3> Where</h3></div>
+                    <div class="yir-places">
+                        <span class="site-tag site-tag-info" ng-repeat="s in y.totals.states">{{ s.name }}</span>
+                        <span class="site-tag site-tag-muted" ng-repeat="c in y.totals.countries" ng-if="c.code !== 'USA'">{{ c.name }}</span>
+                    </div>
+                </div>
+
+                <!-- Raced most with -->
+                <div class="member-card yir-card" ng-if="!isTeam && y.teammates.length">
+                    <div class="member-card-header"><h3> Raced most with</h3></div>
+                    <ul class="yir-list yir-rows">
+                        <li ng-repeat="t in y.teammates">
+                            <span class="yir-row-main">
+                                <member-avatar member="t" size="28"></member-avatar>
+                                <a ui-sref="/members/member/year-in-review({member: t.username, year: y.year})">{{ t.name }}</a></span>
+                            <span class="yir-row-value">{{ t.count }} race{{ t.count === 1 ? '' : 's' }}</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Biggest turnouts -->
+                <div class="member-card yir-card" ng-if="isTeam && y.biggestTurnouts.length">
+                    <div class="member-card-header"><h3> Biggest turnouts</h3></div>
+                    <ul class="yir-list yir-rows">
+                        <li ng-repeat="r in y.biggestTurnouts">
+                            <span class="yir-row-main"><a ui-sref="/races({raceId: r.raceId})">{{ r.racename }}</a>
+                                <span class="yir-muted">{{ r.racedate | date:'MMM d':'UTC' }}</span></span>
+                            <span class="yir-row-value">{{ r.runners }} members</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- The share image -->
+                <div class="member-card yir-card yir-share">
+                    <div class="member-card-header"><h3> Share it</h3></div>
+                    <img ng-src="{{ imageUrl }}" alt="{{ isTeam ? 'The team' : y.member.firstname }}'s {{ y.year }} in review" loading="lazy">
+
+                    <!-- A member's picks for the image (YearInReviewCtrl: picks) -->
+                    <div class="yir-customize" ng-if="!isTeam">
+                        <div class="yir-customize-title">Customize the Year In Review</div>
+                        <div class="form-group" ng-if="y.fun.raceChoices.length">
+                            <label for="yirRace">Best race</label>
+                            <select id="yirRace" class="form-control input-sm" ng-model="picks.race" ng-change="pickRace()"
+                                ng-options="c.resultId as (c.racename + ' · ' + (c.racedate | date:'MMM d':'UTC')) for c in y.fun.raceChoices"></select>
+                            <div class="yir-place-picker" role="group" aria-label="Place">
+                                <button type="button" ng-repeat="kind in ['overall', 'gender', 'age']"
+                                    ng-class="picks.place === kind ? 'member-primary-btn' : 'mcrrc-btn'"
+                                    ng-disabled="!pickedRaceHas(kind)" ng-click="pickPlace(kind)">{{ placeLabels[kind] }}</button>
+                            </div>
+                            <div class="yir-muted">{{ picked.placeText }}</div>
+                        </div>
+                        <div class="form-group" ng-if="y.fun.stats.length">
+                            <label for="yirStat">Stat</label>
+                            <select id="yirStat" class="form-control input-sm" ng-model="picks.stat" ng-change="pickStat()"
+                                ng-options="st.key as (st.key === 'miles' ? 'Miles comparison' : st.label) + ': ' + st.text for st in y.fun.stats"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Background</label>
+                            <div class="yir-place-picker" role="group" aria-label="Background">
+                                <button type="button" ng-class="picks.bg === 'calendar' ? 'member-primary-btn' : 'mcrrc-btn'"
+                                    ng-click="pickBackground('calendar')"><i class="fa fa-calendar"></i> Calendar</button>
+                                <button type="button" ng-if="y.member.hasPhoto" ng-class="picks.bg === 'photo' ? 'member-primary-btn' : 'mcrrc-btn'"
+                                    ng-click="pickBackground('photo')"><i class="fa fa-user"></i> Bio photo</button>
+                                <button type="button" ng-class="picks.bg === 'plain' ? 'member-primary-btn' : 'mcrrc-btn'"
+                                    ng-click="pickBackground('plain')"><i class="fa fa-square-o"></i> Plain</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="yirFood">Fuel burned as</label>
+                            <select id="yirFood" class="form-control input-sm" ng-model="picks.food" ng-change="pickFood()"
+                                ng-options="f.key as f.label for f in y.foods"></select>
+                        </div>
+                    </div>
+                    <div class="yir-share-actions">
+                        <button type="button" class="member-primary-btn" ng-click="share()">
+                            <i class="fa" ng-class="canShare ? 'fa-share-alt' : 'fa-download'"></i> {{ canShare ? 'Share' : 'Open the image to save it' }}</button>
+                        <button type="button" class="mcrrc-btn" ng-click="copyImage()" ng-if="canCopyImage">
+                            <i class="fa" ng-class="copiedImage ? 'fa-check' : 'fa-clipboard'"></i> {{ copiedImage ? 'Copied' : 'Copy image' }}</button>
+                    </div>
+                    <div class="yir-muted" ng-if="copyImageError">The image could not be copied here: use {{ canShare ? 'Share' : 'Open the image' }} instead.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

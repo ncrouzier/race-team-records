@@ -72,6 +72,24 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             templateUrl: "views/memberHeadToHead.html",
             controller: 'HeadToHeadController'
         })
+        // A member's year in review (views/yearInReview.html); no year: the
+        // one just finished early in the new year, this one after
+        .state('/members/member/year-in-review', {
+            // race, place, food, stat, bg: the share image's picks (dynamic: picking
+            // one only changes the address, the page stays)
+            url: "/members/:member/year-in-review/{year:[0-9]{4}}?race&place&food&stat&bg",
+            params: {
+                member: null,
+                year: { value: null, squash: true },
+                race: { value: null, dynamic: true },
+                place: { value: null, dynamic: true },
+                food: { value: null, dynamic: true },
+                stat: { value: null, dynamic: true },
+                bg: { value: null, dynamic: true }
+            },
+            templateUrl: "views/yearInReview.html",
+            controller: 'YearInReviewController'
+        })
         .state('/members/member/volunteer-jobs', {
             url: "/members/:member/volunteer-jobs",
             params: {
@@ -303,6 +321,13 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/progress-map",
             templateUrl: "views/stats/progress-map.html",
             controller: 'ProgressMapController'
+        }).state('/stats/year-in-review', {
+            // The team's year in review, a Stats tab (views/yearInReview.html)
+            parent: '/stats',
+            url: "/year-in-review/{year:[0-9]{4}}",
+            params: { year: { value: null, squash: true } },
+            templateUrl: "views/yearInReview.html",
+            controller: 'YearInReviewController'
         }).state('/stats/awards', {
             parent: '/stats',
             url: "/awards",

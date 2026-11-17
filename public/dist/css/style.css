@@ -26192,3 +26192,383 @@ banner-stage {
   padding-bottom: 0;
   border-bottom: 0;
 }
+.jumbotron.yir-page {
+  text-align: left;
+}
+.jumbotron.yir-page .yir-state {
+  padding: 40px 0;
+  text-align: center;
+}
+.jumbotron.yir-page .yir-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+  background: linear-gradient(135deg, #00384d, #006687);
+  color: #fff;
+}
+.jumbotron.yir-page .yir-back {
+  flex: 1 1 100%;
+  color: #9fd9ee;
+  font-size: 13px;
+  font-weight: 600;
+}
+.jumbotron.yir-page .yir-back:hover,
+.jumbotron.yir-page .yir-back:focus {
+  color: #fff;
+  text-decoration: none;
+}
+.jumbotron.yir-page .yir-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.jumbotron.yir-page .yir-hero-main .member-avatar {
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 4px #FF8300;
+}
+.jumbotron.yir-page .yir-hero-logo {
+  width: 80px;
+  height: 80px;
+}
+.jumbotron.yir-page .yir-kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #9fd9ee;
+}
+.jumbotron.yir-page .yir-title {
+  margin: 2px 0 0;
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.jumbotron.yir-page .yir-title-year {
+  color: #FF8300;
+  white-space: nowrap;
+}
+.jumbotron.yir-page .yir-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #cde9f3;
+}
+.jumbotron.yir-page .yir-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.jumbotron.yir-page .yir-hero-actions .yir-year {
+  width: auto;
+  border-radius: 8px;
+}
+.jumbotron.yir-page .yir-hero-actions .mcrrc-btn {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.jumbotron.yir-page .yir-empty {
+  font-size: 16px;
+  color: #333333;
+}
+.jumbotron.yir-page .yir-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.jumbotron.yir-page .yir-figure {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+.jumbotron.yir-page .yir-figure-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #006687;
+  white-space: nowrap;
+}
+.jumbotron.yir-page .yir-figure-label {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+}
+.jumbotron.yir-page .yir-figure-change {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #999999;
+}
+.jumbotron.yir-page .yir-card .member-card-header h3 .yir-emoji {
+  margin-right: 4px;
+}
+.jumbotron.yir-page .yir-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jumbotron.yir-page .yir-list > li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #edf1f3;
+  font-size: 14px;
+  color: #222222;
+}
+.jumbotron.yir-page .yir-list > li:first-child {
+  border-top: 0;
+}
+.jumbotron.yir-page .yir-list > li > .fa {
+  flex: 0 0 18px;
+  color: #008cba;
+  text-align: center;
+}
+.jumbotron.yir-page .yir-list .yir-highlight-gold > .fa {
+  color: #988708;
+}
+.jumbotron.yir-page .yir-emoji {
+  flex: 0 0 18px;
+  text-align: center;
+}
+.jumbotron.yir-page .yir-muted {
+  color: #999999;
+  font-size: 12px;
+}
+.jumbotron.yir-page .yir-rows > li {
+  align-items: center;
+  justify-content: space-between;
+}
+.jumbotron.yir-page .yir-rows > li .yir-row-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+.jumbotron.yir-page .yir-row-value {
+  margin-left: auto;
+  font-weight: 700;
+  color: #006687;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.jumbotron.yir-page .yir-facts > li {
+  justify-content: space-between;
+}
+.jumbotron.yir-page .yir-facts > li > span {
+  color: #6f6f6f;
+}
+.jumbotron.yir-page .yir-facts > li > strong {
+  text-align: right;
+}
+.jumbotron.yir-page .yir-months {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 130px;
+  margin: 6px 0 12px;
+}
+.jumbotron.yir-page .yir-month {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
+.jumbotron.yir-page .yir-month-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6f6f6f;
+}
+.jumbotron.yir-page .yir-month-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: rgba(0, 140, 186, 0.55);
+}
+.jumbotron.yir-page .yir-month-top .yir-month-bar {
+  background: #FF8300;
+}
+.jumbotron.yir-page .yir-month-name {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999999;
+}
+.jumbotron.yir-page .yir-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.jumbotron.yir-page .yir-leaders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+}
+.jumbotron.yir-page .yir-leaders ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jumbotron.yir-page .yir-leaders li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 14px;
+}
+.jumbotron.yir-page .yir-leaders li > a {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jumbotron.yir-page .yir-leader-title {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+}
+.jumbotron.yir-page .yir-share {
+  text-align: center;
+}
+.jumbotron.yir-page .yir-share .yir-customize {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #edf1f3;
+  text-align: left;
+}
+.jumbotron.yir-page .yir-share .yir-customize label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #008cba;
+}
+.jumbotron.yir-page .yir-share .yir-customize select {
+  border-radius: 8px;
+}
+.jumbotron.yir-page .yir-share .yir-customize-title {
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #006687;
+}
+.jumbotron.yir-page .yir-share .yir-place-picker {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.jumbotron.yir-page .yir-share .yir-place-picker > button {
+  flex: 1 1 0;
+  padding: 5px 6px;
+}
+.jumbotron.yir-page .yir-share .yir-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.jumbotron.yir-page .yir-share img {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 14px;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+@media (max-width: 767px) {
+  .jumbotron.yir-page .yir-title {
+    font-size: 24px;
+  }
+  .jumbotron.yir-page .yir-hero-main .member-avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  .jumbotron.yir-page .yir-hero-logo {
+    width: 60px;
+    height: 60px;
+  }
+  .jumbotron.yir-page .yir-hero-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+  .jumbotron.yir-page .yir-hero-actions .yir-year {
+    flex: 0 0 auto;
+  }
+  .jumbotron.yir-page .yir-hero-actions > button {
+    flex: 1 1 35%;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+  }
+  .jumbotron.yir-page .yir-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .jumbotron.yir-page .yir-figure {
+    padding: 12px 14px;
+  }
+  .jumbotron.yir-page .yir-figure-value {
+    font-size: 24px;
+  }
+  .jumbotron.yir-page .yir-leaders {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.member-stats-page .yir-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.yir-promo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #00384d, #006687);
+  color: #fff;
+  font-size: 15px;
+}
+.yir-promo .fa-star {
+  margin-right: 6px;
+  color: #FF8300;
+}
+.yir-promo .yir-promo-links {
+  display: flex;
+  gap: 8px;
+}
+.yir-promo .yir-promo-links .mcrrc-btn {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.jumbotron.yir-page .yir-fun .yir-list > li.is-picked {
+  margin: 0 -10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-radius: 8px;
+  background: rgba(255, 131, 0, 0.1);
+}
+.jumbotron.yir-page .member-card-header h3 .yir-h3-note {
+  margin-left: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #999999;
+  white-space: nowrap;
+}

@@ -7303,7 +7303,7 @@ module.exports = async function (app, qs, passport, async, _) {
         return (members || []).map(memberFullName).join(', ');
     }
 
-    async function socialMetaForPath(path) {
+    async function socialMetaForPath(path, query) {
         var m;
 
         if ((m = path.match(/^\/races\/([0-9a-fA-F]{24})/))) {
@@ -7355,6 +7355,43 @@ module.exports = async function (app, qs, passport, async, _) {
             }
             if (preview.clubRace) text += ' MCRRC club race.';
             return { ogTitle: preview.name, ogDescription: truncate(text, 200) };
+        }
+
+        // A year in review: its share image is the preview's picture
+        if ((m = path.match(/^\/stats\/year-in-review\/(\d{4})\/?$/)) ||
+            (m = path.match(/^\/members\/([^\/]+)\/year-in-review\/(\d{4})\/?$/))) {
+            const yir = require('./yearInReviewRoutes');
+            const team = m.length === 2;
+            const year = Number(team ? m[1] : m[2]);
+            if (!require('./yearInReview').validYear(year)) return null;
+            const data = team ? await yir.getTeamYear(year) : await yir.getMemberYear(m[1], year);
+            if (!data) return null;
+            const t = data.totals;
+            if (team) {
+                return {
+                    ogTitle: 'MCRRC Racing Team – ' + year + ' in review',
+                    ogDescription: truncate(plural(t.results, 'result') + ' by ' + plural(t.runners, 'member') + ', ' +
+                        Math.round(t.miles).toLocaleString('en-US') + ' miles, ' + plural(t.pbs, 'personal best') + ' and ' +
+                        plural(data.teamRecords.length, 'team record') + (data.partial ? ' so far.' : '.'), 200),
+                    ogImage: siteUrl() + '/api/year-in-review/team/' + year + '/image.png'
+                };
+            }
+            const name = (data.member.firstname + ' ' + data.member.lastname).trim();
+            return {
+                ogTitle: name + ' – ' + year + ' in review',
+                ogDescription: truncate(name + '\'s ' + year + ' with the MCRRC Racing Team: ' + plural(t.races, 'race') + ', ' +
+                    Math.round(t.miles).toLocaleString('en-US') + ' miles' +
+                    (data.pbs.length ? ', ' + plural(data.pbs.length, 'personal best') : '') +
+                    (data.bestAgeGrade ? ', best age grade ' + data.bestAgeGrade.agegrade.toFixed(1) + '%' : '') +
+                    (data.partial ? ' so far.' : '.'), 200),
+                // With the picks the page's address carries (best race, food)
+                ogImage: siteUrl() + '/api/year-in-review/members/' + encodeURIComponent(data.member.username) + '/' + year + '/image.png' +
+                    (function () {
+                        const picks = yir.picksFrom(query || {});
+                        const parts = Object.keys(picks).filter(k => picks[k]).map(k => k + '=' + encodeURIComponent(picks[k]));
+                        return parts.length ? '?' + parts.join('&') : '';
+                    })()
+            };
         }
 
         const Member = require('./models/member');
@@ -7434,7 +7471,7 @@ module.exports = async function (app, qs, passport, async, _) {
         const isDev = process.env.NODE_ENV !== 'production';
         // Never let a bad id or a DB hiccup break the page itself — the site's
         // default title/description still render
-        const social = await socialMetaForPath(req.path).catch(function () { return null; });
+        const social = await socialMetaForPath(req.path, req.query).catch(function () { return null; });
         res.render('index.ejs', {
             user: req.user,
             scriptPath: isDev ? '/dist/js/app.js' : '/dist/js/app.min.js',
@@ -7444,7 +7481,7 @@ module.exports = async function (app, qs, passport, async, _) {
             ogTitle: (social && social.ogTitle) || DEFAULT_OG_TITLE,
             ogDescription: (social && social.ogDescription) || DEFAULT_OG_DESCRIPTION,
             ogUrl: siteUrl() + req.originalUrl,
-            ogImage: siteUrl() + '/images/ogimage.jpg'
+            ogImage: (social && social.ogImage) || siteUrl() + '/images/ogimage.jpg'
         });
     });
 

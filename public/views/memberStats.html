@@ -57,6 +57,8 @@
                         <div class="detailscontainer member-stats-page" ng-if="currentMember">
                             <div class="row text-center">
                                 <h2 class="member-stats-title">Statistics as a team member</h2>
+                                <a class="yir-link" ui-sref="/members/member/year-in-review({member: currentMember.username})">
+                                    <i class="fa fa-star"></i> {{currentMember.firstname}}'s year in review</a>
                             </div>
 
                             <!-- Racing Activity Overview -->

@@ -45,9 +45,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8090
 
-# curl is only here to give HEALTHCHECK something to call.
+# curl is only here to give HEALTHCHECK something to call. fonts-inter (the
+# site's font) and fontconfig: the year in review's share image is drawn as
+# an SVG by sharp, which needs a font on the system to draw its text
+# (app/yearInReviewImage.js).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && apt-get install -y --no-install-recommends curl ca-certificates fontconfig fonts-inter \
     && rm -rf /var/lib/apt/lists/*
 
 # Copied in ascending order of how often each part changes, so a routine code

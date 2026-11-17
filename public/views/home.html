@@ -1,5 +1,17 @@
 <div class="jumbotron ">
 
+    <!-- December and January: the year in review (HomeCtrl.reviewYear) -->
+    <div ng-if="reviewYear" class="feed-card yir-promo">
+        <div class="yir-promo-text">
+            <i class="fa fa-star"></i>
+            <span><strong>{{reviewYear}} in review</strong> is here: the team's year in numbers<span ng-if="user.member">, and yours</span>.</span>
+        </div>
+        <div class="yir-promo-links">
+            <a class="member-primary-btn" ng-if="user.member" ui-sref="/members/member/year-in-review({member: user.member.username, year: reviewYear})">My year</a>
+            <a ng-class="user.member ? 'mcrrc-btn' : 'member-primary-btn'" ui-sref="/stats/year-in-review({year: reviewYear})">The team's year</a>
+        </div>
+    </div>
+
     <!-- Dashboard for logged-in members -->
     <div ng-if="user && user.member" class="feed-card feed-card-dashboard">
         <div class="feed-card-header">

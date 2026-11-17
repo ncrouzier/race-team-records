@@ -49,6 +49,7 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/stats/members': 'Member Stats',
         '/stats/progress-map': 'Progress Map',
         '/stats/awards': 'Awards',
+        '/stats/year-in-review': 'Year in Review',
         '/tools/agegrade': 'Age Grade Calculator',
         '/tools/paceAdjustment': 'Pace Adjustment Calculator',
         '/tools/resultExtractor': 'Result Extractor',

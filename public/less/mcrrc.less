@@ -22716,3 +22716,462 @@ banner-stage {
         }
     }
 }
+
+// =====================================
+// YEAR IN REVIEW (yearInReview.html)
+// =====================================
+// A member's year or the team's: a heading card, big figures, then cards.
+.jumbotron.yir-page {
+    text-align: left;
+
+    .yir-state {
+        padding: 40px 0;
+        text-align: center;
+    }
+
+    .yir-hero {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px 24px;
+        background: linear-gradient(135deg, #00384d, @brand-primary-dark);
+        color: #fff;
+    }
+
+    .yir-back {
+        flex: 1 1 100%;
+        color: #9fd9ee;
+        font-size: 13px;
+        font-weight: 600;
+
+        &:hover,
+        &:focus {
+            color: #fff;
+            text-decoration: none;
+        }
+    }
+
+    .yir-hero-main {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex: 1 1 auto;
+        min-width: 0;
+
+        .member-avatar {
+            flex: 0 0 auto;
+            box-shadow: 0 0 0 4px @orange;
+        }
+    }
+
+    .yir-hero-logo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .yir-kicker {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #9fd9ee;
+    }
+
+    .yir-title {
+        margin: 2px 0 0;
+        font-size: 30px;
+        font-weight: 800;
+        color: #fff;
+        overflow-wrap: anywhere;
+    }
+
+    .yir-title-year {
+        color: @orange;
+        white-space: nowrap;
+    }
+
+    .yir-sub {
+        margin-top: 4px;
+        font-size: 13px;
+        color: #cde9f3;
+    }
+
+    .yir-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+
+        .yir-year {
+            width: auto;
+            border-radius: 8px;
+        }
+
+        .mcrrc-btn {
+            background: transparent;
+            color: #fff;
+            border-color: fade(#fff, 50%);
+        }
+    }
+
+    .yir-empty {
+        font-size: 16px;
+        color: @gray-dark;
+    }
+
+    // The big figures: tiles that fill their rows
+    .yir-figures {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .yir-figure {
+        padding: 16px 18px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .yir-figure-value {
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1.1;
+        color: @brand-primary-dark;
+        white-space: nowrap;
+    }
+
+    .yir-figure-label {
+        margin-top: 2px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: @brand-primary;
+    }
+
+    .yir-figure-change {
+        margin-top: 4px;
+        font-size: 12px;
+        color: @gray-light;
+    }
+
+    .yir-card .member-card-header h3 .yir-emoji {
+        margin-right: 4px;
+    }
+
+    .yir-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        > li {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            padding: 8px 0;
+            border-top: 1px solid #edf1f3;
+            font-size: 14px;
+            color: @gray-darker;
+
+            &:first-child {
+                border-top: 0;
+            }
+
+            > .fa {
+                flex: 0 0 18px;
+                color: @brand-primary;
+                text-align: center;
+            }
+        }
+
+        .yir-highlight-gold > .fa {
+            color: darken(@gold, 22%);
+        }
+    }
+
+    .yir-emoji {
+        flex: 0 0 18px;
+        text-align: center;
+    }
+
+    .yir-muted {
+        color: @gray-light;
+        font-size: 12px;
+    }
+
+    // Name on the left, figure on the right
+    .yir-rows > li {
+        align-items: center;
+        justify-content: space-between;
+
+        .yir-row-main {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            min-width: 0;
+        }
+    }
+
+    .yir-row-value {
+        margin-left: auto;
+        font-weight: 700;
+        color: @brand-primary-dark;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .yir-facts > li {
+        justify-content: space-between;
+
+        > span {
+            color: @gray;
+        }
+
+        > strong {
+            text-align: right;
+        }
+    }
+
+    // Twelve bars, the busiest in orange
+    .yir-months {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 130px;
+        margin: 6px 0 12px;
+    }
+
+    .yir-month {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        height: 100%;
+    }
+
+    .yir-month-count {
+        font-size: 10px;
+        font-weight: 700;
+        color: @gray;
+    }
+
+    .yir-month-bar {
+        width: 100%;
+        min-height: 2px;
+        border-radius: 4px 4px 0 0;
+        background: fade(@brand-primary, 55%);
+    }
+
+    .yir-month-top .yir-month-bar {
+        background: @orange;
+    }
+
+    .yir-month-name {
+        margin-top: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: @gray-light;
+    }
+
+    .yir-places {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    // The team's leaders: four short lists, two to a row
+    .yir-leaders {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 24px;
+
+        ol {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+            font-size: 14px;
+
+            > a {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    }
+
+    .yir-leader-title {
+        margin-bottom: 4px;
+        .site-label();
+    }
+
+    .yir-share {
+        text-align: center;
+
+        .yir-customize {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid #edf1f3;
+            text-align: left;
+
+            label {
+                .site-label();
+            }
+
+            select {
+                border-radius: 8px;
+            }
+        }
+
+        .yir-customize-title {
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: @brand-primary-dark;
+        }
+
+        .yir-place-picker {
+            display: flex;
+            gap: 6px;
+            margin: 8px 0 4px;
+
+            > button {
+                flex: 1 1 0;
+                padding: 5px 6px;
+            }
+        }
+
+        .yir-share-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto 14px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+    }
+}
+
+@media @phone {
+    .jumbotron.yir-page {
+        .yir-title {
+            font-size: 24px;
+        }
+
+        .yir-hero-main .member-avatar {
+            width: 64px !important;
+            height: 64px !important;
+        }
+
+        .yir-hero-logo {
+            width: 60px;
+            height: 60px;
+        }
+
+        // Year and Share on one row, the copy buttons sharing the next
+        .yir-hero-actions {
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+
+            .yir-year {
+                flex: 0 0 auto;
+            }
+
+            > button {
+                flex: 1 1 35%;
+                padding-left: 8px;
+                padding-right: 8px;
+                white-space: nowrap;
+            }
+        }
+
+        .yir-figures {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .yir-figure {
+            padding: 12px 14px;
+        }
+
+        .yir-figure-value {
+            font-size: 24px;
+        }
+
+        .yir-leaders {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}
+
+// Links to the year in review: a member's Statistics tab, the home page
+.member-stats-page .yir-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.yir-promo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #00384d, @brand-primary-dark);
+    color: #fff;
+    font-size: 15px;
+
+    .fa-star {
+        margin-right: 6px;
+        color: @orange;
+    }
+
+    .yir-promo-links {
+        display: flex;
+        gap: 8px;
+
+        .mcrrc-btn {
+            background: transparent;
+            color: #fff;
+            border-color: fade(#fff, 50%);
+        }
+    }
+}
+
+// The stat picked for the share image, among the fun facts
+.jumbotron.yir-page .yir-fun .yir-list > li.is-picked {
+    margin: 0 -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 8px;
+    background: fade(@orange, 10%);
+}
+
+// A card title's quiet note: "Personal bests while on the team"
+.jumbotron.yir-page .member-card-header h3 .yir-h3-note {
+    margin-left: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: @gray-light;
+    white-space: nowrap;
+}

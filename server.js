@@ -276,6 +276,7 @@ require('./app/correctionRoutes.js')(app);
 require('./app/resultSubmissionRoutes.js')(app);
 require('./app/volunteerSubmissionRoutes.js')(app);
 require('./app/resultCheckRoutes.js')(app);
+require('./app/yearInReviewRoutes.js')(app);
 require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
 
 

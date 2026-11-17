@@ -17,7 +17,8 @@
 		aria-haspopup="dialog" aria-expanded="{{ mobileMore.open && mobileMore.sheet === 'more' }}">
 		<i class="fa" ng-class="mobileMore.open && mobileMore.sheet === 'more' ? 'fa-times' : 'fa-bars'"></i><span>More</span>
 		<% if (user && user.role === 'admin') { %>
-		<span class="mobile-tab-dot" ng-if="pendingCorrectionsCount > 0 || pendingSubmissionsCount > 0 || pendingVolunteerSubmissionsCount > 0 || unseenActivityCount > 0"></span>
+		<%# As "Admin tools" on a desktop: the to-do lists (app.js, adminWaiting) %>
+		<span class="mobile-tab-dot" ng-if="adminWaiting()"></span>
 		<% } %>
 	</button>
 	<% if (user) { %>
@@ -25,6 +26,10 @@
 		ng-class="{active: mobileMore.open ? mobileMore.sheet === 'account' : $state.includes('/profile')}"
 		aria-haspopup="dialog" aria-expanded="{{ mobileMore.open && mobileMore.sheet === 'account' }}">
 		<%- include('navAvatar') %><span>Account</span>
+		<% if (user.role === 'admin') { %>
+		<%# As on the username on a desktop: new activity log entries %>
+		<span class="mobile-tab-dot" ng-if="unseenActivityCount > 0"></span>
+		<% } %>
 	</button>
 	<% } else { %>
 	<a ui-sref="/login" ng-click="closeMore()" ng-class="{active: !mobileMore.open && ($state.includes('/login') || $state.includes('/signup'))}">
@@ -49,6 +54,12 @@
 			<a ui-sref="/profile" ng-click="closeMore()"><i class="fa fa-cog"></i> My Account</a>
 			<a href="" ng-click="logout()"><i class="fa fa-sign-out"></i> Log out</a>
 		</div>
+		<% if (user.role === 'admin') { %>
+		<div class="mobile-more-links mobile-more-activity" ng-if="unseenActivityCount > 0">
+			<a ui-sref="/activitylogs" ng-click="closeMore()"><i class="fa fa-list-alt"></i> New activity log entries
+				<span class="crf-unseen-badge">{{unseenActivityCount}}</span></a>
+		</div>
+		<% } %>
 	</div>
 </div>
 <% } %>
@@ -92,8 +103,10 @@
 			<div class="mobile-more-links">
 				<a ui-sref="/stats/team" ng-click="closeMore()">Racing Stats</a>
 				<a ui-sref="/stats/volunteering" ng-click="closeMore()">Volunteering</a>
+				<% if (user && (user.role === 'admin' || user.role === 'captain')) { %>
 				<a ui-sref="/stats/participation" ng-click="closeMore()">Participation</a>
 				<a ui-sref="/stats/members" ng-click="closeMore()">Members</a>
+				<% } %>
 				<a ui-sref="/stats/awards" ng-click="closeMore()">Awards</a>
 				<a ui-sref="/stats/year-in-review" ng-click="closeMore()">Year in Review</a>
 				<a ui-sref="/stats/us-map" ng-click="closeMore()">US Map</a>

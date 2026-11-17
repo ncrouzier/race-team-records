@@ -89,32 +89,34 @@
                         </tr>
                         <tr ng-repeat="u in usersList | filter:userFilter | orderBy:sortFn:sortReverse">
                             <td class="users-name pc-main">{{u.username}}</td>
-                            <td class="pc-line">{{u.email}}</td>
-                            <td class="pc-side">
+                            <td class="pc-line u-email">{{u.email}}</td>
+                            <td class="pc-side u-role">
                                 <span class="site-tag"
                                     ng-class="{'site-tag-danger': u.role === 'admin', 'site-tag-warning': u.role === 'captain', 'site-tag-muted': u.role === 'user'}">
                                     {{u.role}}
                                 </span>
                             </td>
-                            <td class="pc-detail" ng-class="{'pc-empty': !u.member}" data-label="Member">
+                            <td class="pc-detail u-member" data-label="Member"
+                                ng-class="{'pc-empty': !u.member, 'u-same-name': u.member && (u.member.firstname + ' ' + u.member.lastname) === u.username}">
                                 <a ng-if="u.member" ui-sref="/members({member: u.member.username})">
                                     {{u.member.firstname}} {{u.member.lastname}}
                                 </a>
                                 <span ng-if="!u.member" class="text-muted">-</span>
                             </td>
-                            <td class="pc-detail">
+                            <td class="pc-detail u-status" ng-class="{'u-enabled': u.enabled}">
                                 <!-- Changed in the edit modal, which can also email the user -->
-                                <span class="site-tag" ng-class="u.enabled ? 'site-tag-success' : 'site-tag-muted'">
+                                <span class="site-tag" ng-class="u.enabled ? 'site-tag-success' : 'site-tag-muted'"
+                                    title="{{u.enabled ? 'Enabled' : 'Disabled'}}">
                                     <i class="fa" ng-class="u.enabled ? 'fa-check' : 'fa-ban'"></i>
                                     {{u.enabled ? 'enabled' : 'disabled'}}
                                 </span>
                             </td>
-                            <td class="member-table-date pc-detail" data-label="Created">{{u.createdAt | date:'yyyy-MM-dd'}}</td>
-                            <td class="member-table-date pc-detail" data-label="Last login">
+                            <td class="member-table-date pc-detail u-created" data-label="Joined" ng-class="{'pc-empty': !u.createdAt}">{{u.createdAt | date:'yyyy-MM-dd'}}</td>
+                            <td class="member-table-date pc-detail u-login" data-label="Last login">
                                 <span ng-if="u.lastLogin">{{u.lastLogin | date:'yyyy-MM-dd'}}<span class="users-time">{{u.lastLogin | date:'HH:mm'}}</span></span>
                                 <span ng-if="!u.lastLogin">-</span>
                             </td>
-                            <td class="member-table-date pc-detail" data-label="Last active">
+                            <td class="member-table-date pc-detail u-active" data-label="Active">
                                 <span ng-if="u.lastActive">{{u.lastActive | date:'yyyy-MM-dd'}}<span class="users-time">{{u.lastActive | date:'HH:mm'}}</span></span>
                                 <span ng-if="!u.lastActive">-</span>
                             </td>

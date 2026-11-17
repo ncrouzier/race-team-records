@@ -26,10 +26,10 @@
         <li role="presentation" ui-sref-active="active">
             <a ui-sref="/stats/awards"><i class="fa fa-trophy nav-tab-icon" aria-hidden="true"></i>Awards</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role === 'captain'">
             <a ui-sref="/stats/participation"><i class="fa fa-line-chart nav-tab-icon" aria-hidden="true"></i>Participation Stats</a>
         </li>
-        <li role="presentation" ui-sref-active="active" ng-if="user.role == 'admin' || user.role == 'captain'">
+        <li role="presentation" ui-sref-active="active" ng-if="user.role === 'admin' || user.role === 'captain'">
             <a ui-sref="/stats/members"><i class="fa fa-users nav-tab-icon" aria-hidden="true"></i>Team Members Stats</a>
         </li>
     </ul>

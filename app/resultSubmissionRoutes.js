@@ -371,6 +371,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('resultsubmission', submission._id, true);
 
         if (req.body.addPhotoLink && submission.photoLink && result.race && result.race._id) {
             const link = { url: submission.photoLink, label: 'Photos' };
@@ -396,6 +397,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('resultsubmission', submission._id, true);
         res.json(submission);
     }));
 
@@ -408,6 +410,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('resultsubmission', submission._id, true);
         res.json(submission);
     }));
 
@@ -423,6 +426,7 @@ module.exports = function (app) {
         submission.closedAt = null;
         submission.closedBy = undefined;
         await submission.save();
+        await service.setActivityHandled('resultsubmission', submission._id, false);
         res.json(submission);
     }));
 };

@@ -285,6 +285,11 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             // pages under it change (views/stats/shell.html)
             url: "/stats",
             templateUrl: "views/stats/shell.html",
+            // Who is signed in, for the tabs only admins and captains see (the pages under
+            // it each have their own controller; the frame has only this)
+            controller: ['$scope', 'AuthService', function ($scope, AuthService) {
+                $scope.$watch(function () { return AuthService.isLoggedIn(); }, function (user) { $scope.user = user; });
+            }],
             redirectTo: '/stats/team'
         }).state('/stats/team', {
             parent: '/stats',
@@ -308,11 +313,13 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             controller: 'StatsController'
         }).state('/stats/participation', {
             parent: '/stats',
+            data: { roles: ['admin', 'captain'] },
             url: "/participation",
             templateUrl: "views/stats/participation.html",
             controller: 'StatsController'
         }).state('/stats/members', {
             parent: '/stats',
+            data: { roles: ['admin', 'captain'] },
             url: "/members",
             templateUrl: "views/stats/members.html",
             controller: 'StatsController'

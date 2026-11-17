@@ -1276,8 +1276,7 @@ module.exports = async function (app, qs, passport, async, _) {
         keyGenerator: function (req) { return 'photo:' + String(req.user._id); },
         message: { error: 'Too many photo uploads. Try again in an hour.' },
         standardHeaders: true,
-        legacyHeaders: false,
-        validate: { keyGeneratorIpFallback: false }
+        legacyHeaders: false
     });
 
     // The raw file is the request body, its Content-Type the browser's idea of
@@ -1430,8 +1429,7 @@ module.exports = async function (app, qs, passport, async, _) {
         keyGenerator: function (req) { return 'thumbcrop:' + String(req.user._id); },
         message: { error: 'Too many thumbnail changes. Try again in an hour.' },
         standardHeaders: true,
-        legacyHeaders: false,
-        validate: { keyGeneratorIpFallback: false }
+        legacyHeaders: false
     });
     app.put('/api/members/:member_id/thumbnail-crop', service.isLoggedIn, function (req, res, next) {
         if (!memberPhotos.ID_PATTERN.test(req.params.member_id)) return res.status(404).json({ error: 'Member not found' });
@@ -5182,7 +5180,7 @@ module.exports = async function (app, qs, passport, async, _) {
             const since = req.user.lastSeenActivityLogAt || new Date();
             const myId = req.user._id.toString();
             logs.forEach(function (log) {
-                log.unseen = log.createdAt > since && !(log.seenBy || []).some(function (id) { return id.toString() === myId; });
+                log.unseen = !log.handled && log.createdAt > since && !(log.seenBy || []).some(function (id) { return id.toString() === myId; });
                 delete log.seenBy;
             });
 

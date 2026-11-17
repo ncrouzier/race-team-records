@@ -20687,7 +20687,7 @@ banner-stage {
         .rl-name {
             grid-column: 1 / 4;
             grid-row: 1;
-            padding-left: 30px !important;
+            padding-left: 12px !important;
         }
 
         .rl-time {
@@ -20706,7 +20706,7 @@ banner-stage {
 
         .rl-dist {
             grid-column: 1;
-            padding-left: 35px !important;
+            padding-left: 17px !important;
         }
 
         .rl-count {
@@ -20781,13 +20781,36 @@ banner-stage {
             }
         }
 
-        // The pace under the time
+        // The pace under the time, its unit on the same line ("7:46 min/mi")
         .rr-pace {
             grid-column: 5;
             grid-row: 2;
             font-size: 12px;
             white-space: nowrap;
             text-align: right !important;
+
+            br {
+                display: none;
+            }
+
+            .resultPace {
+                font-size: 13px;
+            }
+
+            .resultPaceTxt {
+                margin-left: 2px;
+                font-size: 10px;
+                color: #8aa0aa;
+            }
+        }
+
+        // A little smaller: name and time
+        .rr-name .resultEvent {
+            font-size: 15px;
+        }
+
+        .resultTime {
+            font-size: 17px;
         }
 
         .rr-admin {
@@ -21154,45 +21177,67 @@ banner-stage {
                 font-size: 15px !important;
             }
 
-            // The time, then the gap to first and the links, stacked
+            // On the right: the time (and gap to first), the pace and star
+            // under it, then the result link and the places
             .rc-time {
+                display: contents;
+            }
+
+            .rc-timeline {
                 grid-column: 3;
-                grid-row: 1 / 4;
-                align-self: start;
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: flex-end;
-                align-items: center;
-                column-gap: 5px;
-                max-width: 104px;
-                text-align: right !important;
+                grid-row: 1;
+                justify-self: end;
+                white-space: nowrap;
 
                 .resultTime {
-                    flex-basis: 100%;
-                    text-align: right;
                     font-size: 16px;
                 }
 
                 .timediff {
+                    margin-left: 3px;
                     font-size: 11px;
                 }
             }
 
-            .rc-race {
-                grid-column: 2;
-                grid-row: 2;
-                font-size: 13px;
-            }
-
             .rc-pace {
-                grid-column: 2;
-                grid-row: 3;
+                grid-column: 3;
+                grid-row: 2;
+                justify-self: end;
                 font-size: 12px;
                 white-space: nowrap;
+                text-align: right !important;
 
                 br {
                     display: none;
                 }
+
+                .resultPaceTxt {
+                    margin-left: 2px;
+                    font-size: 10px;
+                    color: #8aa0aa;
+                }
+            }
+
+            .rc-links {
+                grid-column: 3;
+                grid-row: 3;
+                justify-self: end;
+                display: flex;
+                gap: 12px;
+                font-size: 15px;
+
+                // Easier to tap
+                > a,
+                > .fa {
+                    padding: 2px 2px;
+                }
+            }
+
+            // The race and its day on the left, beside the pace and links
+            .rc-race {
+                grid-column: 2;
+                grid-row: 2 / 4;
+                font-size: 13px;
             }
 
             .rc-admin {
@@ -21865,19 +21910,100 @@ banner-stage {
 // filter rows that wrap. Desktop is untouched.
 
 // ---------- Users (users.html) ----------
+// A user, always laid out the same: name with role and status tags, then
+// the email, the member (when not the same name), and when they joined and
+// were last active; the buttons on the right. The last login and the times
+// are left to a desktop.
 @media @phone {
-    // (.jumbotron.users-page: as specific as the desktop rules)
-    .jumbotron.users-page .users-table.pc-table {
-        .users-time {
-            display: inline;
-            margin-left: 4px;
+    .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "name    tags"
+            "email   actions"
+            "member  actions"
+            "dates   actions";
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 2px;
+
+        > td {
+            order: 0 !important;
         }
 
-        // The email right under the name
-        > tbody > tr > .pc-line {
-            order: 1;
+        > .users-name {
+            grid-area: name;
+            font-size: 15px;
+        }
+
+        > .u-email {
+            grid-area: email;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
             font-size: 12px;
             color: #5f7680;
+        }
+
+        // Role and status side by side, top right; the status as its icon
+        // alone (a tick, or a ban for a disabled account)
+        > .u-role,
+        > .u-status {
+            grid-area: tags;
+            align-self: start;
+            justify-self: end;
+        }
+
+        > .u-role {
+            margin-right: 30px;
+        }
+
+        > .u-status .site-tag {
+            width: 24px;
+            padding: 2px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-align: center;
+            font-size: 0;
+
+            .fa {
+                font-size: 11px;
+            }
+        }
+
+        > .u-member {
+            grid-area: member;
+            font-size: 12px;
+
+            &.u-same-name {
+                display: none;
+            }
+        }
+
+        // Joined · Active, on one line
+        > .u-created,
+        > .u-active {
+            grid-area: dates;
+            font-size: 11px;
+        }
+
+        > .u-active {
+            margin-left: 108px;
+        }
+
+        // No join date: Active starts the line
+        > .u-created.pc-empty + .u-login + .u-active {
+            margin-left: 0;
+        }
+
+        > .u-login,
+        .users-time {
+            display: none;
+        }
+
+        > .pc-actions {
+            grid-area: actions;
+            align-self: end;
         }
     }
 }
@@ -23174,4 +23300,48 @@ banner-stage {
     font-weight: 500;
     color: @gray-light;
     white-space: nowrap;
+}
+
+// ---------- Results lists on a phone (raceList.html, memberDetail.html) ----------
+// Inside a card, the framed list reaches nearly to the card's edges and its
+// rows keep less padding: the names start closer to the screen's edge
+@media @phone {
+    .member-card .results-list.list-group {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+
+    .results-list.list-group > .list-group-item {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+// The Account sheet's link to new activity log entries (admins)
+@media @phone {
+    .mobile-more-links.mobile-more-activity {
+        grid-template-columns: 1fr;
+        margin-top: 8px;
+    }
+}
+
+// A pace on one line (records, a member's results): "4:45 min/mi ★", the
+// age-grade star after the unit rather than between (paceDirectives.js puts
+// it before a line break the phone layouts hide)
+@media @phone {
+    .records-row .rc-pace .resultPace > span,
+    .result-list-row .rr-pace .resultPace > span {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 3px;
+
+        > .resultPaceTxt {
+            order: 1;
+            margin-left: 0;
+        }
+
+        > .fa-star {
+            order: 2;
+        }
+    }
 }

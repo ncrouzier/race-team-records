@@ -14,7 +14,10 @@ var activityLogSchema = mongoose.Schema({
     // Admins who have individually opened this entry — lets "seen" be
     // per-entry (opening one log doesn't silently clear others), alongside
     // each admin's lastSeenActivityLogAt cursor used for bulk mark-all.
-    seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    // What it is about has been dealt with (a submission added or
+    // dismissed: service.setActivityHandled): no longer "unseen" for anyone
+    handled: Boolean
 });
 
 activityLogSchema.index({ createdAt: -1 });

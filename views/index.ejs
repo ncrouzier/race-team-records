@@ -159,7 +159,7 @@
 						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/result-submissions') || $state.includes('/volunteer-submissions') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
-								Admin tools <span ng-if="pendingCorrectionsCount > 0 || pendingSubmissionsCount > 0 || pendingVolunteerSubmissionsCount > 0" ng-cloak class="crf-nav-dot"
+								Admin tools <span ng-if="adminWaiting()" ng-cloak class="crf-nav-dot"
 									uib-tooltip="{{ adminWaitingText() }}"
 									tooltip-placement="bottom" tooltip-append-to-body="true"></span> <span class="caret"></span>
 							</a>

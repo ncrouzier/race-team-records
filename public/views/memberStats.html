@@ -170,7 +170,7 @@
                                                                         ng-if="memberStats.sameGenderBeaten > 0"
                                                                         style="font-size: 11px; color: #777;">
                                                                         of which {{memberStats.sameGenderBeaten | number:0}}
-                                                                        {{isFemaleMember() ? 'women' : 'men'}}
+                                                                        {{isFemaleMember() ? 'are women' : 'are men'}}
                                                                     </div>
                                                                 </div>
                                             </script>
@@ -184,12 +184,12 @@
                                                                     <div class="stat-sublabel"
                                                                         ng-if="isFemaleMember() && memberStats.sameGenderAhead > 0"
                                                                         style="font-size: 11px; color: #777;">
-                                                                        of which {{memberStats.sameGenderAhead | number:0}} women
+                                                                        of which {{memberStats.sameGenderAhead | number:0}} are women
                                                                     </div>
                                                                     <div class="stat-sublabel"
                                                                         ng-if="!isFemaleMember() && memberStats.otherGenderAhead > 0"
                                                                         style="font-size: 11px; color: #777;">
-                                                                        chicked by {{memberStats.otherGenderAhead | number:0}}
+                                                                        (Chicked by {{memberStats.otherGenderAhead | number:0}})
                                                                     </div>
                                                                 </div>
                                             </script>

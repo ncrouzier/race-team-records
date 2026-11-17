@@ -25,8 +25,7 @@ function perUserLimiter(prefix, max, message) {
         keyGenerator: (req) => prefix + ':' + String(req.user._id),
         message: { error: message },
         standardHeaders: true,
-        legacyHeaders: false,
-        validate: { keyGeneratorIpFallback: false }
+        legacyHeaders: false
     });
 }
 

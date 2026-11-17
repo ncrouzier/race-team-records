@@ -186,7 +186,12 @@ service.onDataChange(function () { adminCounts.clear(); });
 app.use(async function (req, res, next) {
     if (req.user && req.user.role === 'admin' && req.path.indexOf('/api/') === 0) {
         try {
-            if (req.method !== 'GET') adminCounts.clear();
+            // A change: counted afresh now, and again once it is done (it may
+            // have handled what was being counted: a submission, its log entry)
+            if (req.method !== 'GET') {
+                adminCounts.clear();
+                res.on('finish', function () { adminCounts.clear(); });
+            }
             const key = String(req.user._id);
             let counts = adminCounts.get(key);
             if (!counts || Date.now() - counts.at > ADMIN_COUNTS_MS) {

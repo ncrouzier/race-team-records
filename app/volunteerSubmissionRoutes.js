@@ -230,6 +230,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('volunteersubmission', submission._id, true);
         res.json(submission);
     }));
 
@@ -243,6 +244,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('volunteersubmission', submission._id, true);
         res.json(submission);
     }));
 
@@ -255,6 +257,7 @@ module.exports = function (app) {
         submission.closedAt = new Date();
         submission.closedBy = { _id: req.user._id, username: req.user.username };
         await submission.save();
+        await service.setActivityHandled('volunteersubmission', submission._id, true);
         res.json(submission);
     }));
 
@@ -270,6 +273,7 @@ module.exports = function (app) {
         submission.closedAt = null;
         submission.closedBy = undefined;
         await submission.save();
+        await service.setActivityHandled('volunteersubmission', submission._id, false);
         res.json(submission);
     }));
 };

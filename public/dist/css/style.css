@@ -24625,7 +24625,7 @@ banner-stage {
   .race-list-row .rl-name {
     grid-column: 1 / 4;
     grid-row: 1;
-    padding-left: 30px !important;
+    padding-left: 12px !important;
   }
   .race-list-row .rl-time {
     grid-column: 4;
@@ -24641,7 +24641,7 @@ banner-stage {
   }
   .race-list-row .rl-dist {
     grid-column: 1;
-    padding-left: 35px !important;
+    padding-left: 17px !important;
   }
   .race-list-row .rl-count {
     grid-column: 2;
@@ -24705,6 +24705,23 @@ banner-stage {
     font-size: 12px;
     white-space: nowrap;
     text-align: right !important;
+  }
+  .result-list-row .rr-pace br {
+    display: none;
+  }
+  .result-list-row .rr-pace .resultPace {
+    font-size: 13px;
+  }
+  .result-list-row .rr-pace .resultPaceTxt {
+    margin-left: 2px;
+    font-size: 10px;
+    color: #8aa0aa;
+  }
+  .result-list-row .rr-name .resultEvent {
+    font-size: 15px;
+  }
+  .result-list-row .resultTime {
+    font-size: 17px;
   }
   .result-list-row .rr-admin {
     grid-column: 1 / -1;
@@ -24986,38 +25003,53 @@ banner-stage {
     font-size: 15px !important;
   }
   .jumbotron.records-page .records-row .rc-time {
-    grid-column: 3;
-    grid-row: 1 / 4;
-    align-self: start;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
-    column-gap: 5px;
-    max-width: 104px;
-    text-align: right !important;
+    display: contents;
   }
-  .jumbotron.records-page .records-row .rc-time .resultTime {
-    flex-basis: 100%;
-    text-align: right;
+  .jumbotron.records-page .records-row .rc-timeline {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    white-space: nowrap;
+  }
+  .jumbotron.records-page .records-row .rc-timeline .resultTime {
     font-size: 16px;
   }
-  .jumbotron.records-page .records-row .rc-time .timediff {
+  .jumbotron.records-page .records-row .rc-timeline .timediff {
+    margin-left: 3px;
     font-size: 11px;
   }
-  .jumbotron.records-page .records-row .rc-race {
-    grid-column: 2;
-    grid-row: 2;
-    font-size: 13px;
-  }
   .jumbotron.records-page .records-row .rc-pace {
-    grid-column: 2;
-    grid-row: 3;
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
     font-size: 12px;
     white-space: nowrap;
+    text-align: right !important;
   }
   .jumbotron.records-page .records-row .rc-pace br {
     display: none;
+  }
+  .jumbotron.records-page .records-row .rc-pace .resultPaceTxt {
+    margin-left: 2px;
+    font-size: 10px;
+    color: #8aa0aa;
+  }
+  .jumbotron.records-page .records-row .rc-links {
+    grid-column: 3;
+    grid-row: 3;
+    justify-self: end;
+    display: flex;
+    gap: 12px;
+    font-size: 15px;
+  }
+  .jumbotron.records-page .records-row .rc-links > a,
+  .jumbotron.records-page .records-row .rc-links > .fa {
+    padding: 2px 2px;
+  }
+  .jumbotron.records-page .records-row .rc-race {
+    grid-column: 2;
+    grid-row: 2 / 4;
+    font-size: 13px;
   }
   .jumbotron.records-page .records-row .rc-admin {
     grid-column: 2 / 4;
@@ -25524,14 +25556,74 @@ banner-stage {
   }
 }
 @media (max-width: 767px) {
-  .jumbotron.users-page .users-table.pc-table .users-time {
-    display: inline;
-    margin-left: 4px;
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name    tags" "email   actions" "member  actions" "dates   actions";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 2px;
   }
-  .jumbotron.users-page .users-table.pc-table > tbody > tr > .pc-line {
-    order: 1;
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > td {
+    order: 0 !important;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .users-name {
+    grid-area: name;
+    font-size: 15px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-email {
+    grid-area: email;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 12px;
     color: #5f7680;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-role,
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-status {
+    grid-area: tags;
+    align-self: start;
+    justify-self: end;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-role {
+    margin-right: 30px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-status .site-tag {
+    width: 24px;
+    padding: 2px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 0;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-status .site-tag .fa {
+    font-size: 11px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-member {
+    grid-area: member;
+    font-size: 12px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-member.u-same-name {
+    display: none;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-created,
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-active {
+    grid-area: dates;
+    font-size: 11px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-active {
+    margin-left: 108px;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-created.pc-empty + .u-login + .u-active {
+    margin-left: 0;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .u-login,
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) .users-time {
+    display: none;
+  }
+  .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) > .pc-actions {
+    grid-area: actions;
+    align-self: end;
   }
 }
 @media (max-width: 767px) {
@@ -26571,4 +26663,37 @@ banner-stage {
   font-weight: 500;
   color: #999999;
   white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .member-card .results-list.list-group {
+    margin-left: -10px;
+    margin-right: -10px;
+  }
+  .results-list.list-group > .list-group-item {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+@media (max-width: 767px) {
+  .mobile-more-links.mobile-more-activity {
+    grid-template-columns: 1fr;
+    margin-top: 8px;
+  }
+}
+@media (max-width: 767px) {
+  .records-row .rc-pace .resultPace > span,
+  .result-list-row .rr-pace .resultPace > span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+  .records-row .rc-pace .resultPace > span > .resultPaceTxt,
+  .result-list-row .rr-pace .resultPace > span > .resultPaceTxt {
+    order: 1;
+    margin-left: 0;
+  }
+  .records-row .rc-pace .resultPace > span > .fa-star,
+  .result-list-row .rr-pace .resultPace > span > .fa-star {
+    order: 2;
+  }
 }

@@ -107,7 +107,7 @@ app.config(['$httpProvider', function($httpProvider) {
     }]);
 }]);
 
-app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$transitions', 'ActivityLogService', 'Analytics', '$timeout', 'PageTitleService', function($http, $rootScope, $interval, AuthService, Restangular, $transitions, ActivityLogService, Analytics, $timeout, PageTitleService) {
+app.run(['$http', '$rootScope', '$interval', '$q', 'AuthService', 'Restangular', '$transitions', 'ActivityLogService', 'Analytics', '$timeout', 'PageTitleService', function($http, $rootScope, $interval, $q, AuthService, Restangular, $transitions, ActivityLogService, Analytics, $timeout, PageTitleService) {
     Restangular.setBaseUrl('/api/');
     Restangular.setRestangularFields({
         id: "_id"
@@ -135,7 +135,17 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         add($rootScope.pendingSubmissionsCount, 'result submission');
         add($rootScope.pendingVolunteerSubmissionsCount, 'volunteer submission');
         add($rootScope.pendingCorrectionsCount, 'correction request');
+        // ("series" is its own plural)
+        if ($rootScope.pendingSeriesCount > 0) parts.push($rootScope.pendingSeriesCount + ' race series');
         return parts.join(', ') + ' waiting';
+    };
+
+    // Something on an admin's to-do lists: the red dot on "Admin tools"
+    // (desktop) and on "More" (phones). New activity log entries have their
+    // own: on the username (desktop) and the Account tab (phones).
+    $rootScope.adminWaiting = function () {
+        return $rootScope.pendingSubmissionsCount > 0 || $rootScope.pendingVolunteerSubmissionsCount > 0 ||
+            $rootScope.pendingCorrectionsCount > 0 || $rootScope.pendingSeriesCount > 0;
     };
 
     $rootScope.markActivityLogsSeen = function() {
@@ -160,6 +170,26 @@ app.run(['$http', '$rootScope', '$interval', 'AuthService', 'Restangular', '$tra
         $rootScope.authResolved = true;
     }).error(function(data) {
         $rootScope.authResolved = true;
+    });
+
+    // Pages for some roles only (a state's data.roles: the Participation and
+    // Members stats, for admins and captains): anyone else goes to Racing
+    // Stats. Waits for /api/login to say who is signed in, as a page opened
+    // from its address arrives before that does.
+    $transitions.onBefore({ to: function (state) { return !!(state.data && state.data.roles); } }, function (transition) {
+        function decide() {
+            var user = AuthService.isLoggedIn();
+            var roles = transition.to().data.roles;
+            return user && roles.indexOf(user.role) !== -1 ? true : transition.router.stateService.target('/stats/team');
+        }
+        if ($rootScope.authResolved) return decide();
+        return $q(function (resolve) {
+            var stop = $rootScope.$watch('authResolved', function (done) {
+                if (!done) return;
+                stop();
+                resolve(decide());
+            });
+        });
     });
 
     function pingHeartbeat() {

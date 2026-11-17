@@ -1542,8 +1542,21 @@ module.exports = {
         }
         return ActivityLog.countDocuments({
             createdAt: { $gt: since },
-            seenBy: { $ne: user._id }
+            seenBy: { $ne: user._id },
+            handled: { $ne: true }
         });
+    },
+
+    // An activity log entry about something waiting for an admin (a result
+    // or volunteer submission) is dealt with when that is: added, already
+    // entered or dismissed. It then stops counting as unseen, for every
+    // admin, as it leaves the to-do list; reopened, it counts again.
+    setActivityHandled: async function (targetType, targetId, handled) {
+        try {
+            await ActivityLog.updateMany({ targetType, targetId: String(targetId) }, { $set: { handled: !!handled } });
+        } catch (err) {
+            console.error('Error marking activity handled:', err);
+        }
     },
 
     // route middleware to make sure a user is logged in

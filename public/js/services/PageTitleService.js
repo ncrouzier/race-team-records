@@ -83,7 +83,8 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
     };
 
     // Pages that call set() themselves once their data is in
-    var SET_BY_PAGE = { '/races': true, '/results/result': true, '/series-detail': true };
+    var SET_BY_PAGE = { '/races': true, '/results/result': true, '/series-detail': true,
+        '/members/member/year-in-review': true, '/stats/year-in-review': true };
 
     // How long a page view waits for a title that is still loading
     var WAIT_MS = 4000;

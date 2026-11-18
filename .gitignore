@@ -37,3 +37,12 @@ backups-local/
 # Member photos uploaded at runtime (app/memberPhotos.js). In production they
 # live on the host (/opt/mcrrc/uploads/photos), never in git or the image.
 uploads/
+
+# Leftovers of an Angular rewrite that was started and dropped: its build
+# output and the Angular CLI's cache. Nothing in the site uses them.
+public/dist/ng/
+.angular/
+
+# Claude Code settings: local-only, not meant to be shared (see .vscode/
+# settings.json below for the one that is).
+.claude/

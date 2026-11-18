@@ -29,13 +29,13 @@ function detectedFor(width, height) {
 describe('bannerRender', () => {
     const overlay = bannerRender.fadeOverlay();
 
-    test('a banner is a 2200x572 JPEG', async () => {
+    test('a banner is an OUT_W x OUT_H JPEG', async () => {
         const buf = await photo(2400, 1600);
         const p = bannerRender.photoSettings(detectedFor(2400, 1600));
         const crop = bannerRender.automaticCrop(p, overlay);
         const out = await bannerRender.renderBanner(buf, p, crop, overlay);
         const meta = await sharp(out).metadata();
-        expect([meta.format, meta.width, meta.height]).toEqual(['jpeg', 2200, 572]);
+        expect([meta.format, meta.width, meta.height]).toEqual(['jpeg', bannerRender.OUT_W, bannerRender.OUT_H]);
     });
 
     test('the right of the banner fades to white', async () => {
@@ -57,7 +57,7 @@ describe('bannerRender', () => {
         expect(tooClose.width).toBe(Math.round(L.minWidth));
         const offEdge = bannerRender.clampCrop(p, { x: 99999, y: 99999, width: 1000 }, overlay);
         expect(offEdge.x + L.reachShare * 1000).toBeLessThanOrEqual(2400 + 1);
-        expect(offEdge.y + 1000 * 572 / 2200).toBeLessThanOrEqual(1600 + 1);
+        expect(offEdge.y + 1000 * bannerRender.OUT_H / bannerRender.OUT_W).toBeLessThanOrEqual(1600 + 1);
         const negative = bannerRender.clampCrop(p, { x: -50, y: -50, width: 1000 }, overlay);
         expect([negative.x, negative.y]).toEqual([0, 0]);
     });
@@ -173,7 +173,7 @@ describe('drafts', () => {
         const p = bannerRender.photoSettings({ width: 2000, height: 3000, kind: 'no-face', face: null });
         const overlay = bannerRender.fadeOverlay();
         const out = await bannerRender.renderBanner(draft.photo, p, bannerRender.automaticCrop(p, overlay), overlay);
-        expect(await sharp(out).metadata()).toMatchObject({ width: 2200, height: 572 });
+        expect(await sharp(out).metadata()).toMatchObject({ width: bannerRender.OUT_W, height: bannerRender.OUT_H });
     });
 
     test('a huge photo is scaled down to 8000 px first', async () => {

@@ -12,11 +12,16 @@ const { detectFaces } = require('./faceDetector');
 // ---------------------------------------------------------------------------
 // Banner geometry
 //
-// The banner is 962–1140px wide and 250px tall (background-size: cover,
-// anchored top). An image of 2200 × 572 (3.85:1, the narrowest banner's
-// aspect) is therefore always fitted to the banner's width, so a point at x
-// in the image is at the same fraction of the banner's width at every size.
-// On the widest banner only the top 84% shows.
+// The banner is 962–1140px wide and 250px tall, and 1320 × 290 on screens of
+// 1400px and up (same aspect as 1140 × 250); background-size: cover,
+// anchored top. An image of 2640 × 686 (3.85:1, the narrowest banner's
+// aspect; 2× the widest banner, for retina screens) is therefore always
+// fitted to the banner's width, so a point at x in the image is at the same
+// fraction of the banner's width at every size. On the 1140 and 1320
+// banners only the top 84% shows.
+//
+// Banners made before 2026-11 are 2200 × 572: the same aspect, so they
+// display the same, only a little softer on retina screens at 1320.
 //
 // The badge (.banner-title in public/less/mcrrc.less) is sized in container
 // units, so it scales with the banner the same way. Its edges, measured on a
@@ -28,19 +33,20 @@ const { detectFaces } = require('./faceDetector');
 // All three edges lean 12° (top to the right).
 // ---------------------------------------------------------------------------
 
-const OUT_W = 2200;
-const OUT_H = 572;
+const OUT_W = 2640;
+const OUT_H = 686;
 const DESIGN_W = 1140;
+const NARROW_W = 962;
 const DESIGN_CENTER_Y = 125;
 const TAN = Math.tan(12 * Math.PI / 180);
 const PX = OUT_W / DESIGN_W; // image px per design px
-// Share of the image's height a 1140px-wide (the widest) banner shows
+// Share of the image's height a 1140px-wide banner shows (and a 1320 one)
 const WIDE_VISIBLE = 250 / (DESIGN_W * OUT_H / OUT_W);
 
 // The badge's vertical centre lands at a slightly different image row at
-// each banner width (125px of banner is 241 image rows at 1140px wide, 286
+// each banner width (125px of banner is 289 image rows at 1140px wide, 343
 // at 962px). Aim between the two; the slant puts the error at ±2.5px.
-const CENTER_ROW = 263;
+const CENTER_ROW = Math.round(DESIGN_CENTER_Y * OUT_W * (1 / DESIGN_W + 1 / NARROW_W) / 2);
 
 const STRIPES = { x: 503.4 - 52, y: 197 };
 const NAVY_STRIP = { x: 604.6, y: 87 };

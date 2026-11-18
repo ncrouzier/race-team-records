@@ -654,6 +654,12 @@ footer {
         width: 100%;
     }
 
+    // Same 1140:250 aspect as the lg banner, so the crop and badge line up as
+    // app/bannerRender.js designed them.
+    @media (min-width: @screen-xxl-min) {
+        height: (250px * @container-xxl-inner / 1140px);
+    }
+
     .banner-copyright {
         position: absolute;
         bottom: 5px;
@@ -781,6 +787,10 @@ footer {
 .container {
     min-width: 992px; // just give up on mobile few for this version...
     min-height: 800px;
+
+    @media (min-width: @screen-xxl-min) {
+        width: (@container-xxl-inner + @grid-gutter-width);
+    }
 
     .jumbotron {
         min-height: 730px;

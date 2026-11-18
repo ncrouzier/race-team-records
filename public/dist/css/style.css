@@ -7714,6 +7714,11 @@ footer {
     width: 100%;
   }
 }
+@media (min-width: 1400px) {
+  .navimg {
+    height: 289.47368421px;
+  }
+}
 .navimg .banner-copyright {
   position: absolute;
   bottom: 5px;
@@ -7868,6 +7873,11 @@ footer {
 .container {
   min-width: 992px;
   min-height: 800px;
+}
+@media (min-width: 1400px) {
+  .container {
+    width: 1350px;
+  }
 }
 .container .jumbotron {
   min-height: 730px;

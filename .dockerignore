@@ -24,6 +24,7 @@ tests
 doc
 migrations
 scripts/seed-*.js
+scripts/agegrade-distribution.js
 
 *.log
 npm-debug.log
@@ -34,3 +35,9 @@ HEAD_TO_HEAD_FEATURE.md
 
 # Runtime uploads (member photos) stay on the host, out of the image
 uploads
+
+# Source artwork kept in git for generating icons/thumbnails from (e.g. the
+# year-in-review share image). Nothing at runtime reads it directly — only
+# the already-built derivatives (mcrrc_logo_256.png, app-icon-*.png, ...) are
+# used, and those stay in the image via public/images above.
+public/images/mcrrc_logo.png

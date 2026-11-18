@@ -170,7 +170,7 @@ const FOODS = [
     { key: 'pizza', one: 'slice of pizza', many: 'slices of pizza', kcal: 285 },
     { key: 'bagel', one: 'bagel', many: 'bagels', kcal: 280 },
     { key: 'banana', one: 'banana', many: 'bananas', kcal: 105 },
-    { key: 'cookie', one: 'chocolate chip cookie', many: 'chocolate chip cookies', kcal: 160 },
+    { key: 'cookie', one: 'brown butter chocolate chip cookie', many: 'brown butter chocolate chip cookies', kcal: 160 },
     { key: 'beer', one: 'beer', many: 'beers', kcal: 150 },
     { key: 'waffle', one: 'Honey Stinger waffle', many: 'Honey Stinger waffles', kcal: 140 },
     { key: 'gu', one: 'GU energy gel', many: 'GU energy gels', kcal: 100 },

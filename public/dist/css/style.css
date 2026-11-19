@@ -26660,6 +26660,23 @@ banner-stage {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.5);
 }
+.yir-promo.yir-promo-dashboard {
+  border-left: 5px solid #ef6b0c;
+  text-decoration: none;
+  transition: filter 0.15s;
+}
+.yir-promo.yir-promo-dashboard:hover,
+.yir-promo.yir-promo-dashboard:focus {
+  color: #fff;
+  text-decoration: none;
+  filter: brightness(1.15);
+}
+.yir-promo.yir-promo-dashboard .member-primary-btn {
+  white-space: nowrap;
+  background: #ef6b0c;
+  border-color: #ef6b0c;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
 .jumbotron.yir-page .yir-fun .yir-list > li.is-picked {
   margin: 0 -10px;
   padding-left: 10px;

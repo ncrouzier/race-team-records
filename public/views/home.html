@@ -1,7 +1,8 @@
 <div class="jumbotron ">
 
-    <!-- December and January: the year in review (HomeCtrl.reviewYear) -->
-    <div ng-if="reviewYear" class="feed-card yir-promo">
+    <!-- Nov 1 – Jan 15: the year in review (HomeCtrl.reviewYear). Members get it
+         in their dashboard below instead. -->
+    <div ng-if="reviewYear && !(user && user.member)" class="feed-card yir-promo">
         <div class="yir-promo-text">
             <i class="fa fa-star"></i>
             <span><strong>{{reviewYear}} in review</strong> is here: the team's year in numbers<span ng-if="user.member">, and yours</span>.</span>
@@ -21,6 +22,14 @@
                     &raquo;</a>
             </h4>
         </div>
+        <a ng-if="reviewYear" class="yir-promo yir-promo-dashboard" ng-click="trackDrill('home_year_in_review');"
+            ui-sref="/members/member/year-in-review({member: user.member.username, year: reviewYear})">
+            <span class="yir-promo-text">
+                <i class="fa fa-star"></i>
+                <span><strong>Your {{reviewYear}} in review</strong> is here: your races, personal bests and highlights.</span>
+            </span>
+            <span class="member-primary-btn">See my year &raquo;</span>
+        </a>
         <div class="feed-card-body">
             <div class="row dashboard-grid">
                 <!-- Latest Race -->

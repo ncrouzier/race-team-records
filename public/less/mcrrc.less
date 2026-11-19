@@ -23292,6 +23292,27 @@ banner-stage {
             border-color: fade(#fff, 50%);
         }
     }
+
+    // The whole strip is the link, between the dashboard's header and body
+    &.yir-promo-dashboard {
+        border-left: 5px solid @team-orange-cta;
+        text-decoration: none;
+        transition: filter 0.15s;
+
+        &:hover,
+        &:focus {
+            color: #fff;
+            text-decoration: none;
+            filter: brightness(1.15);
+        }
+
+        .member-primary-btn {
+            white-space: nowrap;
+            background: @team-orange-cta;
+            border-color: @team-orange-cta;
+            box-shadow: 0 2px 6px fade(#000, 25%);
+        }
+    }
 }
 
 // The stat picked for the share image, among the fun facts

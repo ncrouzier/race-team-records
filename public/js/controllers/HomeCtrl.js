@@ -2,9 +2,10 @@ angular.module('mcrrcApp.results').controller('HomeController', ['$scope', 'Auth
 
     $scope.authService = AuthService;
     $scope.currentYear = new Date().getFullYear();
-    // December and January: the year in review, of the year ending or just ended
-    var month = new Date().getMonth();
-    $scope.reviewYear = month === 11 ? $scope.currentYear : (month === 0 ? $scope.currentYear - 1 : null);
+    // November 1 to January 15: the year in review, of the year ending or just ended
+    var today = new Date(), month = today.getMonth();
+    $scope.reviewYear = month >= 10 ? $scope.currentYear
+        : (month === 0 && today.getDate() <= 15 ? $scope.currentYear - 1 : null);
     $scope.reqConfig = TeamRequirementsConfig.getForYear($scope.currentYear);
     $scope.dashboardLoaded = false;
 

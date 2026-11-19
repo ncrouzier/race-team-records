@@ -15,6 +15,12 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="default">
 	<meta name="apple-mobile-web-app-title" content="MCRRC Team">
 	<meta name="theme-color" content="#006687">
+	<script>
+		// Offline page for the installed app (public/sw.js)
+		if ('serviceWorker' in navigator) {
+			window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js'); });
+		}
+	</script>
 	<title><%= ogTitle || 'MCRRC Racing Team' %></title>
 	<link rel="stylesheet" type="text/css" href="dist/css/style.min.css">
 	<link rel="stylesheet" type="text/css" href="libs/nouislider/dist/nouislider.min.css">

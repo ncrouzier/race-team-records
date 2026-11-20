@@ -299,6 +299,10 @@ module.exports = async function (app, qs, passport, async) {
 
         // Override send method (catches all responses including res.json() calls)
         res.send = function (data) {
+            // The answer is on its way, though it goes out only after the
+            // await below: an error the route throws after this must not get
+            // a 500 written over it (app/asyncErrors.js)
+            res.locals.responseStarted = true;
             // Get system info and set headers before sending
             service.getCachedSystemInfo().then(function (systemInfo) {
                 if (systemInfo) {
@@ -4097,152 +4101,9 @@ module.exports = async function (app, qs, passport, async) {
 
 
 
-    //pdf
-    app.get('/api/pdfreport', function (req, res) {
-        let calls = [];
-        let fullreport = {};
-        let openMaleRecords = [];
-        let masterMaleRecords = [];
-        let openFemaleRecords = [];
-        let masterFemaleRecords = [];
-
-        let raceTypeQuery = RaceType.find().sort('meters').and([
-            {
-                'name': { '$ne': 'Odd road distance' }
-            },
-            {
-                'name': { '$ne': 'Odd trail distance' }
-            },
-            {
-                'name': { '$ne': 'Multisport' }
-            }, {
-                'name': { '$ne': 'Swim' }
-            }, {
-                'name': { '$ne': 'Cycling' }
-            },]);
-
-        try {
-            raceTypeQuery.exec().then(racetypes => {
-                racetypes.forEach(function (rt) {
-
-                    calls.push(function (callback) {
-                        let query = Result.find();
-                        try {
-                            query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                            query.exec().then(results => {
-                                openMaleRecords.push({
-                                    'racetype': rt,
-                                    'records': results
-                                });
-                                callback(null);
-                            });
-                        } catch (queryExecErr) {
-                            callback(queryExecErr);
-                        }
-
-
-                    });
-                    calls.push(function (callback) {
-                        let query = Result.find();
-                        try {
-                            query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Male').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                            query.exec().then(results => {
-                                masterMaleRecords.push({
-                                    'racetype': rt,
-                                    'records': results
-                                });
-                                callback(null);
-                            });
-                        } catch (queryExecErr) {
-                            callback(queryExecErr);
-                        }
-                    });
-                    calls.push(function (callback) {
-                        let query = Result.find();
-                        try {
-                            query = query.where('isRecordEligible').equals(true).regex('category', 'Open').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                            query.exec().then(results => {
-                                openFemaleRecords.push({
-                                    'racetype': rt,
-                                    'records': results
-                                });
-                                callback(null);
-                            });
-                        } catch (queryExecErr) {
-                            callback(queryExecErr);
-                        }
-                    });
-                    calls.push(function (callback) {
-                        let query = Result.find();
-                        try {
-                            query = query.where('isRecordEligible').equals(true).regex('category', 'Master').where('members.sex').regex('Female').where('race.racetype._id').equals(rt._id).sort('time').limit(5);
-                            query.exec().then(results => {
-                                masterFemaleRecords.push({
-                                    'racetype': rt,
-                                    'records': results
-                                });
-                                callback(null);
-                            });
-                        } catch (queryExecErr) {
-                            callback(queryExecErr);
-                        }
-                    });
-                });
-
-
-                async.parallel(calls, function (err) {
-                    if (err)
-                        return res.send(err);
-
-                    openMaleRecords.sort(service.sortRecordDistanceByDistance);
-                    masterMaleRecords.sort(service.sortRecordDistanceByDistance);
-                    openFemaleRecords.sort(service.sortRecordDistanceByDistance);
-                    masterFemaleRecords.sort(service.sortRecordDistanceByDistance);
-
-                    fullreport = {
-                        'openMaleRecords': {
-                            'category': 'Open',
-                            'sex': 'Male',
-                            'recordsList': openMaleRecords
-                        },
-
-                        'masterMaleRecords': {
-                            'category': 'Master',
-                            'sex': 'Male',
-                            'recordsList': masterMaleRecords
-                        },
-
-                        'openFemaleRecords': {
-                            'category': 'Open',
-                            'sex': 'Female',
-                            'recordsList': openFemaleRecords
-                        },
-
-                        'masterFemaleRecords': {
-                            'category': 'Matser',
-                            'sex': 'Female',
-                            'recordsList': masterFemaleRecords
-                        }
-                    };
-
-                    res.json(fullreport);
-                });
-            });
-        } catch (raceTypeQueryExecErr) {
-            res.send(err)
-        }
-
-
-    });
-
-
     app.get('/api/milesraced', async function (req, res) {
-        let filter;
-        if (req.query.filters) {
-            filters = JSON.parse(req.query.filters);
-        } else {
-            res.send("no dates provided");
-        }
+        if (!req.query.filters) return res.status(400).send("no dates provided");
+        const filters = JSON.parse(req.query.filters);
         let query = Result.aggregate([
             {
                 $match:
@@ -4302,10 +4163,13 @@ module.exports = async function (app, qs, passport, async) {
             }]);
         try {
             let queryRes = await query.exec();
-            return res.json({ resultsCount: queryRes[0].resultsCount, milesRaced: queryRes[0].milesRaced, raceWon: queryRes[0].raceWon });
+            // No result in the range: no group at all
+            const totals = queryRes[0] || { resultsCount: 0, milesRaced: 0, raceWon: 0 };
+            return res.json({ resultsCount: totals.resultsCount, milesRaced: totals.milesRaced, raceWon: totals.raceWon });
 
         } catch (err) {
-            res.send(err);
+            console.error('Error counting miles raced:', err);
+            res.status(500).json({ error: 'Error counting miles raced' });
         }
 
     });

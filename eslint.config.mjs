@@ -39,7 +39,6 @@ export default [
                 Datamap: 'readonly',
                 d3: 'readonly',
                 topojson: 'readonly',
-                jsPDF: 'readonly',
                 noUiSlider: 'readonly',
                 tinymce: 'readonly',
                 gtag: 'readonly',

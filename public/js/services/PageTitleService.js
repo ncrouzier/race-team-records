@@ -54,7 +54,6 @@ angular.module('mcrrcApp').service('PageTitleService', ['$document', '$q', '$tim
         '/tools/paceAdjustment': 'Pace Adjustment Calculator',
         '/tools/resultExtractor': 'Result Extractor',
         '/report': 'Report',
-        '/pdf': 'PDF Report',
         '/gallery': 'Gallery',
         '/contact': 'Contact',
         '/mcrrcreport': 'MCRRC Report',

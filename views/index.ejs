@@ -28,11 +28,13 @@
 	<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Barlow+Semi+Condensed:wght@600&display=swap" rel="stylesheet">
-	<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
-	<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+	<!-- integrity: the browser refuses a CDN file that is not byte-for-byte this
+	     version (a hacked or swapped CDN copy). Update the hash with the version. -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js" integrity="sha512-dHKZcnZ9DTrzKMsUhg74TyWdhP6wWOh44G4o3ynb939aK3l/nXjnM38kRy8qiPRT25UVeXhSpm/mHXtebzchkw==" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js" integrity="sha512-RzAPb80dX80u+WhT+/e+t3J+Oa1aHEkUuPrb5pkLCf6UInraMxYY9PtIe0zZFFp7IWr5RWLr0qvCwCZf0JvqMw==" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 	<!-- <script src="https://unpkg.com/dexie@4.0.5/dist/dexie.js"></script> -->
 	<script src="libs/tinymce/tinymce.min.js"></script>
 	<!-- Use EJS variable for script path -->
@@ -162,7 +164,7 @@
 						</li>
 						<!-- Admin tools, in labelled groups (not fly-out submenus, which
 						     need hover and do not work on phones) -->
-						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/result-submissions') || $state.includes('/volunteer-submissions') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/pdf') || $state.includes('/activitylogs'))}"
+						<li ng-class="{active: ($state.includes('/tools/resultExtractor') || $state.includes('/racetypes') || $state.includes('/race-series') || $state.includes('/race-series-detail') || $state.includes('/corrections') || $state.includes('/result-submissions') || $state.includes('/volunteer-submissions') || $state.includes('/agegrading-tables') || $state.includes('/applications') || $state.includes('/stats/requirements') || $state.includes('/comp-race-forms') || $state.includes('/volunteer-jobs') || $state.includes('/hosted-pages') || $state.includes('/banners') || $state.includes('/users') || $state.includes('/report') || $state.includes('/activitylogs'))}"
 							class="uib-dropdown" uib-dropdown on-toggle="toggled(open)">
 							<a href class="uib-dropdown-toggle" uib-dropdown-toggle>
 								Admin tools <span ng-if="adminWaiting()" ng-cloak class="crf-nav-dot"
@@ -208,7 +210,6 @@
 									<div class="admin-menu-heading"><i class="fa fa-file-text-o fa-fw"></i> Reports &amp; Logs</div>
 									<ul>
 										<li ng-class="{active: $state.includes('/report')}"><a ui-sref="/report">Create Report</a></li>
-										<li ng-class="{active: $state.includes('/pdf')}"><a ui-sref="/pdf">Create PDF Report</a></li>
 										<li ng-class="{active: $state.includes('/activitylogs')}"><a ui-sref="/activitylogs">Activity Log
 											<span ng-if="unseenActivityCount > 0" ng-cloak class="crf-unseen-badge">{{unseenActivityCount}}</span></a></li>
 									</ul>

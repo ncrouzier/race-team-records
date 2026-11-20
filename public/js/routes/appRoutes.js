@@ -367,10 +367,6 @@ angular.module('appRoutes', []).config(function ($stateProvider, $urlRouterProvi
             url: "/report",
             templateUrl: "views/report.html",
             controller: 'ReportController'
-        }).state('/pdf', {
-            url: "/pdf",
-            templateUrl: "views/pdf.html",
-            controller: 'PdfGeneratorController'
         }).state('/gallery', {
             url: "/gallery",
             templateUrl: "views/gallery.html",

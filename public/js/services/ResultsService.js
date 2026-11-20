@@ -658,20 +658,6 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
 
 
 
-    // =====================================
-    // PDF API =====================
-    // =====================================
-    factory.getResultsForPdf = function (params) {
-
-        return Restangular.one('pdfreport').get(params).then(
-            function (results) {
-                return results;
-            },
-            function (res) {
-                console.log('Error: ' + res.status);
-            });
-
-    };
 
 
     // =====================================

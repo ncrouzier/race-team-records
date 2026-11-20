@@ -1625,13 +1625,6 @@ module.exports = {
             return 1;
         return 0;
     },
-    sortRecordDistanceByDistance: function (a, b) {
-        if (a.racetype.meters < b.racetype.meters)
-            return -1;
-        if (a.racetype.meters > b.racetype.meters)
-            return 1;
-        return 0;
-    },
 
 
 };

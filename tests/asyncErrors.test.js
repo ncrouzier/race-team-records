@@ -41,6 +41,34 @@ describe('catchAsyncErrors', () => {
         expect(await (await env.get('/chain')).json()).toEqual({ marked: true });
     });
 
+    test('an error after the response has started is logged, not answered', async () => {
+        const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            env = await serve(app => {
+                // Like the /api send override in app/routes.js: res.send
+                // marks the response started, and sends after an await
+                app.use((req, res, next) => {
+                    const send = res.send;
+                    res.send = function (data) {
+                        res.locals.responseStarted = true;
+                        setTimeout(() => send.call(this, data), 20);
+                    };
+                    next();
+                });
+                app.get('/sent-then-throws', async (req, res) => { res.send('answered'); undefinedVariable.x; });
+                app.get('/ok', (req, res) => res.send('still here'));
+            });
+            const res = await env.get('/sent-then-throws');
+            expect(res.status).toBe(200);
+            expect(await res.text()).toBe('answered');
+            await new Promise(resolve => setTimeout(resolve, 50));
+            expect(await (await env.get('/ok')).text()).toBe('still here');
+            expect(log).toHaveBeenCalledWith('Error in GET /sent-then-throws:', expect.any(ReferenceError));
+        } finally {
+            log.mockRestore();
+        }
+    });
+
     test('app.get(setting) still reads a setting', async () => {
         env = await serve(() => {});
         expect(env.app.get('answer')).toBe(42);

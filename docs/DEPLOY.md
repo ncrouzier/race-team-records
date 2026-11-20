@@ -442,11 +442,7 @@ not thought about it.
 
 ## 7. Cleanup, once stable
 
-- `heroku-ssl-redirect` dependency and the `process.env.DYNO` block in
-  `server.js` — Caddy does the redirect now
-- `heroku-postbuild` script in `package.json`
-- `.slugignore`, `.openshift/`, and the OpenShift/mLab branches around the
-  Mongo connection
+- `.openshift/`, and the OpenShift/mLab branches around the Mongo connection
 - `config/db.js` — dead code, and it contains a syntax error that would throw
   if anything ever required it (`node --check config/db.js` fails)
 - Remove `feature/digitalocean` from the trigger list in `deploy.yml`

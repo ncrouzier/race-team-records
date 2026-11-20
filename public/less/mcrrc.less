@@ -3840,7 +3840,7 @@ footer {
 
 
 // Extra small screens (phones)
-@media @phone {
+@media @{phone} {
     .modal {
         .modal-dialog {
             margin: 5px;
@@ -13611,7 +13611,7 @@ footer {
 
     // Three tabs do not fit a phone's width with their icons: a full row of
     // equal tabs, labels only
-    @media @phone {
+    @media @{phone} {
         display: flex;
         width: 100%;
         margin-left: 0;
@@ -20287,7 +20287,7 @@ banner-stage {
     display: none;
 }
 
-@media @phone {
+@media @{phone} {
     body {
         padding-top: 0;
         // Room for the tab bar (and the iPhone home indicator under it)
@@ -20636,7 +20636,7 @@ banner-stage {
     display: none;
 }
 
-@media @phone {
+@media @{phone} {
     .rl-phone-only {
         display: inline;
     }
@@ -20843,7 +20843,7 @@ banner-stage {
 // their own; .pc-actions (admin buttons) go last, on the right. The header
 // keeps only its sort links (th.pc-sortable), as a strip. A row that is not a
 // result (an opened history, say: tr.pc-block) stays one block.
-@media @phone {
+@media @{phone} {
     .table-responsive.pc-wrap {
         overflow: visible;
         border: 0;
@@ -20958,7 +20958,7 @@ banner-stage {
 }
 
 // ---------- Individual Results (directives/individualResults.html) ----------
-@media @phone {
+@media @{phone} {
     .individual-results {
         // The header: its sort links, as a strip
         .ir-head {
@@ -21069,7 +21069,7 @@ banner-stage {
 }
 
 // ---------- Race Series list (series.html; built on Individual Results) ----------
-@media @phone {
+@media @{phone} {
     .individual-results.series-list .resultlistrow.sl-row {
         .sl-name {
             order: 1;
@@ -21105,7 +21105,7 @@ banner-stage {
     display: none;
 }
 
-@media @phone {
+@media @{phone} {
     .pc-phone-inline {
         display: inline;
     }
@@ -21140,7 +21140,7 @@ banner-stage {
 }
 
 // ---------- Best Performances (records.html) ----------
-@media @phone {
+@media @{phone} {
     .jumbotron.records-page {
         .records-filter-card {
             flex-wrap: wrap;
@@ -21261,7 +21261,7 @@ banner-stage {
 
 // ---------- Records by Age / by Year (ageRecords.html, yearRecords.html) ----------
 // A grid of distances: it scrolls sideways, the age (or year) column pinned
-@media @phone {
+@media @{phone} {
     .age-records-container::before {
         content: "\2190  Swipe sideways for more distances  \2192";
         display: block;
@@ -21284,7 +21284,7 @@ banner-stage {
 }
 
 // ---------- Team Members (memberList.html) ----------
-@media @phone {
+@media @{phone} {
     .jumbotron.members-list-page {
         .members-filter-card {
             flex-wrap: wrap;
@@ -21349,7 +21349,7 @@ banner-stage {
 }
 
 // ---------- A member's pages: header and tabs (memberDetail.html & co.) ----------
-@media @phone {
+@media @{phone} {
     // The photo: a fair share of the screen, not all of it
     img.member-picture {
         max-height: 340px;
@@ -21405,7 +21405,7 @@ banner-stage {
 }
 
 // ---------- A member's Statistics and Head-to-Head (memberStats.html, memberHeadToHead.html) ----------
-@media @phone {
+@media @{phone} {
     // Stat tiles two to a row, the same height, the numbers smaller
     .row:has(> [class*="col-sm-"] > .stat-box),
     .row:has(> [class*="col-sm-"] > .parkrun-stat-box) {
@@ -21520,7 +21520,7 @@ banner-stage {
     }
 }
 
-@media @phone {
+@media @{phone} {
     // pc-table: a cell left out on phones; line breaks inside a cell's pieces
     table.pc-table > tbody > tr > td.pc-hide {
         display: none;
@@ -21619,7 +21619,7 @@ banner-stage {
     display: none;
 }
 
-@media @phone {
+@media @{phone} {
     .cal-grid-wrap {
         overflow-x: visible;
 
@@ -21659,7 +21659,7 @@ banner-stage {
 }
 
 // ---------- Volunteering stats (stats/volunteering.html) ----------
-@media @phone {
+@media @{phone} {
     // One tbody per volunteer (row + its jobs): no 2px rule between them
     table.pc-table > tbody + tbody {
         border-top: 0;
@@ -21682,7 +21682,7 @@ banner-stage {
 }
 
 // ---------- Progress map (stats/progress-map.html) ----------
-@media @phone {
+@media @{phone} {
     // The figures, two then three to a row (their col-xs widths)
     .progress-figure {
         margin-bottom: 10px;
@@ -21702,7 +21702,7 @@ banner-stage {
 }
 
 // ---------- Members and Participation stats (stats/members.html, participation.html) ----------
-@media @phone {
+@media @{phone} {
     // The title, the status toggle and the count, centred under each other
     .members-header,
     .participation-header {
@@ -21772,7 +21772,7 @@ banner-stage {
 // ---------- US and World race maps (stats/us-map.html, world-map.html) ----------
 // The map scales to the width; its 700px desktop height left it floating in
 // a tall empty card
-@media @phone {
+@media @{phone} {
     .map-card > [usa-map],
     .map-card > [world-map] {
         min-height: 0 !important;
@@ -21783,7 +21783,7 @@ banner-stage {
 // ---------- Wide tables (.table-responsive) ----------
 // Bootstrap scrolls these sideways below @screen-xs-max, which is 1px here:
 // on phones they were cut off instead. Card tables (.pc-wrap) don't need it.
-@media @phone {
+@media @{phone} {
     .table-responsive:not(.pc-wrap) {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
@@ -21791,7 +21791,7 @@ banner-stage {
 }
 
 // ---------- Pace adjustment tool (tempAdjustment.html) ----------
-@media @phone {
+@media @{phone} {
     .temp-adjustment-tool.jumbotron {
         // Temperature, dew point and pace side by side, labels above
         .form-inline {
@@ -21846,7 +21846,7 @@ banner-stage {
 }
 
 // ---------- About age grading: the versions table (about.html) ----------
-@media @phone {
+@media @{phone} {
     .about-ag-table {
         font-size: 13px;
 
@@ -21866,7 +21866,7 @@ banner-stage {
 
 // ---------- Form fields on phones ----------
 // iOS zooms the page into any field under 16px when it's focused
-@media @phone {
+@media @{phone} {
     input.form-control,
     select.form-control,
     textarea.form-control,
@@ -21878,7 +21878,7 @@ banner-stage {
 // pc-table with a rank (or a colour) before the name: the name leaves room on
 // its line for .pc-side, and the details always start a line of their own
 // (a short one would otherwise squeeze in after .pc-side)
-@media @phone {
+@media @{phone} {
     table.pc-table.pc-ranked {
         .pc-main {
             flex-basis: calc(100% - 170px);
@@ -21896,7 +21896,7 @@ banner-stage {
 // ---------- Comp race forms and team applications lists ----------
 // (compRaceForms.html, teamApplications.html) The action chips go under the
 // name instead of crushing it
-@media @phone {
+@media @{phone} {
     .crf-list-page .feed-row:has(> .crf-actions) {
         flex-wrap: wrap;
 
@@ -21924,7 +21924,7 @@ banner-stage {
 // the email, the member (when not the same name), and when they joined and
 // were last active; the buttons on the right. The last login and the times
 // are left to a desktop.
-@media @phone {
+@media @{phone} {
     .jumbotron.users-page .users-table.pc-table > tbody > tr:not(:has(> .member-table-empty)) {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -22020,7 +22020,7 @@ banner-stage {
 
 // ---------- Activity log (activitylogs.html) ----------
 // The action and its date, then what happened, then who and on what
-@media @phone {
+@media @{phone} {
     .activity-log-table.pc-table {
         // The action tag is short: the date fits beside it
         .pc-main {
@@ -22040,7 +22040,7 @@ banner-stage {
 }
 
 // ---------- Volunteer jobs (volunteerJobs.html) ----------
-@media @phone {
+@media @{phone} {
     .vj-table.pc-table .vj-event {
         font-size: 13px;
         font-weight: 600;
@@ -22048,7 +22048,7 @@ banner-stage {
 }
 
 // ---------- Hosted pages (hostedPages.html) ----------
-@media @phone {
+@media @{phone} {
     .hp-table.pc-table .hp-updated > div {
         display: inline;
         margin-left: 4px;
@@ -22056,7 +22056,7 @@ banner-stage {
 }
 
 // ---------- Comp race forms: one form (compRaceFormDetail.html) ----------
-@media @phone {
+@media @{phone} {
     .jumbotron.crf-detail-page {
         // Comps, discounts, the legend and the email buttons wrap
         .crf-allocation-row {
@@ -22127,7 +22127,7 @@ banner-stage {
 }
 
 // ---------- Banners (banners.html) ----------
-@media @phone {
+@media @{phone} {
     // The title, then New / Reset / Save all on a row of their own
     .banner-header-card .member-card-header {
         flex-wrap: wrap;
@@ -22141,14 +22141,14 @@ banner-stage {
 }
 
 // pc-table whose .pc-main takes its whole line (no .pc-side beside it)
-@media @phone {
+@media @{phone} {
     table.pc-table.pc-stack .pc-main {
         flex-basis: 100%;
     }
 }
 
 // ---------- Result form (modals/resultModal.html) ----------
-@media @phone {
+@media @{phone} {
     .result-modal {
         // Hours, minutes, seconds, hundredths: four to a row, inside the
         // form's edges (their row shares no margin with the racer column)
@@ -22211,7 +22211,7 @@ banner-stage {
 }
 
 // ---------- Member form (modals/memberModal.html) ----------
-@media @phone {
+@media @{phone} {
     // A membership's start and end dates share the row and shrink to fit
     // (stacked, the columns get back the padding the row's margins expect)
     .member-modal .daterangecol {
@@ -22238,7 +22238,7 @@ banner-stage {
 
 // ---------- Pagers (results.html, records...) ----------
 // The page numbers on a row of their own; the count and the page size under
-@media @phone {
+@media @{phone} {
     .records-pager {
         grid-template-columns: 1fr auto;
         row-gap: 6px;
@@ -22266,7 +22266,7 @@ banner-stage {
 }
 
 // ---------- Race form (modals/raceEditModal.html) ----------
-@media @phone {
+@media @{phone} {
     // "Achievements (0)" and its Add button: wrap rather than squeeze
     .race-edit-modal-class .section-header {
         flex-wrap: wrap;
@@ -22283,7 +22283,7 @@ banner-stage {
 }
 
 // ---------- Race and series pages: the header (raceDetail.html, seriesDetail.html) ----------
-@media @phone {
+@media @{phone} {
     .race-detail-page {
         .rd-racemeta .rd-meta-item {
             margin-right: 12px;
@@ -22367,7 +22367,7 @@ banner-stage {
 // ---------- A member's page: the awards (memberDetail.html) ----------
 // On a desktop they float at the top right; on a phone that covers the name.
 // Here they join the page under the name and dates, as a row of badges.
-@media @phone {
+@media @{phone} {
     .detailscontainer:has(> .member-awards) {
         display: flex;
         flex-direction: column;
@@ -22433,7 +22433,7 @@ banner-stage {
 
 // ---------- Home: the welcome card's requirements (home.html) ----------
 // Races and best age grade side by side, not one under the other
-@media @phone {
+@media @{phone} {
     .row.dashboard-section-body:has(> .requirement-block) {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -22503,7 +22503,7 @@ banner-stage {
     display: none;
 }
 
-@media @phone {
+@media @{phone} {
     .nav-tabs,
     .racing-stats-page > .nav-tabs,
     .stats-shell > .nav-tabs {
@@ -22637,7 +22637,7 @@ banner-stage {
 // ---------- Ranked lists: one line per entry (stats/team.html, notacult.html) ----------
 // Name (and its small detail) on the left, the figure on the right, rather
 // than the figure alone on a second line: the top-10 lists half as tall
-@media @phone {
+@media @{phone} {
     .list-group-item > .row:has(> [class*="col-sm-"]:first-child + .text-right:last-child),
     .parkrun-list-item > .row:has(> [class*="col-sm-"]:first-child + .text-right:last-child) {
         display: flex;
@@ -22672,7 +22672,7 @@ banner-stage {
 }
 
 // ---------- Racing Stats: the distances pie (stats/team.html) ----------
-@media @phone {
+@media @{phone} {
     .racing-stats-page .d3-pie-svg svg {
         max-height: 190px;
     }
@@ -22680,7 +22680,7 @@ banner-stage {
 
 // ---------- A member's Statistics: long figures (memberStats.html) ----------
 // "9d 1h 23m 29s" on one line in its half-width tile
-@media @phone {
+@media @{phone} {
     // (the same line height as its neighbours' 1.7em numbers: tiles line up)
     .stat-box .stat-number.stat-number-long {
         font-size: 1.15em;
@@ -22712,7 +22712,7 @@ banner-stage {
     }
 }
 
-@media @phone {
+@media @{phone} {
     .stats-shell {
         padding-top: 12px;
 
@@ -22733,7 +22733,7 @@ banner-stage {
 
 // ---------- The Stats pages on a phone: gliding underline, swipe panel ----------
 // (navTabs, otherDirectives.js)
-@media @phone {
+@media @{phone} {
     .stats-shell {
         position: relative;
     }
@@ -23206,7 +23206,7 @@ banner-stage {
     }
 }
 
-@media @phone {
+@media @{phone} {
     .jumbotron.yir-page {
         .yir-title {
             font-size: 24px;
@@ -23336,7 +23336,7 @@ banner-stage {
 // ---------- Results lists on a phone (raceList.html, memberDetail.html) ----------
 // Inside a card, the framed list reaches nearly to the card's edges and its
 // rows keep less padding: the names start closer to the screen's edge
-@media @phone {
+@media @{phone} {
     .member-card .results-list.list-group {
         margin-left: -10px;
         margin-right: -10px;
@@ -23349,7 +23349,7 @@ banner-stage {
 }
 
 // The Account sheet's link to new activity log entries (admins)
-@media @phone {
+@media @{phone} {
     .mobile-more-links.mobile-more-activity {
         grid-template-columns: 1fr;
         margin-top: 8px;
@@ -23359,7 +23359,7 @@ banner-stage {
 // A pace on one line (records, a member's results): "4:45 min/mi ★", the
 // age-grade star after the unit rather than between (paceDirectives.js puts
 // it before a line break the phone layouts hide)
-@media @phone {
+@media @{phone} {
     .records-row .rc-pace .resultPace > span,
     .result-list-row .rr-pace .resultPace > span {
         display: inline-flex;

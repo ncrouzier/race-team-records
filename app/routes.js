@@ -275,7 +275,7 @@ function sanitizeBio(html) {
     return sanitizeHtml(html || '', bioSanitizeOptions);
 }
 
-module.exports = async function (app, qs, passport, async, _) {
+module.exports = async function (app, qs, passport, async) {
 
     const User = require('./models/user');
 
@@ -3284,7 +3284,11 @@ module.exports = async function (app, qs, passport, async, _) {
 
         return query.exec().then(results => {
             results.forEach(function (resu) {
-                resu.results = _.sortBy(resu.results, 'time');
+                // By time, results without one last (as underscore's sortBy did)
+                resu.results = resu.results.slice().sort(function (a, b) {
+                    if (a.time === undefined || b.time === undefined) return (a.time === undefined) - (b.time === undefined);
+                    return a.time - b.time;
+                });
             });
             // Async rather than gzipSync: this is several MB, and blocking
             // the event loop for it would stall every other request on what

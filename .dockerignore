@@ -28,7 +28,6 @@ scripts/agegrade-distribution.js
 
 *.log
 npm-debug.log
-.slugignore
 .openshift
 README.md
 HEAD_TO_HEAD_FEATURE.md

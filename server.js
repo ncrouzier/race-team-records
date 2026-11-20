@@ -12,7 +12,6 @@ if (!process.env.SESSION_SECRET) {
 // get all the tools we need
 var express = require('express');
 const compression = require('compression');
-const sslRedirect = require('heroku-ssl-redirect').default
 var app = express();
 
 // Errors in async route handlers answer that request with a 500 instead of
@@ -38,15 +37,11 @@ var flash = require('connect-flash');
 
 var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
 
-var bson = require('bson');
 var crypto = require('crypto');
 var async = require('async');
 
 var favicon = require('serve-favicon');
-
-var _ = require('underscore');
 
 var qs = require('querystring');
 
@@ -55,13 +50,6 @@ const schedule = require('node-schedule');
 
 process.env.TZ = 'UTC';
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
-
-// On Heroku the dyno terminated TLS itself, so the app had to do the redirect.
-// Behind Dokploy's Traefik the proxy does it, and DYNO is unset there, so this
-// stays dormant. It is kept only so a Heroku rollback still redirects.
-if (process.env.DYNO) {
-    app.use(sslRedirect());
-}
 
 // Number of reverse proxies in front of the app. Must be 1 under Dokploy:
 // without it every request appears to originate from Traefik, so the per-IP
@@ -146,10 +134,10 @@ require('./config/mail')(); // sets the global `transport` the routes send email
 // set up our express application
 app.use(morgan('dev')); // log every request to the console
 app.use(cookieParser(process.env.SESSION_SECRET)); // read cookies (needed for auth)
-app.use(bodyParser.urlencoded({
+app.use(express.urlencoded({
     extended: true
 }));
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.set('view engine', 'ejs'); // set up ejs for templating
 
@@ -281,7 +269,7 @@ require('./app/resultSubmissionRoutes.js')(app);
 require('./app/volunteerSubmissionRoutes.js')(app);
 require('./app/resultCheckRoutes.js')(app);
 require('./app/yearInReviewRoutes.js')(app);
-require('./app/routes.js')(app, qs, passport, async, _); // load our routes and pass in our app and fully configured passport
+require('./app/routes.js')(app, qs, passport, async); // load our routes and pass in our app and fully configured passport
 
 
 

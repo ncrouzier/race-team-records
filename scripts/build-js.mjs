@@ -4,24 +4,29 @@ import { minify } from 'terser';
 
 const mode = process.argv[2] || 'dev';
 
+// The library's own minified build for prod, its readable one for dev (clearer
+// errors: AngularJS's minified build only links to its error pages). Ours is
+// minified without mangling, which leaves an unminified library several times
+// the size of its official .min.js.
+const pick = base => base + (mode === 'prod' ? '.min.js' : '.js');
+
 // Library files in exact order (matches old Gruntfile concat config)
 const libFiles = [
-    'public/libs/jquery/dist/jquery.js',
-    'public/libs/angular/angular.js',
-    'public/libs/angular-notify/dist/angular-notify.js',
-    'public/libs/angular-loading-bar/build/loading-bar.js',
-    'public/libs/angular-sanitize/angular-sanitize.js',
-    'public/libs/angular-ui-router/release/angular-ui-router.js',
-    'public/libs/angular-ui-select/dist/select.js',
-    'public/libs/lodash/dist/lodash.js',
-    'public/libs/restangular/dist/restangular.js',
+    pick('public/libs/jquery/dist/jquery'),
+    pick('public/libs/angular/angular'),
+    pick('public/libs/angular-notify/dist/angular-notify'),
+    pick('public/libs/angular-loading-bar/build/loading-bar'),
+    pick('public/libs/angular-sanitize/angular-sanitize'),
+    pick('public/libs/angular-ui-router/release/angular-ui-router'),
+    pick('public/libs/angular-ui-select/dist/select'),
+    pick('public/libs/lodash/dist/lodash'),
+    pick('public/libs/restangular/dist/restangular'),
     'public/libs/angular-utils-pagination/dirPagination.js',
     'public/libs/angular-dialog-service/dist/dialogs.min.js',
     'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-    'public/libs/async/dist/async.min.js',
     'public/libs/datamaps/dist/datamaps.all.hires.min.js',
     'public/libs/moment/min/moment.min.js',
-    'public/libs/nouislider/dist/nouislider.js',
+    pick('public/libs/nouislider/dist/nouislider'),
     'config/teamRequirements.js',
     'config/locations.js',
     // Shared with the server: pure stats the pages also run on cached data

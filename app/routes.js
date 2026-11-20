@@ -2812,7 +2812,6 @@ module.exports = async function (app, qs, passport, async, _) {
         const sort = req.query.sort;
         const limit = parseInt(req.query.limit);
         let query = Race.find();
-        console.log("req.query", req.query.filters)
         if (req.query.filters) {
             const filters = JSON.parse(req.query.filters);
             if (filters.dateFrom) {

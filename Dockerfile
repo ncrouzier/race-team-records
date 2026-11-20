@@ -63,6 +63,11 @@ COPY --from=build /app/public/data ./public/data
 COPY --from=build /app/public/dist ./public/dist
 COPY --from=build /app/public/css ./public/css
 COPY --from=build /app/public/views ./public/views
+# The installed site's manifest, service worker and offline page sit at the
+# root of public/ (the worker's location sets its scope: the whole site), so
+# none of the folder copies above bring them in. Without the manifest, Chrome
+# says the site cannot be installed.
+COPY --from=build /app/public/manifest.webmanifest /app/public/sw.js /app/public/offline.html ./public/
 # public/js and public/less are deliberately absent. They are build inputs:
 # the bundle at dist/js/app.min.js and the stylesheet at dist/css/style.min.css
 # are what index.ejs loads, and nothing server-side reads either directory.

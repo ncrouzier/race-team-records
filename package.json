@@ -51,12 +51,11 @@
     "mongoose": "^9.12.2",
     "morgan": "~1.12.1",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^6.9.14",
     "passport": "~0.6.0",
     "passport-local": "~1.0.0",
     "sanitize-html": "^2.18.2",
     "serve-favicon": "^2.5.0",
-    "sharp": "^0.32.6",
+    "sharp": "^0.35.5",
     "underscore": "^1.13.8"
   },
   "devDependencies": {

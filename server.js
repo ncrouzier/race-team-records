@@ -44,7 +44,6 @@ var bson = require('bson');
 var crypto = require('crypto');
 var async = require('async');
 
-var nodemailer = require("nodemailer");
 var favicon = require('serve-favicon');
 
 var _ = require('underscore');
@@ -142,7 +141,7 @@ clientP.then(function () {
 app.use(express.static(__dirname + '/public'));
 
 require('./config/passport')(passport); // pass passport for configuration
-var mail = require('./config/mail')(nodemailer);
+require('./config/mail')(); // sets the global `transport` the routes send email with
 
 // set up our express application
 app.use(morgan('dev')); // log every request to the console

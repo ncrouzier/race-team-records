@@ -24,7 +24,8 @@ const libFiles = [
     'public/libs/angular-utils-pagination/dirPagination.js',
     'public/libs/angular-dialog-service/dist/dialogs.min.js',
     'public/libs/angular-local-storage/dist/angular-local-storage.min.js',
-    'public/libs/datamaps/dist/datamaps.all.hires.min.js',
+    // datamaps (half a megabyte) is not bundled: the US and world map pages
+    // load it when they first draw (raceMapDirective, otherDirectives.js)
     'public/libs/moment/min/moment.min.js',
     pick('public/libs/nouislider/dist/nouislider'),
     'config/teamRequirements.js',

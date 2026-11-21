@@ -5,10 +5,89 @@
         <div class="member-card rx-card">
             <div class="member-card-header">
                 <h3><i class="fa fa-table"></i> Result Extractor</h3>
+                <span class="rx-header-right">
+                    <button type="button" class="mcrrc-btn rx-parkrun-toggle" ng-class="{'is-on': parkrunCheck.open}"
+                        ng-click="toggleParkrunCheck()" aria-controls="rx-parkrun" aria-expanded="{{parkrunCheck.open}}"
+                        uib-tooltip="{{parkrunCheck.open ? 'Close the parkrun check' : 'Find team members in the results of the usual parkruns'}}">
+                        <i class="fa fa-search"></i> Parkrun check
+                        <i class="fa rx-parkrun-chevron" ng-class="parkrunCheck.open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                    </button>
+                </span>
             </div>
             <p class="rx-subtitle">
                 Load a results page, map its columns, then pick which team results to save.
             </p>
+
+            <!-- The parkrun check (ResultExtractorCtrl: parkrunCheck) -->
+            <div class="rx-parkrun" id="rx-parkrun" ng-if="parkrunCheck.open">
+                <div class="rx-parkrun-bar">
+                    <label for="rxParkrunDate">Results of</label>
+                    <div class="input-group rx-date rx-parkrun-date">
+                        <input type="text" id="rxParkrunDate" class="form-control" placeholder="the latest event"
+                            uib-datepicker-popup="yyyy-MM-dd" ng-model="parkrunCheck.date"
+                            ng-model-options="{timezone: 'utc'}" is-open="parkrunCheck.dateOpen" close-text="Close" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" ng-if="parkrunCheck.date"
+                                ng-click="parkrunCheck.date = null" uib-tooltip="Back to the latest event">Latest</button>
+                            <button type="button" class="btn btn-default" ng-click="parkrunCheck.dateOpen = true"><i
+                                    class="glyphicon glyphicon-calendar"></i></button>
+                        </span>
+                    </div>
+                    <button type="button" class="mcrrc-btn" ng-click="checkAllParkruns()"
+                        ng-disabled="parkrunCheck.running || !parkrunCheck.list.length">
+                        <i class="fa" ng-class="parkrunCheck.running ? 'fa-spinner fa-spin' : 'fa-refresh'"></i> Check all
+                    </button>
+                    <small class="rx-hint" ng-if="parkrunCheck.loaded && !parkrunCheck.error">
+                        Parkruns run {{parkrunCheck.minRuns}}+ times, or in the last {{parkrunCheck.recentMonths}} months.
+                    </small>
+                    <small class="rx-hint rx-parkrun-total" ng-if="parkrunCheck.allRequests !== null && parkrunCheck.allRequests !== undefined">
+                        Check all: {{parkrunCheck.allRequests}} request{{parkrunCheck.allRequests === 1 ? '' : 's'}} to parkrun
+                    </small>
+                </div>
+                <div class="rx-hint" ng-if="!parkrunCheck.loaded"><i class="fa fa-spinner fa-spin"></i> Loading the parkruns…</div>
+                <div class="alert alert-danger rx-alert" ng-if="parkrunCheck.error">{{parkrunCheck.error}}</div>
+                <table class="table member-table rx-parkrun-table pc-table" ng-if="parkrunCheck.list.length">
+                    <tbody>
+                        <tr ng-repeat="p in parkrunCheck.list" ng-class="{'rx-parkrun-open': parkrunCheck.current === p}">
+                            <td class="pc-main rx-parkrun-name">
+                                <strong>{{p.name}}</strong>
+                                <small class="rx-hint">{{p.runs}} run{{p.runs === 1 ? '' : 's'}}<span ng-if="p.lastEvent">,
+                                    last saved #{{p.lastEvent.eventNumber}} {{p.lastDate | date:'MMM d, y':'UTC'}}</span></small>
+                            </td>
+                            <td class="pc-line rx-parkrun-status" ng-switch="p.status">
+                                <span ng-switch-when="idle" class="rx-hint">Not checked</span>
+                                <span ng-switch-when="nolink" class="rx-hint">No saved result links to its results page</span>
+                                <span ng-switch-when="checking" class="rx-hint"><i class="fa fa-spinner fa-spin"></i> Checking…</span>
+                                <span ng-switch-when="noevent" class="rx-hint">No event on {{parkrunCheck.date | date:'MMM d':'UTC'}}</span>
+                                <span ng-switch-when="error"><span class="site-tag site-tag-danger">Failed</span> {{p.error}}</span>
+                                <span ng-switch-default>
+                                    <a ng-href="{{p.results.resultUrl}}" target="_blank" rel="noopener">#{{p.results.eventNumber}}</a>,
+                                    {{p.results.raceDay | date:'MMM d':'UTC'}}
+                                    <span class="site-tag site-tag-success" ng-if="p.status === 'added'">Already added</span>
+                                    <span class="site-tag" ng-if="p.status === 'none'">No team members</span>
+                                    <span class="site-tag site-tag-info" ng-if="p.status === 'found'">{{p.found.length}} {{p.found.length === 1 ? 'member' : 'members'}}</span>
+                                    <span class="rx-parkrun-names" ng-if="p.found.length">
+                                        <span ng-repeat="f in p.found">{{f.member.firstname}} {{f.member.lastname}}
+                                            <small class="rx-hint">{{f.time | secondsToTimeString}}</small><span ng-if="!$last">, </span></span>
+                                    </span>
+                                </span>
+                                <small class="rx-hint rx-parkrun-requests" ng-if="p.requests && p.status !== 'checking'">
+                                    {{p.requests}} request{{p.requests === 1 ? '' : 's'}} to parkrun
+                                </small>
+                            </td>
+                            <td class="pc-actions rx-parkrun-actions">
+                                <button type="button" class="mcrrc-btn" ng-click="checkParkrun(p)"
+                                    ng-disabled="!p.latestUrl || p.status === 'checking' || parkrunCheck.running">
+                                    <i class="fa fa-refresh"></i> Check
+                                </button>
+                                <button type="button" class="mcrrc-btn is-on" ng-if="p.status === 'found'" ng-click="openParkrun(p)">
+                                    <i class="fa fa-arrow-down"></i> Open
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
             <form ng-submit="loadTable()">
                 <div class="row">
@@ -67,7 +146,7 @@
         </div>
 
         <!-- 2. Column mapping and race details -->
-        <div class="member-card rx-card" ng-if="tableData">
+        <div class="member-card rx-card" id="rx-map-card" ng-if="tableData">
             <div class="member-card-header">
                 <h3><i class="fa fa-columns"></i> Map Table Columns</h3>
                 <span class="rx-header-right">

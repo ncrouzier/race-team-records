@@ -16,6 +16,7 @@ const { CompRaceForm, CompRaceFormResponse } = require('./models/compraceform');
 const profileThumbnails = require('./profileThumbnails');
 const memberPhotos = require('./memberPhotos');
 const loginCodes = require('./loginCodes');
+const parkrunCheck = require('./parkrunCheck');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
@@ -40,16 +41,23 @@ function parkrunMetadata(html) {
     const dateText = $('.Results-header h3 .format-date').text().trim();
     const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
 
-    let raceDate;
-    if (dateText) {
-        // parkrun writes DD/MM/YYYY
-        const [day, month, year] = dateText.split('/');
-        raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    // parkrun writes DD/MM/YYYY on some sites and YYYY-MM-DD on others
+    // (parkrun.us, since 2026)
+    let raceDate, raceDay;
+    const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateText);
+    const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(dateText);
+    const parts = dmy ? { year: dmy[3], month: dmy[2], day: dmy[1] } : ymd ? { year: ymd[1], month: ymd[2], day: ymd[3] } : null;
+    if (parts) {
+        raceDate = new Date(parseInt(parts.year), parseInt(parts.month) - 1, parseInt(parts.day));
+        // The day as written, which no time zone can move (the parkrun check)
+        raceDay = parts.year + '-' + parts.month.padStart(2, '0') + '-' + parts.day.padStart(2, '0');
     }
 
     return {
         pageTitle: eventNumber ? `${resultsHeader} #${eventNumber}` : resultsHeader,
-        raceDate: raceDate
+        raceDate: raceDate,
+        raceDay: raceDay,
+        eventNumber: /^\d+$/.test(eventNumber) ? parseInt(eventNumber, 10) : null
     };
 }
 
@@ -4379,6 +4387,111 @@ module.exports = async function (app, qs, passport, async) {
             }
             res.json({ success: 'Email sent successfully', status: 200 });
         });
+    });
+
+    // ---- The parkrun check (result extractor page; app/parkrunCheck.js) ----
+
+    // The parkruns worth checking: run 5+ times, or in the last 3 months
+    app.get('/api/parkrun-check', service.isAdminLoggedIn, async function (req, res) {
+        try {
+            const [races, results] = await Promise.all([
+                Race.find({ racename: /parkrun/i }).select('racename racedate location').lean(),
+                Result.find({ 'race.racename': /parkrun/i, resultlink: /parkrun\./i })
+                    .select('resultlink race.racename race.racedate').lean()
+            ]);
+            const links = results.map(r => ({ racename: r.race.racename, racedate: r.race.racedate, resultlink: r.resultlink }));
+            res.json({ parkruns: parkrunCheck.buildList(races, links), minRuns: parkrunCheck.MIN_RUNS, recentDays: parkrunCheck.RECENT_DAYS });
+        } catch (err) {
+            console.error('Parkrun check list failed:', err);
+            res.status(500).json({ error: 'Could not list the parkruns' });
+        }
+    });
+
+    // A parkrun results page through the proxy (parkrun blocks direct
+    // requests): { meta, parsed } (parkrunMetadata, the table), { missing }
+    // for an event not run yet; throws (err.refused) when parkrun says no.
+    async function fetchParkrunPage(url) {
+        const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
+        const response = await axios.get(proxyUrl, {
+            headers: {
+                'User-Agent': SCRAPE_USER_AGENT,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9'
+            },
+            timeout: 30000,
+            maxRedirects: 5,
+            validateStatus: status => status >= 200 && status < 500
+        });
+        const html = typeof response.data === 'string' ? response.data : '';
+        if (response.status === 404) return { missing: true };
+        if (response.status >= 400 || isBotChallenge(html) || /CAPTCHA|Access Denied/.test(html.slice(0, 20000))) {
+            const err = new Error('parkrun refused the request (HTTP ' + response.status + '). Try again later.');
+            err.refused = true;
+            throw err;
+        }
+        const meta = parkrunMetadata(html);
+        if (!meta || !meta.eventNumber || !meta.raceDay) return { missing: true };
+        return { meta, parsed: parseResultsTableFromHtml(html) };
+    }
+
+    // One parkrun's results: its latest, or those of a date. The table as
+    // /api/extract-table gives it, the event's own address, and whether that
+    // event is already saved. body: { url, date? }: url a parkrun results
+    // address (the list's latestUrl); date "2026-11-14" for that day's event
+    // (parkrun's .../results/2026-11-14/: a 404, { noEvent }, when there was
+    // none). Every answer says how many pages it took from parkrun (requests).
+    app.post('/api/parkrun-check/latest', service.isAdminLoggedIn, async function (req, res) {
+        const body = req.body || {};
+        const base = parkrunCheck.eventBase(body.url);
+        if (!base) return res.status(400).json({ success: false, error: 'Not a parkrun results address' });
+        if (!process.env.PARKRUN_PROXY_URL) {
+            return res.status(503).json({ success: false, error: 'No parkrun proxy is configured (PARKRUN_PROXY_URL)' });
+        }
+        const date = body.date;
+        if (date !== undefined && date !== null && isNaN(parkrunCheck.dayTime(date))) {
+            return res.status(400).json({ success: false, error: 'date must be YYYY-MM-DD' });
+        }
+        let requests = 0;
+        const fetchPage = url => { requests++; return fetchParkrunPage(url); };
+        try {
+            let page;
+            if (!date) {
+                page = await fetchPage(parkrunCheck.latestResultsUrl(base));
+                if (page.missing) return res.status(502).json({ success: false, requests, error: 'The page is not a parkrun results page' });
+            } else {
+                page = await fetchPage(parkrunCheck.dateResultsUrl(base, date));
+                // No event that day, or (should parkrun redirect) another day's
+                if (page.missing || page.meta.raceDay !== date) {
+                    return res.json({ success: true, noEvent: true, date: date, requests });
+                }
+            }
+            const meta = page.meta;
+            if (!page.parsed) {
+                return res.status(502).json({ success: false, requests, error: 'No results table on ' + meta.pageTitle });
+            }
+            // Saved under the event's own number: latestresults moves on next week
+            const resultUrl = parkrunCheck.eventResultsUrl(base, meta.eventNumber);
+            const [linked, named] = await Promise.all([
+                Result.exists({ resultlink: { $in: parkrunCheck.linkVariants(resultUrl) } }),
+                Race.exists({ racename: new RegExp('^' + escapeRegex(meta.pageTitle) + '$', 'i') })
+            ]);
+            res.json({
+                success: true,
+                fetchedVia: 'parkrun-proxy',
+                source: 'parkrun',
+                headers: page.parsed.headers,
+                data: page.parsed.data,
+                pageTitle: meta.pageTitle,
+                raceDay: meta.raceDay,
+                eventNumber: meta.eventNumber,
+                resultUrl: resultUrl,
+                alreadyAdded: !!(linked || named),
+                requests
+            });
+        } catch (err) {
+            console.error('Parkrun check failed for ' + base.origin + '/' + base.slug + ':', err.message);
+            res.status(502).json({ success: false, requests, error: err.refused ? err.message : 'Could not fetch the results: ' + err.message });
+        }
     });
 
     // Add this with other route definitions

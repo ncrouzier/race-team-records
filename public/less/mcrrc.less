@@ -17327,6 +17327,86 @@ h2 .club-mark {
         font-size: 14px;
     }
 
+    // The parkrun check: a panel behind the header's "Parkrun check" button,
+    // whose chevron says whether it opens or closes it
+    .rx-parkrun-chevron {
+        margin-left: 6px;
+        font-size: 0.8em;
+    }
+
+    .rx-parkrun-total {
+        margin-left: auto;
+    }
+
+    .rx-parkrun {
+        margin: 0 0 18px;
+        padding: 12px 14px;
+        border: 1px solid #d5e1e6;
+        border-radius: 8px;
+        background: @brand-primary-very-light;
+    }
+
+    .rx-parkrun-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+
+        > label {
+            margin: 0;
+            font-weight: 600;
+            color: @brand-primary-dark;
+        }
+
+        .rx-parkrun-date {
+            width: 230px;
+        }
+    }
+
+    .rx-parkrun-table {
+        margin-bottom: 0;
+        background: #fff;
+
+        > tbody > tr > td {
+            vertical-align: middle;
+            padding: 6px 10px;
+        }
+
+        .rx-parkrun-name {
+            width: 34%;
+
+            small {
+                display: block;
+            }
+        }
+
+        .rx-parkrun-names {
+            display: block;
+            margin-top: 2px;
+            color: #333;
+        }
+
+        .rx-parkrun-requests {
+            display: block;
+            margin-top: 2px;
+        }
+
+        .rx-parkrun-actions {
+            text-align: right;
+            white-space: nowrap;
+
+            .mcrrc-btn + .mcrrc-btn {
+                margin-left: 4px;
+            }
+        }
+
+        // The one opened in the extractor below
+        > tbody > tr.rx-parkrun-open > td {
+            background: @brand-primary-very-light;
+        }
+    }
+
     .rx-section-title {
         margin: 24px 0 14px;
         padding-bottom: 8px;

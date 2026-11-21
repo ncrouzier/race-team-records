@@ -21612,6 +21612,68 @@ h2 .club-mark {
   color: #6b7f88;
   font-size: 14px;
 }
+.jumbotron.result-extractor-tool .rx-parkrun-chevron {
+  margin-left: 6px;
+  font-size: 0.8em;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-total {
+  margin-left: auto;
+}
+.jumbotron.result-extractor-tool .rx-parkrun {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #d5e1e6;
+  border-radius: 8px;
+  background: #F7FBFC;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-bar > label {
+  margin: 0;
+  font-weight: 600;
+  color: #006687;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-bar .rx-parkrun-date {
+  width: 230px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table {
+  margin-bottom: 0;
+  background: #fff;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table > tbody > tr > td {
+  vertical-align: middle;
+  padding: 6px 10px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-name {
+  width: 34%;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-name small {
+  display: block;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-names {
+  display: block;
+  margin-top: 2px;
+  color: #333;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-requests {
+  display: block;
+  margin-top: 2px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-actions .mcrrc-btn + .mcrrc-btn {
+  margin-left: 4px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table > tbody > tr.rx-parkrun-open > td {
+  background: #F7FBFC;
+}
 .jumbotron.result-extractor-tool .rx-section-title {
   margin: 24px 0 14px;
   padding-bottom: 8px;

@@ -1,6 +1,6 @@
 angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
-    '$scope', '$http', 'Analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService', 'ResultExtractionService',
-    function ($scope, $http, Analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService, ResultExtractionService) {
+    '$scope', '$http', '$q', '$timeout', 'Analytics', 'AuthService', 'ResultsService', 'MembersService', 'NotificationService', 'UtilsService', 'ResultExtractionService',
+    function ($scope, $http, $q, $timeout, Analytics, AuthService, ResultsService, MembersService, NotificationService, UtilsService, ResultExtractionService) {
 
         $scope.authService = AuthService;
         $scope.$watch('authService.isLoggedIn()', function (user) {
@@ -132,7 +132,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         // race date, not by who is on the team today: a 2014 race must match the
         // 2014 roster, including people who have since left.
         $scope.allTeamMembers = [];
-        MembersService.getMembers({
+        var membersLoaded = MembersService.getMembers({
             "filters[memberStatus]": "all",
             "sort": "firstname lastname"
         }).then(function(members) {
@@ -188,98 +188,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             $http.post('/api/extract-table', data)
                 .then(function(response) {
                     if (response.data.success) {
-                        $scope.formData.raceType = null;
-                        $scope.hiddenColumns = {};
-                        $scope.tableHeaders = response.data.headers;
-                        $scope.tableData = response.data.data;
-                        $scope.pageTitle = response.data.pageTitle;
-                        NotificationService.showNotifiction(true,
-                            'Loaded ' + response.data.data.length + ' rows ' +
-                            (FETCHED_VIA[response.data.fetchedVia] || 'from the page') + '.');
-
-                        // Pasted source: the server says what it recognised.
-                        // A URL: the host name still tells us.
-                        $scope.isParkrunSource = $scope.htmlSource
-                            ? response.data.source === 'parkrun'
-                            : $scope.url.includes('parkrun.');
-
-                        // The page may carry its own date (parkrun does). Take it
-                        // only if the admin left the field empty; if it disagrees
-                        // with what they set, say so rather than overruling them.
-                        if (response.data.raceDate) {
-                            var pageDate = new Date(response.data.raceDate);
-                            if (!$scope.formData.raceDate) {
-                                $scope.formData.raceDate = pageDate;
-                            } else if (pageDate.toDateString() !== new Date($scope.formData.raceDate).toDateString()) {
-                                NotificationService.showNotifiction(false,
-                                    'The results page says ' + pageDate.toDateString() +
-                                    ', but the race date is set to ' +
-                                    new Date($scope.formData.raceDate).toDateString() + '.');
-                            }
-                        }
-
-                        // Set race type to road 5K for Parkrun
-                        if ($scope.isParkrunSource) {
-                            $scope.racetypesList.forEach(function(racetype) {
-                                if (racetype.name === '5k' && racetype.surface === 'road') {
-                                    $scope.raceType = racetype;
-                                    $scope.formData.raceType = racetype;
-                                }
-                            });
-                        }
-                        
-                        // Filter out the first row if it appears to be headers
-                        $scope.tableData = response.data.data.filter(function(row, index) {
-                            if (index === 0) {
-                                // Check if the first row looks like headers
-                                var isHeaderRow = true;
-                                for (var header in row) {
-                                    // If any value is not a string or contains numbers, it's probably not a header row
-                                    if (typeof row[header] !== 'string' || /\d/.test(row[header])) {
-                                        isHeaderRow = false;
-                                        break;
-                                    }
-                                }
-                                return !isHeaderRow;
-                            }
-                            return true;
-                        });
-
-                        // Site-specific column mapping, shared with the race edit
-                        // modal's "retrieve from a link" flow.
-                        $scope.columnMapping = ResultExtractionService.guessColumnMapping(
-                            $scope.isParkrunSource ? 'parkrun.' : $scope.url,
-                            $scope.tableHeaders,
-                            // Pasted source from a site we cannot identify has no
-                            // URL to match on, so fall back to header names. The
-                            // mapping dropdowns are still there to correct it.
-                            { fallbackToGenericHeaders: !!$scope.htmlSource && !$scope.isParkrunSource }
-                        );
-
-                        
-                        $scope.distanceSuggestions = ResultExtractionService.guessRaceDistance($scope.racetypesList, {
-                            pageTitle: response.data.pageTitle,
-                            url: $scope.url,
-                            headers: $scope.tableHeaders,
-                            rows: $scope.tableData,
-                            columnMapping: $scope.columnMapping
-                        });
-
-                        // Try to extract race name from the page title or content
-                        if (response.data.pageTitle) {
-                            // Remove common suffixes and clean up the title
-                            var title = response.data.pageTitle
-                                .replace(/results?/i, '')
-                                .replace(/race/i, '')
-                                .replace(/202[0-9]/g, '') // Remove years
-                                .trim();
-                            
-                            if (title) {
-                                $scope.formData.raceName = title;
-                            }
-                        }
-                        // Set the result link to the URL being processed
-                        $scope.formData.resultlink = $scope.url;
+                        applyExtraction(response.data);
                     } else {
                         NotificationService.showNotifiction(false,'Failed to load table data: ' + response.data.error);
                     }
@@ -291,6 +200,234 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     $scope.processedResults = null;
                     $scope.isLoading = false;
                 });
+        };
+
+        // A results table loaded: the server's /api/extract-table answer, or
+        // the parkrun check's (which has the same shape)
+        function applyExtraction(data) {
+            $scope.formData.raceType = null;
+            $scope.hiddenColumns = {};
+            $scope.tableHeaders = data.headers;
+            $scope.tableData = data.data;
+            $scope.pageTitle = data.pageTitle;
+            NotificationService.showNotifiction(true,
+                'Loaded ' + data.data.length + ' rows ' +
+                (FETCHED_VIA[data.fetchedVia] || 'from the page') + '.');
+
+            // Pasted source: the server says what it recognised.
+            // A URL: the host name still tells us.
+            $scope.isParkrunSource = $scope.htmlSource
+                ? data.source === 'parkrun'
+                : $scope.url.includes('parkrun.');
+
+            // The page may carry its own date (parkrun does). Take it
+            // only if the admin left the field empty; if it disagrees
+            // with what they set, say so rather than overruling them.
+            if (data.raceDate) {
+                var pageDate = new Date(data.raceDate);
+                if (!$scope.formData.raceDate) {
+                    $scope.formData.raceDate = pageDate;
+                } else if (pageDate.toDateString() !== new Date($scope.formData.raceDate).toDateString()) {
+                    NotificationService.showNotifiction(false,
+                        'The results page says ' + pageDate.toDateString() +
+                        ', but the race date is set to ' +
+                        new Date($scope.formData.raceDate).toDateString() + '.');
+                }
+            }
+
+            // Set race type to road 5K for Parkrun
+            if ($scope.isParkrunSource) {
+                $scope.racetypesList.forEach(function(racetype) {
+                    if (racetype.name === '5k' && racetype.surface === 'road') {
+                        $scope.raceType = racetype;
+                        $scope.formData.raceType = racetype;
+                    }
+                });
+            }
+            
+            // Filter out the first row if it appears to be headers
+            $scope.tableData = data.data.filter(function(row, index) {
+                if (index === 0) {
+                    // Check if the first row looks like headers
+                    var isHeaderRow = true;
+                    for (var header in row) {
+                        // If any value is not a string or contains numbers, it's probably not a header row
+                        if (typeof row[header] !== 'string' || /\d/.test(row[header])) {
+                            isHeaderRow = false;
+                            break;
+                        }
+                    }
+                    return !isHeaderRow;
+                }
+                return true;
+            });
+
+            // Site-specific column mapping, shared with the race edit
+            // modal's "retrieve from a link" flow.
+            $scope.columnMapping = ResultExtractionService.guessColumnMapping(
+                $scope.isParkrunSource ? 'parkrun.' : $scope.url,
+                $scope.tableHeaders,
+                // Pasted source from a site we cannot identify has no
+                // URL to match on, so fall back to header names. The
+                // mapping dropdowns are still there to correct it.
+                { fallbackToGenericHeaders: !!$scope.htmlSource && !$scope.isParkrunSource }
+            );
+
+            
+            $scope.distanceSuggestions = ResultExtractionService.guessRaceDistance($scope.racetypesList, {
+                pageTitle: data.pageTitle,
+                url: $scope.url,
+                headers: $scope.tableHeaders,
+                rows: $scope.tableData,
+                columnMapping: $scope.columnMapping
+            });
+
+            // Try to extract race name from the page title or content
+            if (data.pageTitle) {
+                // Remove common suffixes and clean up the title
+                var title = data.pageTitle
+                    .replace(/results?/i, '')
+                    .replace(/race/i, '')
+                    .replace(/202[0-9]/g, '') // Remove years
+                    .trim();
+                
+                if (title) {
+                    $scope.formData.raceName = title;
+                }
+            }
+            // Set the result link to the URL being processed
+            $scope.formData.resultlink = $scope.url;
+        }
+
+        // ---- The parkrun check (app/parkrunCheck.js) ----
+        // A panel behind the "Parkrun check" button: the parkruns the team runs
+        // most or ran lately; for each, its results of the latest event or of a
+        // date picked, fetched on demand, and the team members in them. "Open
+        // in extractor" loads one into this page as if its address had been
+        // entered (the event's own page, .../results/388/), from the results
+        // already fetched.
+        var prc = $scope.parkrunCheck = { open: false, list: [], loaded: false, error: null, running: false, current: null, date: null };
+
+        function loadParkruns() {
+            if (prc.requested) return;
+            prc.requested = true;
+            $http.get('/api/parkrun-check').then(function (res) {
+                prc.list = res.data.parkruns.map(function (p) {
+                    return angular.extend(p, { status: p.latestUrl ? 'idle' : 'nolink' });
+                });
+                prc.minRuns = res.data.minRuns;
+                prc.recentMonths = Math.round(res.data.recentDays / 30);
+                prc.loaded = true;
+            }, function (res) {
+                prc.error = (res.data && res.data.error) || 'Could not list the parkruns';
+                prc.loaded = true;
+            });
+        }
+
+        $scope.toggleParkrunCheck = function () {
+            prc.open = !prc.open;
+            if (prc.open) loadParkruns();
+        };
+
+        // Another date: what was checked was for the one before
+        $scope.$watch('parkrunCheck.date', function (date, before) {
+            if (date === before) return;
+            prc.list.forEach(function (item) {
+                if (item.status === 'checking') return;
+                item.status = item.latestUrl ? 'idle' : 'nolink';
+                item.results = null;
+                item.found = null;
+                item.requests = null;
+            });
+            prc.allRequests = null;
+        });
+
+        // The date picked, as "2026-11-14" (the picker's dates are UTC midnight)
+        function pickedDay() {
+            return prc.date ? new Date(prc.date).toISOString().slice(0, 10) : null;
+        }
+
+        // "2026-11-21" -> that day at UTC midnight, as the date picker has it
+        function utcDay(day) {
+            var p = String(day || '').split('-');
+            return p.length === 3 ? new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])) : null;
+        }
+
+        // The team members in a parkrun's results (members on the team that
+        // day, alternate names included): the extractor's own matching
+        function membersIn(results) {
+            var mapping = ResultExtractionService.guessColumnMapping('parkrun.', results.headers);
+            var members = ResultExtractionService.membersActiveOn($scope.allTeamMembers, utcDay(results.raceDay));
+            var found = [];
+            results.data.forEach(function (row) {
+                var parsed = ResultExtractionService.parseRow(row, mapping, results.data,
+                    { stripPersonalBest: true, stripDigitsFromGender: true });
+                var member = parsed && ResultExtractionService.matchMember(parsed.firstname, parsed.lastname, members);
+                if (member && !found.some(function (f) { return f.member._id === member._id; })) {
+                    found.push({ member: member, time: parsed.time });
+                }
+            });
+            return found;
+        }
+
+        $scope.checkParkrun = function (item) {
+            var day = pickedDay();
+            item.status = 'checking';
+            item.error = null;
+            item.requests = null;
+            var body = { url: item.latestUrl };
+            if (day) body.date = day;
+            return $q.all([$http.post('/api/parkrun-check/latest', body), membersLoaded])
+                .then(function (out) {
+                    var results = out[0].data;
+                    // Pages fetched from parkrun for this check
+                    item.requests = results.requests;
+                    if (results.noEvent) {
+                        item.results = null;
+                        item.status = 'noevent';
+                        return;
+                    }
+                    item.results = results;
+                    item.found = membersIn(results);
+                    item.status = results.alreadyAdded ? 'added' : item.found.length ? 'found' : 'none';
+                }, function (res) {
+                    item.requests = res && res.data ? res.data.requests : null;
+                    item.status = 'error';
+                    item.error = (res && res.data && res.data.error) || 'Could not fetch the results';
+                });
+        };
+
+        // Every parkrun on the list, one after the other (gentle on parkrun
+        // and the proxy)
+        $scope.checkAllParkruns = function () {
+            prc.running = true;
+            prc.allRequests = null;
+            Analytics.event('admin_action', { action: 'parkrun_check_all' });
+            var chain = $q.when();
+            prc.list.forEach(function (item) {
+                if (item.latestUrl) chain = chain.then(function () { return $scope.checkParkrun(item); });
+            });
+            chain.finally(function () {
+                prc.running = false;
+                // All the pages fetched from parkrun for it
+                prc.allRequests = prc.list.reduce(function (sum, item) { return sum + (item.requests || 0); }, 0);
+            });
+        };
+
+        $scope.openParkrun = function (item) {
+            var results = item.results;
+            prc.current = item;
+            $scope.htmlSource = '';
+            $scope.url = results.resultUrl;
+            $scope.processedResults = [];
+            $scope.formData.raceDate = utcDay(results.raceDay);
+            // Where it is: as the last time the team ran it
+            $scope.formData.location = angular.copy(item.location || { country: 'USA', state: null });
+            applyExtraction(results);
+            $timeout(function () {
+                var card = document.getElementById('rx-map-card');
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         };
 
         $scope.hasRequiredFields = function() {
@@ -778,6 +915,10 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             ResultsService.saveResults(resultsToSave, $scope.seriesPick.choice)
                 .then(function(savedResults) {
                     Analytics.event('results_import', { count: savedResults.length });
+                    // An event opened from the parkrun check is now added
+                    if (prc.current && prc.current.results && prc.current.results.resultUrl === $scope.formData.resultlink) {
+                        prc.current.status = 'added';
+                    }
                     $scope.processedResults = []; // Clear processed results after successful save
                     $scope.isLoading = false;
                     $scope.savingMessage = '';

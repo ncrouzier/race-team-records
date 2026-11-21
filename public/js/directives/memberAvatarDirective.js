@@ -4,10 +4,11 @@
 //
 //   <member-avatar member="m" size="40"></member-avatar>
 //
-// `member` needs _id, firstname and lastname. The photo comes from the
-// member's own profileThumbUrl when the list it came from embedded one, else
-// from MemberThumbsService's one cached map of every member's thumbnail, so a
-// page full of avatars costs no request per photo.
+// `member` needs _id, firstname and lastname. The photo's URL comes from the
+// member's own profileThumbUrl when the list it came from had one, else from
+// MemberThumbsService's one cached map of every member's thumbnail URL. Each
+// photo is a file the browser keeps until it changes; off-screen ones load
+// when scrolled to.
 angular.module('mcrrcApp').directive('memberAvatar', ['MemberThumbsService', function (MemberThumbsService) {
     return {
         restrict: 'E',
@@ -18,7 +19,7 @@ angular.module('mcrrcApp').directive('memberAvatar', ['MemberThumbsService', fun
         template:
             '<span class="member-avatar" ng-style="box">' +
             '<span class="member-avatar-initials">{{initials}}</span>' +
-            '<img ng-if="src" ng-src="{{src}}" alt="" onerror="this.style.display=\'none\'">' +
+            '<img ng-if="src" ng-src="{{src}}" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
             '</span>',
         link: function (scope) {
             scope.$watchGroup(['member._id', 'member.profileThumbUrl', 'size'], function () {

@@ -12,7 +12,10 @@
  *   node scripts/regenerate-profile-thumbnails.js --force     regenerate everyone
  *
  * Safe to re-run; also safe to run against production (it only touches
- * Member.profileThumb, fetching each member's own already-public pictureLink).
+ * Member.profileThumb and the thumbnail files, fetching each member's own
+ * already-public pictureLink). The files go to PHOTO_DIR, next to the bio
+ * photos: in production, run it inside the app container, where that folder
+ * is mounted.
  */
 
 require('dotenv').config();
@@ -32,8 +35,11 @@ async function main() {
     console.log(FORCE ? 'Regenerating every member\'s thumbnail...' : 'Backfilling missing thumbnails only (use --force to redo everyone)...');
 
     const t0 = Date.now();
-    const { checked, generated } = await profileThumbnails.ensureAllGenerated({ force: FORCE });
+    const { checked, generated, moved } = await profileThumbnails.ensureAllGenerated({ force: FORCE });
+    if (moved) console.log(`Moved ${moved} thumbnail(s) from the database to files.`);
     console.log(`Checked ${checked} member photo(s), generated ${generated} thumbnail(s) in ${Math.round((Date.now() - t0) / 1000)}s.`);
+    // Browsers' cached member lists link to the old thumbnails
+    if (moved || generated) await require('../app/service').markMemberProfileChanged();
 
     await mongoose.disconnect();
 }

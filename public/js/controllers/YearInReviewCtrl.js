@@ -22,7 +22,14 @@ angular.module('mcrrcApp.members').controller('YearInReviewController', ['$scope
     var api = $scope.isTeam
         ? '/api/year-in-review/team/' + $scope.year
         : '/api/year-in-review/members/' + encodeURIComponent($scope.username) + '/' + $scope.year;
-    $scope.imageUrl = api + '/image.png';
+    // The share image: the page shows the WebP (a tenth of the PNG's size);
+    // the PNG is what gets shared and copied, made from it here (prepareShare)
+    var imageQuery = '';
+    function imageUrl(format) {
+        return api + '/image.' + format + imageQuery;
+    }
+    $scope.imageUrl = imageUrl('webp');
+    $scope.imagePngUrl = imageUrl('png');
 
     $http.get(api).then(function (res) {
         var y = res.data;
@@ -192,7 +199,9 @@ angular.module('mcrrcApp.members').controller('YearInReviewController', ['$scope
         var params = pickParams();
         var query = Object.keys(params).filter(function (k) { return params[k]; })
             .map(function (k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
-        $scope.imageUrl = api + '/image.png' + (query ? '?' + query : '');
+        imageQuery = query ? '?' + query : '';
+        $scope.imageUrl = imageUrl('webp');
+        $scope.imagePngUrl = imageUrl('png');
         if (changed) {
             $scope.copiedImage = false;
             $state.go('.', params, { location: 'replace' });
@@ -218,18 +227,52 @@ angular.module('mcrrcApp.members').controller('YearInReviewController', ['$scope
     // Copying the image: where the browser can put an image on the clipboard
     $scope.canCopyImage = !!($window.ClipboardItem && $window.navigator.clipboard && $window.navigator.clipboard.write);
 
-    // The image, fetched once the page is in, before any tap: a phone opens
+    // The image, ready once the page is in, before any tap: a phone opens
     // its share sheet (and Safari copies) only straight from the tap, not
-    // after waiting for a download
+    // after waiting for a download. A PNG, the one image format clipboards
+    // take and every app opens, drawn from the WebP the page shows (the same
+    // download); the server's PNG only if that fails.
     var shareFile = null;
     var imageBlob = null;
+
+    function fetchBlob(url) {
+        return $window.fetch(url).then(function (res) {
+            if (!res.ok) throw new Error('No image');
+            return res.blob();
+        });
+    }
+
+    // A PNG of an image blob, through a canvas. Native promises throughout:
+    // the ClipboardItem takes this one.
+    function toPng(blob) {
+        return new $window.Promise(function (resolve, reject) {
+            var url = $window.URL.createObjectURL(blob);
+            var img = new $window.Image();
+            img.onload = function () {
+                var canvas = $window.document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                $window.URL.revokeObjectURL(url);
+                canvas.toBlob(function (png) {
+                    if (png) resolve(png); else reject(new Error('Could not make the PNG'));
+                }, 'image/png');
+            };
+            img.onerror = function () {
+                $window.URL.revokeObjectURL(url);
+                reject(new Error('Could not read the image'));
+            };
+            img.src = url;
+        });
+    }
+
     function prepareShare() {
         shareFile = null;
         imageBlob = null;
         if (!$window.Blob || (!$scope.canShare && !$scope.canCopyImage)) return;
-        imageBlob = $window.fetch($scope.imageUrl).then(function (res) {
-            if (!res.ok) throw new Error('No image');
-            return res.blob();
+        var pngUrl = $scope.imagePngUrl;
+        imageBlob = fetchBlob($scope.imageUrl).then(toPng).catch(function () {
+            return fetchBlob(pngUrl);
         }).then(function (blob) {
             var png = blob.type === 'image/png' ? blob : new $window.Blob([blob], { type: 'image/png' });
             if ($scope.canShare && $window.File) {
@@ -268,7 +311,7 @@ angular.module('mcrrcApp.members').controller('YearInReviewController', ['$scope
         var nav = $window.navigator;
         Analytics.event('share', { content_type: 'year_in_review', item_id: ($scope.isTeam ? 'team' : $scope.username) + '_' + $scope.year });
         if (!nav.share) {
-            $window.open($scope.imageUrl, '_blank');
+            $window.open($scope.imagePngUrl, '_blank');
             return;
         }
         var title = shareTitle();

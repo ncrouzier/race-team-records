@@ -1,4 +1,4 @@
-const { hashSource, needsGeneration, toBuffer, toDataUri, computeFaceCropRegion, cropToRegion, cropFor } = require('../app/profileThumbnails');
+const { hashSource, needsGeneration, toBuffer, thumbUrl, computeFaceCropRegion, cropToRegion, cropFor } = require('../app/profileThumbnails');
 
 describe('hashSource', () => {
     test('the same link hashes the same way every time', () => {
@@ -18,49 +18,49 @@ describe('hashSource', () => {
 describe('needsGeneration', () => {
     const link = 'https://example.com/photo.jpg';
     const hash = hashSource(link);
+    const made = { fileHash: 'abc123', sourceHash: hash };
 
     test('no pictureLink at all: nothing to generate', () => {
-        expect(needsGeneration({ pictureLink: '' })).toBe(false);
-        expect(needsGeneration({})).toBe(false);
+        expect(needsGeneration({ pictureLink: '' }, null)).toBe(false);
+        expect(needsGeneration({}, null)).toBe(false);
     });
 
     test('a pictureLink with no thumbnail yet: needs one', () => {
-        expect(needsGeneration({ pictureLink: link })).toBe(true);
+        expect(needsGeneration({ pictureLink: link }, null)).toBe(true);
     });
 
-    test('a thumbnail already matching the current link: done', () => {
-        expect(needsGeneration({
-            pictureLink: link,
-            profileThumb: { data: Buffer.from('x'), sourceHash: hash }
-        })).toBe(false);
+    test('a thumbnail file matching its record and the current link: done', () => {
+        expect(needsGeneration({ pictureLink: link, profileThumb: made }, 'abc123')).toBe(false);
     });
 
     test('the link changed since the thumbnail was made: needs a new one', () => {
-        expect(needsGeneration({
-            pictureLink: 'https://example.com/new-photo.jpg',
-            profileThumb: { data: Buffer.from('x'), sourceHash: hash }
-        })).toBe(true);
+        expect(needsGeneration({ pictureLink: 'https://example.com/new-photo.jpg', profileThumb: made }, 'abc123')).toBe(true);
     });
 
     test('the same broken link that already failed: do not retry forever', () => {
         expect(needsGeneration({
             pictureLink: link,
             profileThumb: { error: 'Not an image', sourceHash: hash }
-        })).toBe(false);
+        }, null)).toBe(false);
     });
 
     test('a different link than the one that previously failed: try the new one', () => {
         expect(needsGeneration({
             pictureLink: 'https://example.com/different.jpg',
             profileThumb: { error: 'Not an image', sourceHash: hash }
-        })).toBe(true);
+        }, null)).toBe(true);
     });
 
-    test('hash matches but no data was actually saved (defensive case): needs one', () => {
-        expect(needsGeneration({
-            pictureLink: link,
-            profileThumb: { sourceHash: hash }
-        })).toBe(true);
+    test('the record says made but the file is missing (lost, not restored): needs one', () => {
+        expect(needsGeneration({ pictureLink: link, profileThumb: made }, null)).toBe(true);
+    });
+
+    test('the file is not the one the record describes (a crash between the writes): needs one', () => {
+        expect(needsGeneration({ pictureLink: link, profileThumb: made }, 'other')).toBe(true);
+    });
+
+    test('hash matches but no file was ever recorded (defensive case): needs one', () => {
+        expect(needsGeneration({ pictureLink: link, profileThumb: { sourceHash: hash } }, null)).toBe(true);
     });
 });
 
@@ -82,19 +82,19 @@ describe('toBuffer', () => {
     });
 });
 
-describe('toDataUri', () => {
-    test('builds a usable data: URI from a thumbnail', () => {
-        const uri = toDataUri({ data: Buffer.from('abc'), contentType: 'image/jpeg' });
-        expect(uri).toBe('data:image/jpeg;base64,' + Buffer.from('abc').toString('base64'));
+describe('thumbUrl', () => {
+    const id = '5686c9f7edacc8f8996f9038';
+
+    test('the file next to the bio photos, versioned by its hash', () => {
+        expect(thumbUrl({ _id: id, profileThumb: { fileHash: 'abc123' } }))
+            .toBe('/uploads/photos/' + id + '.thumb.jpg?v=abc123');
     });
 
-    test('defaults to image/jpeg when contentType is missing', () => {
-        expect(toDataUri({ data: Buffer.from('abc') })).toMatch(/^data:image\/jpeg;base64,/);
-    });
-
-    test('no thumbnail, or one with no data (a stored failure): nothing to embed', () => {
-        expect(toDataUri(null)).toBeNull();
-        expect(toDataUri({ error: 'Not an image' })).toBeNull();
+    test('no thumbnail, a stored failure, or one not moved to a file yet: no URL', () => {
+        expect(thumbUrl({ _id: id })).toBeNull();
+        expect(thumbUrl({ _id: id, profileThumb: { error: 'Not an image', sourceHash: 'x' } })).toBeNull();
+        expect(thumbUrl({ _id: id, profileThumb: { data: Buffer.from('x') } })).toBeNull();
+        expect(thumbUrl(null)).toBeNull();
     });
 });
 

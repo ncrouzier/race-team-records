@@ -3,7 +3,9 @@
 // -----------------------------------------------------
 @import "public/libs/bootstrap/less/bootstrap.less";
 @import "../variables.less";
-@import url("https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700");
+// No Open Sans: Inter is the site's font (views/index.ejs). Its import here
+// was inlined by the CSS build as .ttf files, which browsers downloaded as a
+// stand-in while Inter loaded.
 
 // Navbar =====================================================================
 

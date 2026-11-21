@@ -150,5 +150,6 @@ module.exports = {
     savePhoto,
     deletePhoto,
     readPhoto,
+    writeAtomic,
     checkWritable
 };

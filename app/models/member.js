@@ -19,15 +19,18 @@ var memberSchema = mongoose.Schema({
         end: Date
     }],
     pictureLink: String,
-    // A small (160x160) JPEG cropped from pictureLink, generated server-side
-    // by app/profileThumbnails.js and kept here rather than on disk — the
-    // app container has no persistent volume, so anything written to the
-    // filesystem at runtime is gone on the next deploy. `select: false` so
-    // the ~5-15KB of image bytes never ride along on list/bio queries;
-    // callers that need it ask for it explicitly (`.select('+profileThumb')`).
+    // What describes the member's thumbnail: a small (160x160) JPEG cropped
+    // from pictureLink by app/profileThumbnails.js, stored as a file next to
+    // the bio photos (<PHOTO_DIR>/<id>.thumb.jpg). `select: false`: callers
+    // that need it ask for it explicitly (`.select('+profileThumb')`), and
+    // turn it into the file's URL (profileThumbnails.thumbUrl).
     profileThumb: {
         type: {
+            // Only in thumbnails made before they were files: startup moves
+            // them out (profileThumbnails.moveFromDatabase)
             data: Buffer,
+            // Hash of the file's bytes: the ?v= of its URL
+            fileHash: String,
             contentType: String,
             sourceHash: String, // sha1 of pictureLink when this was generated
             generatedAt: Date,
@@ -35,7 +38,7 @@ var memberSchema = mongoose.Schema({
             // (the same units as profileThumbCrop): the chosen crop, or the
             // one face detection / the smart crop picked
             crop: { left: Number, top: Number, size: Number },
-            error: String // set instead of data when the fetch/resize failed
+            error: String // set instead of a file when the fetch/resize failed
         },
         select: false
     },

@@ -91,7 +91,8 @@ if [ -n "$UPLOAD_PARTS" ]; then
 		--exclude='*.tmp' --exclude='.tmp-*' --exclude='.drafts' $UPLOAD_PARTS
 	find "$BACKUP_DIR" \( -name 'uploads-*.tar.gz' -o -name 'photos-*.tar.gz' \) -mtime "+$RETAIN_DAYS" -delete
 	echo "$(date -u +%FT%TZ) uploads backup ok: $UPLOADS_ARCHIVE ($(($(wc -c < "$UPLOADS_ARCHIVE") / 1024)) KiB," \
-		"$(find "$STACK_DIR/uploads/photos" -name '*.jpg' 2>/dev/null | wc -l) photos," \
+		"$(find "$STACK_DIR/uploads/photos" -name '*.jpg' ! -name '*.thumb.jpg' 2>/dev/null | wc -l) photos," \
+		"$(find "$STACK_DIR/uploads/photos" -name '*.thumb.jpg' 2>/dev/null | wc -l) thumbnails," \
 		"$(find "$STACK_DIR/uploads/banners" -maxdepth 1 -name '*.jpg' 2>/dev/null | wc -l) banners)"
 fi
 

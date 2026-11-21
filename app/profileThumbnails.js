@@ -1,18 +1,26 @@
 // Small server-side profile-photo thumbnails: a 160x160 JPEG cropped from a
-// member's pictureLink, generated once and kept on the member document in
-// Mongo, behind `profileThumb`'s `select: false` so it never bloats a
-// list/bio query by accident (app/models/member.js). Not in a folder next to
-// the photos (app/memberPhotos.js), on purpose:
-//   - the cached list of all members embeds every thumbnail as a data: URI
-//     (MembersService.getAllMembersWithThumbs), so a page full of avatars is
-//     one request; with files that list would read ~150 files to build, or
-//     link to them and cost a request per avatar;
-//   - the thumbnail, the photo it was made from (sourceHash), the square it
-//     was cut from and any failure change in one write, so they can never
-//     disagree, as a file and its record could after a crash or a partial
-//     restore;
-//   - it is small (a few KB of JPEG, under 1 MB for the whole team), backed
-//     up with the database, and can always be made again from the photo.
+// member's pictureLink, generated once and stored as a file next to the bio
+// photos (app/memberPhotos.js): <PHOTO_DIR>/<memberId>.thumb.jpg, served at
+// /uploads/photos/<memberId>.thumb.jpg?v=<hash of the file> (thumbUrl). The
+// folder is the one production mounts from the host and backs up
+// (deploy/backup.sh), so no deploy setup changes for it.
+//
+// Files, not data: URIs in the member list (which is how they started): the
+// list is downloaded again whenever member or result data changes, and with
+// every photo inside it that was ~800 KB each time. As files, each one is
+// cached by the browser until it changes (the ?v= changes with its bytes).
+//
+// The member document keeps what describes the file (profileThumb): the hash
+// of its bytes (fileHash, the ?v=), the photo it was made from (sourceHash),
+// the square it was cut from (crop) and any failure. File and record are
+// written one after the other, not together, so after a crash or a partial
+// restore they can disagree: startup (ensureAllGenerated) hashes every file
+// and remakes any that does not match its record. Generations for one member
+// run one at a time (oneAtATime), so two of them (an upload, then a crop
+// chosen right after) cannot interleave their writes.
+//
+// Thumbnails made before this lived in the record itself (profileThumb.data):
+// startup moves those to files (moveFromDatabase).
 //
 // Regeneration triggers (wired up by the caller, not this module):
 //   - server startup, via ensureAllGenerated() — for any member whose
@@ -34,6 +42,7 @@
 // "entropy" smart crop, same as before this existed.
 
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const memberPhotos = require('./memberPhotos');
@@ -53,10 +62,55 @@ function hashSource(link) {
     return crypto.createHash('sha1').update(link || '').digest('hex');
 }
 
-// Decides, from a member doc carrying just pictureLink + profileThumb,
-// whether it needs a (re)generation pass. Pure and exported so the decision
-// itself can be unit tested without the network, sharp, or Mongo.
-function needsGeneration(member) {
+// The version of a thumbnail file: the ?v= of its URL
+function hashFile(data) {
+    return crypto.createHash('sha1').update(data).digest('hex').slice(0, 16);
+}
+
+// ---- The files -------------------------------------------------------------
+
+function fileFor(memberId) {
+    const id = String(memberId);
+    if (!memberPhotos.ID_PATTERN.test(id)) throw new Error('Not a member id');
+    return path.join(memberPhotos.PHOTO_DIR, id + '.thumb.jpg');
+}
+
+// A member's thumbnail file, or null when there is none
+async function readThumb(memberId) {
+    try {
+        return await fs.promises.readFile(fileFor(memberId));
+    } catch (err) {
+        if (err.code === 'ENOENT' || err.message === 'Not a member id') return null;
+        throw err;
+    }
+}
+
+async function writeThumb(memberId, data) {
+    await fs.promises.mkdir(memberPhotos.PHOTO_DIR, { recursive: true });
+    await memberPhotos.writeAtomic(fileFor(memberId), data);
+}
+
+async function deleteThumb(memberId) {
+    try {
+        await fs.promises.unlink(fileFor(memberId));
+    } catch (err) {
+        if (err.code !== 'ENOENT') throw err;
+    }
+}
+
+// The URL of a member's thumbnail, from a member doc carrying _id and
+// profileThumb; null when they have none. Changes whenever the file does.
+function thumbUrl(member) {
+    const thumb = member && member.profileThumb;
+    if (!thumb || !thumb.fileHash || thumb.error) return null;
+    return memberPhotos.URL_PREFIX + member._id + '.thumb.jpg?v=' + thumb.fileHash;
+}
+
+// Decides, from a member doc carrying just pictureLink + profileThumb, and
+// the hash of their thumbnail file as it is on disk (null when there is
+// none), whether it needs a (re)generation pass. Pure and exported so the
+// decision itself can be unit tested without the network, sharp, or Mongo.
+function needsGeneration(member, fileHash) {
     const link = (member.pictureLink || '').trim();
     if (!link) return false; // nothing to generate from
     const hash = hashSource(link);
@@ -64,7 +118,20 @@ function needsGeneration(member) {
     if (!thumb) return true; // never attempted
     if (thumb.sourceHash !== hash) return true; // link changed since the last attempt
     if (thumb.error) return false; // same broken link already tried; don't loop forever
-    return !thumb.data; // defensive: hash matches but nothing was actually saved
+    // The file is missing, or is not the one the record describes (a crash
+    // between the two writes, a partial restore)
+    return !thumb.fileHash || thumb.fileHash !== fileHash;
+}
+
+// Runs fn for one member once the previous run for that member is done
+const running = new Map();
+function oneAtATime(memberId, fn) {
+    const key = String(memberId);
+    const run = (running.get(key) || Promise.resolve()).catch(() => { }).then(fn);
+    running.set(key, run);
+    const forget = () => { if (running.get(key) === run) running.delete(key); };
+    run.then(forget, forget);
+    return run;
 }
 
 async function fetchImageBuffer(link) {
@@ -224,13 +291,19 @@ async function resizeToSquareJpeg(buffer, crop) {
 // the member no longer has a pictureLink. `member` needs `_id` and
 // `pictureLink` (and `profileThumbCrop`, when one was chosen); safe to call
 // with a plain lean object or a full document. Resolves to whether it worked.
-async function generateForMember(member) {
-    if (!member || !member._id) return;
+function generateForMember(member) {
+    if (!member || !member._id) return Promise.resolve();
+    return oneAtATime(member._id, () => generateNow(member));
+}
+
+async function generateNow(member) {
     const id = member._id;
     const link = (member.pictureLink || '').trim();
 
     if (!link) {
+        // The record first: a link to a file that is gone shows initials
         await Member.updateOne({ _id: id }, { $unset: { profileThumb: '' } });
+        await deleteThumb(id);
         return true;
     }
 
@@ -246,10 +319,12 @@ async function generateForMember(member) {
         if (!now || (now.pictureLink || '').trim() !== link || !sameCrop(cropFor(now, link), crop)) {
             return true;
         }
+        // The file first: the record then gives it its new URL
+        await writeThumb(id, data);
         await Member.updateOne({ _id: id }, {
             $set: {
                 profileThumb: {
-                    data,
+                    fileHash: hashFile(data),
                     contentType: 'image/jpeg',
                     sourceHash: hash,
                     generatedAt: new Date(),
@@ -266,11 +341,38 @@ async function generateForMember(member) {
                 'profileThumb.error': String((err && err.message) || err).slice(0, 300),
                 'profileThumb.generatedAt': new Date()
             },
-            $unset: { 'profileThumb.data': '' }
+            $unset: { 'profileThumb.data': '', 'profileThumb.fileHash': '' }
         });
+        await deleteThumb(id).catch(() => { });
         console.warn('profileThumbnails: could not generate a thumbnail for member ' + id + ': ' + (err && err.message));
         return false;
     }
+}
+
+// Thumbnails stored in the record (profileThumb.data, before they were
+// files): written out as files, and the bytes dropped from the record. Also
+// what a restore of a database backup from before then needs. Resolves to
+// how many were moved.
+async function moveFromDatabase() {
+    const members = await Member.find({ 'profileThumb.data': { $exists: true } }, '_id profileThumb')
+        .select('+profileThumb').lean();
+    let moved = 0;
+    for (const member of members) {
+        await oneAtATime(member._id, async () => {
+            const data = toBuffer(member.profileThumb.data);
+            if (!data || !data.length) {
+                await Member.updateOne({ _id: member._id }, { $unset: { 'profileThumb.data': '' } });
+                return;
+            }
+            await writeThumb(member._id, data);
+            await Member.updateOne({ _id: member._id }, {
+                $set: { 'profileThumb.fileHash': hashFile(data) },
+                $unset: { 'profileThumb.data': '' }
+            });
+            moved++;
+        });
+    }
+    return moved;
 }
 
 // Fire-and-forget wrapper for the save-time trigger: never lets a thumbnail
@@ -290,15 +392,26 @@ function regenerateInBackground(member, onDone) {
 // its source link already matches — for a one-off re-crop after a change
 // like the one above, where the source hasn't changed but the result
 // should. See scripts/regenerate-profile-thumbnails.js.
+// Resolves to { checked, generated, moved } (moved: thumbnails taken out of
+// the database, see moveFromDatabase).
 async function ensureAllGenerated({ force = false } = {}) {
+    const moved = await moveFromDatabase();
     const members = await Member.find(
         { pictureLink: { $exists: true, $ne: '' } },
         'pictureLink profileThumb profileThumbCrop'
     ).select('+profileThumb').lean();
 
-    const todo = force ? members : members.filter(needsGeneration);
+    let todo = members;
+    if (!force) {
+        // Each file as it is on disk (a few KB each, ~150 of them)
+        const fileHashes = await Promise.all(members.map(async m => {
+            const data = await readThumb(m._id);
+            return data ? hashFile(data) : null;
+        }));
+        todo = members.filter((m, i) => needsGeneration(m, fileHashes[i]));
+    }
     if (!todo.length) {
-        return { checked: members.length, generated: 0 };
+        return { checked: members.length, generated: 0, moved };
     }
 
     let next = 0;
@@ -312,27 +425,17 @@ async function ensureAllGenerated({ force = false } = {}) {
     }
     const workerCount = Math.min(CONCURRENCY, todo.length);
     await Promise.all(Array.from({ length: workerCount }, worker));
-    return { checked: members.length, generated };
+    return { checked: members.length, generated, moved };
 }
 
 // A .lean() Buffer field comes back from the driver as a BSON Binary
 // (`{ buffer, sub_type, position }`), not a Node Buffer — this normalizes
-// either shape. Shared by the single-thumbnail route and the data-URI
-// embedding below, so there is one place that knows that.
+// either shape (for moveFromDatabase).
 function toBuffer(data) {
     if (!data) return null;
     if (Buffer.isBuffer(data)) return data;
     if (data.buffer) return Buffer.from(data.buffer);
     return Buffer.from(data);
-}
-
-// A ready-to-use `data:` URI for a thumbnail, for embedding directly in a
-// list response (see GET /api/members) instead of one request per photo.
-// null when there is nothing to embed (no thumbnail, or a stored failure).
-function toDataUri(thumb) {
-    const buf = thumb && toBuffer(thumb.data);
-    if (!buf) return null;
-    return 'data:' + (thumb.contentType || 'image/jpeg') + ';base64,' + buf.toString('base64');
 }
 
 module.exports = {
@@ -348,6 +451,10 @@ module.exports = {
     generateForMember,
     regenerateInBackground,
     ensureAllGenerated,
-    toBuffer,
-    toDataUri
+    moveFromDatabase,
+    hashFile,
+    fileFor,
+    readThumb,
+    thumbUrl,
+    toBuffer
 };

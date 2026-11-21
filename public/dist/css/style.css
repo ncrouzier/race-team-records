@@ -1071,7 +1071,7 @@ html {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 body {
-  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 15px;
   line-height: 1.4;
   color: #222222;
@@ -1172,7 +1172,7 @@ h6,
 .h4,
 .h5,
 .h6 {
-  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 300;
   line-height: 1.1;
   color: inherit;
@@ -6051,7 +6051,7 @@ button.close {
   position: absolute;
   z-index: 1070;
   display: block;
-  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-style: normal;
   font-weight: normal;
   letter-spacing: normal;
@@ -6169,7 +6169,7 @@ button.close {
   display: none;
   max-width: 276px;
   padding: 1px;
-  font-family: "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-style: normal;
   font-weight: normal;
   letter-spacing: normal;
@@ -6811,48 +6811,6 @@ button.close {
   .hidden-print {
     display: none !important;
   }
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 300;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk5hkWVAexQ.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 400;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk8ZkWVAexQ.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: italic;
-  font-weight: 700;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0RkyFjWVAexQ.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 300;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsiH0B4gaVc.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVc.ttf) format('truetype');
-}
-@font-face {
-  font-family: 'Open Sans';
-  font-style: normal;
-  font-weight: 700;
-  font-stretch: normal;
-  src: url(https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsg-1x4gaVc.ttf) format('truetype');
 }
 .navbar {
   border: none;
@@ -7763,7 +7721,7 @@ footer {
   color: #fff;
 }
 .navimg .banner-title .banner-title-top {
-  font-family: 'Barlow Semi Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Barlow Semi Condensed', "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 600;
   font-size: 1.57894737cqw;
   line-height: 1;
@@ -7778,7 +7736,7 @@ footer {
 }
 .navimg .banner-title .banner-title-bottom {
   position: relative;
-  font-family: 'Barlow Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Barlow Condensed', "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 800;
   font-size: 8.77192982cqw;
   line-height: 0.92;
@@ -23583,7 +23541,7 @@ banner-stage {
   color: #fff;
 }
 .bstage-window .banner-title .banner-title-top {
-  font-family: 'Barlow Semi Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Barlow Semi Condensed', "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 600;
   font-size: 1.57894737cqw;
   line-height: 1;
@@ -23598,7 +23556,7 @@ banner-stage {
 }
 .bstage-window .banner-title .banner-title-bottom {
   position: relative;
-  font-family: 'Barlow Condensed', "Inter", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'Barlow Condensed', "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 800;
   font-size: 8.77192982cqw;
   line-height: 0.92;

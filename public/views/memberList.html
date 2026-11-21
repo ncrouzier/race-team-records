@@ -106,12 +106,11 @@
                 ng-class="{'my-member-cell': isMyMember(m)}">
                 <!-- A small server-generated thumbnail (app/profileThumbnails.js), not
                      the full bio photo — keeps ~100 cards from meaning ~100 full-size
-                     downloads. Usually embedded right in the member list response
-                     (profileThumbUrl, a data: URI — see GET /api/members) so showing
-                     every card costs one request, not one per card; the per-member
-                     route is only a fallback for a list fetched before that embedding
-                     existed, or still mid-generation. Initials underneath show through
-                     on a 404 (not generated yet, broken source link) or any load error. -->
+                     downloads. Its URL comes with the member list (profileThumbUrl,
+                     versioned, so the browser keeps each photo until it changes — see
+                     GET /api/members); the per-member route is only a fallback for a
+                     thumbnail still being made. Initials underneath show through on a
+                     404 (not generated yet, broken source link) or any load error. -->
                 <span class="members-avatar">
                     <span>{{memberInitials(m)}}</span>
                     <img ng-if="m.pictureLink" ng-src="{{m.profileThumbUrl || ('/api/members/' + m._id + '/thumbnail.jpg')}}"

@@ -19,9 +19,10 @@ angular.module('mcrrcApp.members').factory('MembersService', ['Restangular', '$u
     // fields, filters and orders, which only the server applies.
     var memberLists = {};
     // Every member (past ones too), without the heavy bio / personal bests,
-    // with each one's profile thumbnail embedded (profileThumbUrl). One
-    // cached list shared by the members page (which filters it by status
-    // itself) and by every avatar on the site (MemberThumbsService).
+    // with the URL of each one's profile thumbnail (profileThumbUrl,
+    // versioned: the browser keeps each photo until it changes). One cached
+    // list shared by the members page (which filters it by status itself)
+    // and by every avatar on the site (MemberThumbsService).
     var ALL_MEMBERS_WITH_THUMBS = { select: '-bio -personalBests +profileThumb' };
     factory.getAllMembersWithThumbs = function () {
         return factory.getMembersWithCacheSupport(ALL_MEMBERS_WITH_THUMBS);

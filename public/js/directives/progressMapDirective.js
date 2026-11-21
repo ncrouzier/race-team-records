@@ -1,4 +1,6 @@
-angular.module('mcrrcApp').directive('progressMap', ['$timeout', '$filter', function ($timeout, $filter) {
+// The team's progress along its virtual route (Leaflet). Leaflet is not in
+// the page head: the first map shown loads it (LazyLoad).
+angular.module('mcrrcApp').directive('progressMap', ['$timeout', '$filter', 'LazyLoad', function ($timeout, $filter, LazyLoad) {
     return {
         restrict: 'EA',
         scope: {
@@ -14,6 +16,16 @@ angular.module('mcrrcApp').directive('progressMap', ['$timeout', '$filter', func
         link: function (scope, element) {
             var map = null;
             var layerGroup = null;
+            var destroyed = false;
+
+            // fn once Leaflet is in and the page has laid the map out
+            function whenReady(fn) {
+                LazyLoad.lib('leaflet').then(function () {
+                    if (!destroyed) $timeout(fn, 100);
+                }, function (err) {
+                    console.error(err);
+                });
+            }
 
             function initMap() {
                 if (map) {
@@ -151,18 +163,19 @@ angular.module('mcrrcApp').directive('progressMap', ['$timeout', '$filter', func
 
             scope.$watchCollection('segments', function (newVal) {
                 if (newVal) {
-                    $timeout(function () {
-                        updateMap();
-                    }, 100);
+                    whenReady(function () {
+                        if (!destroyed) updateMap();
+                    });
                 }
             });
 
             scope.$watch('routeData', function (newVal, oldVal) {
                 if (newVal) {
-                    $timeout(function () {
+                    whenReady(function () {
+                        if (destroyed) return;
                         if (!map) initMap();
                         updateMap();
-                    }, 100);
+                    });
                 }
             });
 
@@ -190,6 +203,7 @@ angular.module('mcrrcApp').directive('progressMap', ['$timeout', '$filter', func
             });
 
             scope.$on('$destroy', function () {
+                destroyed = true;
                 if (map) {
                     map.remove();
                     map = null;

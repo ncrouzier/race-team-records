@@ -199,8 +199,7 @@ async function photoBackdrop(member) {
             source = null;
         }
     }
-    const thumb = member && member.profileThumb;
-    if (!source && thumb && thumb.data) source = profileThumbnails.toBuffer(thumb.data);
+    if (!source && member) source = await profileThumbnails.readThumb(member._id).catch(() => null);
     if (!source) return null;
     try {
         const jpeg = await sharp(source).resize(SIZE, SIZE, { fit: 'cover', position: 'attention' })
@@ -306,12 +305,12 @@ function svgFor(y, withPhoto, mosaic, backdrop) {
 // The member's photo as a circle: their profile thumbnail, cut around
 // their face (app/profileThumbnails.js); null when they have none
 async function photoCircle(member) {
-    const thumb = member && member.profileThumb;
-    if (!thumb || !thumb.data) return null;
+    const thumb = member ? await profileThumbnails.readThumb(member._id).catch(() => null) : null;
+    if (!thumb) return null;
     const d = PHOTO_D;
     const mask = Buffer.from(`<svg width="${d}" height="${d}"><circle cx="${d / 2}" cy="${d / 2}" r="${d / 2}" fill="#fff"/></svg>`);
     try {
-        return await sharp(profileThumbnails.toBuffer(thumb.data)).resize(d, d, { fit: 'cover', kernel: 'lanczos3' })
+        return await sharp(thumb).resize(d, d, { fit: 'cover', kernel: 'lanczos3' })
             .composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer();
     } catch (err) {
         return null;
@@ -320,7 +319,7 @@ async function photoCircle(member) {
 
 /**
  * The PNG for a year (memberYear or teamYear's result); member: the member
- * document (profileThumb) for a member's year; faces: the team's thumbnails
+ * document (_id, pictureLink) for a member's year; faces: the team's thumbnails
  * (Buffers) for the team's.
  */
 async function render(y, member, faces) {
@@ -337,7 +336,12 @@ async function render(y, member, faces) {
 
     const mosaic = y.kind === 'team' ? await facesMosaic(faces) : null;
     const backdrop = y.kind === 'member' && y.fun && y.fun.background === 'photo' ? await photoBackdrop(member) : null;
-    return sharp(Buffer.from(svgFor(y, !!photo, mosaic, backdrop))).composite(layers).png({ compressionLevel: 9 }).toBuffer();
+    const rgba = await sharp(Buffer.from(svgFor(y, !!photo, mosaic, backdrop))).composite(layers).png().toBuffer();
+    // The image is fully opaque: without its alpha channel the same pixels
+    // take 12-35% fewer bytes. A second pass, as sharp applies removeAlpha
+    // before compositing. (The page shows a WebP made from this PNG: see
+    // app/yearInReviewRoutes.js.)
+    return sharp(rgba).removeAlpha().png({ compressionLevel: 9, adaptiveFiltering: true }).toBuffer();
 }
 
 module.exports = { render, svgFor, placeText };

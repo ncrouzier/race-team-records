@@ -1,7 +1,8 @@
 // Small OSM map for the pace adjustment tool: shows where the runner is and
 // where the weather reading actually came from (Open-Meteo snaps to its own
-// grid, so the two are never quite the same point).
-angular.module('mcrrcApp').directive('weatherMap', ['$timeout', function ($timeout) {
+// grid, so the two are never quite the same point). Leaflet is not in the
+// page head: the first map shown loads it (LazyLoad).
+angular.module('mcrrcApp').directive('weatherMap', ['$timeout', 'LazyLoad', function ($timeout, LazyLoad) {
     return {
         restrict: 'EA',
         scope: {
@@ -14,6 +15,7 @@ angular.module('mcrrcApp').directive('weatherMap', ['$timeout', function ($timeo
             var layerGroup = null;
             var pickMode = false;
             var pickLink = null;
+            var destroyed = false;
 
             function container() {
                 return element.find('.weather-map-container')[0];
@@ -160,10 +162,17 @@ angular.module('mcrrcApp').directive('weatherMap', ['$timeout', function ($timeo
             }
 
             scope.$watch('weather', function (weather) {
-                if (weather) render(weather);
+                if (!weather) return;
+                LazyLoad.lib('leaflet').then(function () {
+                    // The newest reading, if another came in while Leaflet loaded
+                    if (!destroyed && scope.weather) render(scope.weather);
+                }, function (err) {
+                    console.error(err);
+                });
             });
 
             scope.$on('$destroy', function () {
+                destroyed = true;
                 if (map) {
                     map.remove();
                     map = null;

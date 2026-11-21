@@ -297,13 +297,22 @@ require('./app/memberPhotos').checkWritable();
 })();
 
 // Backfill member profile thumbnails at boot — covers members whose
-// pictureLink has no matching thumbnail yet (new members, or ones who had a
-// photo before this existed). Explicitly caught: unlike service.startUpUpdate
-// above, a thumbnail failure should never take the whole server down.
+// pictureLink has no matching thumbnail file yet (new members, a file lost
+// or out of step with its record), and moves thumbnails still stored in the
+// database to files. Explicitly caught: unlike service.startUpUpdate above, a
+// thumbnail failure should never take the whole server down.
 require('./app/profileThumbnails').ensureAllGenerated()
-    .then(({ checked, generated }) => {
+    .then(async ({ checked, generated, moved }) => {
+        if (moved > 0) {
+            console.log(`Moved ${moved} profile thumbnail(s) from the database to files`);
+        }
         if (generated > 0) {
             console.log(`Generated ${generated} profile thumbnail(s) (${checked} member photo(s) checked)`);
+        }
+        // Browsers' cached member lists have the old thumbnail links (or the
+        // thumbnails themselves): have them fetch the lists again
+        if (moved > 0 || generated > 0) {
+            await service.markMemberProfileChanged();
         }
     })
     .catch(err => console.error('Error generating profile thumbnails at startup:', err));

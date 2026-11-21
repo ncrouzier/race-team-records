@@ -3,15 +3,21 @@
 // (app/yearInReviewImage.js). Public, like the member and stats pages.
 //
 //   GET /api/year-in-review/team/:year            the team's year
-//   GET /api/year-in-review/team/:year/image.png
+//   GET /api/year-in-review/team/:year/image.png (or .webp)
 //   GET /api/year-in-review/members/:username/:year
-//   GET /api/year-in-review/members/:username/:year/image.png?race=&place=&food=&stat=&bg=
+//   GET /api/year-in-review/members/:username/:year/image.png?race=&place=&food=&stat=&bg= (or .webp)
+//
+// The image in two formats: the page shows the WebP (a tenth of the PNG's
+// size, and it is downloaded on every visit to the page), and makes the PNG
+// to share or copy from it in the browser (YearInReviewCtrl). The PNG is for
+// link previews (og:image) and the "open image" button.
 
 const Member = require('./models/member');
 const Result = require('./models/result');
 const VolunteerJob = require('./models/volunteerjob');
 const { FIRST_YEAR, FOODS, foodBurned, teamRanks, validYear, memberYear, teamYear, withChoices } = require('./yearInReview');
 const image = require('./yearInReviewImage');
+const sharp = require('sharp');
 
 const RESULT_FIELDS = 'time ranking members agegrade legs miles achievements race._id race.racename race.racedate race.order ' +
     'race.racetype race.distanceName race.location race.isMultisport';
@@ -35,7 +41,7 @@ function yearRange(year) {
 }
 
 function findMember(username, withPhoto) {
-    const fields = 'firstname lastname username sex achievements' + (withPhoto ? ' pictureLink +profileThumb' : '');
+    const fields = 'firstname lastname username sex achievements' + (withPhoto ? ' pictureLink' : '');
     return Member.findOne({ username: String(username) }).select(fields).lean();
 }
 
@@ -115,10 +121,12 @@ function getTeamRanks(year) {
 // background, in a fixed shuffled order (the same image each time)
 async function teamFaces(year) {
     const ids = await Result.distinct('members._id', { 'race.racedate': yearRange(year) });
-    const members = await Member.find({ _id: { $in: ids }, 'profileThumb.data': { $exists: true } }).select('+profileThumb').lean();
+    const members = await Member.find({ _id: { $in: ids }, 'profileThumb.fileHash': { $exists: true } }).select('_id').lean();
     const profileThumbnails = require('./profileThumbnails');
     const hash = id => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) | 0; return h; };
-    return members.sort((a, b) => hash(a._id) - hash(b._id)).map(m => profileThumbnails.toBuffer(m.profileThumb.data));
+    const faces = await Promise.all(members.sort((a, b) => hash(a._id) - hash(b._id))
+        .map(m => profileThumbnails.readThumb(m._id).catch(() => null)));
+    return faces.filter(Boolean);
 }
 
 function getTeamYear(year) {
@@ -132,9 +140,19 @@ function picksFrom(query) {
     return { race: pick(query.race), place: pick(query.place), food: pick(query.food), stat: pick(query.stat), bg: pick(query.bg) };
 }
 
-function sendImage(res, png) {
-    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' });
-    res.end(png);
+// The image for a cache key in the format asked for: the PNG is rendered
+// (render) once, the WebP made from it, and both kept a few minutes.
+// Resolves to null when render does (no such member).
+const WEBP_QUALITY = 90; // looks the same as the PNG, even zoomed in
+function imageIn(format, key, render) {
+    const png = cached(key, render);
+    if (format !== 'webp') return png;
+    return cached(key + ':webp', () => png.then(buf => buf && sharp(buf).webp({ quality: WEBP_QUALITY, effort: 6 }).toBuffer()));
+}
+
+function sendImage(res, format, buf) {
+    res.set({ 'Content-Type': 'image/' + format, 'Cache-Control': 'public, max-age=3600' });
+    res.end(buf);
 }
 
 module.exports = function (app) {
@@ -149,15 +167,15 @@ module.exports = function (app) {
         }
     });
 
-    app.get('/api/year-in-review/team/:year/image.png', async function (req, res) {
+    app.get('/api/year-in-review/team/:year/image.:format(png|webp)', async function (req, res) {
         const year = validYear(req.params.year);
         if (!year) return res.status(404).end();
         try {
-            const png = await cached('ti:' + year, async () => {
+            const buf = await imageIn(req.params.format, 'ti:' + year, async () => {
                 const [data, faces] = await Promise.all([getTeamYear(year), teamFaces(year)]);
                 return image.render(data, null, faces);
             });
-            sendImage(res, png);
+            sendImage(res, req.params.format, buf);
         } catch (err) {
             console.error('Year in review image (team) error:', err);
             res.status(500).end();
@@ -177,18 +195,18 @@ module.exports = function (app) {
         }
     });
 
-    app.get('/api/year-in-review/members/:username/:year/image.png', async function (req, res) {
+    app.get('/api/year-in-review/members/:username/:year/image.:format(png|webp)', async function (req, res) {
         const year = validYear(req.params.year);
         if (!year) return res.status(404).end();
         try {
             const picks = picksFrom(req.query);
             const key = 'mi:' + req.params.username + ':' + year + ':' + [picks.race, picks.place, picks.food, picks.stat, picks.bg].join(':');
-            const png = await cached(key, async () => {
+            const buf = await imageIn(req.params.format, key, async () => {
                 const [data, member] = await Promise.all([getMemberYear(req.params.username, year), findMember(req.params.username, true)]);
                 return data ? image.render(withChoices(data, picks), member) : null;
             });
-            if (!png) return res.status(404).end();
-            sendImage(res, png);
+            if (!buf) return res.status(404).end();
+            sendImage(res, req.params.format, buf);
         } catch (err) {
             console.error('Year in review image (member) error:', err);
             res.status(500).end();

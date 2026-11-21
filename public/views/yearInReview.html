@@ -268,7 +268,11 @@
                 <!-- The share image -->
                 <div class="member-card yir-card yir-share">
                     <div class="member-card-header"><h3> Share it</h3></div>
-                    <img ng-src="{{ imageUrl }}" alt="{{ isTeam ? 'The team' : y.member.firstname }}'s {{ y.year }} in review" loading="lazy">
+                    <!-- The WebP, a tenth of the PNG's size; the PNG for a browser without WebP -->
+                    <picture>
+                        <source type="image/webp" ng-attr-srcset="{{ imageUrl }}">
+                        <img ng-src="{{ imagePngUrl }}" alt="{{ isTeam ? 'The team' : y.member.firstname }}'s {{ y.year }} in review" loading="lazy">
+                    </picture>
 
                     <!-- A member's picks for the image (YearInReviewCtrl: picks) -->
                     <div class="yir-customize" ng-if="!isTeam">

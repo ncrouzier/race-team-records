@@ -34,45 +34,9 @@ app.directive('imageonload', function () {
 // opens their races there rather than everyone's.
 //
 // Datamaps and topojson are not in the bundle (datamaps alone is half a
-// megabyte, for two pages): the first map drawn loads them, once. topojson
-// keeps its integrity hash (see views/index.ejs); update it with the version.
-var MAP_SCRIPTS = [
-  {
-    src: 'https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js',
-    integrity: 'sha512-RzAPb80dX80u+WhT+/e+t3J+Oa1aHEkUuPrb5pkLCf6UInraMxYY9PtIe0zZFFp7IWr5RWLr0qvCwCZf0JvqMw=='
-  },
-  { src: '/libs/datamaps/dist/datamaps.all.hires.min.js' }
-];
-var mapScriptsLoading = null;
-
-function loadMapScripts($q) {
-  if (window.Datamap) return $q.resolve();
-  if (!mapScriptsLoading) {
-    mapScriptsLoading = $q.all(MAP_SCRIPTS.map(function (file) {
-      return $q(function (resolve, reject) {
-        var script = document.createElement('script');
-        script.src = file.src;
-        if (file.integrity) {
-          script.integrity = file.integrity;
-          script.crossOrigin = 'anonymous';
-        }
-        // Fetched side by side, run in this order (datamaps after topojson)
-        script.async = false;
-        script.onload = resolve;
-        script.onerror = function () { reject(new Error('Could not load ' + file.src)); };
-        document.head.appendChild(script);
-      });
-    })).catch(function (err) {
-      // let the next visit to a map page try again
-      mapScriptsLoading = null;
-      return $q.reject(err);
-    });
-  }
-  return mapScriptsLoading;
-}
-
+// megabyte, for two pages): the first map drawn loads them (LazyLoad).
 function raceMapDirective(kind) {
-  return ['$timeout', '$window', '$q', 'UtilsService', '$state', function ($timeout, $window, $q, UtilsService, $state) {
+  return ['$timeout', '$window', '$q', 'UtilsService', '$state', 'LazyLoad', function ($timeout, $window, $q, UtilsService, $state, LazyLoad) {
     return {
       restrict: 'EA',
       scope: {
@@ -143,7 +107,7 @@ function raceMapDirective(kind) {
             ? $q.resolve(scope.mapCounts)
             : UtilsService.getLocationInfo({ type: kind });
           var wanted = scope.mapCounts;
-          $q.all([counts, loadMapScripts($q)]).then(function (loaded) {
+          $q.all([counts, LazyLoad.lib('datamaps')]).then(function (loaded) {
             // a newer pick (or a member picked while the team's counts were
             // loading) wins, and a page left meanwhile draws nothing
             if (destroyed || scope.mapCounts !== wanted) return;

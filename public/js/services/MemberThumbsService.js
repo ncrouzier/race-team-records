@@ -1,8 +1,9 @@
-// Every member's profile thumbnail as a data: URI, keyed by member _id, read
-// from the one cached list of all members the members page also uses
+// Every member's profile thumbnail URL, keyed by member _id, read from the
+// one cached list of all members the members page also uses
 // (MembersService.getAllMembersWithThumbs: IndexedDB-backed, refreshed when
-// member data changes) instead of one request per avatar. A member missing
-// from the map has no photo: callers show initials without asking the server.
+// member data changes). Each URL is versioned (?v=), so the browser keeps the
+// photo until it changes. A member missing from the map has no photo:
+// callers show initials without asking the server.
 angular.module('mcrrcApp.members').factory('MemberThumbsService', ['MembersService', '$q', function (MembersService, $q) {
     var mapPromise = null;
     var map = null;
@@ -26,7 +27,7 @@ angular.module('mcrrcApp.members').factory('MemberThumbsService', ['MembersServi
     }
 
     return {
-        // Promise of the { memberId: dataUri } map
+        // Promise of the { memberId: url } map
         all: load,
         // The thumbnail for one member once the map is in, else null
         peek: function (memberId) {

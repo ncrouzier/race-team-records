@@ -202,10 +202,9 @@ angular.module('mcrrcApp.results').controller('RaceDetailController', ['$scope',
         return (first + last).toUpperCase();
     }
 
-    // Each runner's profile thumbnail, from MemberThumbsService's one cached
-    // map of every member's thumbnail (no request per dot), decoded once per
-    // member and shared by every redraw. No thumbnail: the dot keeps its
-    // initials.
+    // Each runner's profile thumbnail, at the URL from MemberThumbsService's
+    // one cached map of every member's thumbnail, loaded once per member and
+    // shared by every redraw. No thumbnail: the dot keeps its initials.
     var dotPhotos = {};
     function dotPhotoFor(result) {
         var member = result.members && result.members[0];

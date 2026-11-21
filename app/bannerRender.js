@@ -252,8 +252,27 @@ function isAutomaticCrop(p, crop, overlay) {
     return ['x', 'y', 'width'].every((k) => Math.abs(Number(crop[k]) - auto[k]) <= 1);
 }
 
-// The banner, from the photo and a crop ({ x, y, width } in its pixels)
+// The banner, from the photo and a crop ({ x, y, width } in its pixels): a JPEG
 async function renderBanner(buffer, p, crop, overlay, quality) {
+    return jpegOf(await renderPixels(buffer, p, crop, overlay), quality);
+}
+
+// The banner as its JPEG and its AVIF, both from the same rendered pixels
+// (a save: app/bannerFiles.js keeps both). toAvif: bannerFiles.toAvif.
+async function renderBannerFiles(buffer, p, crop, overlay, toAvif) {
+    const pixels = await renderPixels(buffer, p, crop, overlay);
+    const [jpeg, avif] = await Promise.all([jpegOf(pixels), toAvif(pixels)]);
+    return { jpeg, avif };
+}
+
+function jpegOf(pixels, quality) {
+    return sharp(pixels.data, { raw: pixels.info })
+        .jpeg({ quality: quality || QUALITY, chromaSubsampling: '4:4:4', mozjpeg: true })
+        .toBuffer();
+}
+
+// The banner's pixels, before compression: { data, info } (raw)
+async function renderPixels(buffer, p, crop, overlay) {
     overlay = overlay || fadeOverlay();
     const pl = isAutomaticCrop(p, crop, overlay)
         ? placementFor(Object.assign({}, p, { crop: null }), overlay)
@@ -270,17 +289,18 @@ async function renderBanner(buffer, p, crop, overlay, quality) {
         .extract({ left, top, width: Math.min(scaledW - left, OUT_W), height: OUT_H })
         .toBuffer();
 
-    return sharp({ create: { width: OUT_W, height: OUT_H, channels: 3, background: '#ffffff' } })
+    const out = await sharp({ create: { width: OUT_W, height: OUT_H, channels: 3, background: '#ffffff' } })
         .composite([
             { input: photo, left: 0, top: 0 },
             { input: overlay.svg, left: 0, top: 0 }
         ])
-        .jpeg({ quality: quality || QUALITY, chromaSubsampling: '4:4:4', mozjpeg: true })
-        .toBuffer();
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+    return { data: out.data, info: { width: out.info.width, height: out.info.height, channels: out.info.channels } };
 }
 
 module.exports = {
     OUT_W, OUT_H, WIDE_VISIBLE, FRAMING, FADE, QUALITY,
     analyse, fadeOverlay, photoSettings, cropLimits, clampCrop, placementFor,
-    cropOfPlacement, automaticCrop, isAutomaticCrop, renderBanner
+    cropOfPlacement, automaticCrop, isAutomaticCrop, renderBanner, renderBannerFiles
 };

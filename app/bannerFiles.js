@@ -1,6 +1,8 @@
 // Homepage banners, stored on the server: <BANNER_DIR>/<name>.jpg, made on
 // the Banners admin page (app/bannerRoutes.js) — not in the repo or the
-// Docker image. In production BANNER_DIR is a host folder bind-mounted into
+// Docker image. Next to each, <name>.avif: the same banner at about half the
+// bytes, sent to browsers that take AVIF (nearly all); the JPG is the master
+// copy, and what every other browser gets. In production BANNER_DIR is a host folder bind-mounted into
 // the container (/opt/mcrrc/uploads/banners, see deploy/docker-compose.yml);
 // locally it defaults to ./uploads/banners.
 //
@@ -13,6 +15,13 @@
 // never served — and the banner made from it has none. The draft is deleted once
 // the banner is saved — the source photo is not kept — or cancelled, and any
 // draft left behind is swept after DRAFT_MAX_AGE_MS.
+//
+// The AVIF is current when it is at least as new as its JPG: every write of
+// a JPG comes before its AVIF's, so a JPG replaced without one (a failed
+// encode, a crash in between) leaves an older AVIF, which is not served
+// (avifFor) and is made again at the next start (ensureAvifs). Saves from the
+// editor make both from the same rendered pixels; startup makes any missing
+// one from its JPG, and drops AVIFs whose JPG is gone.
 //
 // Banner names are chosen by the admin, cleaned to NAME_CHARS, and must not
 // be in use already, by another banner entry or by any file in the folder,
@@ -42,6 +51,11 @@ const ACCEPTED_FORMATS = ['jpeg', 'png', 'webp'];
 
 const NAME_PATTERN = /^[A-Za-z0-9_-]{1,60}$/;
 const FILE_PATTERN = /^([A-Za-z0-9_-]{1,60})\.jpg$/;
+const AVIF_PATTERN = /^([A-Za-z0-9_-]{1,60})\.avif$/;
+// Indistinguishable from the JPG (quality 95) even zoomed in, at ~60% of its
+// bytes; 60 would be ~45%, slightly soft in fine detail. Changing it remakes
+// every AVIF at the next start (QUALITY_STAMP).
+const AVIF_QUALITY = 70;
 const DRAFT_PATTERN = /^[a-f0-9]{24}$/;
 
 function bannerError(message, status) {
@@ -71,6 +85,32 @@ function fileFor(name) {
     return path.join(BANNER_DIR, name + '.jpg');
 }
 
+// The quality the AVIFs were made at: when it is not AVIF_QUALITY, startup
+// makes them all again (ensureAvifs)
+const QUALITY_STAMP = '.avif-quality';
+
+function avifFileFor(name) {
+    if (!NAME_PATTERN.test(String(name))) throw bannerError('Not a banner name');
+    return path.join(BANNER_DIR, name + '.avif');
+}
+
+// The AVIF of a banner: from its JPG, or from its rendered pixels
+// ({ data, info }, bannerRender.renderBannerFiles)
+function toAvif(input) {
+    const img = input && input.info ? sharp(input.data, { raw: input.info }) : sharp(input);
+    return img.avif({ quality: AVIF_QUALITY, effort: 4 }).toBuffer();
+}
+
+// The path of a banner's AVIF when it is current (see the top), else null
+async function avifFor(name) {
+    try {
+        const [jpg, avif] = await Promise.all([fs.promises.stat(fileFor(name)), fs.promises.stat(avifFileFor(name))]);
+        return avif.mtimeMs >= jpg.mtimeMs ? avifFileFor(name) : null;
+    } catch (err) {
+        return null;
+    }
+}
+
 // The names of the banner files in the folder
 function listFiles() {
     try {
@@ -93,8 +133,13 @@ function nameTaken(name, filenames, ownFilename) {
     return filenames.concat(listFiles()).some((f) => String(f).toLowerCase() === want);
 }
 
+// The banner's address. Its version names the picture and the AVIF quality:
+// the URL is cached for good ("immutable"), so a browser fetches it again
+// only when one of them changes. Without the quality, browsers that had the
+// JPG at this URL before AVIFs existed (or an AVIF at an older quality) would
+// keep it for a year.
 function urlFor(filename, version) {
-    return URL_PREFIX + encodeURIComponent(filename) + (version ? '?v=' + version : '');
+    return URL_PREFIX + encodeURIComponent(filename) + (version ? '?v=' + version + '-a' + AVIF_QUALITY : '');
 }
 
 function versionOf(buffer) {
@@ -110,9 +155,29 @@ async function writeTmp(data) {
     return tmp;
 }
 
-// A new banner file: fails with a 409 if the name exists, even if another
-// save took it a moment ago
-async function createBanner(name, data) {
+// A banner's AVIF written in place (after its JPG: see the top). Without
+// one, an older AVIF is removed rather than left to be made again.
+async function writeAvif(name, avif) {
+    const file = avifFileFor(name);
+    if (!avif) return removeFile(file);
+    const tmp = await writeTmp(avif);
+    try {
+        await fs.promises.rename(tmp, file);
+    } catch (err) {
+        await fs.promises.unlink(tmp).catch(() => { });
+        // Not fatal: the JPG is there, and startup makes the AVIF again
+        console.error('Banners: could not write ' + name + '.avif:', err.message);
+        await removeFile(file).catch(() => { });
+    }
+}
+
+function removeFile(file) {
+    return fs.promises.unlink(file).catch((err) => { if (err.code !== 'ENOENT') throw err; });
+}
+
+// A new banner: its JPG, then its AVIF (when given). Fails with a 409 if the
+// name exists, even if another save took it a moment ago.
+async function createBanner(name, data, avif) {
     const file = fileFor(name);
     const tmp = await writeTmp(data);
     try {
@@ -123,10 +188,11 @@ async function createBanner(name, data) {
     } finally {
         await fs.promises.unlink(tmp).catch(() => { });
     }
+    await writeAvif(name, avif);
 }
 
-// A banner's file replaced in place: readers see the old one or the new one
-async function replaceBanner(name, data) {
+// A banner's files replaced in place: readers see the old one or the new one
+async function replaceBanner(name, data, avif) {
     const file = fileFor(name);
     const tmp = await writeTmp(data);
     try {
@@ -135,32 +201,100 @@ async function replaceBanner(name, data) {
         await fs.promises.unlink(tmp).catch(() => { });
         throw err;
     }
+    await writeAvif(name, avif);
 }
 
 // Rename a banner's file: the new name is created exclusively, then the old
 // one removed. A rename that only changes case goes through a temporary name
 // (on a case-insensitive disk the two names are one file).
+// Its AVIF follows (moved, so it stays as new as the JPG).
 async function renameBanner(oldName, newName) {
     const from = fileFor(oldName), to = fileFor(newName);
     if (oldName.toLowerCase() === newName.toLowerCase()) {
-        const tmp = path.join(BANNER_DIR, '.tmp-' + crypto.randomBytes(8).toString('hex'));
-        await fs.promises.rename(from, tmp);
-        await fs.promises.rename(tmp, to);
-        return;
+        await renameThroughTmp(from, to);
+    } else {
+        try {
+            await fs.promises.link(from, to);
+        } catch (err) {
+            if (err.code === 'EEXIST') throw bannerError('The name "' + newName + '" is already used by another banner.', 409);
+            throw err;
+        }
+        await fs.promises.unlink(from);
     }
-    try {
-        await fs.promises.link(from, to);
-    } catch (err) {
-        if (err.code === 'EEXIST') throw bannerError('The name "' + newName + '" is already used by another banner.', 409);
-        throw err;
-    }
-    await fs.promises.unlink(from);
+    await renameAvif(oldName, newName);
 }
 
-function deleteBanner(name) {
-    let file;
-    try { file = fileFor(name); } catch (e) { return Promise.resolve(); }
-    return fs.promises.unlink(file).catch((err) => { if (err.code !== 'ENOENT') throw err; });
+async function renameThroughTmp(from, to) {
+    const tmp = path.join(BANNER_DIR, '.tmp-' + crypto.randomBytes(8).toString('hex'));
+    await fs.promises.rename(from, tmp);
+    await fs.promises.rename(tmp, to);
+}
+
+// The AVIF under the banner's new name. None, or one that cannot be moved:
+// any under either name is removed, and startup makes it again from the JPG.
+async function renameAvif(oldName, newName) {
+    const from = avifFileFor(oldName), to = avifFileFor(newName);
+    try {
+        if (oldName.toLowerCase() === newName.toLowerCase()) await renameThroughTmp(from, to);
+        else await fs.promises.rename(from, to);
+    } catch (err) {
+        if (err.code !== 'ENOENT') console.error('Banners: could not rename ' + oldName + '.avif:', err.message);
+        await removeFile(from).catch(() => { });
+        if (oldName.toLowerCase() !== newName.toLowerCase()) await removeFile(to).catch(() => { });
+    }
+}
+
+// Both of a banner's files
+async function deleteBanner(name) {
+    let file, avif;
+    try { file = fileFor(name); avif = avifFileFor(name); } catch (e) { return; }
+    await removeFile(file);
+    await removeFile(avif);
+}
+
+// At startup: an AVIF for every banner without a current one (made from its
+// JPG, one at a time: each takes a fraction of a second of the one core), or
+// for every banner when AVIF_QUALITY changed since they were made; and none
+// for a banner that is gone. Resolves to { made, removed, requality }.
+async function ensureAvifs() {
+    let entries;
+    try { entries = await fs.promises.readdir(BANNER_DIR); } catch (err) { return { made: 0, removed: 0, requality: false }; }
+    const stampFile = path.join(BANNER_DIR, QUALITY_STAMP);
+    const stamped = (await fs.promises.readFile(stampFile, 'utf8').catch(() => '')).trim();
+    const requality = stamped !== String(AVIF_QUALITY);
+    let made = 0, removed = 0, failed = 0;
+    for (const entry of entries) {
+        const m = AVIF_PATTERN.exec(entry);
+        if (m && !entries.includes(m[1] + '.jpg')) {
+            await removeFile(path.join(BANNER_DIR, entry));
+            removed++;
+        }
+    }
+    const mtimeOf = (file) => fs.promises.stat(file).then((st) => st.mtimeMs, () => null);
+    for (const entry of entries) {
+        const m = FILE_PATTERN.exec(entry);
+        if (!m || (!requality && await avifFor(m[1]))) continue;
+        try {
+            const jpgBefore = await mtimeOf(fileFor(m[1]));
+            const avifBefore = await mtimeOf(avifFileFor(m[1]));
+            const avif = await toAvif(await fs.promises.readFile(fileFor(m[1])));
+            // Either file written meanwhile (an admin's save, which writes
+            // both): this one is of the old picture, or not needed
+            if (await mtimeOf(fileFor(m[1])) !== jpgBefore || await mtimeOf(avifFileFor(m[1])) !== avifBefore) continue;
+            await writeAvif(m[1], avif);
+            made++;
+        } catch (err) {
+            failed++;
+            console.error('Banners: could not make ' + m[1] + '.avif:', err.message);
+        }
+    }
+    // Only once they all are at this quality: a failed one is tried again
+    if (requality && !failed) {
+        await fs.promises.writeFile(stampFile, String(AVIF_QUALITY) + '\n').catch((err) => {
+            console.error('Banners: could not record the AVIF quality:', err.message);
+        });
+    }
+    return { made, removed, requality };
 }
 
 // ---- Drafts ----
@@ -300,8 +434,9 @@ async function checkWritable() {
 module.exports = {
     BANNER_DIR, DRAFT_DIR, URL_PREFIX, MAX_UPLOAD_BYTES, ACCEPTED_TYPES, NAME_PATTERN, FILE_PATTERN, DRAFT_PATTERN,
     DRAFT_MAX_AGE_MS,
-    cleanName, fileFor, listFiles, nameTaken, urlFor, versionOf,
-    createBanner, replaceBanner, renameBanner, deleteBanner,
+    AVIF_QUALITY,
+    cleanName, fileFor, avifFileFor, avifFor, toAvif, listFiles, nameTaken, urlFor, versionOf,
+    createBanner, replaceBanner, renameBanner, deleteBanner, ensureAvifs,
     createDraft, readDraft, draftPhotoPath, deleteDraft, sweepDrafts,
     checkWritable
 };

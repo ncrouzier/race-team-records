@@ -287,10 +287,20 @@ service.startUpUpdate();
 require('./app/memberPhotos').checkWritable();
 
 // Banners live in BANNER_DIR (a host folder in production). At boot: say if
-// it cannot be written; and every hour, drop editor drafts left for over a day.
+// it cannot be written, and make the AVIF of any banner without a current one
+// (all of them on the first boot with AVIFs, or after a change of their
+// quality: a fraction of a second each); and
+// every hour, drop editor drafts left for over a day.
 (function () {
     const bannerFiles = require('./app/bannerFiles');
     bannerFiles.checkWritable();
+    bannerFiles.ensureAvifs()
+        .then(({ made, removed, requality }) => {
+            if (made || removed) {
+                console.log(`Banners: made ${made} AVIF file(s)${requality ? ' (new quality)' : ''}, removed ${removed} left over`);
+            }
+        })
+        .catch(err => console.error('Banners: could not make the AVIF files:', err));
     const sweep = () => bannerFiles.sweepDrafts().catch(err => console.error('Banners: draft cleanup failed:', err));
     sweep();
     setInterval(sweep, 60 * 60 * 1000).unref();

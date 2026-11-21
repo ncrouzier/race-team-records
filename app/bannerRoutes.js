@@ -95,16 +95,22 @@ module.exports = function (app) {
     });
 
     // A banner file. Not express.static: only a banner name maps to a file,
-    // so no listing, no draft, no temporary file is reachable.
-    app.get('/uploads/banners/:file', function (req, res) {
+    // so no listing, no draft, no temporary file is reachable. The same URL
+    // (<name>.jpg) is the AVIF for a browser that takes it and the banner has
+    // a current one (app/bannerFiles.js), else the JPG.
+    app.get('/uploads/banners/:file', async function (req, res) {
         const m = bannerFiles.FILE_PATTERN.exec(req.params.file);
         if (!m) return res.status(404).end();
+        const avif = /\bimage\/avif\b/.test(req.headers.accept || '') ? await bannerFiles.avifFor(m[1]) : null;
         res.set({
             'X-Content-Type-Options': 'nosniff',
             'Content-Security-Policy': "default-src 'none'",
-            'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'public, max-age=300'
+            'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'public, max-age=300',
+            // Two formats at one URL: caches must key on what the browser takes
+            'Vary': 'Accept'
         });
-        res.sendFile(bannerFiles.fileFor(m[1]), { dotfiles: 'deny', headers: { 'Content-Type': 'image/jpeg' } }, function (err) {
+        const file = avif || bannerFiles.fileFor(m[1]);
+        res.sendFile(file, { dotfiles: 'deny', headers: { 'Content-Type': avif ? 'image/avif' : 'image/jpeg' } }, function (err) {
             if (err && !res.headersSent) {
                 res.removeHeader('Cache-Control');
                 res.status(err.status === 404 || err.code === 'ENOENT' ? 404 : 500).end();
@@ -316,12 +322,13 @@ module.exports = function (app) {
             const draft = await bannerFiles.readDraft(req.params.id);
             const p = bannerRender.photoSettings(draft.detected);
             const crop = bannerRender.clampCrop(p, body.crop || {}, overlay);
-            const jpeg = await serial(() => bannerRender.renderBanner(draft.photo, p, crop, overlay));
+            // The JPG and the AVIF, from the same pixels (app/bannerFiles.js keeps both)
+            const { jpeg, avif } = await serial(() => bannerRender.renderBannerFiles(draft.photo, p, crop, overlay, bannerFiles.toAvif));
             const version = bannerFiles.versionOf(jpeg);
             const filename = name + '.jpg';
 
             if (!banner) {
-                await bannerFiles.createBanner(name, jpeg);
+                await bannerFiles.createBanner(name, jpeg, avif);
                 try {
                     banner = await Banner.create({ filename, members: [], pinned: false, titlePosition: 'right', version });
                 } catch (err) {
@@ -331,12 +338,12 @@ module.exports = function (app) {
             } else {
                 const oldBase = baseName(oldFilename);
                 if (oldBase === name) {
-                    await bannerFiles.replaceBanner(name, jpeg);
+                    await bannerFiles.replaceBanner(name, jpeg, avif);
                 } else if (oldBase.toLowerCase() === name.toLowerCase()) {
-                    await bannerFiles.replaceBanner(oldBase, jpeg);
+                    await bannerFiles.replaceBanner(oldBase, jpeg, avif);
                     await bannerFiles.renameBanner(oldBase, name);
                 } else {
-                    await bannerFiles.createBanner(name, jpeg);
+                    await bannerFiles.createBanner(name, jpeg, avif);
                     await bannerFiles.deleteBanner(oldBase);
                 }
                 banner.filename = filename;

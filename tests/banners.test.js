@@ -137,8 +137,107 @@ describe('banner files', () => {
         expect(bannerFiles.listFiles()).toEqual(['three.jpg']);
     });
 
-    test('urls carry the version', () => {
-        expect(bannerFiles.urlFor('aaronA.jpg', 'abc')).toBe('/uploads/banners/aaronA.jpg?v=abc');
+    test('urls carry the version, and the AVIF quality (so a cached copy is not kept past a change)', () => {
+        expect(bannerFiles.urlFor('aaronA.jpg', 'abc')).toBe('/uploads/banners/aaronA.jpg?v=abc-a' + bannerFiles.AVIF_QUALITY);
+    });
+});
+
+describe('banner AVIF files', () => {
+    beforeEach(clearDir);
+    const files = () => fs.readdirSync(BANNER_DIR).filter((f) => !f.startsWith('.')).sort();
+    const read = (f) => fs.readFileSync(path.join(BANNER_DIR, f), 'utf8');
+    // A file made a while ago (an AVIF older than its JPG is not current)
+    const age = (f, seconds) => { const t = new Date(Date.now() - seconds * 1000); fs.utimesSync(path.join(BANNER_DIR, f), t, t); };
+
+    test('a new banner gets both files, and its AVIF is current', async () => {
+        await bannerFiles.createBanner('one', Buffer.from('jpg'), Buffer.from('avif'));
+        expect(files()).toEqual(['one.avif', 'one.jpg']);
+        expect(await bannerFiles.avifFor('one')).toBe(path.join(BANNER_DIR, 'one.avif'));
+    });
+
+    test('replacing replaces both; replaced without an AVIF, the old one goes', async () => {
+        await bannerFiles.createBanner('one', Buffer.from('jpg1'), Buffer.from('avif1'));
+        await bannerFiles.replaceBanner('one', Buffer.from('jpg2'), Buffer.from('avif2'));
+        expect([read('one.jpg'), read('one.avif')]).toEqual(['jpg2', 'avif2']);
+        await bannerFiles.replaceBanner('one', Buffer.from('jpg3'));
+        expect(files()).toEqual(['one.jpg']);
+        expect(await bannerFiles.avifFor('one')).toBeNull();
+    });
+
+    test('renaming moves both, also a case-only rename; deleting removes both', async () => {
+        await bannerFiles.createBanner('one', Buffer.from('jpg'), Buffer.from('avif'));
+        await bannerFiles.renameBanner('one', 'two');
+        expect(files()).toEqual(['two.avif', 'two.jpg']);
+        await bannerFiles.renameBanner('two', 'Two');
+        expect(files()).toEqual(['Two.avif', 'Two.jpg']);
+        expect(read('Two.avif')).toBe('avif');
+        expect(await bannerFiles.avifFor('Two')).not.toBeNull();
+        await bannerFiles.deleteBanner('Two');
+        expect(files()).toEqual([]);
+    });
+
+    test('a rename refused (name taken) leaves both files where they were', async () => {
+        await bannerFiles.createBanner('one', Buffer.from('jpg'), Buffer.from('avif'));
+        await bannerFiles.createBanner('two', Buffer.from('x'));
+        await expect(bannerFiles.renameBanner('one', 'two')).rejects.toMatchObject({ status: 409 });
+        expect(files()).toEqual(['one.avif', 'one.jpg', 'two.jpg']);
+    });
+
+    test('an AVIF older than its JPG is not served', async () => {
+        await bannerFiles.createBanner('one', Buffer.from('jpg'), Buffer.from('avif'));
+        age('one.avif', 60);
+        expect(await bannerFiles.avifFor('one')).toBeNull();
+    });
+
+    test('startup makes the missing and out of date AVIFs, keeps current ones, drops orphans', async () => {
+        const jpeg = await photo(400, 120);
+        await bannerFiles.createBanner('missing', jpeg);
+        await bannerFiles.createBanner('stale', jpeg, Buffer.from('old avif'));
+        age('stale.avif', 60);
+        await bannerFiles.createBanner('current', jpeg, Buffer.from('kept'));
+        fs.writeFileSync(path.join(BANNER_DIR, 'orphan.avif'), 'no jpg');
+
+        // At the quality already recorded: only what is missing or out of date
+        fs.writeFileSync(path.join(BANNER_DIR, '.avif-quality'), String(bannerFiles.AVIF_QUALITY));
+        expect(await bannerFiles.ensureAvifs()).toEqual({ made: 2, removed: 1, requality: false });
+        expect(files()).toEqual(['current.avif', 'current.jpg', 'missing.avif', 'missing.jpg', 'stale.avif', 'stale.jpg']);
+        expect(read('current.avif')).toBe('kept');
+        for (const name of ['missing', 'stale']) {
+            const meta = await sharp(fs.readFileSync(path.join(BANNER_DIR, name + '.avif'))).metadata();
+            expect([meta.format, meta.width, meta.height]).toEqual(['heif', 400, 120]);
+            expect(await bannerFiles.avifFor(name)).not.toBeNull();
+        }
+        expect(await bannerFiles.ensureAvifs()).toEqual({ made: 0, removed: 0, requality: false });
+    });
+
+    test('a change of AVIF quality remakes them all, once', async () => {
+        const jpeg = await photo(400, 120);
+        await bannerFiles.createBanner('one', jpeg, Buffer.from('made at the old quality'));
+        await bannerFiles.createBanner('two', jpeg, Buffer.from('made at the old quality'));
+        fs.writeFileSync(path.join(BANNER_DIR, '.avif-quality'), '50');
+
+        expect(await bannerFiles.ensureAvifs()).toEqual({ made: 2, removed: 0, requality: true });
+        expect(read('.avif-quality').trim()).toBe(String(bannerFiles.AVIF_QUALITY));
+        for (const name of ['one', 'two']) {
+            expect((await sharp(fs.readFileSync(path.join(BANNER_DIR, name + '.avif'))).metadata()).format).toBe('heif');
+        }
+        expect(await bannerFiles.ensureAvifs()).toEqual({ made: 0, removed: 0, requality: false });
+    });
+
+    test('with no quality recorded (before this existed), they are all remade', async () => {
+        await bannerFiles.createBanner('one', await photo(400, 120), Buffer.from('unknown quality'));
+        expect(await bannerFiles.ensureAvifs()).toEqual({ made: 1, removed: 0, requality: true });
+    });
+
+    test('a save renders the JPG and the AVIF from the same pixels', async () => {
+        const buf = await photo(3000, 2000);
+        const p = bannerRender.photoSettings(detectedFor(3000, 2000));
+        const overlay = bannerRender.fadeOverlay();
+        const { jpeg, avif } = await bannerRender.renderBannerFiles(buf, p, bannerRender.automaticCrop(p, overlay), overlay, bannerFiles.toAvif);
+        const [j, a] = await Promise.all([sharp(jpeg).metadata(), sharp(avif).metadata()]);
+        expect([j.format, j.width, j.height]).toEqual(['jpeg', bannerRender.OUT_W, bannerRender.OUT_H]);
+        expect([a.format, a.width, a.height]).toEqual(['heif', bannerRender.OUT_W, bannerRender.OUT_H]);
+        expect(avif.length).toBeLessThan(jpeg.length);
     });
 });
 

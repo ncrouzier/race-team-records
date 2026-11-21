@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const raceInfosEncoding = require('./raceInfosEncoding');
 const fs = require('fs');
 const path = require('path');
 const service = require('./service');
@@ -3183,21 +3184,41 @@ module.exports = async function (app, qs, passport, async) {
     // });
 
     // get raceinfo list
-    // Holds the gzipped response bytes rather than the result objects. This
-    // endpoint returns ~800KB gzipped (several MB raw), and caching the objects
-    // still meant re-running JSON.stringify and gzip on every hit — which was
+    // Holds the compressed response bytes rather than the result objects. This
+    // endpoint returns several MB of JSON, and caching the objects still meant
+    // re-running JSON.stringify and compression on every hit — which was
     // essentially its entire response time. Now a cache hit is a buffer write.
+    // Brotli for browsers (about half gzip's size), gzip for the rest: see
+    // app/raceInfosEncoding.js, which also builds the smallest Brotli copy in
+    // the background.
     var raceInfosCache = {};
+    var raceInfosBrotli = raceInfosEncoding.createUpgrader({ minBytes: 256 * 1024 });
+
+    // Caches an entry for a key and starts its smallest Brotli copy, kept
+    // only while the entry is still the one served for that key
+    function cacheRaceInfos(key, entry) {
+        var json = entry.json;
+        delete entry.json;
+        raceInfosCache[key] = entry;
+        raceInfosBrotli.start(key, entry, json, function () {
+            return raceInfosCache[key] === entry;
+        });
+    }
 
     // The compression middleware skips any response that already carries a
-    // Content-Encoding ("already encoded"), so writing pre-gzipped bytes here
-    // does not get double-compressed.
+    // Content-Encoding ("already encoded"), so writing pre-compressed bytes
+    // here does not get compressed twice.
     function sendRaceInfos(req, res, entry) {
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        // Two representations share this URL, so caches must key on the header.
+        // Several representations share this URL, so caches must key on the header.
         res.setHeader('Vary', 'Accept-Encoding');
 
-        if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+        var acceptEncoding = req.headers['accept-encoding'];
+        if (raceInfosEncoding.accepts(acceptEncoding, 'br')) {
+            res.setHeader('Content-Encoding', 'br');
+            return res.send(entry.br);
+        }
+        if (raceInfosEncoding.accepts(acceptEncoding, 'gzip')) {
             res.setHeader('Content-Encoding', 'gzip');
             return res.send(entry.gzip);
         }
@@ -3211,7 +3232,8 @@ module.exports = async function (app, qs, passport, async) {
     }
 
     // The race list for one set of parameters, as the route sends it:
-    // { gzip, timestamp }, or { results } when compressing failed. timestamp
+    // { gzip, br, json, timestamp }, or { results } when compressing failed
+    // (json is the text, for cacheRaceInfos; it is not kept). timestamp
     // is when the build started, so a change landing during the build makes
     // the entry stale rather than looking fresh.
     function buildRaceInfos(params) {
@@ -3297,12 +3319,12 @@ module.exports = async function (app, qs, passport, async) {
             // Async rather than gzipSync: this is several MB, and blocking
             // the event loop for it would stall every other request on what
             // is a single-core box.
-            return new Promise(function (resolve) {
-                zlib.gzip(JSON.stringify(results), function (err, buf) {
-                    // The response is still serveable uncompressed
-                    if (err) return resolve({ results: results });
-                    resolve({ gzip: buf, timestamp: startedAt });
-                });
+            const json = JSON.stringify(results);
+            return raceInfosEncoding.encode(json).then(function (encoded) {
+                return { gzip: encoded.gzip, br: encoded.br, json: json, timestamp: startedAt };
+            }, function () {
+                // The response is still serveable uncompressed
+                return { results: results };
             });
         });
     }
@@ -3319,12 +3341,14 @@ module.exports = async function (app, qs, passport, async) {
     const FULL_LIST = { sort: '-racedate -order racename' };
     let warmTimer = null;
     service.onDataChange(function () {
+        // Smallest Brotli copies still being made are of the old data
+        raceInfosBrotli.cancelAll();
         clearTimeout(warmTimer);
         warmTimer = setTimeout(function () {
             const key = raceInfosKey(FULL_LIST.sort, NaN, undefined, undefined);
             buildRaceInfos({ sort: FULL_LIST.sort, limit: NaN }).then(function (entry) {
                 if (entry.gzip && (!raceInfosCache[key] || raceInfosCache[key].timestamp < entry.timestamp)) {
-                    raceInfosCache[key] = entry;
+                    cacheRaceInfos(key, entry);
                 }
             }).catch(function (err) {
                 console.error('Could not rebuild the race list in the background:', err.message);
@@ -3377,7 +3401,7 @@ module.exports = async function (app, qs, passport, async) {
 
         const entry = await buildRaceInfos({ sort: sort, limit: limit, raceId: raceId, filters: filters });
         if (!entry.gzip) return res.json(entry.results);
-        raceInfosCache[cacheKey] = entry;
+        cacheRaceInfos(cacheKey, entry);
         sendRaceInfos(req, res, entry);
 
 

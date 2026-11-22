@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- build ------------------------------------------------------------------
-FROM node:22-bookworm-slim AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /app
 
 # bower resolves several of its packages over git, so git has to be present
@@ -39,7 +39,7 @@ RUN npm prune --omit=dev
 
 
 # ---- runtime ----------------------------------------------------------------
-FROM node:22-bookworm-slim AS runtime
+FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production

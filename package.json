@@ -25,7 +25,7 @@
   "main": "server.js",
   "version": "1.0.0",
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=24 <25"
   },
   "dependencies": {
     "@tensorflow/tfjs-backend-wasm": "^4.22.0",
@@ -37,13 +37,14 @@
     "cheerio": "^1.0.0",
     "compression": "^1.8.2",
     "connect-flash": "^0.1.1",
-    "connect-mongo": "5.1.0",
+    "connect-mongo": "6.0.0",
     "cookie-parser": "~1.4.7",
     "dotenv": "^17.0.0",
     "ejs": "^3.1.10",
     "express": "^4.22.3",
     "express-rate-limit": "^7.1.5",
     "express-session": "^1.19.0",
+    "mongodb": "~7.8.0",
     "mongoose": "^9.12.2",
     "morgan": "~1.12.1",
     "node-schedule": "^2.1.1",

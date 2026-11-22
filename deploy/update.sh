@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Pull the published image and restart the site.
+# Pull the published image and restart the site. Also pulls the other
+# services' images (Caddy, MongoDB, Portainer) within the tags
+# docker-compose.yml allows (mongo stays on its series: 8.3.x), so their
+# security fixes arrive with each update instead of never.
 #
 #   ./update.sh            # pull whatever IMAGE_TAG in .env already points at
 #   ./update.sh v1.4.0     # switch to a specific release and pull that
@@ -61,6 +64,26 @@ container_image() {
 
 BEFORE_IMAGE="$(container_image)"
 
+# The other services' images before the pull, to say which ones changed
+OTHER_SERVICES="caddy mongo portainer"
+service_image() {
+	local cid
+	cid="$(docker compose ps -q "$1" 2>/dev/null || true)"
+	[ -n "$cid" ] && docker inspect --format '{{.Image}}' "$cid" 2>/dev/null || true
+}
+# "caddy=<image id> mongo=<image id> ...": a plain list, no bash 4 needed
+OTHER_BEFORE=""
+for svc in $OTHER_SERVICES; do
+	OTHER_BEFORE="$OTHER_BEFORE $svc=$(service_image "$svc")"
+done
+image_before() {
+	local pair
+	for pair in $OTHER_BEFORE; do
+		[ "${pair%%=*}" = "$1" ] && printf '%s' "${pair#*=}"
+	done
+	return 0
+}
+
 if [ "$REQUESTED_TAG" != "$PREVIOUS_TAG" ]; then
 	echo "IMAGE_TAG: $PREVIOUS_TAG -> $REQUESTED_TAG"
 	write_tag "$REQUESTED_TAG"
@@ -73,6 +96,11 @@ if ! docker compose pull app; then
 	[ "$REQUESTED_TAG" != "$PREVIOUS_TAG" ] && write_tag "$PREVIOUS_TAG"
 	exit 1
 fi
+
+# Not fatal: if one cannot be pulled, it keeps running the image it has
+echo "Pulling the latest $OTHER_SERVICES images ..."
+# shellcheck disable=SC2086
+docker compose pull $OTHER_SERVICES || echo "  (could not pull all of them - those keep their current image)"
 
 # The upload folders (member photos, banners), bind-mounted into the app
 # (docker-compose.yml). Created here rather than left to Docker, which would
@@ -88,7 +116,8 @@ for part in photos banners; do
 done
 
 echo "Restarting ..."
-docker compose up -d app
+# Every service: only those whose image (or settings) changed are recreated
+docker compose up -d
 
 # ---- Wait for health --------------------------------------------------------
 # The image declares a HEALTHCHECK against /api/health, which reports 503 while
@@ -142,9 +171,56 @@ if [ -n "$BEFORE_IMAGE" ] && [ "$BEFORE_IMAGE" = "$AFTER_IMAGE" ]; then
 else
 	echo "Updated to '$REQUESTED_TAG'."
 fi
+for svc in $OTHER_SERVICES; do
+	after="$(service_image "$svc")"
+	if [ -n "$after" ] && [ "$after" != "$(image_before "$svc")" ]; then
+		version="$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$after" 2>/dev/null || true)"
+		echo "  $svc: updated to a new image${version:+ ($version)}"
+	fi
+done
 
-# Only dangling layers, so this never removes an image still referenced by a tag
-# you might want to roll back to.
-docker image prune -f >/dev/null 2>&1 || true
+# ---- Clean up (only after a healthy deploy) ----------------------------------
+# What each deploy leaves behind, which otherwise fills the droplet's disk:
+#   - older releases of the app image: every one but the running one and the
+#     one it replaced (kept to roll back to: see the message above);
+#   - containers stopped for over a day (a few hours' grace for one stopped
+#     on purpose and about to be started again);
+#   - dangling image layers, unused networks, build cache.
+# Never volumes: Mongo's data is one. Never an image a container still uses
+# (Docker refuses), so mongo, caddy and portainer stay. A failure here is
+# reported, never a failed deploy: the site is already up.
+APP_IMAGE_REPO="ghcr.io/ncrouzier/race-team-records"
+
+cleanup() {
+	local ref id removed=0
+	# repo:tag and image id of every local copy of the app image
+	while read -r ref id; do
+		[ -z "$ref" ] && continue
+		if [ "$id" = "$AFTER_IMAGE" ] || [ "$id" = "$BEFORE_IMAGE" ]; then
+			continue
+		fi
+		if docker image rm "$ref" >/dev/null 2>&1; then
+			removed=$((removed + 1))
+		fi
+	done < <(docker image ls --no-trunc --format '{{.Repository}}:{{.Tag}} {{.ID}}' "$APP_IMAGE_REPO" | grep -v ':<none> ')
+	echo "  old app releases removed: $removed"
+
+	docker container prune -f --filter 'until=24h' >/dev/null && echo "  stopped containers (over a day old): removed"
+	docker image prune -f >/dev/null && echo "  dangling image layers: removed"
+	docker network prune -f >/dev/null && echo "  unused networks: removed"
+	docker builder prune -f >/dev/null 2>&1 && echo "  build cache: cleared"
+	return 0
+}
+
+disk_used() {
+	docker system df --format '{{.Type}}: {{.Size}}' 2>/dev/null | paste -sd ',' - | sed 's/,/, /g'
+}
+
+echo "Cleaning up ..."
+echo "  before: $(disk_used || true)"
+if ! cleanup; then
+	echo "  (cleanup did not finish - the deploy itself succeeded)"
+fi
+echo "  after:  $(disk_used || true)"
 
 docker compose ps app

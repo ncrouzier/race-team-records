@@ -20,8 +20,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Was pinned to Node 10 and 12, neither of which can run this app.
-          node-version: '22'
+          # The Node the Docker image runs (Dockerfile); package.json engines agrees.
+          node-version: '24'
           cache: npm
 
       - run: npm ci

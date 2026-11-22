@@ -30,7 +30,8 @@ var osport = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 
 var port = process.env.PORT || 8090;
 var session = require('express-session');
-const MongoStore = require('connect-mongo');
+// connect-mongo 6 exports it by name (require() no longer returns it directly)
+const { MongoStore } = require('connect-mongo');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var flash = require('connect-flash');

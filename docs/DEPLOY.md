@@ -160,14 +160,14 @@ of the same view on demand and leaves nothing resident.
 ## 3. Data migration
 
 Nothing needs installing on the droplet: `mongodb-database-tools` is not in
-Ubuntu's repos (it lives in MongoDB's own apt repo), but the `mongo:8.3` image
+Ubuntu's repos (it lives in MongoDB's own apt repo), but the `mongo:9.0` image
 already ships `mongodump`, `mongorestore` and `mongosh`. Run them in a
 throwaway container, which also guarantees the tool version matches the server.
 
 ```bash
 # From Atlas, onto the droplet. --archive writes to stdout, so the dump lands
 # on the host without mounting anything into the container.
-docker run --rm mongo:8.3 mongodump \
+docker run --rm mongo:9.0 mongodump \
   --uri="<atlas-connection-string>" --archive --gzip > /root/atlas.archive
 
 # Into the running Mongo container
@@ -278,8 +278,8 @@ accumulating.
 
 ### Upgrading MongoDB
 
-The stack pins an explicit series — currently `mongo:8.3` — never the floating
-`mongo:8`. That tag moves across releases, and **a release refuses to start on
+The stack pins an explicit series — currently `mongo:9.0` — never a floating
+`mongo:9` or `latest`. That tag moves across releases, and **a release refuses to start on
 data whose featureCompatibilityVersion is below its floor**:
 
 ```
@@ -356,12 +356,64 @@ restarting — no restore needed. Raising it closes that door for the same reaso
 
 Be aware of what 8.3 is: 8.0 is the **major** release with a long support
 window, while 8.1/8.2/8.3 are **rapid releases**, supported only until the next
-one ships. Running 8.3 means revisiting this every few months. `mongo:8.0`
-would keep receiving 8.0.x patches for years with no attention at all.
+one ships.
 
-Note the driver matters too: MongoDB 8 support needs a recent driver. This
-project runs mongoose 8.24.x (mongodb driver 6.20), which is fine. The older
-6.5 driver predated MongoDB 8's release entirely.
+**Moving from 8.3 to 9.0** (November 2026). 9.0 is the next major: patched for
+years. It starts on data at FCV 8.0 or 8.3 — whichever this volume has — so no
+FCV change is needed before switching, only after.
+
+Rehearsed on a copy of the data (both FCV 8.0 and 8.3): 9.0.8 came up on the
+8.3 volume with all 23 collections' counts unchanged, took FCV 9.0, restarted
+clean, and the app (Node 24, driver 7.8) passed every page check on it;
+`mongodump`/`mongorestore` ship in the 9.0 image.
+
+**First deploy the app release with driver 7.8** (connect-mongo 6, which
+shares it): the 6.x driver the app used before is only tested up to 8.2. The
+new driver works on 8.3 too, so that release goes out on its own, before Mongo
+changes. Then:
+
+```bash
+cd /opt/mcrrc
+./backup.sh                      # the way back, should it be needed
+
+# What is running now: expect 8.3.x, and FCV 8.0 or 8.3. Anything else: stop here.
+docker compose exec -T mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
+  --quiet --eval 'print(db.version()); print("FCV: " + db.adminCommand({getParameter:1,featureCompatibilityVersion:1}).featureCompatibilityVersion.version); db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print("  " + c + " " + db[c].countDocuments()))'
+
+docker compose stop app
+
+# docker-compose.yml from the repo: image: mongo:9.0
+docker compose pull mongo
+docker compose up -d mongo
+sleep 20
+docker compose ps mongo          # Up (healthy), not Restarting
+
+# Same check: expect 9.0.x, the same FCV as before, the same counts
+docker compose exec -T mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/mcrrcrecords?authSource=admin" \
+  --quiet --eval 'print(db.version()); print("FCV: " + db.adminCommand({getParameter:1,featureCompatibilityVersion:1}).featureCompatibilityVersion.version); db.getCollectionNames().filter(c => !c.startsWith("system.")).forEach(c => print("  " + c + " " + db[c].countDocuments()))'
+
+docker compose start app
+docker compose exec app curl -s http://localhost:8090/api/health
+```
+
+**Then wait before raising FCV** — a few days of normal use. Until then the
+way back is the tag: put `mongo:8.3` back and `docker compose up -d mongo`, no
+restore. Once satisfied:
+
+```bash
+docker compose exec -T mongo mongosh \
+  "mongodb://<MONGO_USER>:<MONGO_PASSWORD>@localhost:27017/?authSource=admin" \
+  --quiet --eval 'printjson(db.adminCommand({setFeatureCompatibilityVersion:"9.0", confirm:true})); print(db.adminCommand({getParameter:1,featureCompatibilityVersion:1}).featureCompatibilityVersion.version)'
+```
+
+After that, 8.3 cannot read the data files: the way back is `restore.sh` with
+the archive from the first step, into an 8.3 container.
+
+Note the driver matters too: each MongoDB release needs a driver that knows
+it. Since this upgrade the app runs mongoose 9.12 with the mongodb driver 7.8
+(also used by connect-mongo, which takes the app's), tested up to 9.0.
 
 ### Restoring an archive
 

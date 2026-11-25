@@ -103,8 +103,7 @@ Leave the URL in the link box: it is what picks the per-site column guesses
 
 `POST /api/extract-table` accepts `{ htmlSource }` in place of `{ url }` and runs
 the same table parsing, so this works for any site whose results are in an HTML
-table. The extractor page's separate `/api/extract-parkrun` endpoint is
-unchanged.
+table, parkrun's included (its event, number and date are read from the page).
 
 ## Option E — r.jina.ai (on by default, no setup)
 

@@ -21784,6 +21784,32 @@ h2 .club-mark {
   margin-top: 0;
   font-weight: 400;
 }
+.jumbotron.result-extractor-tool .rx-clear-source {
+  float: right;
+  margin-bottom: 4px;
+}
+.jumbotron.result-extractor-tool .rx-bookmarklet {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px dashed currentColor;
+  border-radius: 4px;
+  cursor: grab;
+  white-space: nowrap;
+}
+.jumbotron.result-extractor-tool .rx-result-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.jumbotron.result-extractor-tool .rx-result-sets p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.jumbotron.result-extractor-tool .rx-result-sets .mcrrc-btn {
+  white-space: normal;
+  text-align: left;
+}
 .jumbotron.result-extractor-tool .rx-actions {
   display: flex;
   align-items: center;

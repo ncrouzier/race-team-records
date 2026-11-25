@@ -75,7 +75,8 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
         headers.forEach(function (header) {
             var headerLower = header.toLowerCase();
 
-            if (url.includes('runsignup.com')) {
+            // RunSignUp, also on a race's own domain (turkeychase.com/Race/Results/97804)
+            if (url.includes('runsignup.com') || /\/Race\/Results\/\d+/i.test(url)) {
                 if (headerLower.includes('name')) {
                     mapping[header] = 'name';
                 } else if (headerLower.includes('chip time') || headerLower.includes('finish')) {
@@ -86,8 +87,12 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
                     mapping[header] = 'genderRank';
                 } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
                     mapping[header] = 'gender';
-                } else if (headerLower.includes('age place') || headerLower.includes('age rank')) {
+                } else if (/^(age|division|div)\s*(place|rank)$/.test(headerLower)) {
                     mapping[header] = 'ageRank';
+                } else if (/^(age\s*group|division|div)$/.test(headerLower)) {
+                    // Gives the age group totals (app/runsignup.js blanks
+                    // the award divisions, which are not age groups)
+                    mapping[header] = 'ageGroup';
                 }
             } else if (url.includes('parkrun.')) {
                 if (headerLower.includes('name') || headerLower.includes('runner') || headerLower.includes('parkrunner')) {
@@ -130,6 +135,9 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
                     mapping[header] = 'genderRank';
                 } else if (headerLower === 'division place') {
                     mapping[header] = 'ageRank';
+                } else if (headerLower === 'age group') {
+                    // Worked out by the server (app/athlinks.js): the sizes
+                    mapping[header] = 'ageGroup';
                 }
             }
         });
@@ -209,10 +217,13 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
         });
     };
 
+    // A time as written ("21:04", "1:02:03.4", "PB 21:04") -> centiseconds;
+    // 0 when there is none ("DNF", "—", blank)
     factory.cleanTime = function (timeStr) {
         if (!timeStr) return 0;
         // Remove any non-numeric characters except for colons and periods
         timeStr = timeStr.toString().replace(/[^0-9:.]/g, '');
+        if (!/\d/.test(timeStr)) return 0;
 
         if (timeStr.includes(':')) {
             var parts = timeStr.split(':');
@@ -247,41 +258,88 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
 
     // Count rows sharing a value in a column, and the row's position among them.
     // Used when a site gives a group (gender, age band) but no rank within it.
-    function rankWithinGroup(tableData, row, column, stripDigits) {
-        var valueOf = function (candidate) {
-            var text = (candidate[column] || '').toString();
-            return (stripDigits ? text.replace(/[0-9]/g, '') : text).trim();
-        };
-        var value = valueOf(row);
-        var group = tableData.filter(function (candidate) {
-            return valueOf(candidate) === value;
-        });
-        var index = group.indexOf(row);
-        return index < 0 ? null : { rank: index + 1, total: group.length };
+    // Worked out once per table and column, not once per row: scanning the
+    // whole table for every row froze the page on a 17,000-runner race.
+    var tableIndexes = new WeakMap();
+    function tableIndex(tableData) {
+        var index = tableIndexes.get(tableData);
+        if (!index) {
+            index = new Map();
+            tableIndexes.set(tableData, index);
+        }
+        return index;
     }
 
+    function groupValue(row, column, stripDigits) {
+        var text = (row[column] || '').toString();
+        return (stripDigits ? text.replace(/[0-9]/g, '') : text).trim();
+    }
+
+    function rankWithinGroup(tableData, row, column, stripDigits) {
+        var index = tableIndex(tableData);
+        var key = 'group|' + column + '|' + (stripDigits ? 1 : 0);
+        var groups = index.get(key);
+        if (!groups) {
+            groups = { totals: new Map(), ranks: new Map() };
+            tableData.forEach(function (candidate) {
+                var value = groupValue(candidate, column, stripDigits);
+                var count = (groups.totals.get(value) || 0) + 1;
+                groups.totals.set(value, count);
+                groups.ranks.set(candidate, count);
+            });
+            index.set(key, groups);
+        }
+        var rank = groups.ranks.get(row);
+        return rank ? { rank: rank, total: groups.totals.get(groupValue(row, column, stripDigits)) } : null;
+    }
+
+    // The biggest place in the table: the last finisher's place is the number
+    // of finishers. Once per table, like the groups above.
+    function fieldSizeOf(tableData, placeColumn) {
+        var index = tableIndex(tableData);
+        var key = 'fieldSize|' + placeColumn;
+        if (!index.has(key)) {
+            var biggest = 0;
+            tableData.forEach(function (candidate) {
+                var place = parseInt(candidate[placeColumn]);
+                if (place > biggest) biggest = place;
+            });
+            index.set(key, biggest);
+        }
+        return index.get(key);
+    }
+
+    // The runner's name in a scraped row: {firstname, lastname}, or null.
+    // Separate from parseRow so a caller can match the name first and work out
+    // the rest only for team members' rows.
+    factory.parseName = function (row, columnMapping) {
+        var nameColumn = factory.columnFor(columnMapping, 'name');
+        var firstNameColumn = factory.columnFor(columnMapping, 'firstname');
+        var lastNameColumn = factory.columnFor(columnMapping, 'lastname');
+        if (nameColumn && row[nameColumn]) {
+            var nameParts = row[nameColumn].toString().trim().split(/\s+/);
+            if (nameParts.length < 2) return null;
+            return { firstname: nameParts[0], lastname: nameParts.slice(1).join(' ') };
+        }
+        if (firstNameColumn && lastNameColumn && row[firstNameColumn] && row[lastNameColumn]) {
+            return {
+                firstname: row[firstNameColumn].toString().trim(),
+                lastname: row[lastNameColumn].toString().trim()
+            };
+        }
+        return null;
+    };
+
     // Turn one scraped row into {firstname, lastname, time, ranking}. Returns
-    // null when the row has no usable name or time.
+    // null when the row has no usable name or time (a DNF has none).
     // options.stripDigitsFromGender is for parkrun, which writes "Male12".
     factory.parseRow = function (row, columnMapping, tableData, options) {
         options = options || {};
         var col = function (field) { return factory.columnFor(columnMapping, field); };
-        var parsed = { ranking: {} };
 
-        var nameColumn = col('name');
-        var firstNameColumn = col('firstname');
-        var lastNameColumn = col('lastname');
-        if (nameColumn && row[nameColumn]) {
-            var nameParts = row[nameColumn].toString().trim().split(/\s+/);
-            if (nameParts.length < 2) return null;
-            parsed.firstname = nameParts[0];
-            parsed.lastname = nameParts.slice(1).join(' ');
-        } else if (firstNameColumn && lastNameColumn && row[firstNameColumn] && row[lastNameColumn]) {
-            parsed.firstname = row[firstNameColumn].toString().trim();
-            parsed.lastname = row[lastNameColumn].toString().trim();
-        } else {
-            return null;
-        }
+        var name = factory.parseName(row, columnMapping);
+        if (!name) return null;
+        var parsed = { firstname: name.firstname, lastname: name.lastname, ranking: {} };
 
         var timeColumn = col('time');
         if (!timeColumn || !row[timeColumn]) return null;
@@ -290,6 +348,7 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
             timeStr = timeStr.split('PB')[0].trim();
         }
         parsed.time = factory.cleanTime(timeStr);
+        if (!(parsed.time > 0)) return null;
 
         // Gender rank, either given directly or derived from the gender column
         var genderRankColumn = col('genderRank');
@@ -339,42 +398,75 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
                 var place = parseInt(row[placeColumn]);
                 if (!isNaN(place)) parsed.ranking.overallrank = place;
             }
-            var fieldSize = Math.max.apply(null, tableData.map(function (candidate) {
-                var candidatePlace = parseInt(candidate[placeColumn]);
-                return isNaN(candidatePlace) ? 0 : candidatePlace;
-            }));
+            var fieldSize = fieldSizeOf(tableData, placeColumn);
             if (fieldSize > 0) parsed.ranking.overalltotal = fieldSize;
         }
 
         return parsed;
     };
 
-    factory.normalizeName = function (name) {
-        return (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    // The words of a name, lower case, accents and punctuation off:
+    // "José O'Brien-Smith" -> ["jose", "obrien", "smith"]
+    factory.nameWords = function (name) {
+        return (name || '').toString()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[-_]/g, ' ')
+            .replace(/[^a-z0-9\s]/g, '')
+            .split(/\s+/)
+            .filter(Boolean);
     };
 
-    // Fuzzy full-name match, including a member's recorded alternate names.
-    factory.matchMember = function (firstname, lastname, members) {
-        var resultFullName = factory.normalizeName(firstname + ' ' + lastname);
-        if (!resultFullName) return null;
+    // A results name as words, first name first: "Smith, John" (last name
+    // first, as some timers write it) is turned round
+    function resultNameWords(firstname, lastname) {
+        var full = ((firstname || '') + ' ' + (lastname || '')).trim();
+        var comma = full.indexOf(',');
+        if (comma > 0) full = full.slice(comma + 1) + ' ' + full.slice(0, comma);
+        return factory.nameWords(full);
+    }
 
-        return (members || []).find(function (member) {
-            var memberFullName = factory.normalizeName(member.firstname + ' ' + member.lastname);
-            if (resultFullName === memberFullName ||
-                resultFullName.includes(memberFullName) ||
-                memberFullName.includes(resultFullName)) {
-                return true;
-            }
-            if (member.alternateFullNames && member.alternateFullNames.length > 0) {
-                return member.alternateFullNames.some(function (altName) {
-                    var normalizedAltName = factory.normalizeName(altName);
-                    return normalizedAltName && (resultFullName === normalizedAltName ||
-                        resultFullName.includes(normalizedAltName) ||
-                        normalizedAltName.includes(resultFullName));
-                });
-            }
-            return false;
-        }) || null;
+    // How well two names (as words) agree:
+    //   'exact'  the same letters, spaces aside ("Mary Ann" = "Maryann");
+    //   'close'  the same first name, and one's other words all among the
+    //            other's: a middle name or initial, a second last name, a
+    //            "Jr" ("John A Smith" = "John Smith");
+    //   null     anything else. Whole words only, never part of one: "Ann
+    //            Lee" is not "Joann Leeson", nor "Jo Smith" "Jo Smithson".
+    function nameAgreement(a, b) {
+        if (!a.length || !b.length) return null;
+        if (a.join('') === b.join('')) return 'exact';
+        if (a.length < 2 || b.length < 2 || a[0] !== b[0]) return null;
+        var restA = a.slice(1), restB = b.slice(1);
+        // ...and more than initials: "John A" is not "John A Smith"
+        var within = function (small, big) {
+            return small.some(function (word) { return word.length > 1; }) &&
+                small.every(function (word) { return big.indexOf(word) !== -1; });
+        };
+        return within(restA, restB) || within(restB, restA) ? 'close' : null;
+    }
+
+    // The member a results name belongs to: their name or one of their
+    // recorded alternate names. An exact match wins; failing that a close one,
+    // but only if it points at one member alone (two "John ... Smith"s on the
+    // team and a "John Smith" in the results: no guess). null if none.
+    factory.matchMember = function (firstname, lastname, members) {
+        var words = resultNameWords(firstname, lastname);
+        if (!words.length) return null;
+
+        var close = [];
+        var exact = (members || []).find(function (member) {
+            var names = [member.firstname + ' ' + member.lastname].concat(member.alternateFullNames || []);
+            var best = null;
+            names.forEach(function (name) {
+                var agreement = nameAgreement(words, factory.nameWords(name));
+                if (agreement === 'exact' || (agreement === 'close' && !best)) best = agreement;
+            });
+            if (best === 'close') close.push(member);
+            return best === 'exact';
+        });
+        if (exact) return exact;
+        return close.length === 1 ? close[0] : null;
     };
 
     // Was this member on the team on a given day? An open-ended membership
@@ -517,6 +609,15 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
 
         var textDistances = distancesInText(text);
         var measured = measuredMeters(page.headers, page.rows, page.columnMapping);
+
+        // The distance the results site gives the event (RunSignUp's "3.76
+        // Miles", Athlinks' meters): measured, not a name, so within 2% like
+        // time ÷ pace — a 6K course listed at 3.76 miles is still a 6K
+        distancesInText(page.distance).forEach(function (d) {
+            rankTypes(typesNear(racetypes, d, 0.02), surface, text).forEach(function (rt) {
+                add(rt, 'results site: ' + page.distance);
+            });
+        });
 
         if (measured) {
             var near = rankTypes(typesNear(racetypes, measured, 0.02), surface, text);

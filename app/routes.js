@@ -7,6 +7,9 @@ const path = require('path');
 const service = require('./service');
 const raceSeriesSync = require('./raceSeriesSync');
 const { raceMatchFilter } = require('./raceMatch');
+const resultDuplicates = require('./resultDuplicates');
+const runsignup = require('./runsignup');
+const athlinks = require('./athlinks');
 const { resultStanding } = require('./resultStanding');
 const cheerio = require('cheerio');
 const axios = require('axios');
@@ -17,49 +20,15 @@ const profileThumbnails = require('./profileThumbnails');
 const memberPhotos = require('./memberPhotos');
 const loginCodes = require('./loginCodes');
 const parkrunCheck = require('./parkrunCheck');
+const { parkrunMetadata } = parkrunCheck;
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
 // Locating the results on a scraped page is its own problem — layout tables,
 // several result tables per page, fixed-width <pre> blocks — so it lives in its
-// own module. normaliseTableHeaders and looksLikeHeaderRow are re-exported from
-// there because the parkrun branch below builds its tables by hand.
-const {
-    parseResultsTableFromHtml,
-    normaliseTableHeaders,
-    looksLikeHeaderRow
-} = require('./resultTableParser');
-
-// parkrun puts the event name, number and date in its own header markup rather
-// than anywhere the generic parser would look, so pull them out when they are
-// there. Returns null for any other site.
-function parkrunMetadata(html) {
-    const $ = cheerio.load(html);
-    const resultsHeader = $('.Results-header h1').text().trim();
-    if (!resultsHeader) return null;
-
-    const dateText = $('.Results-header h3 .format-date').text().trim();
-    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
-
-    // parkrun writes DD/MM/YYYY on some sites and YYYY-MM-DD on others
-    // (parkrun.us, since 2026)
-    let raceDate, raceDay;
-    const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateText);
-    const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(dateText);
-    const parts = dmy ? { year: dmy[3], month: dmy[2], day: dmy[1] } : ymd ? { year: ymd[1], month: ymd[2], day: ymd[3] } : null;
-    if (parts) {
-        raceDate = new Date(parseInt(parts.year), parseInt(parts.month) - 1, parseInt(parts.day));
-        // The day as written, which no time zone can move (the parkrun check)
-        raceDay = parts.year + '-' + parts.month.padStart(2, '0') + '-' + parts.day.padStart(2, '0');
-    }
-
-    return {
-        pageTitle: eventNumber ? `${resultsHeader} #${eventNumber}` : resultsHeader,
-        raceDate: raceDate,
-        raceDay: raceDay,
-        eventNumber: /^\d+$/.test(eventNumber) ? parseInt(eventNumber, 10) : null
-    };
-}
+// own module. parkrun's pages go through it too (app/parkrunCheck.js reads
+// their event, number and date).
+const { parseResultsTableFromHtml, pagePaste } = require('./resultTableParser');
 
 const SCRAPE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
@@ -2684,6 +2653,12 @@ module.exports = async function (app, qs, passport, async) {
 
             const createdResults = [];
             const memberIds = new Set(); // Track unique members for PB updates
+            // Already saved, so not saved again (app/resultDuplicates.js): the
+            // runners' names, for the answer. seenRunners catches the same
+            // runners twice in this one request.
+            const skippedNames = [];
+            const seenRunners = new Set();
+            let failedCount = 0;
 
             // Process each result
             for (const resultData of results) {
@@ -2696,8 +2671,18 @@ module.exports = async function (app, qs, passport, async) {
                             throw new Error(`Member with ID ${memberObj._id} not found`);
                         }
                         members.push(member);
-                        memberIds.add(member._id.toString());
                     }
+
+                    const runnerIds = members.map(m => m._id);
+                    const key = resultDuplicates.runnersKey(runnerIds);
+                    // A race just created has no results to look through
+                    if (seenRunners.has(key) || (existingRace &&
+                        await Result.exists(resultDuplicates.savedResultFilter(raceToUse._id, runnerIds)))) {
+                        skippedNames.push(members.map(m => m.firstname + ' ' + m.lastname).join(' & '));
+                        continue;
+                    }
+                    seenRunners.add(key);
+                    runnerIds.forEach(id => memberIds.add(id.toString()));
 
                     // Calculate age grade if applicable
                     let agegrade = null;
@@ -2735,6 +2720,7 @@ module.exports = async function (app, qs, passport, async) {
                 } catch (resultError) {
                     console.error('Error creating result:', resultError);
                     // Continue with other results even if one fails
+                    failedCount++;
                 }
             }
 
@@ -2755,8 +2741,10 @@ module.exports = async function (app, qs, passport, async) {
 
             res.json({
                 success: true,
-                message: `Successfully created ${createdResults.length} results`,
+                message: resultDuplicates.saveSummary(createdResults.length, skippedNames, failedCount),
                 createdCount: createdResults.length,
+                skippedCount: skippedNames.length,
+                failedCount: failedCount,
                 totalRequested: results.length,
                 race: raceToUse
             });
@@ -4505,27 +4493,74 @@ module.exports = async function (app, qs, passport, async) {
             // since parkrun blocks scraping. Either way the table itself is
             // found generically; only the page metadata is site-specific.
             if (htmlSource) {
-                const parsed = parseResultsTableFromHtml(htmlSource, tableIndex);
-                if (!parsed) {
-                    return res.status(400).json({
-                        success: false,
-                        error: 'No results table found in the pasted HTML. Make sure you copied the whole page source, including the results.'
+                // The bookmarklet's copy (public/bookmarklets/results.js) of
+                // an Athlinks race: the runners, not a page
+                const athlinksPaste = athlinks.fromPaste(htmlSource);
+                if (athlinksPaste) {
+                    return res.json(Object.assign({
+                        success: true,
+                        fetchedVia: 'athlinks-bookmarklet',
+                        source: 'athlinks'
+                    }, athlinks.toExtraction(athlinksPaste)));
+                }
+                // ...or its copy of a RunSignUp result set
+                const runsignupPaste = runsignup.fromPaste(htmlSource);
+                if (runsignupPaste) {
+                    const rsu = await runsignup.fromPastePayload(runsignupPaste, axios.get, { 'User-Agent': SCRAPE_USER_AGENT });
+                    return res.json({
+                        success: true,
+                        fetchedVia: 'runsignup-bookmarklet',
+                        source: 'runsignup',
+                        headers: rsu.headers,
+                        data: rsu.data,
+                        pageTitle: rsu.pageTitle,
+                        raceDay: rsu.raceDay,
+                        distance: rsu.distance,
+                        location: rsu.location,
+                        resultSetName: rsu.resultSetName,
+                        truncated: rsu.truncated,
+                        total: rsu.total,
+                        resultUrl: rsu.resultUrl
                     });
                 }
 
-                const parkrun = parkrunMetadata(htmlSource);
+                // ...or its copy of a whole page (mcrrc.org, any other
+                // site): the page's source, and the address it came from
+                const pageCopy = pagePaste(htmlSource);
+                const pageHtml = pageCopy ? pageCopy.html : htmlSource;
+                const pageUrl = pageCopy ? pageCopy.url : null;
+
+                const parsed = parseResultsTableFromHtml(pageHtml, tableIndex);
+                if (!parsed) {
+                    return res.status(400).json({
+                        success: false,
+                        error: pageCopy
+                            ? 'No results table found on the page the bookmark copied (' + (pageUrl || 'no address') + ').'
+                            : 'No results table found in the pasted HTML. Make sure you copied the whole page source, including the results.'
+                    });
+                }
+
+                const parkrun = parkrunMetadata(pageHtml);
+                // A parkrun page is saved under its event's own number:
+                // latestresults moves on next week
+                const parkrunBase = parkrun && parkrun.eventNumber && parkrunCheck.eventBase(pageUrl);
                 return res.json({
                     success: true,
                     // How the page was fetched, shown to the admin
-                    fetchedVia: 'pasted',
+                    fetchedVia: pageCopy ? 'page-bookmarklet' : 'pasted',
                     headers: parsed.headers,
                     data: parsed.data,
                     pageTitle: (parkrun && parkrun.pageTitle) || parsed.pageTitle,
                     raceDate: parkrun && parkrun.raceDate,
+                    raceDay: parkrun && parkrun.raceDay,
                     // Lets the client pick parkrun's column names and its
                     // "3:21 PB" time quirk, instead of assuming every paste is
                     // a parkrun page the way it used to.
                     source: parkrun ? 'parkrun' : 'generic',
+                    // The page's address, from the bookmark: the result link,
+                    // and the site whose column names to expect (mcrrc.org's)
+                    sourceUrl: pageUrl,
+                    resultUrl: parkrunBase ? parkrunCheck.eventResultsUrl(parkrunBase, parkrun.eventNumber) : pageUrl,
                     tables: parsed.tables
                 });
             }
@@ -4534,390 +4569,96 @@ module.exports = async function (app, qs, passport, async) {
                 return res.status(400).json({ success: false, error: 'URL is required' });
             }
 
-            if (url.includes('runsignup.com')) {
-                // Extract race ID and resultSetId from the URL
-                const raceIdMatch = url.match(/\/Results\/(\d+)/);
-                const resultSetMatch = url.match(/resultSetId-(\d+)/);
-
-                if (!raceIdMatch) {
-                    return res.status(400).json({ success: false, error: 'Could not find race ID in URL' });
-                }
-
-                const raceId = raceIdMatch[1];
-                const resultSetId = resultSetMatch ? resultSetMatch[1] : null;
-
-                // Get the page data and cookies
-                const pageData = await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive'
-                    }
+            if (runsignup.parseUrl(url)) {
+                // RunSignUp's system, on runsignup.com or a race's own domain
+                // (turkeychase.com/Race/Results/97804): the results feed, page
+                // by page, and the race's date, distance and state from
+                // RunSignUp's race API (app/runsignup.js)
+                const rsu = await runsignup.fetchRunSignUp(url, axios.get, {
+                    'User-Agent': SCRAPE_USER_AGENT,
+                    'Accept-Language': 'en-US,en;q=0.9'
                 });
-
-                const cookies = pageData.headers['set-cookie'];
-
-                // Extract title from the HTML page title and remove "results" at the end if present
-                const $ = cheerio.load(pageData.data);
-                const pageTitle = $('title').text().trim().replace(/\s*results\s*$/i, '') || 'RunSignUp Race';
-
-                // Now make the API call with the cookies for Json
-                const apiUrljson = `https://runsignup.com/Race/Results/${raceId}/?format=json&resultSetId=${resultSetId}&page=1&num=5000&search=`;
-                const response = await axios.get(apiUrljson, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'Accept': 'application/json',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Connection': 'keep-alive',
-                        'Cookie': cookies ? cookies.join('; ') : ''
-                    }
-                });
-
-
-
-                const raceData = response.data;
-                if (!raceData.resultSet || !raceData.resultSet.results || !raceData.resultSet.results.length) {
-                    return res.status(400).json({
+                if (rsu.needsChoice) {
+                    // No result set in the address and no single obvious one
+                    return res.json({
                         success: false,
-                        error: 'No results found in the JSON data'
+                        needsChoice: true,
+                        pageTitle: rsu.pageTitle,
+                        resultSets: rsu.resultSets,
+                        error: rsu.resultSets.length
+                            ? 'This race has several result sets: pick one.'
+                            : 'No results posted on this RunSignUp race yet.'
                     });
                 }
-
-                // Get visible headers from RunSignUp data
-                const visibleHeadings = raceData.headings.filter(h => !h.hidden);
-                const headers = visibleHeadings.map(h => h.name.replace('\n', ' '));
-
-
-                // Transform RunSignUp data using array indices, only including visible columns
-                const data = raceData.resultSet.results.map(result => {
-                    const row = {};
-                    // Only process the visible columns using their array indices
-                    visibleHeadings.forEach((heading, visibleIndex) => {
-                        // Find the original index of this heading in the full headings array
-                        const originalIndex = raceData.headings.findIndex(h => h.name === heading.name);
-                        if (originalIndex !== -1) {
-                            row[heading.name.replace('\n', ' ')] = result[originalIndex]?.toString() || '';
-                        }
-                    });
-                    return row;
-                });
-
                 res.json({
                     success: true,
                     // How the page was fetched, shown to the admin
                     fetchedVia: 'runsignup-api',
-                    headers: headers,
-                    data: data,
-                    pageTitle: pageTitle
+                    headers: rsu.headers,
+                    data: rsu.data,
+                    pageTitle: rsu.pageTitle,
+                    raceDay: rsu.raceDay,
+                    distance: rsu.distance,
+                    location: rsu.location,
+                    resultSetName: rsu.resultSetName,
+                    truncated: rsu.truncated,
+                    total: rsu.total
                 });
             } else if (url.includes('parkrun.')) {
-                // Use proxy to retrieve parkrun content
-                const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
-                // console.log(proxyUrl);
+                // Through the proxy (parkrun blocks direct requests), and read
+                // the way the parkrun check reads it: parkrunMetadata for the
+                // event and its date (either way parkrun writes it), the
+                // generic parser for the table
+                if (!process.env.PARKRUN_PROXY_URL) {
+                    return res.status(503).json({
+                        success: false,
+                        error: 'No parkrun proxy is configured (PARKRUN_PROXY_URL). Paste the page source instead.'
+                    });
+                }
+                let page;
                 try {
-                    const response = await axios.get(proxyUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                            'Accept-Language': 'en-US,en;q=0.9',
-                            'Accept-Encoding': 'gzip, deflate, br',
-                            'Connection': 'keep-alive',
-                            'Cache-Control': 'no-cache',
-                            'Pragma': 'no-cache'
-                        },
-                        maxRedirects: 5,
-                        validateStatus: function (status) {
-                            return status >= 200 && status < 500;
-                        },
-                        timeout: 15000 // 15 second timeout for proxy
-                    });
-
-                    // Check if we got a CAPTCHA page or any other error page
-                    if (response.data.includes('JavaScript is disabled') ||
-                        response.data.includes('CAPTCHA') ||
-                        response.data.includes('Access Denied') ||
-                        response.data.includes('Please try again later')) {
-                        return res.status(403).json({
-                            success: false,
-                            error: 'Parkrun is restricting access. This could be due to CAPTCHA, rate limiting, or IP restrictions. Please try again later or use a different results source.'
-                        });
-                    }
-
-                    const $ = cheerio.load(response.data);
-
-                    // Extract page title from Results-header
-                    const resultsHeader = $('.Results-header h1').text().trim();
-
-                    // Parse event number and date from h3 spans
-                    const dateText = $('.Results-header h3 .format-date').text().trim();
-                    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
-
-                    // Convert date from DD/MM/YYYY to Date object
-                    const [day, month, year] = dateText.split('/');
-                    const raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-
-                    const pageTitle = `${resultsHeader} #${eventNumber}`;
-
-                    // Try different table selectors
-                    let table = null;
-                    let headers = [];
-                    let data = [];
-
-                    // Parkrun specific table selectors
-                    const tableSelectors = [
-                        'table.Results-table',  // Parkrun specific class
-                        'table.Results',        // Another Parkrun specific class
-                        'table.results-table',  // Common for results tables
-                        'table.table',          // Bootstrap tables
-                        'table.dataTable',      // DataTables
-                        'table.sortable',       // Sortable tables
-                        'table.grid',           // Grid tables
-                        'table',                // Any table as last resort
-                        'div.table',            // Some sites use div with table class
-                        'div.results'           // Some sites use div for results
-                    ];
-
-                    // Try each selector until we find a working one
-                    for (const selector of tableSelectors) {
-                        const element = $(selector).first();
-                        if (element.length) {
-                            // Try to extract headers - be more strict about what constitutes a header
-                            let potentialHeaders = [];
-                            const headerRow = element.find('thead tr, tr:first-child').first();
-
-                            // Only process if we found a header row
-                            if (headerRow.length) {
-                                // Check if this looks like a header row (all cells should be th elements)
-                                const allCellsAreTh = headerRow.find('td').length === 0;
-
-                                if (allCellsAreTh) {
-                                    const rawHeaders = [];
-                                    headerRow.find('th').each(function () {
-                                        // Every cell, blank ones included: the
-                                        // array index is what aligns headers to
-                                        // <td>s, so a gap must not close up.
-                                        rawHeaders.push($(this).text().trim());
-                                    });
-                                    if (looksLikeHeaderRow(rawHeaders)) {
-                                        potentialHeaders = normaliseTableHeaders(rawHeaders);
-                                    }
-                                }
-                            }
-
-                            // If we found valid headers, try to extract data
-                            if (potentialHeaders.length > 0) {
-                                const potentialData = [];
-                                // Skip the header row when getting data
-                                element.find('tbody tr, tr:not(:first-child)').each(function () {
-                                    const row = {};
-                                    $(this).find('td').each(function (index) {
-                                        if (potentialHeaders[index]) {
-                                            row[potentialHeaders[index]] = $(this).text().trim();
-                                        }
-                                    });
-                                    if (Object.keys(row).length > 0) {
-                                        potentialData.push(row);
-                                    }
-                                });
-
-                                // If we found both headers and data, use this table
-                                if (potentialData.length > 0) {
-                                    table = element;
-                                    headers = potentialHeaders;
-                                    data = potentialData;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!table || headers.length === 0 || data.length === 0) {
-                        return res.status(400).json({
-                            success: false,
-                            error: 'No valid results table found on the page. Tried selectors: ' + tableSelectors.join(', ')
-                        });
-                    }
-
-                    res.json({
-                        success: true,
-                        // How the page was fetched, shown to the admin
-                        fetchedVia: 'parkrun-proxy',
-                        headers: headers,
-                        data: data,
-                        pageTitle: pageTitle,
-                        raceDate: raceDate
-                    });
-
-                } catch (proxyError) {
-                    console.error('Proxy error for parkrun:', proxyError);
-                    return res.status(500).json({
+                    page = await fetchParkrunPage(url);
+                } catch (err) {
+                    console.error('Proxy error for parkrun:', err.message);
+                    return res.status(502).json({
                         success: false,
-                        error: 'Failed to retrieve parkrun data through proxy: ' + proxyError.message
+                        error: err.refused ? err.message + ' Or paste the page source.'
+                            : 'Failed to retrieve parkrun data through the proxy: ' + err.message
                     });
                 }
-            } else if (url.includes('athlinks.com')) {
-                // Extract event ID and race ID from the URL
-                // Look for event ID after 'Event/' in the URL
-                const eventMatch = url.match(/\/Event\/(\d+)/);
-                const raceIdMatch = url.match(/\/Course\/(\d+)/);
-
-                if (!eventMatch || !raceIdMatch) {
-                    return res.status(400).json({
+                if (page.missing) {
+                    return res.status(404).json({
                         success: false,
-                        error: 'Could not find event ID or race ID in URL'
+                        error: 'Not a parkrun results page, or that event has not been run yet'
                     });
                 }
-
-                const eventId = eventMatch[1];
-                const raceId = raceIdMatch[1];
-
-                // Make multiple requests to Athlinks API to get all results
-                let allResults = [];
-                let from = 0;
-                const limit = 100; // Increased limit per request for efficiency
-                let hasMoreResults = true;
-                let firstResponse = null;
-
-
-                while (hasMoreResults) {
-                    try {
-                        const response = await axios.get(`https://reignite-api.athlinks.com/event/${eventId}/race/${raceId}/results?from=${from}&limit=${limit}`, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                                'Accept': 'application/json',
-                                'Accept-Language': 'en-US,en;q=0.5',
-                                'Connection': 'keep-alive'
-                            }
-                        });
-
-                        // Store first response for race info
-                        if (!firstResponse) {
-                            firstResponse = response;
-                        }
-
-                        const raceData = response.data;
-                        if (!raceData) {
-                            return res.status(400).json({
-                                success: false,
-                                error: 'No results found in the API response' + from + " " + limit
-                            });
-                        }
-                        if (raceData.intervals && raceData.intervals[0] && raceData.intervals[0].results) {
-                            const results = raceData.intervals[0].results;
-                            if (results.length === 0) {
-                                hasMoreResults = false;
-                            } else {
-                                allResults = allResults.concat(results);
-                                // console.log(allResults.length);
-                                from += limit;
-                            }
-                        } else {
-                            hasMoreResults = false;
-                        }
-
-                    } catch (error) {
-                        console.error('Error fetching results:', error);
-                        return res.status(500).json({
-                            success: false,
-                            error: 'Failed to fetch results: ' + error.message
-                        });
-                    }
+                if (!page.parsed) {
+                    return res.status(400).json({ success: false, error: 'No results table on ' + page.meta.pageTitle });
                 }
-
-                if (allResults.length === 0) {
-                    return res.status(400).json({
-                        success: false,
-                        error: 'No results found in the API response'
-                    });
-                }
-
-                // Extract race info from the first response
-                const raceInfo = firstResponse.data.intervals[0];
-                const pageTitle = firstResponse.data.race.name;
-                const raceDate = new Date(allResults[0].startTimeInMillis);
-                const totalAthletes = firstResponse.data.division.totalAthletes;
-
-                // Transform the accumulated results data
-                const data = await Promise.all(allResults.map(async result => {
-                    // Convert milliseconds to HH:MM:SS format
-                    const timeInSeconds = result.chipTimeInMillis / 1000;
-                    const hours = Math.floor(timeInSeconds / 3600);
-                    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-                    const seconds = Math.ceil(timeInSeconds % 60);
-                    const time = hours > 0
-                        ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-                        : `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-                    // If this is a club member, fetch their individual result
-                    // let additionalInfo = {};
-                    // if (result.displayName === "Nicolas Crouzier" && result.id) {
-                    //     try {
-                    //         console.log(`https://reignite-api.athlinks.com/azp/ctlive/event/${eventId}/entry/${result.id}`);
-                    //         const individualResponse = await axios.get(`https://reignite-api.athlinks.com/azp/ctlive/event/${eventId}/entry/${result.id}`, {
-                    //             headers: {
-                    //                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    //                 'Accept': 'application/json',
-                    //                 'Accept-Language': 'en-US,en;q=0.5',
-                    //                 'Connection': 'keep-alive'
-                    //             }
-                    //         });
-
-                    //         if (individualResponse.data) {
-                    //             additionalInfo = {
-                    //                 'Division Total': individualResponse.data.divisions[2] || '',
-                    //             };
-                    //             console.log(individualResponse.data);
-                    //         }
-                    //     } catch (error) {
-                    //         console.error('Error fetching individual result:', error);
-                    //     }
-                    // }
-
-                    return {
-                        'Place': result.rankings.overall,
-                        'Name': result.displayName,
-                        'Gender': result.gender,
-                        'Age': result.age,
-                        'Bib': result.bib,
-                        'Time': time,
-                        'Gender Place': result.rankings.gender,
-                        'Division Place': result.rankings.primary
-                        // ...additionalInfo
-                    };
-                }));
-
-                // Update headers to include any additional fields we found
-                const headers = [
-                    'Place', 'Name', 'Gender', 'Age', 'Bib', 'Time', 'Gender Place', 'Division Place', 'Division Total'
-                ];
-
-                // Add any additional headers we found in the data
-                if (data.length > 0) {
-                    Object.keys(data[0]).forEach(key => {
-                        if (!headers.includes(key)) {
-                            headers.push(key);
-                        }
-                    });
-                }
-
                 res.json({
                     success: true,
                     // How the page was fetched, shown to the admin
-                    fetchedVia: 'athlinks-api',
-                    headers: headers,
-                    data: data,
-                    pageTitle: pageTitle,
-                    raceDate: raceDate,
-                    raceInfo: {
-                        name: firstResponse.data.race.name,
-                        distance: {
-                            meters: raceInfo.distance.meters,
-                            units: raceInfo.distance.units
-                        },
-                        totalAthletes: totalAthletes
-                    }
+                    fetchedVia: 'parkrun-proxy',
+                    source: 'parkrun',
+                    headers: page.parsed.headers,
+                    data: page.parsed.data,
+                    pageTitle: page.meta.pageTitle,
+                    raceDate: page.meta.raceDate,
+                    raceDay: page.meta.raceDay,
+                    tables: page.parsed.tables
                 });
+            } else if (url.includes('athlinks.com')) {
+                // Athlinks' results feed, 100 runners a request
+                // (app/athlinks.js). Athlinks now often refuses servers; the
+                // error then points to the bookmarklet.
+                const payload = await athlinks.fetchAthlinks(url, axios.get, { 'User-Agent': SCRAPE_USER_AGENT });
+                const extraction = athlinks.toExtraction(payload);
+                res.json(Object.assign({
+                    success: true,
+                    // How the page was fetched, shown to the admin
+                    fetchedVia: 'athlinks-api',
+                    source: 'athlinks'
+                }, extraction));
             } else {
                 // Original MCRRC parsing logic or any other compatible (unlikely).
                 // Goes through fetchPageHtml so a Cloudflare 403 is retried via
@@ -4952,7 +4693,7 @@ module.exports = async function (app, qs, passport, async) {
                     error: error.message
                 });
             }
-            res.status(500).json({
+            res.status(error.status || 500).json({
                 success: false,
                 error: 'Failed to extract table data: ' + error.message
             });
@@ -7482,125 +7223,6 @@ module.exports = async function (app, qs, passport, async) {
             ogUrl: siteUrl() + req.originalUrl,
             ogImage: (social && social.ogImage) || siteUrl() + '/images/ogimage.jpg'
         });
-    });
-
-    app.post('/api/extract-parkrun', service.isAdminLoggedIn, async function (req, res) {
-        try {
-            const { htmlSource } = req.body;
-
-            if (!htmlSource) {
-                return res.status(400).json({ success: false, error: 'HTML source is required' });
-            }
-
-            // Process the HTML source directly
-            const $ = cheerio.load(htmlSource);
-
-            // Extract page title from Results-header
-            const resultsHeader = $('.Results-header h1').text().trim();
-
-            // Parse event number and date from h3 spans
-            const dateText = $('.Results-header h3 .format-date').text().trim();
-            const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
-
-            // Convert date from DD/MM/YYYY to Date object
-            let raceDate;
-            if (dateText) {
-                const [day, month, year] = dateText.split('/');
-                raceDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-            }
-
-            const pageTitle = `${resultsHeader} #${eventNumber}`;
-
-            // Try different table selectors
-            let table = null;
-            let headers = [];
-            let data = [];
-
-            // Parkrun specific table selectors
-            const tableSelectors = [
-                'table.Results-table',  // Parkrun specific class
-                'table.Results',        // Another Parkrun specific class
-                'table.results-table',  // Common for results tables
-                'table.table',          // Bootstrap tables
-                'table.dataTable',      // DataTables
-                'table.sortable',       // Sortable tables
-                'table.grid',           // Grid tables
-                'table',                // Any table as last resort
-                'div.table',            // Some sites use div with table class
-                'div.results'           // Some sites use div for results
-            ];
-
-            // Try each selector until we find a working one
-            for (const selector of tableSelectors) {
-                const element = $(selector).first();
-                if (element.length) {
-                    // Try to extract headers - be more strict about what constitutes a header
-                    let potentialHeaders = [];
-                    const headerRow = element.find('thead tr, tr:first-child').first();
-
-                    // Only process if we found a header row
-                    if (headerRow.length) {
-                        // Every cell, blank ones included: the array index is
-                        // what aligns headers to cells, so a gap must not
-                        // close up. See normaliseTableHeaders.
-                        const rawHeaders = [];
-                        headerRow.find('th, td').each(function () {
-                            rawHeaders.push($(this).text().trim());
-                        });
-                        if (looksLikeHeaderRow(rawHeaders)) {
-                            potentialHeaders = normaliseTableHeaders(rawHeaders);
-                        }
-                    }
-
-                    // If we found valid headers, try to extract data
-                    if (potentialHeaders.length > 0) {
-                        const potentialData = [];
-                        // Skip the header row when getting data
-                        element.find('tbody tr, tr:not(:first-child)').each(function () {
-                            const row = {};
-                            $(this).find('td').each(function (index) {
-                                if (potentialHeaders[index]) {
-                                    row[potentialHeaders[index]] = $(this).text().trim();
-                                }
-                            });
-                            if (Object.keys(row).length > 0) {
-                                potentialData.push(row);
-                            }
-                        });
-
-                        // If we found both headers and data, use this table
-                        if (potentialData.length > 0) {
-                            table = element;
-                            headers = potentialHeaders;
-                            data = potentialData;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (!table || headers.length === 0 || data.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'No valid results table found in the provided content. Tried selectors: ' + tableSelectors.join(', ')
-                });
-            }
-
-            res.json({
-                success: true,
-                headers: headers,
-                data: data,
-                pageTitle: pageTitle,
-                raceDate: raceDate
-            });
-
-        } catch (error) {
-            console.error('Error extracting Parkrun table:', error);
-            res.status(500).json({
-                success: false,
-                error: 'Failed to extract table data: ' + error.message
-            });
-        }
     });
 
 

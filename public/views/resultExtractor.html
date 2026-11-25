@@ -92,12 +92,12 @@
             <form ng-submit="loadTable()">
                 <div class="row">
                     <div class="col-md-4 rx-field">
-                        <label>Race date <span class="text-danger">*</span></label>
+                        <label>Race date</label>
                         <div class="input-group rx-date">
                             <input type="text" name="racedate" class="form-control"
                                 uib-datepicker-popup="yyyy-MM-dd" ng-model="formData.raceDate"
                                 ng-model-options="{timezone: 'utc'}" is-open="formData.opened"
-                                min-date="'2013-01-01'" max-date="'3015-06-22'" required
+                                min-date="'2013-01-01'" max-date="'3015-06-22'"
                                 close-text="Close" />
                             <span class="input-group-btn">
                                 <button type="button" class="btn btn-default rx-today" ng-click="setToday()"
@@ -107,8 +107,8 @@
                             </span>
                         </div>
                         <small class="rx-hint" ng-if="!formData.raceDate">
-                            Set this first — results are matched against the team as it was on
-                            race day.
+                            Taken from the results when they give it (parkrun, RunSignUp,
+                            Athlinks). Results are matched against the team as it was that day.
                         </small>
                         <small class="rx-hint rx-hint-ok" ng-if="formData.raceDate">
                             <i class="fa fa-users"></i> {{currentTeamMembers.length}} members on
@@ -125,6 +125,10 @@
                     </div>
                     <div class="col-md-6 rx-field">
                         <label for="htmlSourceInput">Page source code</label>
+                        <button type="button" class="mcrrc-btn rx-btn-sm rx-clear-source" ng-show="htmlSource"
+                            ng-click="clearHtmlSource()" title="Empty the box">
+                            <i class="fa fa-times"></i> Clear
+                        </button>
                         <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource"
                             placeholder="Paste the page source here — parkrun, or any results page that cannot be fetched by URL"
                             ng-disabled="url"></textarea>
@@ -132,15 +136,31 @@
                             For parkrun, or any site that blocks us: open the page, view source
                             and paste it all here.
                         </small>
+                        <small class="rx-hint">
+                            Quicker: drag
+                            <a class="rx-bookmarklet" rx-bookmarklet="/bookmarklets/results.js"
+                                title="Drag to your bookmarks bar">Results → clipboard</a>
+                            to your bookmarks bar. Click it on a race's results page (mcrrc.org,
+                            Athlinks, RunSignUp or a race's own RunSignUp site, parkrun, any other),
+                            then paste here.
+                        </small>
                     </div>
+                </div>
+
+                <!-- A RunSignUp race with several result sets, none in the address -->
+                <div class="rx-result-sets" ng-if="resultSetChoice">
+                    <p><strong>{{resultSetChoice.pageTitle}}</strong> has several result sets. Which one?</p>
+                    <button type="button" class="mcrrc-btn" ng-repeat="set in resultSetChoice.sets"
+                        ng-click="pickResultSet(set)">
+                        {{set.year}} · {{set.name}}
+                    </button>
                 </div>
 
                 <div class="rx-actions">
                     <button type="submit" class="member-primary-btn"
-                        ng-disabled="(!url && !htmlSource) || !formData.raceDate">
+                        ng-disabled="!url && !htmlSource">
                         <i class="fa fa-download"></i> Load Table
                     </button>
-                    <span class="rx-hint" ng-if="!formData.raceDate">Pick a race date first.</span>
                 </div>
             </form>
         </div>
@@ -204,10 +224,14 @@
                 </div>
                 <div class="col-md-6 rx-field">
                     <label>Race date</label>
-                    <p class="rx-static">
+                    <p class="rx-static" ng-if="formData.raceDate">
                         {{formData.raceDate | date:'MMMM d, y':'UTC'}}
                         <small class="rx-hint">— {{currentTeamMembers.length}} members on the
                             team that day. Change it at the top of the page.</small>
+                    </p>
+                    <p class="rx-static text-danger" ng-if="!formData.raceDate">
+                        Not set: the page gave none. Set it at the top of the page to match the
+                        results to the team.
                     </p>
                 </div>
             </div>

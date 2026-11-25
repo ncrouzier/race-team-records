@@ -88,45 +88,12 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             }
         }, true);
 
-        // Define mappable fields
-        $scope.mappableFields = [
-            { value: 'place', label: 'Overall Ranking' },
-            { value: 'genderRank', label: 'Gender Ranking' },
-            { value: 'ageRank', label: 'Age Ranking' },
-            { value: 'name', label: 'Full Name' },
-            { value: 'firstname', label: 'First Name' },
-            { value: 'lastname', label: 'Last Name' },
-            { value: 'time', label: 'Time' } ,
-            { value: 'gender', label: 'Gender/Sex' },
-            { value: 'ageGroup', label: 'Age/Division Group' }           
-        ];
-
-        // Get available options for a specific header
+        // The fields a column can be mapped to, and those still free for a
+        // column: shared with the race edit modal
+        $scope.mappableFields = ResultExtractionService.mappableFields;
         $scope.getAvailableOptions = function(header) {
-            var currentMapping = $scope.columnMapping[header];
-            return $scope.mappableFields.filter(function(field) {
-                // If this is the current mapping, always include it
-                if (field.value === currentMapping) {
-                    return true;
-                }
-                // Check if this field is mapped to any other header
-                for (var otherHeader in $scope.columnMapping) {
-                    if (otherHeader !== header && $scope.columnMapping[otherHeader] === field.value) {
-                        return false;
-                    }
-                }
-                // // Special handling for name fields
-                // if (field.value === 'name' && (hasFirstName || hasLastName)) {
-                //     return false; // Can't map name if firstname or lastname is already mapped
-                // }
-                // if ((field.value === 'firstname' || field.value === 'lastname') && hasName) {
-                //     return false; // Can't map firstname or lastname if name is already mapped
-                // }
-                return true;
-            });
+            return ResultExtractionService.availableFieldsFor($scope.columnMapping, header);
         };
-
-       
 
         // Every member, past and present. Which of them count is decided by the
         // race date, not by who is on the team today: a 2014 race must match the
@@ -165,16 +132,16 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             'jina': 'through r.jina.ai (the site blocked a direct request)',
             'runsignup-api': 'from the RunSignUp API',
             'parkrun-proxy': 'from parkrun through the proxy',
-            'athlinks-api': 'from the Athlinks API'
+            'athlinks-api': 'from the Athlinks API',
+            'athlinks-bookmarklet': 'from the bookmark\'s copy of the Athlinks race',
+            'runsignup-bookmarklet': 'from the bookmark\'s copy of the RunSignUp results',
+            'page-bookmarklet': 'from the bookmark\'s copy of the page'
         };
 
+        // No race date needed to load: many pages give theirs (parkrun,
+        // RunSignUp, Athlinks), and the rest wait for it before matching
+        // (canProcess), since the date decides who was on the team
         $scope.loadTable = function() {
-            if (!$scope.formData.raceDate) {
-                NotificationService.showNotifiction(false,
-                    'Set the race date first — it decides which members the results are matched against.');
-                return;
-            }
-
             $scope.isLoading = true;
             $scope.distanceSuggestions = [];
 
@@ -185,10 +152,18 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 ? { htmlSource: $scope.htmlSource }
                 : { url: $scope.url };
 
+            $scope.resultSetChoice = null;
             $http.post('/api/extract-table', data)
                 .then(function(response) {
                     if (response.data.success) {
                         applyExtraction(response.data);
+                    } else if (response.data.needsChoice && response.data.resultSets.length) {
+                        // A RunSignUp race with several result sets and none
+                        // in the address: listed for the admin to pick
+                        $scope.resultSetChoice = {
+                            pageTitle: response.data.pageTitle,
+                            sets: response.data.resultSets
+                        };
                     } else {
                         NotificationService.showNotifiction(false,'Failed to load table data: ' + response.data.error);
                     }
@@ -200,6 +175,17 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     $scope.processedResults = null;
                     $scope.isLoading = false;
                 });
+        };
+
+        // Empty the paste box (a whole page source is long to select by hand)
+        $scope.clearHtmlSource = function() {
+            $scope.htmlSource = '';
+        };
+
+        // A RunSignUp result set picked from the list: its address, loaded
+        $scope.pickResultSet = function(set) {
+            $scope.url = $scope.url.replace(/#.*$/, '').replace(/[?&]resultSetId=\d+/i, '') + '#resultSetId-' + set.id;
+            $scope.loadTable();
         };
 
         // A results table loaded: the server's /api/extract-table answer, or
@@ -223,8 +209,10 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             // The page may carry its own date (parkrun does). Take it
             // only if the admin left the field empty; if it disagrees
             // with what they set, say so rather than overruling them.
-            if (data.raceDate) {
-                var pageDate = new Date(data.raceDate);
+            if (data.raceDate || data.raceDay) {
+                // The day as the page writes it (parkrun), which no time zone
+                // can move; else the server's date
+                var pageDate = data.raceDay ? utcDay(data.raceDay) : new Date(data.raceDate);
                 if (!$scope.formData.raceDate) {
                     $scope.formData.raceDate = pageDate;
                 } else if (pageDate.toDateString() !== new Date($scope.formData.raceDate).toDateString()) {
@@ -233,6 +221,24 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                         ', but the race date is set to ' +
                         new Date($scope.formData.raceDate).toDateString() + '.');
                 }
+            }
+
+            if (!$scope.formData.raceDate) {
+                NotificationService.showNotifiction(false,
+                    'The page gives no race date: set it to match the results to the team as it was that day.');
+            }
+
+            // Where the race was, when the results site says (RunSignUp):
+            // only into an empty state, never over the admin's choice
+            if (data.location && data.location.state && !$scope.formData.location.state) {
+                $scope.formData.location = angular.copy(data.location);
+            }
+
+            // More runners than were fetched: say so rather than save a
+            // part of the race as if it were all of it
+            if (data.truncated) {
+                NotificationService.showNotifiction(false,
+                    'Only ' + data.data.length + ' of the ' + data.total + ' runners could be fetched.');
             }
 
             // Set race type to road 5K for Parkrun
@@ -263,20 +269,29 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             });
 
             // Site-specific column mapping, shared with the race edit
-            // modal's "retrieve from a link" flow.
+            // modal's "retrieve from a link" flow. A paste the server
+            // recognised (parkrun's page, the bookmarklet's copy of an
+            // Athlinks or RunSignUp race) maps as that site's address would.
+            var SITE_ADDRESS = { parkrun: 'parkrun.', athlinks: 'athlinks.com', runsignup: 'runsignup.com' };
+            var siteAddress = $scope.isParkrunSource ? SITE_ADDRESS.parkrun
+                : ($scope.htmlSource && SITE_ADDRESS[data.source]) || null;
+            // The bookmark's copy of a page carries its address (mcrrc.org's
+            // column names are known)
+            var mappingAddress = siteAddress || data.sourceUrl || $scope.url;
             $scope.columnMapping = ResultExtractionService.guessColumnMapping(
-                $scope.isParkrunSource ? 'parkrun.' : $scope.url,
+                mappingAddress,
                 $scope.tableHeaders,
                 // Pasted source from a site we cannot identify has no
                 // URL to match on, so fall back to header names. The
                 // mapping dropdowns are still there to correct it.
-                { fallbackToGenericHeaders: !!$scope.htmlSource && !$scope.isParkrunSource }
+                { fallbackToGenericHeaders: !!$scope.htmlSource && !siteAddress }
             );
 
             
             $scope.distanceSuggestions = ResultExtractionService.guessRaceDistance($scope.racetypesList, {
                 pageTitle: data.pageTitle,
-                url: $scope.url,
+                url: data.sourceUrl || $scope.url,
+                distance: data.distance,
                 headers: $scope.tableHeaders,
                 rows: $scope.tableData,
                 columnMapping: $scope.columnMapping
@@ -295,8 +310,9 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     $scope.formData.raceName = title;
                 }
             }
-            // Set the result link to the URL being processed
-            $scope.formData.resultlink = $scope.url;
+            // Set the result link to the URL being processed, or the page
+            // the pasted results came from (the Athlinks bookmarklet's)
+            $scope.formData.resultlink = data.resultUrl || $scope.url;
         }
 
         // ---- The parkrun check (app/parkrunCheck.js) ----
@@ -556,275 +572,58 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             };
         };
 
+        // The team members' rows of the table, ready to save. The name is
+        // matched first and the rest of a row worked out only for members (a
+        // 17,000-runner race has a few dozen), with the parsing and matching
+        // the parkrun check and the race edit modal use too
+        // (ResultExtractionService).
         $scope.processResults = function() {
-            const processStatus = $scope.canProcess();
-            if (!processStatus.canProcess) {                
-                return;
-            }
+            if (!$scope.canProcess().canProcess) return;
 
-            $scope.processedResults = $scope.tableData
-                .map(function(row) {
-                    var result = {
-                        selected: true, // Default to selected
-                        member: {
-                                                   },
-                        time: 0,
-                        timeExp: {
-                            hours: 0,
-                            minutes: 0,
-                            seconds: 0,
-                            centiseconds: 0
-                        },
-                        race: {
-                            racename: $scope.formData.raceName,
-                            racedate: $scope.formData.raceDate ? new Date($scope.formData.raceDate).getTime() : null,
-                            racetype: $scope.formData.raceType,
-                            location: $scope.formData.location,
-                            isMultisport: false,
-                            distanceName: $scope.formData.distanceName                        
-                        },
-                        ranking: {                                                    
-                        },
-                        resultlink: $scope.formData.resultlink,
-                        isRecordEligible: $scope.formData.isRecordEligible || false
-                    };
+            // Recomputed here rather than read from the cached list: the
+            // date watcher and this run can land in the same digest, and
+            // the roster must never lag the date the admin just set.
+            var members = membersOnRaceDay();
+            var mapping = $scope.columnMapping;
+            var options = {
+                stripPersonalBest: !!$scope.isParkrunSource,
+                stripDigitsFromGender: !!$scope.isParkrunSource
+            };
+            var processed = [];
 
-                    // Find the column header that was mapped to 'name'
-                    var nameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'name');
-                    var firstNameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'firstname');
-                    var lastNameColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'lastname');
+            $scope.tableData.forEach(function(row) {
+                var name = ResultExtractionService.parseName(row, mapping);
+                var member = name && ResultExtractionService.matchMember(name.firstname, name.lastname, members);
+                if (!member) return;
+                var parsed = ResultExtractionService.parseRow(row, mapping, $scope.tableData, options);
+                if (!parsed) return;
 
-                    if (nameColumn && row[nameColumn]) {
-                        var nameParts = row[nameColumn].trim().split(/\s+/);
-                        if (nameParts.length >= 2) {
-                            result.member.firstname = nameParts[0];
-                            result.member.lastname = nameParts.slice(1).join(' ');
-                        } else {
-                            return null;
-                        }
-                    } else if (firstNameColumn && lastNameColumn && row[firstNameColumn] && row[lastNameColumn]) {
-                        result.member.firstname = row[firstNameColumn].trim();
-                        result.member.lastname = row[lastNameColumn].trim();
-                    } else {
-                        return null;
-                    }
-
-                    // Find the column header that was mapped to 'time'
-                    var timeColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'time');
-                    if (timeColumn && row[timeColumn]) {
-                        var timeStr = row[timeColumn].toString().trim();
-                        // For Parkrun results, extract only the finish time (before any PB info)
-                        if ($scope.isParkrunSource) {
-                            timeStr = timeStr.split('PB')[0].trim();
-                        }
-                        result.time = $scope.cleanTime(timeStr);
-                        // Initialize timeExp from the cleaned time
-                        var totalSeconds = result.time / 100; // Convert from centiseconds to seconds
-                        result.timeExp.hours = Math.floor(totalSeconds / 3600);
-                        result.timeExp.minutes = Math.floor((totalSeconds % 3600) / 60);
-                        result.timeExp.seconds = Math.floor(totalSeconds % 60);
-                        result.timeExp.centiseconds = Math.floor((result.time % 100));
-                    } else {
-                        return null;
-                    }
-
-                    // Parse gender ranking
-                    var genderRankColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'genderRank');
-                    var genderColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'gender' );
-                    
-                    if (genderRankColumn && row[genderRankColumn]) {
-                        var genderRankStr = row[genderRankColumn].toString().trim();
-                        // Check if the format is "rank/total"
-                        if (genderRankStr.includes('/')) {
-                            var genderParts = genderRankStr.split('/');
-                            genderRankValue = parseInt(genderParts[0]);
-                            var genderTotalValue = parseInt(genderParts[1]);
-                            if (!isNaN(genderRankValue)) {
-                                result.ranking.genderrank = genderRankValue;
-                            }
-                            if (!isNaN(genderTotalValue)) {
-                                result.ranking.gendertotal = genderTotalValue;
-                            }
-                        } else {
-                            // Handle single number format
-                            genderRankValue = parseInt(genderRankStr);
-                            if (!isNaN(genderRankValue)) {
-                                result.ranking.genderrank = genderRankValue;
-                                // Try to find total gender participants by looking for the highest rank
-                                if (genderColumn && row[genderColumn]) {
-                                    // If we have gender/sex info but no ranking, calculate it
-                                    var currentGender = row[genderColumn].toString().trim();
-                                    // Count total participants in the same age group
-                                    result.ranking.gendertotal = $scope.tableData.filter(r => {
-                                        var otherGender = r[genderColumn].toString().trim();
-                                        return otherGender === currentGender;
-                                    }).length;
-                                }
-                            }
-                        }
-                    } else if (genderColumn && row[genderColumn]) {
-                        // If we only have gender info, calculate rank based on position within gender group
-                        var currentGender2,genderTotal;
-                        if ($scope.isParkrunSource) {
-                            
-                             currentGender2 = row[genderColumn].toString().replace(/[0-9]/g, '').trim();
-                            //  console.log(currentGender2);
-                            // Count total participants of the same gender
-                            genderTotal = $scope.tableData.filter(r => {
-                                var otherGender = r[genderColumn].toString().replace(/[0-9]/g, '').trim();
-                                return otherGender === currentGender2;
-                            }).length;
-                        }else{
-                            currentGender2 = row[genderColumn].toString().trim();
-                        
-                            // Count total participants of the same gender
-                            genderTotal = $scope.tableData.filter(r => {
-                                var otherGender = r[genderColumn].toString().trim();
-                                return otherGender === currentGender2;
-                            }).length;
-                        }
-                        
-                        // Calculate gender rank based on position in the filtered array
-                        var genderRank = $scope.tableData
-                            .filter(r => r[genderColumn].toString().replace(/[0-9]/g, '').trim() === currentGender2)
-                            .findIndex(r => r === row) + 1;
-                        
-                        if (genderRank > 0) {
-                            result.ranking.genderrank = genderRank;
-                            result.ranking.gendertotal = genderTotal;
-                        }
-                    }
-
-                    // Parse age ranking
-                    var ageRankColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'ageRank');
-                    var ageGroupColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'ageGroup');
-                    if (ageRankColumn && row[ageRankColumn]) {
-                        var ageRankStr = row[ageRankColumn].toString().trim();
-                        // Check if the format is "rank/total"
-                        if (ageRankStr.includes('/')) {
-                            var ageParts = ageRankStr.split('/');
-                            ageRankValue = parseInt(ageParts[0]);
-                            var ageTotalValue = parseInt(ageParts[1]);
-                            if (!isNaN(ageRankValue)) {
-                                result.ranking.agerank = ageRankValue;
-                            }
-                            if (!isNaN(ageTotalValue)) {
-                                result.ranking.agetotal = ageTotalValue;
-                            }
-                        } else {
-                            // Handle single number format
-                            ageRankValue = parseInt(ageRankStr);
-                            if (!isNaN(ageRankValue)) {
-                                result.ranking.agerank = ageRankValue;
-                                // If we have age group information, use it to calculate total
-                                if (ageGroupColumn && row[ageGroupColumn]) {
-                                    var currentAgeGroup = row[ageGroupColumn].toString().trim();
-                                    // Count total participants in the same age group
-                                    result.ranking.agetotal = $scope.tableData.filter(r => {
-                                        var otherAgeGroup = r[ageGroupColumn].toString().trim();
-                                        return otherAgeGroup === currentAgeGroup;
-                                    }).length;
-                                } 
-                            }
-                        }
-                    } else if (ageGroupColumn && row[ageGroupColumn]) {
-                        // If we only have age group info, calculate rank based on position within age group
-                        var currentAgeGroup2 = row[ageGroupColumn].toString().trim();
-                        
-                        // Count total participants in the same age group
-                        var ageGroupTotal = $scope.tableData.filter(r => {
-                            var otherAgeGroup = r[ageGroupColumn].toString().trim();
-                            return otherAgeGroup === currentAgeGroup2;
-                        }).length;
-                        
-                        // Calculate age group rank based on position in the filtered array
-                        var ageGroupRank = $scope.tableData
-                            .filter(r => r[ageGroupColumn].toString().trim() === currentAgeGroup2)
-                            .findIndex(r => r === row) + 1;
-                        
-                        if (ageGroupRank > 0) {
-                            result.ranking.agerank = ageGroupRank;
-                            result.ranking.agetotal = ageGroupTotal;
-                        }
-                    }
-
-                    // Parse general ranking (place)
-                     // Find the column header that was mapped to 'place' to get total participants
-                    var placeColumn = Object.keys($scope.columnMapping).find(key => $scope.columnMapping[key] === 'place');
-                    if (placeColumn && row[placeColumn]) {
-                        var place = parseInt(row[placeColumn]);
-                        if (!isNaN(place)) {
-                            result.ranking.overallrank = place;
-                        }
-                    }
-                    
-                    var totalParticipants = 0;
-                    if (placeColumn) {
-                        // Find the highest place number to get total participants
-                        totalParticipants = Math.max(...$scope.tableData.map(row => {
-                            var place = parseInt(row[placeColumn]);
-                            return isNaN(place) ? 0 : place;
-                        }));
-                        result.ranking.overalltotal = totalParticipants;
-                    }
-
-                    // After the existing gender ranking parsing code, add:
-                    
-
-                    
-
-                    return result;
-                })
-                .filter(function(result) {
-                    if (!result) return false;
-
-                    // Recomputed here rather than read from the cached list: the
-                    // date watcher and this run can land in the same digest, and
-                    // the roster must never lag the date the admin just set.
-                    var raceDayMembers = membersOnRaceDay();
-
-                    // More flexible name matching using full names
-                    var isMatch = raceDayMembers.some(function(member) {
-                        // Normalize names for comparison
-                        var normalizeName = function(name) {
-                            return name.toLowerCase()
-                                .replace(/[^a-z0-9]/g, '')
-                                .replace(/\s+/g, '');
-                        };
-
-                        var resultFullName = normalizeName(result.member.firstname + ' ' + result.member.lastname);
-                        var memberFullName = normalizeName(member.firstname + ' ' + member.lastname);
-                        
-                        // Check against alternate names if they exist
-                        var alternateNamesMatch = false;
-                        if (member.alternateFullNames && member.alternateFullNames.length > 0) {
-                            alternateNamesMatch = member.alternateFullNames.some(function(altName) {
-                                var normalizedAltName = normalizeName(altName);
-                                return resultFullName === normalizedAltName || 
-                                       resultFullName.includes(normalizedAltName) || 
-                                       normalizedAltName.includes(resultFullName);
-                            });
-                        }
-
-                        if (resultFullName === memberFullName || 
-                            resultFullName.includes(memberFullName) || 
-                            memberFullName.includes(resultFullName) ||
-                            alternateNamesMatch) {
-                            // Update the member data with the complete member information
-                            result.members = [member];
-                            return true;
-                        }
-                        return false;
-                    });
-
-                    return isMatch;
+                var time = Math.round(parsed.time); // centiseconds
+                processed.push({
+                    selected: true,
+                    members: [member],
+                    time: time,
+                    timeExp: {
+                        hours: Math.floor(time / 360000),
+                        minutes: Math.floor((time % 360000) / 6000),
+                        seconds: Math.floor((time % 6000) / 100),
+                        centiseconds: time % 100
+                    },
+                    race: {
+                        racename: $scope.formData.raceName,
+                        racedate: $scope.formData.raceDate ? new Date($scope.formData.raceDate).getTime() : null,
+                        racetype: $scope.formData.raceType,
+                        location: $scope.formData.location,
+                        isMultisport: false,
+                        distanceName: $scope.formData.distanceName
+                    },
+                    ranking: parsed.ranking,
+                    resultlink: $scope.formData.resultlink,
+                    isRecordEligible: $scope.formData.isRecordEligible || false
                 });
-
-            // Remove the temporary member object since we now have the proper members array
-            $scope.processedResults.forEach(function(result) {
-                delete result.member;
             });
 
+            $scope.processedResults = processed;
         };
 
         $scope.selectAll = function() {
@@ -930,25 +729,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 });
         };
 
-        $scope.cleanTime = function(timeStr) {
-            if (!timeStr) return 0;
-            // Remove any non-numeric characters except for colons and periods
-            timeStr = timeStr.replace(/[^0-9:.]/g, '');
-            
-            // Handle different time formats
-            if (timeStr.includes(':')) {
-                var parts = timeStr.split(':');
-                if (parts.length === 2) {
-                    // MM:SS format
-                    return (parseInt(parts[0]) * 60 + parseFloat(parts[1]))*100;
-                } else if (parts.length === 3) {
-                    // HH:MM:SS format
-                    return (parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]))*100;
-                }
-            }
-            // If it's just a number, assume it's seconds
-            return parseFloat(timeStr)*100;
-        };
+        $scope.cleanTime = ResultExtractionService.cleanTime;
 
         $scope.updateTime = function(result) {
             // Ensure all time components are numbers
@@ -1012,6 +793,23 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         $scope.formData.opened = true;
     };
     }
-]); 
+]);
 
-
+// The bookmarklet link on the extractor page: its address is the script in
+// the file named (rx-bookmarklet="/bookmarklets/results.js") as a javascript:
+// address, set by hand since Angular will not put one in an href.
+angular.module('mcrrcApp.tools').directive('rxBookmarklet', ['$http', function ($http) {
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            $http.get(attrs.rxBookmarklet, { cache: true, transformResponse: [] }).then(function (response) {
+                element[0].setAttribute('href', 'javascript:' + encodeURIComponent(response.data));
+            });
+            // A click here would run it on this page: it is for dragging
+            element.on('click', function (event) {
+                event.preventDefault();
+                alert('Drag this link to your bookmarks bar, then click it on a race\'s results page (mcrrc.org, Athlinks, RunSignUp, parkrun or any other).');
+            });
+        }
+    };
+}]);

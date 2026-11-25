@@ -294,7 +294,38 @@ function parseResultsTableFromHtml(html, tableIndex) {
     };
 }
 
+// A time in milliseconds (Athlinks' chipTimeInMillis) as "M:SS" or "H:MM:SS".
+// Rounded up to the whole second, as road race times are (59.2 s is 1:00), and
+// rounded before it is split: rounding the seconds alone turned 24:59.5 into
+// "24:60". '' when there is no time (a runner who did not finish).
+function formatDuration(ms) {
+    if (typeof ms !== 'number' || !isFinite(ms) || ms <= 0) return '';
+    const total = Math.ceil(ms / 1000);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = String(total % 60).padStart(2, '0');
+    return hours > 0 ? hours + ':' + String(minutes).padStart(2, '0') + ':' + seconds : minutes + ':' + seconds;
+}
+
+// Pasted text that is the results bookmarklet's copy of a whole page
+// (public/bookmarklets/results.js, on mcrrc.org and any site that is not
+// Athlinks or RunSignUp): { url, html }, else null
+function pagePaste(pasted) {
+    const trimmed = String(pasted || '').trim();
+    if (trimmed[0] !== '{') return null;
+    let payload;
+    try {
+        payload = JSON.parse(trimmed);
+    } catch (e) {
+        return null;
+    }
+    if (!payload || payload.mcrrcPage !== 1 || typeof payload.html !== 'string') return null;
+    return { url: typeof payload.url === 'string' ? payload.url : null, html: payload.html };
+}
+
 module.exports = {
+    formatDuration: formatDuration,
+    pagePaste: pagePaste,
     findResultTables: findResultTables,
     parseResultsTableFromHtml: parseResultsTableFromHtml,
     normaliseTableHeaders: normaliseTableHeaders,

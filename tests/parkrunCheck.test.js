@@ -1,4 +1,5 @@
-const { eventBase, latestResultsUrl, eventResultsUrl, dateResultsUrl, linkVariants, buildList, eventNumberOf } = require('../app/parkrunCheck');
+const { eventBase, latestResultsUrl, eventResultsUrl, dateResultsUrl, linkVariants, buildList, eventNumberOf, parkrunMetadata } = require('../app/parkrunCheck');
+const { formatDuration } = require('../app/resultTableParser');
 
 describe('eventBase', () => {
     test.each([
@@ -89,5 +90,38 @@ describe('event numbers', () => {
     test('the event number in a race name', () => {
         expect(eventNumberOf('Kensington parkrun #384')).toBe(384);
         expect(eventNumberOf('Kensington parkrun')).toBeNull();
+    });
+});
+
+describe('parkrunMetadata', () => {
+    const page = (date, number) => '<div class="Results-header"><h1>Kensington parkrun</h1>' +
+        '<h3><span class="format-date">' + date + '</span><span class="spacer">|</span><span>#' + number + '</span></h3></div>';
+
+    test.each([
+        ['2026-11-14', 'parkrun.us, since 2026'],
+        ['14/11/2026', 'the other parkrun sites'],
+    ])('the event, its number and its day from %s (%s)', (date) => {
+        const meta = parkrunMetadata(page(date, 384));
+        expect(meta).toMatchObject({ pageTitle: 'Kensington parkrun #384', eventNumber: 384, raceDay: '2026-11-14' });
+        expect(meta.raceDate.getFullYear()).toBe(2026);
+        expect(meta.raceDate.getMonth()).toBe(10);
+        expect(meta.raceDate.getDate()).toBe(14);
+    });
+
+    test('not a parkrun page', () => {
+        expect(parkrunMetadata('<h1>Turkey Chase</h1>')).toBeNull();
+    });
+});
+
+describe('formatDuration (Athlinks times)', () => {
+    test.each([
+        [1499500, '25:00'],   // 24:59.5 rounds up, and never to "24:60"
+        [1499000, '24:59'],
+        [1080001, '18:01'],
+        [3723000, '1:02:03'],
+        [3599100, '1:00:00'],
+        [null, ''], [0, ''], [undefined, ''],
+    ])('%s ms is "%s"', (ms, text) => {
+        expect(formatDuration(ms)).toBe(text);
     });
 });

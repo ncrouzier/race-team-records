@@ -14,6 +14,7 @@
 // Fetching and saving are in app/routes.js (/api/parkrun-check); this module
 // is the pure part, tested in tests/parkrunCheck.test.js.
 
+const cheerio = require('cheerio');
 const { parkrunName } = require('./raceSeriesMatcher');
 
 const MIN_RUNS = 5;
@@ -134,8 +135,39 @@ function buildList(races, links, options) {
         }));
 }
 
+// parkrun puts the event name, number and date in its own header markup rather
+// than anywhere the generic parser would look, so pull them out when they are
+// there. Returns null for any other site.
+function parkrunMetadata(html) {
+    const $ = cheerio.load(html);
+    const resultsHeader = $('.Results-header h1').text().trim();
+    if (!resultsHeader) return null;
+
+    const dateText = $('.Results-header h3 .format-date').text().trim();
+    const eventNumber = $('.Results-header h3 span:last-child').text().trim().replace('#', '');
+
+    // parkrun writes DD/MM/YYYY on some sites and YYYY-MM-DD on others
+    // (parkrun.us, since 2026)
+    let raceDate, raceDay;
+    const dmy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateText);
+    const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(dateText);
+    const parts = dmy ? { year: dmy[3], month: dmy[2], day: dmy[1] } : ymd ? { year: ymd[1], month: ymd[2], day: ymd[3] } : null;
+    if (parts) {
+        raceDate = new Date(parseInt(parts.year), parseInt(parts.month) - 1, parseInt(parts.day));
+        // The day as written, which no time zone can move (the parkrun check)
+        raceDay = parts.year + '-' + parts.month.padStart(2, '0') + '-' + parts.day.padStart(2, '0');
+    }
+
+    return {
+        pageTitle: eventNumber ? `${resultsHeader} #${eventNumber}` : resultsHeader,
+        raceDate: raceDate,
+        raceDay: raceDay,
+        eventNumber: /^\d+$/.test(eventNumber) ? parseInt(eventNumber, 10) : null
+    };
+}
+
 module.exports = {
     MIN_RUNS, RECENT_DAYS,
     eventBase, latestResultsUrl, eventResultsUrl, dateResultsUrl, linkVariants, buildList,
-    dayTime, eventNumberOf
+    dayTime, eventNumberOf, parkrunMetadata
 };

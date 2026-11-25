@@ -187,7 +187,9 @@ angular.module('mcrrcApp.results').factory('ResultsService', ['Restangular', 'Sy
         return factory.saveResultsBulk(resultsToSave, race, seriesChoice).then(
             function (response) {
                 if (response.success) {
-                    NotificationService.showNotifiction(true, response.message || response.createdCount + " results saved successfully!");
+                    // Results already saved are skipped (app/resultDuplicates.js):
+                    // nothing saved at all is worth a warning, not a green tick
+                    NotificationService.showNotifiction(response.createdCount > 0, response.message || response.createdCount + " results saved successfully!");
                     return resultsToSave; // Return the original results array
                 } else {
                     NotificationService.showNotifiction(false, response.message || "Bulk save failed");

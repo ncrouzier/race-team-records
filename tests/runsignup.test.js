@@ -137,4 +137,19 @@ describe('fetchRunSignUp', () => {
         expect(out.data).toHaveLength(1);
         expect(out.raceDay).toBeUndefined();
     });
+
+    test('a race API that never answers costs the date after a few seconds, not the load', async () => {
+        jest.useFakeTimers();
+        try {
+            const get = url => url.includes('/Rest/race/') ? new Promise(() => {})
+                : Promise.resolve({ data: url.includes('format=json') ? feedPage([runner(1)], 1) : PAGE });
+            const pending = fetchRunSignUp('https://runsignup.com/Race/Results/1#resultSetId-2', get);
+            await jest.advanceTimersByTimeAsync(8000);
+            const out = await pending;
+            expect(out.data).toHaveLength(1);
+            expect(out.raceDay).toBeUndefined();
+        } finally {
+            jest.useRealTimers();
+        }
+    });
 });

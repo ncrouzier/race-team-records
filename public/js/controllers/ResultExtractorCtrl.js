@@ -170,11 +170,27 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     $scope.isLoading = false;
                 })
                 .catch(function(response) {
-                    NotificationService.showNotifiction(false,response.data.error);
+                    // No answer at all (status -1: the upload cut off, the
+                    // connection dropped) has no data: say so, and stop the
+                    // spinner rather than throw here and leave it turning
+                    var error = response && response.data && response.data.error;
+                    NotificationService.showNotifiction(false, error ||
+                        (response && response.status > 0 ? 'The server answered HTTP ' + response.status + '.'
+                            : 'The request did not reach the server, or its answer never came back. Try again.'));
                     $scope.tableData = null;
                     $scope.processedResults = null;
                     $scope.isLoading = false;
                 });
+        };
+
+        // A bookmark copy pasted into the box replaces what is there: pasted
+        // onto an earlier copy, the two run together and neither reads
+        $scope.onSourcePaste = function(event) {
+            var clipboard = (event.originalEvent || event).clipboardData;
+            var text = clipboard && clipboard.getData('text');
+            if (!text || !/^\s*\{\s*"mcrrc/.test(text)) return;
+            event.preventDefault();
+            $scope.htmlSource = text;
         };
 
         // Empty the paste box (a whole page source is long to select by hand)

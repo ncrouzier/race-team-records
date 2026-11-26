@@ -129,7 +129,7 @@
                             ng-click="clearHtmlSource()" title="Empty the box">
                             <i class="fa fa-times"></i> Clear
                         </button>
-                        <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource"
+                        <textarea rows="2" class="form-control" id="htmlSourceInput" ng-model="htmlSource" ng-paste="onSourcePaste($event)"
                             placeholder="Paste the page source here — parkrun, or any results page that cannot be fetched by URL"
                             ng-disabled="url"></textarea>
                         <small class="rx-hint">

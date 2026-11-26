@@ -4524,6 +4524,15 @@ module.exports = async function (app, qs, passport, async) {
                     });
                 }
 
+                // A bookmark copy that no longer reads (cut short, or pasted
+                // onto another): said plainly, not "no table in the HTML"
+                if (/^\s*\{\s*"mcrrc/.test(htmlSource) && !pagePaste(htmlSource)) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'The pasted bookmark copy is incomplete or holds more than one copy. Clear the box, click the bookmark again on the results page, and paste once.'
+                    });
+                }
+
                 // ...or its copy of a whole page (mcrrc.org, any other
                 // site): the page's source, and the address it came from
                 const pageCopy = pagePaste(htmlSource);

@@ -357,4 +357,11 @@ schedule.scheduleJob('* * * * *', async function () {
 var server = app.listen(port, function () {
     console.log('Node app is running on port', port);
 });
+// Caddy keeps its connections to the app open for 2 minutes and reuses them;
+// Node's default closes an idle one after 5 s. A request Caddy sends just as
+// Node closes the connection dies half read ("request aborted") and the
+// visitor gets a 502: a large paste in the result extractor, most often. So
+// the app waits longer than Caddy does, and Caddy is always the one to close.
+server.keepAliveTimeout = 125 * 1000;
+server.headersTimeout = 126 * 1000;
 

@@ -27,6 +27,8 @@ const cheerio = require('cheerio');
 const PER_PAGE = 2500;
 // 2500 a page: 50,000 runners, more than any race the team runs
 const MAX_PAGES = 20;
+// The race API (date, distance, state) is a bonus: never wait long for it
+const RACE_API_MS = 8000;
 
 // The race and, when the address names one, the result set. Both spellings
 // RunSignUp uses: ?resultSetId=123 and #resultSetId-123; when both are there
@@ -179,12 +181,20 @@ async function finish(pages, raceId, resultSetId, pageTitle, get, headers) {
     // The date, distance and place: a bonus, never a reason to fail
     let info = {};
     const setInfo = pages[0].resultSet.setInfo || {};
+    // Capped from outside the request too: a connection that hangs where
+    // axios' own timer does not reach must not hold the table
+    let timer;
     try {
-        const race = await get('https://runsignup.com/Rest/race/' + raceId +
-            '?format=json&future_events_only=F&most_recent_events_only=F', { headers: headers, timeout: 20000 });
+        const race = await Promise.race([
+            get('https://runsignup.com/Rest/race/' + raceId + '?format=json&future_events_only=F&most_recent_events_only=F',
+                { headers: headers, timeout: RACE_API_MS, signal: AbortSignal.timeout(RACE_API_MS) }),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('race API too slow')), RACE_API_MS); })
+        ]);
         if (race.data && race.data.race) info = eventInfo(race.data.race, setInfo.race_category_id);
     } catch (e) {
         // the table is what matters
+    } finally {
+        clearTimeout(timer);
     }
 
     return Object.assign({

@@ -22,7 +22,8 @@ const RECENT_DAYS = 92; // about 3 months
 
 // parkrun.us, parkrun.org.uk, parkrun.com.au, parkrun.co.za, parkrun.fr...
 const PARKRUN_HOST = /^(www\.)?parkrun\.(com?\.)?[a-z]{2,3}(\.[a-z]{2})?$/i;
-const RESULTS_PATH = /^\/([a-z0-9-]+)\/results\/(\d+|latestresults)\/?$/i;
+// An event's number, its latest, or a day's (2026-11-14)
+const RESULTS_PATH = /^\/([a-z0-9-]+)\/results\/(\d+|latestresults|\d{4}-\d{2}-\d{2})\/?$/i;
 
 // The event a parkrun results address belongs to: { origin, slug }, or null
 // for anything else (another site, a runner's page, a typo)

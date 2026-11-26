@@ -8,9 +8,11 @@
      (turkeychase.com/Race/Results/97804): asks that site's results feed for
      the result set the page shows, 2,500 runners at a time
      (app/runsignup.js reads the copy);
-   - any other page (mcrrc.org's results, a timer's site, parkrun): the
-     page's source with its address, as "view source" and paste would give,
-     in one click (app/resultTableParser.js reads the copy).
+   - parkrun: the results page as shown, with its address, and no request
+     at all (parkrun refuses those it finds too many of);
+   - any other page (mcrrc.org's results, a timer's site): the page's source
+     with its address, as "view source" and paste would give, in one click.
+   app/resultTableParser.js reads those last two.
    It then copies them for the result extractor's paste box. Nothing is sent
    anywhere but the site the page is on.
 
@@ -218,6 +220,17 @@
             });
     }
 
+    /* parkrun: every runner is in the page as shown, so no second visit */
+    function parkrunPage() {
+        var html = document.documentElement ? document.documentElement.outerHTML : '';
+        if (!/Results-header/.test(html)) {
+            fail('This parkrun page has no results: open an event\'s results (…/results/latestresults/ or …/results/<number>/).');
+            return;
+        }
+        copy({ mcrrcPage: 1, url: location.href, html: html },
+            'The results of "' + (document.title || 'this parkrun') + '"');
+    }
+
     /* ---- Which site ---- */
     var athlinksIds = /\/Event\/(\d+)\/Course\/(\d+)/i.exec(location.pathname);
     var runsignupRace = /^\/Race\/Results\/(\d+)/i.exec(location.pathname);
@@ -226,6 +239,8 @@
         work = athlinks(athlinksIds);
     } else if (runsignupRace) {
         work = runsignup(runsignupRace[1]);
+    } else if (/(^|\.)parkrun\.(com?\.)?[a-z]{2,3}(\.[a-z]{2})?$/i.test(location.hostname)) {
+        work = parkrunPage();
     } else if (/(^|\.)athlinks\.com$/i.test(location.hostname)) {
         alert('Open one course\'s results on Athlinks first: an address with /Event/…/Course/… in it.');
         return;

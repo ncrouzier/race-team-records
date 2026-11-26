@@ -7,6 +7,7 @@ const vm = require('vm');
 const athlinks = require('../app/athlinks');
 const runsignup = require('../app/runsignup');
 const { pagePaste, parseResultsTableFromHtml } = require('../app/resultTableParser');
+const { parkrunMetadata, eventBase, eventResultsUrl } = require('../app/parkrunCheck');
 
 const source = fs.readFileSync(path.join(__dirname, '../public/bookmarklets/results.js'), 'utf8');
 
@@ -153,6 +154,47 @@ describe('on any other page (mcrrc.org)', () => {
         const out = run('https://www.athlinks.com/event/386693', () => { fetched = true; });
         expect(out.alerted()).toMatch(/Athlinks/);
         expect(fetched).toBe(false);
+    });
+});
+
+describe('on parkrun', () => {
+    const SHOWN = '<html><body><div class="Results-header"><h1>Kensington parkrun</h1><h3><span class="format-date">2026-11-14</span>' +
+        '<span>|</span><span>#384</span></h3></div><table class="Results-table"><thead><tr><th>Position</th><th>parkrunner</th>' +
+        '<th>Gender</th><th>Time</th></tr></thead><tbody><tr><td>1</td><td>Ann Lee</td><td>Female1</td><td>18:01 PB</td></tr>' +
+        '<tr><td>2</td><td>Bob Kim</td><td>Male1</td><td>18:30</td></tr></tbody></table></body></html>';
+
+    function parkrun(href, shown) {
+        let fetched = false;
+        const out = run(href, () => { fetched = true; }, { title: 'Kensington parkrun' });
+        return { out, fetched: () => fetched, shown };
+    }
+
+    test('the page as shown, no request to parkrun; read with its event, date and number', async () => {
+        const href = 'https://www.parkrun.us/kensington/results/2026-11-14/';
+        let fetched = false;
+        const url = new URL(href);
+        let copied = null;
+        vm.runInNewContext(source, {
+            location: { href, origin: url.origin, hostname: url.hostname, pathname: url.pathname, search: '', hash: '' },
+            document: { title: 'Kensington parkrun', documentElement: { outerHTML: SHOWN }, getElementById: () => null,
+                createElement: () => element(), body: { appendChild() {} } },
+            navigator: { clipboard: { writeText: t => { copied = t; return Promise.resolve(); } } },
+            alert() {}, fetch: () => { fetched = true; }, Promise
+        });
+        await flush();
+        expect(fetched).toBe(false);
+        const copy = pagePaste(copied);
+        expect(copy).toEqual({ url: href, html: SHOWN });
+        expect(parkrunMetadata(copy.html)).toMatchObject({ eventNumber: 384, raceDay: '2026-11-14' });
+        // Saved under the event's number, not the day's address
+        expect(eventResultsUrl(eventBase(copy.url), 384)).toBe('https://www.parkrun.us/kensington/results/384/');
+        expect(parseResultsTableFromHtml(copy.html).data).toHaveLength(2);
+    });
+
+    test('a parkrun page with no results: says so', async () => {
+        const { fetched } = parkrun('https://www.parkrun.us/kensington/');
+        await flush();
+        expect(fetched()).toBe(false);
     });
 });
 

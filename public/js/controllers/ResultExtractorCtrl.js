@@ -802,13 +802,22 @@ angular.module('mcrrcApp.tools').directive('rxBookmarklet', ['$http', function (
     return {
         restrict: 'A',
         link: function (scope, element, attrs) {
+            // Only the script itself: a server without the file answers with
+            // the site's page (the "*" route), which as a bookmark fails with
+            // "expected expression, got '<'"
+            var ready = false;
             $http.get(attrs.rxBookmarklet, { cache: true, transformResponse: [] }).then(function (response) {
-                element[0].setAttribute('href', 'javascript:' + encodeURIComponent(response.data));
+                var code = typeof response.data === 'string' ? response.data : '';
+                if (code.indexOf('MCRRC result extractor') === -1 || /^\s*</.test(code)) return;
+                element[0].setAttribute('href', 'javascript:' + encodeURIComponent(code));
+                ready = true;
             });
             // A click here would run it on this page: it is for dragging
             element.on('click', function (event) {
                 event.preventDefault();
-                alert('Drag this link to your bookmarks bar, then click it on a race\'s results page (mcrrc.org, Athlinks, RunSignUp, parkrun or any other).');
+                alert(ready
+                    ? 'Drag this link to your bookmarks bar, then click it on a race\'s results page (mcrrc.org, Athlinks, RunSignUp, parkrun or any other).'
+                    : 'The bookmark could not be loaded from ' + attrs.rxBookmarklet + ' (is this version of the site deployed?).');
             });
         }
     };

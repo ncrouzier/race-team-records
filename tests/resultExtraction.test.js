@@ -113,3 +113,69 @@ describe('parseRow', () => {
         expect(service.parseName({ Name: 'Cher' }, { Name: 'name' })).toBeNull();
     });
 });
+
+describe('parseRow on part of the field (the mika:timing copy)', () => {
+    const mapping = { Place: 'place', Name: 'name', Gender: 'gender', 'Age Group': 'ageGroup', Time: 'time',
+        'Gender Place': 'genderRank', 'Division Place': 'ageRank' };
+    const table = [
+        { Place: '16245/29037', Name: 'Bob Kim', Gender: 'M', 'Age Group': 'M45-49', Time: '03:35:03', 'Gender Place': '10497/16346', 'Division Place': '' },
+        { Place: '16767/29037', Name: 'Ann Lee', Gender: 'F', 'Age Group': 'F45-49', Time: '03:37:04', 'Gender Place': '', 'Division Place': '361/1900' }
+    ];
+
+    test('places and totals as the cells say them, nothing counted within the table', () => {
+        const bob = service.parseRow(table[0], mapping, table, { wholeField: false });
+        expect(bob.ranking).toEqual({ overallrank: 16245, overalltotal: 29037, genderrank: 10497, gendertotal: 16346 });
+        const ann = service.parseRow(table[1], mapping, table, { wholeField: false });
+        expect(ann.ranking).toEqual({ overallrank: 16767, overalltotal: 29037, agerank: 361, agetotal: 1900 });
+    });
+
+    test('a whole field still counts within the table where a cell is blank', () => {
+        const bob = service.parseRow(table[0], mapping, table, {});
+        expect(bob.ranking).toMatchObject({ agerank: 1, agetotal: 1 });
+    });
+
+    test('the column names the copy uses map without help', () => {
+        expect(service.guessColumnMapping('mikatiming', Object.keys(mapping))).toEqual(mapping);
+    });
+});
+
+describe('is the matched runner the member? (identityConcerns)', () => {
+    test.each([
+        ['M45-49', { min: 45, max: 49 }], ['45-49', { min: 45, max: 49 }], ['F 50 - 54', { min: 50, max: 54 }],
+        ['M4049', { min: 40, max: 49 }], ['80+', { min: 80, max: 120 }], ['W70 and over', { min: 70, max: 120 }],
+        ['19 and under', { min: 0, max: 19 }], ['-19', { min: 0, max: 19 }], ['U20', { min: 0, max: 19 }],
+        ['JU20', { min: 0, max: 19 }], ['45', { min: 45, max: 49 }], ['18-39', { min: 18, max: 39 }],
+        ['H', null], ['Open', null], ['Masters', null], ['M Top Finishers', null], ['', null],
+    ])('age group %s', (label, range) => {
+        expect(service.ageGroupRange(label)).toEqual(range);
+    });
+
+    const ann = { firstname: 'Ann', lastname: 'Lee', sex: 'Female', dateofbirth: '1979-06-01T00:00:00.000Z' };
+    const mapping = { 'Age Group': 'ageGroup', Gender: 'gender', Name: 'name' };
+    const raceDay = new Date(Date.UTC(2026, 3, 20)); // she is 46
+
+    test('her age group and sex: nothing to say', () => {
+        expect(service.identityConcerns(ann, { 'Age Group': 'F45-49', Gender: 'F' }, mapping, raceDay)).toEqual([]);
+    });
+
+    test('a year either way is allowed (Berlin goes by the age reached that year)', () => {
+        expect(service.identityConcerns(ann, { 'Age Group': '40-44' }, mapping, new Date(Date.UTC(2024, 3, 20)))).toEqual([]); // 44
+        expect(service.identityConcerns(ann, { 'Age Group': '45-49' }, mapping, new Date(Date.UTC(2025, 0, 10)))).toEqual([]); // 45
+        expect(service.identityConcerns(ann, { 'Age Group': '50-54' }, mapping, raceDay)).toHaveLength(1); // 46: 50 is too far
+    });
+
+    test('a namesake: another age group, another sex', () => {
+        const concerns = service.identityConcerns(ann, { 'Age Group': 'M18-39', Gender: 'M' }, mapping, raceDay);
+        expect(concerns).toEqual([
+            'age group M18-39, but Ann was 46 on race day',
+            'listed as a man, but Ann\'s record says female'
+        ]);
+    });
+
+    test('the sex in the age group alone counts; nothing to compare, nothing said', () => {
+        expect(service.identityConcerns(ann, { 'Age Group': 'M45-49' }, { 'Age Group': 'ageGroup' }, raceDay)).toHaveLength(1);
+        expect(service.identityConcerns(ann, { 'Age Group': 'Open' }, mapping, raceDay)).toEqual([]);
+        expect(service.identityConcerns(Object.assign({}, ann, { dateofbirth: null }), { 'Age Group': '18-39' }, mapping, raceDay)).toEqual([]);
+        expect(service.identityConcerns(ann, { Name: 'Ann Lee' }, { Name: 'name' }, raceDay)).toEqual([]);
+    });
+});

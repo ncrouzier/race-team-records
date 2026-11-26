@@ -22,6 +22,7 @@ const loginCodes = require('./loginCodes');
 const parkrunCheck = require('./parkrunCheck');
 const { parkrunMetadata } = parkrunCheck;
 const { createParkrunFetcher } = require('./parkrunFetch');
+const mika = require('./mika');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
@@ -4492,6 +4493,17 @@ module.exports = async function (app, qs, passport, async) {
                         fetchedVia: 'athlinks-bookmarklet',
                         source: 'athlinks'
                     }, athlinks.toExtraction(athlinksPaste)));
+                }
+                // ...or its copy of a mika:timing race (Boston, Chicago,
+                // Berlin, London): the team's possible runners and totals
+                const mikaPaste = mika.fromPaste(htmlSource);
+                if (mikaPaste) {
+                    trace('mika:timing copy from ' + mikaPaste.host + ': ' + mikaPaste.runners.length + ' possible runners');
+                    return res.json(Object.assign({
+                        success: true,
+                        fetchedVia: 'mika-bookmarklet',
+                        source: 'mika'
+                    }, mika.toExtraction(mikaPaste)));
                 }
                 // ...or its copy of a RunSignUp result set
                 const runsignupPaste = runsignup.fromPaste(htmlSource);

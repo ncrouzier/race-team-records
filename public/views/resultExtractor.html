@@ -143,10 +143,13 @@
                         <small class="rx-hint">
                             Quicker: drag
                             <a class="rx-bookmarklet" rx-bookmarklet="/bookmarklets/results.js"
+                                rx-bookmarklet-team="bookmarkTeam"
                                 title="Drag to your bookmarks bar">Results → clipboard</a>
                             to your bookmarks bar. Click it on a race's results page (mcrrc.org,
-                            Athlinks, RunSignUp or a race's own RunSignUp site, parkrun, any other),
-                            then paste here.
+                            Athlinks, RunSignUp or a race's own RunSignUp site, parkrun, the Boston,
+                            Chicago, Berlin or London marathon or another mika:timing site, any other),
+                            then paste here. For mika:timing sites it searches the team's names: set
+                            the race date first for a past year's team.
                         </small>
                     </div>
                 </div>
@@ -397,7 +400,12 @@
                             <td>
                                 <input type="checkbox" ng-model="result.selected" ng-checked="result.selected">
                             </td>
-                            <td class="rx-name">{{result.members[0].firstname}} {{result.members[0].lastname}}</td>
+                            <td class="rx-name">{{result.members[0].firstname}} {{result.members[0].lastname}}
+                                <span class="rx-suspicious" ng-if="result.suspicious.length"
+                                    uib-tooltip="Maybe a namesake: {{result.suspicious.join('; ')}}" tooltip-placement="right">
+                                    <i class="fa fa-exclamation-triangle"></i> suspicious
+                                </span>
+                            </td>
                             <td><span class="resultTime">{{result.time | secondsToTimeString}}</span></td>
                             <td class="nowrap">
                                 <span class="rx-time">

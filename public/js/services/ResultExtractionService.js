@@ -122,6 +122,24 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
                 } else if (headerLower.includes('gender') || headerLower.includes('sex')) {
                     mapping[header] = 'gender';
                 }
+            } else if (url.includes('mikatiming')) {
+                // The mika:timing bookmark's copy (app/mika.js): its own
+                // headings, every place with its total ("1828/2414")
+                if (headerLower === 'name') {
+                    mapping[header] = 'name';
+                } else if (headerLower === 'time') {
+                    mapping[header] = 'time';
+                } else if (headerLower === 'place') {
+                    mapping[header] = 'place';
+                } else if (headerLower === 'gender') {
+                    mapping[header] = 'gender';
+                } else if (headerLower === 'gender place') {
+                    mapping[header] = 'genderRank';
+                } else if (headerLower === 'division place') {
+                    mapping[header] = 'ageRank';
+                } else if (headerLower === 'age group') {
+                    mapping[header] = 'ageGroup';
+                }
             } else if (url.includes('athlinks.com')) {
                 if (headerLower === 'name') {
                     mapping[header] = 'name';
@@ -333,6 +351,9 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
     // Turn one scraped row into {firstname, lastname, time, ranking}. Returns
     // null when the row has no usable name or time (a DNF has none).
     // options.stripDigitsFromGender is for parkrun, which writes "Male12".
+    // options.wholeField false: the table holds some of the field only (the
+    // mika:timing bookmark's copy, app/mika.js), so a place or total is only
+    // what its cell says ("1828/2414"), never counted within the table.
     factory.parseRow = function (row, columnMapping, tableData, options) {
         options = options || {};
         var col = function (field) { return factory.columnFor(columnMapping, field); };
@@ -351,8 +372,9 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
         if (!(parsed.time > 0)) return null;
 
         // Gender rank, either given directly or derived from the gender column
+        var wholeField = options.wholeField !== false;
         var genderRankColumn = col('genderRank');
-        var genderColumn = col('gender');
+        var genderColumn = wholeField ? col('gender') : null;
         if (genderRankColumn && row[genderRankColumn]) {
             var gender = parseRankCell(row[genderRankColumn]);
             if (gender.rank !== undefined) parsed.ranking.genderrank = gender.rank;
@@ -372,7 +394,7 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
 
         // Age group rank, same two shapes
         var ageRankColumn = col('ageRank');
-        var ageGroupColumn = col('ageGroup');
+        var ageGroupColumn = wholeField ? col('ageGroup') : null;
         if (ageRankColumn && row[ageRankColumn]) {
             var age = parseRankCell(row[ageRankColumn]);
             if (age.rank !== undefined) parsed.ranking.agerank = age.rank;
@@ -392,14 +414,17 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
 
         // Overall place, with the field size taken from the biggest place in the
         // table — the last finisher's place is the number of finishers.
+        // A "12/345" place says its total itself.
         var placeColumn = col('place');
         if (placeColumn) {
-            if (row[placeColumn]) {
-                var place = parseInt(row[placeColumn]);
-                if (!isNaN(place)) parsed.ranking.overallrank = place;
+            var overall = row[placeColumn] ? parseRankCell(row[placeColumn]) : {};
+            if (overall.rank !== undefined) parsed.ranking.overallrank = overall.rank;
+            if (overall.total !== undefined) {
+                parsed.ranking.overalltotal = overall.total;
+            } else if (wholeField) {
+                var fieldSize = fieldSizeOf(tableData, placeColumn);
+                if (fieldSize > 0) parsed.ranking.overalltotal = fieldSize;
             }
-            var fieldSize = fieldSizeOf(tableData, placeColumn);
-            if (fieldSize > 0) parsed.ranking.overalltotal = fieldSize;
         }
 
         return parsed;
@@ -649,6 +674,68 @@ angular.module('mcrrcApp').factory('ResultExtractionService', ['$http', function
         });
 
         return suggestions.slice(0, 8);
+    };
+
+    // ---- Is the matched runner really the member? ----
+    // A namesake's row can match a member by name alone. The row's age group
+    // and sex, when the site gives them, say whether it can be them.
+
+    // An age group as sites write it -> {min, max} ages, or null when it does
+    // not say (Open, Masters, Berlin's "H"): "M45-49", "45-49", RunSignUp's
+    // "M4049", "80+", "19 and under", "-19", "U20" and Berlin's "JU20",
+    // Berlin's "45" (45-49)
+    factory.ageGroupRange = function (label) {
+        var m;
+        // "U20", Berlin's juniors "JU20", "MU20": under 20
+        if ((m = /^(?:[mfwx]\s*)?j?u\s*(\d{1,2})$/i.exec(String(label || '').trim()))) return { min: 0, max: +m[1] - 1 };
+        var text = String(label || '').trim().replace(/^(men|women|male|female|man|woman|[mfwx])\s*/i, '');
+        if ((m = /^(\d{1,2})\s*[-\u2013]\s*(\d{1,3})$/.exec(text))) return { min: +m[1], max: +m[2] };
+        if ((m = /^(\d{2})(\d{2})$/.exec(text)) && +m[1] < +m[2]) return { min: +m[1], max: +m[2] };
+        if ((m = /^(\d{1,2})\s*(\+|and\s+(over|up|older))$/i.exec(text))) return { min: +m[1], max: 120 };
+        if ((m = /^(\d{1,2})\s*(and\s+under|&\s*under)$/i.exec(text)) || (m = /^-\s*(\d{1,2})$/.exec(text))) return { min: 0, max: +m[1] };
+        if ((m = /^(\d{2})$/.exec(text))) return { min: +m[1], max: +m[1] + 4 };
+        return null;
+    };
+
+    // A sex as sites write it -> 'Male', 'Female', or null
+    function sexOf(value) {
+        var text = String(value || '').trim();
+        if (/^(m|male|man|men)$/i.test(text) || /^m[^a-z]/i.test(text)) return 'Male';
+        if (/^(f|w|female|woman|women)$/i.test(text) || /^[fw][^a-z]/i.test(text)) return 'Female';
+        return null;
+    }
+
+    function ageOn(birthday, date) {
+        var bd = new Date(birthday);
+        var d = new Date(date);
+        if (isNaN(bd) || isNaN(d)) return null;
+        var age = d.getUTCFullYear() - bd.getUTCFullYear();
+        if (d.getUTCMonth() < bd.getUTCMonth() ||
+            (d.getUTCMonth() === bd.getUTCMonth() && d.getUTCDate() < bd.getUTCDate())) {
+            age--;
+        }
+        return age;
+    }
+
+    // Why the row may not be the member: [] when nothing says so. A year of
+    // slack on the age: some races (Berlin) go by the age reached that year.
+    factory.identityConcerns = function (member, row, columnMapping, raceDate) {
+        var concerns = [];
+        if (!member || !row) return concerns;
+        var groupColumn = factory.columnFor(columnMapping, 'ageGroup');
+        var genderColumn = factory.columnFor(columnMapping, 'gender');
+        var group = groupColumn && row[groupColumn];
+        var range = factory.ageGroupRange(group);
+        var age = member.dateofbirth && raceDate ? ageOn(member.dateofbirth, raceDate) : null;
+        if (range && age !== null && (age < range.min - 1 || age > range.max + 1)) {
+            concerns.push('age group ' + String(group).trim() + ', but ' + member.firstname + ' was ' + age + ' on race day');
+        }
+        // The sex in the age group ("F45-49") counts too
+        var sex = sexOf(genderColumn && row[genderColumn]) || sexOf(group);
+        if (sex && member.sex && (member.sex === 'Male' || member.sex === 'Female') && sex !== member.sex) {
+            concerns.push('listed as ' + (sex === 'Male' ? 'a man' : 'a woman') + ', but ' + member.firstname + '\'s record says ' + member.sex.toLowerCase());
+        }
+        return concerns;
     };
 
     return factory;

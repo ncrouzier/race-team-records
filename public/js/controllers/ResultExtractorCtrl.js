@@ -105,6 +105,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         }).then(function(members) {
             $scope.allTeamMembers = members;
             $scope.currentTeamMembers = membersOnRaceDay();
+            $scope.bookmarkTeam = bookmarkTeam();
         });
 
         function membersOnRaceDay() {
@@ -116,7 +117,27 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         // Shown next to the date field, so it is obvious which roster is in play
         $scope.$watch('formData.raceDate', function() {
             $scope.currentTeamMembers = membersOnRaceDay();
+            $scope.bookmarkTeam = bookmarkTeam();
         });
+
+        // The team the bookmark searches for on a mika:timing site (Boston,
+        // Chicago, Berlin, London: rxBookmarklet writes it into the bookmark):
+        // those on the team on the race date set here, else today. Names and
+        // sex only.
+        function bookmarkTeam() {
+            var day = $scope.formData.raceDate || new Date();
+            var team = [];
+            ResultExtractionService.membersActiveOn($scope.allTeamMembers, day).forEach(function (m) {
+                if (m.firstname && m.lastname) team.push([m.firstname, m.lastname, m.sex || '']);
+                // Another name a member races under ("Kate Smith-Jones"): searched too
+                (m.alternateFullNames || []).forEach(function (full) {
+                    var words = String(full).trim().split(/\s+/);
+                    if (words.length > 1) team.push([words[0], words.slice(1).join(' '), m.sex || '']);
+                });
+            });
+            return team;
+        }
+        $scope.bookmarkTeam = [];
 
         $scope.$watch('formData.location.country', function(country) {
             if(country !== 'USA'){
@@ -136,7 +157,8 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             'athlinks-api': 'from the Athlinks API',
             'athlinks-bookmarklet': 'from the bookmark\'s copy of the Athlinks race',
             'runsignup-bookmarklet': 'from the bookmark\'s copy of the RunSignUp results',
-            'page-bookmarklet': 'from the bookmark\'s copy of the page'
+            'page-bookmarklet': 'from the bookmark\'s copy of the page',
+            'mika-bookmarklet': 'from the bookmark\'s search of the results site'
         };
 
         // No race date needed to load: many pages give theirs (parkrun,
@@ -297,6 +319,11 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     'Only ' + data.data.length + ' of the ' + data.total + ' runners could be fetched.');
             }
 
+            // A table of some of the field only (the mika:timing bookmark's
+            // copy): its places come with their totals, never counted here
+            $scope.wholeField = data.wholeField !== false;
+            if (data.notes) NotificationService.showNotifiction(false, data.notes);
+
             // Set race type to road 5K for Parkrun
             if ($scope.isParkrunSource) {
                 $scope.racetypesList.forEach(function(racetype) {
@@ -328,7 +355,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             // modal's "retrieve from a link" flow. A paste the server
             // recognised (parkrun's page, the bookmarklet's copy of an
             // Athlinks or RunSignUp race) maps as that site's address would.
-            var SITE_ADDRESS = { parkrun: 'parkrun.', athlinks: 'athlinks.com', runsignup: 'runsignup.com' };
+            var SITE_ADDRESS = { parkrun: 'parkrun.', athlinks: 'athlinks.com', runsignup: 'runsignup.com', mika: 'mikatiming' };
             var siteAddress = $scope.isParkrunSource ? SITE_ADDRESS.parkrun
                 : ($scope.htmlSource && SITE_ADDRESS[data.source]) || null;
             // The bookmark's copy of a page carries its address (mcrrc.org's
@@ -647,7 +674,8 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             var mapping = $scope.columnMapping;
             var options = {
                 stripPersonalBest: !!$scope.isParkrunSource,
-                stripDigitsFromGender: !!$scope.isParkrunSource
+                stripDigitsFromGender: !!$scope.isParkrunSource,
+                wholeField: $scope.wholeField !== false
             };
             var processed = [];
 
@@ -679,7 +707,10 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     },
                     ranking: parsed.ranking,
                     resultlink: $scope.formData.resultlink,
-                    isRecordEligible: $scope.formData.isRecordEligible || false
+                    isRecordEligible: $scope.formData.isRecordEligible || false,
+                    // A namesake? The row's age group or sex says the member
+                    // could not be them: shown, the admin decides
+                    suspicious: ResultExtractionService.identityConcerns(member, row, mapping, $scope.formData.raceDate)
                 });
             });
 
@@ -857,26 +888,49 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
 
 // The bookmarklet link on the extractor page: its address is the script in
 // the file named (rx-bookmarklet="/bookmarklets/results.js") as a javascript:
-// address, set by hand since Angular will not put one in an href.
+// address, set by hand since Angular will not put one in an href. The team
+// (rx-bookmarklet-team: [[first, last, sex], ...]) is written into it for
+// mika:timing sites, which it searches by name; the link follows the team.
 angular.module('mcrrcApp.tools').directive('rxBookmarklet', ['$http', function ($http) {
+    var TEAM_MARK = '/*MCRRC_TEAM*/[]';
+    // Comments and indentation out: a bookmark's address has a length limit
+    // (Firefox's is near 65,000 characters), and encoding triples spaces.
+    // The script has no "/*" outside its comments. (Same in
+    // tests/resultsBookmarklet.test.js, which runs what this gives.)
+    function compact(script) {
+        return script.replace(/\/\*(?!MCRRC_TEAM\*\/)[\s\S]*?\*\//g, '').replace(/^\s+/gm, '').replace(/\n+/g, '\n');
+    }
     return {
         restrict: 'A',
         link: function (scope, element, attrs) {
             // Only the script itself: a server without the file answers with
             // the site's page (the "*" route), which as a bookmark fails with
             // "expected expression, got '<'"
-            var ready = false;
+            var code = null;
+            var team = [];
+            function build() {
+                if (!code) return;
+                var withTeam = code.replace(TEAM_MARK, '/*MCRRC_TEAM*/' + JSON.stringify(team || []));
+                element[0].setAttribute('href', 'javascript:' + encodeURIComponent(withTeam));
+            }
             $http.get(attrs.rxBookmarklet, { cache: true, transformResponse: [] }).then(function (response) {
-                var code = typeof response.data === 'string' ? response.data : '';
-                if (code.indexOf('MCRRC result extractor') === -1 || /^\s*</.test(code)) return;
-                element[0].setAttribute('href', 'javascript:' + encodeURIComponent(code));
-                ready = true;
+                var text = typeof response.data === 'string' ? response.data : '';
+                if (text.indexOf('MCRRC result extractor') === -1 || /^\s*</.test(text)) return;
+                code = compact(text);
+                build();
             });
+            if (attrs.rxBookmarkletTeam) {
+                scope.$watch(attrs.rxBookmarkletTeam, function (value) {
+                    team = value || [];
+                    build();
+                }, true);
+            }
             // A click here would run it on this page: it is for dragging
             element.on('click', function (event) {
                 event.preventDefault();
-                alert(ready
-                    ? 'Drag this link to your bookmarks bar, then click it on a race\'s results page (mcrrc.org, Athlinks, RunSignUp, parkrun or any other).'
+                alert(code
+                    ? 'Drag this link to your bookmarks bar, then click it on a race\'s results page (mcrrc.org, Athlinks, RunSignUp, parkrun, Boston/Chicago/Berlin/London and other mika:timing sites, or any other).' +
+                        (team.length ? ' It searches mika:timing sites for the ' + team.length + ' team members on the race date set here (today if none): drag it again for another date.' : '')
                     : 'The bookmark could not be loaded from ' + attrs.rxBookmarklet + ' (is this version of the site deployed?).');
             });
         }

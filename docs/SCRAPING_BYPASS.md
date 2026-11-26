@@ -128,3 +128,15 @@ The last fallback. `GET https://r.jina.ai/<url>` with `Accept: application/json`
 - **Turn it off** with `SCRAPE_JINA=off`.
 
 When it misses, Option D (paste the source) still works.
+
+## mika:timing sites (Boston, Chicago, Berlin, London marathons)
+
+Not fetched by the server: the sites block nothing, but Boston's robots.txt
+disallows every automated client. The "Results → clipboard" bookmark does it
+in the admin's browser instead (`mika()` in `public/bookmarklets/results.js`,
+read by `app/mika.js`): it searches each team member's last name (the
+extractor page writes the team into the bookmark), keeps finishers whose name
+could be a member's, and counts the overall, gender and age-group totals
+their places are out of. Codes and columns are read from each site
+(`getSearchFields`, the list headings), never assumed: Boston's 45-49 is code
+9, Chicago's 45; Chicago lists no age-group place, Berlin no gender place.

@@ -21797,6 +21797,18 @@ h2 .club-mark {
   margin-top: 0;
   font-weight: 400;
 }
+.jumbotron.result-extractor-tool .rx-suspicious {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid #E99002;
+  border-radius: 8px;
+  color: #845101;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: help;
+}
 .jumbotron.result-extractor-tool .mcrrc-btn.rx-clear-source {
   position: absolute;
   top: -3px;

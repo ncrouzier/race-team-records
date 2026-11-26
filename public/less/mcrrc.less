@@ -17554,6 +17554,20 @@ h2 .club-mark {
     // On the label's line, out of the flow: showing it moves nothing (as a
     // float it pushed the box down, out of line with the URL beside it).
     // The column (.col-md-6, position: relative) is what it sits in.
+    // A matched row whose age group or sex does not fit the member
+    .rx-suspicious {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 0 6px;
+        border: 1px solid @brand-warning;
+        border-radius: 8px;
+        color: darken(@brand-warning, 20%);
+        font-size: 11px;
+        line-height: 16px;
+        white-space: nowrap;
+        cursor: help;
+    }
+
     .mcrrc-btn.rx-clear-source {
         position: absolute;
         top: -3px;

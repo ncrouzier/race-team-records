@@ -13,17 +13,23 @@ const { parkrunMetadata, eventBase, eventResultsUrl } = require('../app/parkrunC
 // As the extractor page puts it in the bookmark (rxBookmarklet's compact():
 // comments and indentation out)
 const source = fs.readFileSync(path.join(__dirname, '../public/bookmarklets/results.js'), 'utf8')
-    .replace(/\/\*(?!MCRRC_TEAM\*\/)[\s\S]*?\*\//g, '').replace(/^\s+/gm, '').replace(/\n+/g, '\n');
+    .replace(/\/\*(?!MCRRC_SITE\*\/)[\s\S]*?\*\//g, '').replace(/^\s+/gm, '').replace(/\n+/g, '\n');
 
-// An element of the fake page: enough for the progress box and a <select>
+// An element of the fake page: enough for the progress box, its date form
+// and a <select>
 function element(extra) {
-    return Object.assign({ setAttribute() {}, getAttribute() { return null; }, appendChild() {}, remove() {}, textContent: '' }, extra);
+    return Object.assign({
+        attributes: {}, children: [], textContent: '',
+        setAttribute(name, value) { this.attributes[name] = value; }, getAttribute() { return null; },
+        appendChild(child) { this.children.push(child); }, remove() {}, focus() {}
+    }, extra);
 }
 
 function run(href, fetchImpl, page) {
     const url = new URL(href);
     let copiedText = null;
     let alerted = null;
+    const created = [];
     const sandbox = {
         location: { href, origin: url.origin, hostname: url.hostname, pathname: url.pathname, search: url.search, hash: url.hash },
         document: Object.assign({
@@ -32,7 +38,7 @@ function run(href, fetchImpl, page) {
             getElementById: id => (page && page.elements && page.elements[id]) || null,
             // A mika:timing page loads the site's search script
             querySelector: selector => (page && page.mika && /ajax2/.test(selector) ? {} : null),
-            createElement: () => element(),
+            createElement: tag => { const el = element({ tag }); created.push(el); return el; },
             body: { appendChild() {} }
         }, page && { title: page.title || '' }),
         navigator: { clipboard: { writeText: t => { copiedText = t; return Promise.resolve(); } } },
@@ -40,10 +46,35 @@ function run(href, fetchImpl, page) {
         fetch: fetchImpl,
         Promise
     };
-    // The team the extractor page writes into the bookmark (rxBookmarklet)
-    const code = page && page.team ? source.replace('/*MCRRC_TEAM*/[]', JSON.stringify(page.team)) : source;
+    // The team site's address the extractor page writes into the bookmark
+    // (rxBookmarklet), and its roster (page.team, or page.roster: a whole
+    // answer); the dates the bookmark asks it for in page.rosterDates
+    let code = source;
+    if (page && (page.team || page.roster)) {
+        code = source.replace("/*MCRRC_SITE*/''", '/*MCRRC_SITE*/"https://team.test"');
+        const siteFetch = sandbox.fetch;
+        sandbox.fetch = (url, options) => {
+            if (!url.startsWith('https://team.test/')) return siteFetch(url, options);
+            (page.rosterDates = page.rosterDates || []).push(/date=([\d-]+)/.exec(url)[1]);
+            if (page.roster) return page.roster(url);
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({ team: page.team }) });
+        };
+    }
     vm.runInNewContext(code, sandbox);
-    return { copied: () => copiedText, alerted: () => alerted };
+    // The race date form (mika:timing): answered as the admin would, unless
+    // the test does it (page.date: 'ask')
+    const form = {
+        input: () => created.find(e => e.tag === 'input'),
+        button: label => created.find(e => e.tag === 'button' && e.textContent === label),
+        error: () => created.find(e => e.tag === 'div' && /^Pick a date/.test(e.textContent)),
+        submit: day => { form.input().value = day; created.find(e => e.tag === 'form').onsubmit({ preventDefault() {} }); }
+    };
+    if (created.some(e => e.tag === 'form') && !(page && page.date === 'ask')) {
+        const day = page && 'date' in page ? page.date : '2026-04-20';
+        if (day === null) form.button('Cancel').onclick();
+        else form.submit(day);
+    }
+    return { copied: () => copiedText, alerted: () => alerted, form };
 }
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 20));
@@ -393,7 +424,71 @@ describe('on a mika:timing site (Boston, Chicago, Berlin, London)', () => {
         expect(mika.fromPaste(out.copied()).runners).toHaveLength(1);
     });
 
-    test('a bookmark dragged before the team was written in says so', async () => {
+    describe('the race date it asks for', () => {
+        const site = urls => url => {
+            urls.push(url);
+            if (url.includes('getSearchFields')) return text(fields([['9', '45-49']], [['M', 'Men'], ['W', 'Women']]));
+            if (url.includes('content=detail')) return text(detailPage({ _type_age_class: '45-49' }));
+            if (url.includes('search%5Bname%5D')) return text(listPage(['Place Overall'], [{ id: 'X', name: 'Lee, Ann', places: [5], time: '03:00:00' }]));
+            return text(listPage(['Place Overall'], [], { count: 100 }));
+        };
+        const ROSTER = [['Ann', 'Lee', 'Female'], ['Bob', 'Kim', 'Male']];
+
+        test('the team that day from the team site, then their names searched; the date goes with the copy', async () => {
+            const urls = [];
+            const page = { mika: true, team: ROSTER, date: '2024-04-15' };
+            const out = run('https://results.baa.org/2024/', site(urls), page);
+            for (let i = 0; i < 4; i++) await flush();
+            expect(page.rosterDates).toEqual(['2024-04-15']);
+            expect(urls.filter(u => u.includes('search%5Bname%5D')).map(u => /name%5D=(\w+)/.exec(u)[1])).toEqual(['Lee', 'Kim']);
+            expect(mika.toExtraction(mika.fromPaste(out.copied())).raceDay).toBe('2024-04-15');
+        });
+
+        test('no one on the team that day, or the team site not answering: said, the results site not asked', async () => {
+            for (const roster of [
+                () => Promise.resolve({ ok: true, json: () => Promise.resolve({ team: [] }) }),
+                () => Promise.resolve({ ok: false, status: 500 }),
+                () => Promise.reject(new Error('NetworkError'))
+            ]) {
+                const urls = [];
+                const out = run('https://results.baa.org/2010/', site(urls), { mika: true, roster, date: '2010-04-19' });
+                for (let i = 0; i < 3; i++) await flush();
+                expect(urls.filter(u => u.includes('search%5Bname%5D'))).toEqual([]);
+                expect(out.copied()).toBeNull();
+            }
+        });
+
+        test('cancelled, or not a date: nothing fetched; a bad date is said in the form', async () => {
+            for (const date of [null, '21/04/2025', '2025-13-45', '']) {
+                const urls = [];
+                const out = run('https://results.baa.org/2025/', site(urls), { mika: true, team: ROSTER, date });
+                await flush();
+                expect(urls).toEqual([]);
+                expect(out.copied()).toBeNull();
+                if (date !== null) expect(out.form.error().textContent).toBe('Pick a date in 2025.');
+            }
+        });
+
+        test('the form: this year starts at today, Today fills it in, a past year keeps the picker to that year', async () => {
+            const today = new Date();
+            const todayText = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            const now = run('https://results.baa.org/' + today.getFullYear() + '/', site([]), { mika: true, team: ROSTER, date: 'ask' });
+            expect(now.form.input()).toMatchObject({ type: 'date', value: todayText });
+
+            const urls = [];
+            const past = run('https://results.baa.org/2024/', site(urls), { mika: true, team: ROSTER, date: 'ask' });
+            expect(past.form.input()).toMatchObject({ min: '2024-01-01', max: '2024-12-31' });
+            expect(past.form.input().value).toBeUndefined();
+            past.form.button('Today').onclick();
+            expect(past.form.input().value).toBe(todayText);
+            past.form.submit('2024-04-15');
+            for (let i = 0; i < 4; i++) await flush();
+            expect(urls.some(u => u.includes('search%5Bname%5D=Lee'))).toBe(true);
+        });
+
+    });
+
+    test('a bookmark that does not know the team site says so', async () => {
         const out = run('https://results.baa.org/2026/', () => text('{}'), { mika: true });
         await flush();
         expect(out.copied()).toBeNull();

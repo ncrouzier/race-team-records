@@ -23,6 +23,7 @@ const parkrunCheck = require('./parkrunCheck');
 const { parkrunMetadata } = parkrunCheck;
 const { createParkrunFetcher } = require('./parkrunFetch');
 const mika = require('./mika');
+const bookmarkletRoster = require('./bookmarkletRoster');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
@@ -4377,6 +4378,22 @@ module.exports = async function (app, qs, passport, async) {
             }
             res.json({ success: 'Email sent successfully', status: 200 });
         });
+    });
+
+    // The team on a race day, for the results bookmark on another site
+    // (app/bookmarkletRoster.js): open to any origin, no login, no cookies
+    app.get('/api/bookmarklet/roster', async function (req, res) {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Cache-Control', 'no-store');
+        const day = bookmarkletRoster.parseDay(req.query.date);
+        if (!day) return res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+        try {
+            const members = await Member.find({}).select('firstname lastname sex membershipDates alternateFullNames').lean();
+            res.json({ date: req.query.date, team: bookmarkletRoster.rosterOn(members, day) });
+        } catch (err) {
+            console.error('Bookmark roster failed:', err.message);
+            res.status(500).json({ error: 'Could not read the team' });
+        }
     });
 
     // ---- The parkrun check (result extractor page; app/parkrunCheck.js) ----

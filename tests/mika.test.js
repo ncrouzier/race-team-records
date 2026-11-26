@@ -30,6 +30,8 @@ describe('mika:timing copy', () => {
             'Gender Place': '10497/16346', 'Division Place': '1828/2414', Home: 'Garrett Park', Country: 'USA'
         });
         expect(out.data[1]).toMatchObject({ Gender: 'F', 'Age Group': 'F45-49', 'Gender Place': '5975/12588', 'Division Place': '361/1900' });
+        expect(mika.toExtraction(copy({ raceDay: '2026-04-20' })).raceDay).toBe('2026-04-20');
+        expect(mika.toExtraction(copy({ raceDay: 'soon' })).raceDay).toBeUndefined();
         expect(out).toMatchObject({ pageTitle: 'Boston Marathon 2026', distance: '26.2 miles', wholeField: false,
             location: { country: 'USA', state: 'MA' }, total: 29037, notes: null, resultUrl: 'https://results.baa.org/2026/' });
     });

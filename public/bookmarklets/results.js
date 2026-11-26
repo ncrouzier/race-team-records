@@ -13,17 +13,19 @@
    - mika:timing sites (Boston, Chicago, Berlin, London marathons and
      others): searches each team member's name (last name and first), reads
      the page of each finisher whose name could be theirs, and asks the totals their places are out of
-     (app/mika.js reads the copy). The team comes with the bookmark: the
-     extractor page writes it in (TEAM below) when the bookmark is dragged;
+     (app/mika.js reads the copy). It asks for the race date, then the team
+     on that day from the team site (SITE below, written in by the extractor
+     page when the bookmark is dragged: /api/bookmarklet/roster);
    - any other page (mcrrc.org's results, a timer's site): the page's source
      with its address, as "view source" and paste would give, in one click.
    app/resultTableParser.js reads those last two.
    It then copies them for the result extractor's paste box. Nothing is sent
-   anywhere but the site the page is on.
+   anywhere but the site the page is on (and, on mika:timing sites, the race
+   date to the team site, for the roster).
 
    The extractor page makes the bookmark from this file. Block comments only:
    it runs as one javascript: address. */
-(function (TEAM) {
+(function (SITE) {
     var box = document.getElementById('mcrrc-results') || document.createElement('div');
     box.id = 'mcrrc-results';
     box.setAttribute('style', 'position:fixed;top:16px;right:16px;z-index:2147483647;max-width:340px;' +
@@ -361,10 +363,10 @@
         return first.indexOf(memberFirst) === 0 || memberFirst.indexOf(first) === 0 ? 2 : 1;
     }
 
-    function likeliestMember(runner) {
+    function likeliestMember(runner, team) {
         var best = null;
         var bestFit = 0;
-        TEAM.forEach(function (member) {
+        team.forEach(function (member) {
             var f = fit(runner, member);
             if (f > bestFit) { best = member; bestFit = f; }
         });
@@ -425,10 +427,117 @@
         return Promise.all(workers).then(function () { return results; });
     }
 
+    /* The race date, asked in the box: a date picker (kept to the year of
+       the results shown), Today, Search, Cancel. Enter searches, Escape
+       cancels. Resolves with "2025-04-21", or null when cancelled. */
+    var BUTTON = 'font:inherit;padding:5px 12px;border-radius:6px;cursor:pointer;border:1px solid #b8c4d0;background:#f3f6f9;color:#222';
+    var PRIMARY = 'font:inherit;padding:5px 14px;border-radius:6px;cursor:pointer;border:1px solid #1b5e9e;background:#1b5e9e;color:#fff;font-weight:600';
+    function askDate(year) {
+        return new Promise(function (resolve) {
+            var today = new Date();
+            var todayText = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);
+            say('');
+            box.textContent = '';
+            var title = document.createElement('strong');
+            title.textContent = 'MCRRC results';
+            title.setAttribute('style', 'display:block;margin-bottom:4px');
+            box.appendChild(title);
+
+            var form = document.createElement('form');
+            form.setAttribute('style', 'margin:0');
+            var label = document.createElement('label');
+            label.setAttribute('for', 'mcrrc-race-day');
+            label.setAttribute('style', 'display:block;font-weight:600');
+            label.textContent = 'Race date';
+            form.appendChild(label);
+            var hint = document.createElement('div');
+            hint.setAttribute('style', 'color:#5f6b76;font-size:12px;margin-bottom:6px');
+            hint.textContent = 'Searches for the members on the team that day.';
+            form.appendChild(hint);
+
+            var row = document.createElement('div');
+            row.setAttribute('style', 'display:flex;gap:6px;align-items:center;margin-bottom:8px');
+            var input = document.createElement('input');
+            input.type = 'date';
+            input.id = 'mcrrc-race-day';
+            input.required = true;
+            input.setAttribute('style', 'flex:1;min-width:0;font:inherit;padding:5px 8px;border:1px solid #b8c4d0;border-radius:6px;color:#222;background:#fff');
+            if (year) {
+                input.min = year + '-01-01';
+                input.max = year + '-12-31';
+            }
+            if (!year || year === todayText.slice(0, 4)) input.value = todayText;
+            row.appendChild(input);
+            var todayButton = document.createElement('button');
+            todayButton.type = 'button';
+            todayButton.textContent = 'Today';
+            todayButton.setAttribute('style', BUTTON);
+            todayButton.onclick = function () { input.value = todayText; error.textContent = ''; input.focus(); };
+            row.appendChild(todayButton);
+            form.appendChild(row);
+
+            var error = document.createElement('div');
+            error.setAttribute('style', 'color:#b3261e;font-size:13px;margin-bottom:6px');
+            form.appendChild(error);
+
+            var actions = document.createElement('div');
+            actions.setAttribute('style', 'display:flex;gap:6px;justify-content:flex-end');
+            var cancel = document.createElement('button');
+            cancel.type = 'button';
+            cancel.textContent = 'Cancel';
+            cancel.setAttribute('style', BUTTON);
+            var search = document.createElement('button');
+            search.type = 'submit';
+            search.textContent = 'Search';
+            search.setAttribute('style', PRIMARY);
+            actions.appendChild(cancel);
+            actions.appendChild(search);
+            form.appendChild(actions);
+
+            var finish = function (day) {
+                if (!day) box.remove();
+                resolve(day);
+            };
+            cancel.onclick = function () { finish(null); };
+            form.onkeydown = function (event) { if (event.key === 'Escape') finish(null); };
+            form.onsubmit = function (event) {
+                if (event && event.preventDefault) event.preventDefault();
+                var day = String(input.value || '').trim();
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || isNaN(Date.parse(day))) {
+                    error.textContent = 'Pick a date' + (year ? ' in ' + year : '') + '.';
+                    return;
+                }
+                finish(day);
+            };
+            box.appendChild(form);
+            if (input.focus) input.focus();
+        });
+    }
+
     function mika() {
-        if (!TEAM.length) {
-            return fail('This bookmark has no team in it. Drag "Results → clipboard" again from the result extractor (it writes the team in), then click it here.');
+        if (!SITE) {
+            return fail('This bookmark does not know the team site. Drag "Results → clipboard" again from the result extractor, then click it here.');
         }
+        /* The race date: whose team to search for, and the result's date */
+        var urlYear = (/\/(\d{4})\//.exec(location.pathname) || [])[1];
+        return askDate(urlYear).then(function (day) {
+            if (!day) return;
+            /* The team that day, as the team site has it now */
+            say('Getting the team on ' + day + ' from ' + SITE.replace(/^https?:\/\//, '') + '…');
+            return fetch(SITE + '/api/bookmarklet/roster?date=' + day, { credentials: 'omit' }).then(function (response) {
+                if (!response.ok) throw new Error('it answered HTTP ' + response.status);
+                return response.json();
+            }).then(function (roster) {
+                var team = (roster && roster.team) || [];
+                if (!team.length) return fail('No one was on the team on ' + day + '.');
+                return searchTeam(day, team);
+            }, function (error) {
+                fail('Could not get the team from ' + SITE + ' (' + error.message + '). Is the site up, and this bookmark dragged from it?');
+            });
+        });
+    }
+
+    function searchTeam(day, team) {
         var base = location.origin + location.pathname.replace(/[^/]*$/, '');
         var params = {};
         location.search.replace(/^\?/, '').split('&').forEach(function (pair) {
@@ -438,7 +547,8 @@
         var payload = {
             mcrrcMika: 1, url: location.href, host: location.hostname, base: base,
             year: (/\/(\d{4})\//.exec(location.pathname) || [])[1] || null,
-            pageTitle: document.title || '', runners: [], totals: { gender: {}, groups: {} }
+            pageTitle: document.title || '', runners: [], totals: { gender: {}, groups: {} },
+            raceDay: day, teamSize: team.length
         };
 
         say('Reading this site\'s age groups…');
@@ -472,7 +582,7 @@
                    (the sites match a first name as a prefix: "Ann" finds
                    Anne), so only that member's namesakes come back */
                 var searches = [];
-                TEAM.forEach(function (member) {
+                team.forEach(function (member) {
                     var first = String(member[0] || '').split(/\s+/)[0];
                     var key = letters(first) + '|' + letters(member[1]);
                     if (member[1] && first && !searches.some(function (q) { return q.key === key; })) {
@@ -488,7 +598,7 @@
                         mikaRows(html).forEach(function (row) {
                             if (!row.time) return; /* no finish time: not a finisher */
                             var name = splitName(row.name);
-                            var member = likeliestMember(name);
+                            var member = likeliestMember(name, team);
                             /* the same first name, or one starting the other */
                             if (!member || fit(name, member) < 2) return;
                             /* Found once: two searches (a member's other name,
@@ -592,6 +702,6 @@
     Promise.resolve(work).catch(function (error) {
         fail('Could not fetch the results: ' + error.message);
     });
-/* The extractor page puts the team here: [[first, last, 'Male'|'Female'], ...],
-   a member's other names (alternateFullNames) as more entries */
-})(/*MCRRC_TEAM*/[]);
+/* The extractor page puts its own address here (https://raceteam.mcrrc.org),
+   where mika() asks for the team on the race date */
+})(/*MCRRC_SITE*/'');

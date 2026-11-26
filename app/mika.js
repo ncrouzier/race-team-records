@@ -118,6 +118,8 @@ function toExtraction(payload) {
         truncated: false,
         wholeField: false,
         resultUrl: payload.url || null,
+        // The date the admin gave the bookmark (whose team it searched for)
+        raceDay: /^\d{4}-\d{2}-\d{2}$/.test(payload.raceDay || '') ? payload.raceDay : undefined,
         distance: known ? known.distance : (/marathon/i.test(payload.eventName + ' ' + payload.pageTitle) ? '26.2 miles' : undefined),
         location: known ? known.location : undefined,
         notes: missing.length

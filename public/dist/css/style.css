@@ -21664,6 +21664,19 @@ h2 .club-mark {
   display: block;
   margin-top: 2px;
 }
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-via {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 16px;
+}
+.jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-via.is-direct {
+  border-color: #E99002;
+  color: #845101;
+}
 .jumbotron.result-extractor-tool .rx-parkrun-table .rx-parkrun-actions {
   text-align: right;
   white-space: nowrap;
@@ -21784,9 +21797,12 @@ h2 .club-mark {
   margin-top: 0;
   font-weight: 400;
 }
-.jumbotron.result-extractor-tool .rx-clear-source {
-  float: right;
-  margin-bottom: 4px;
+.jumbotron.result-extractor-tool .mcrrc-btn.rx-clear-source {
+  position: absolute;
+  top: -3px;
+  right: 15px;
+  padding: 1px 8px;
+  line-height: 1.5;
 }
 .jumbotron.result-extractor-tool .rx-bookmarklet {
   display: inline-block;

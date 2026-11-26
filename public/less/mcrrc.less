@@ -17392,6 +17392,22 @@ h2 .club-mark {
             margin-top: 2px;
         }
 
+        // How the page came: a small tag after the request count
+        .rx-parkrun-via {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 0 6px;
+            border: 1px solid @gray-lighter;
+            border-radius: 8px;
+            font-size: 11px;
+            line-height: 16px;
+
+            &.is-direct {
+                border-color: @brand-warning;
+                color: darken(@brand-warning, 20%);
+            }
+        }
+
         .rx-parkrun-actions {
             text-align: right;
             white-space: nowrap;
@@ -17535,9 +17551,15 @@ h2 .club-mark {
     }
 
     // Clear, beside the paste box's label
-    .rx-clear-source {
-        float: right;
-        margin-bottom: 4px;
+    // On the label's line, out of the flow: showing it moves nothing (as a
+    // float it pushed the box down, out of line with the URL beside it).
+    // The column (.col-md-6, position: relative) is what it sits in.
+    .mcrrc-btn.rx-clear-source {
+        position: absolute;
+        top: -3px;
+        right: 15px; // the column's gutter
+        padding: 1px 8px;
+        line-height: 1.5;
     }
 
     // The results bookmarklet, to drag to the bookmarks bar

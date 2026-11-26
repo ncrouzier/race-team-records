@@ -73,6 +73,10 @@
                                 </span>
                                 <small class="rx-hint rx-parkrun-requests" ng-if="p.requests && p.status !== 'checking'">
                                     {{p.requests}} request{{p.requests === 1 ? '' : 's'}} to parkrun
+                                    <span class="rx-parkrun-via" ng-if="p.via" ng-class="{'is-direct': p.via === 'parkrun-direct'}"
+                                        uib-tooltip="{{p.via === 'parkrun-direct' ? 'The proxy was unavailable: asked parkrun directly' : 'Fetched through the parkrun proxy'}}">
+                                        {{p.via === 'parkrun-direct' ? 'direct' : 'via proxy'}}
+                                    </span>
                                 </small>
                             </td>
                             <td class="pc-actions rx-parkrun-actions">

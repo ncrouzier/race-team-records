@@ -21,6 +21,7 @@ const memberPhotos = require('./memberPhotos');
 const loginCodes = require('./loginCodes');
 const parkrunCheck = require('./parkrunCheck');
 const { parkrunMetadata } = parkrunCheck;
+const { createParkrunFetcher } = require('./parkrunFetch');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 
@@ -4395,32 +4396,21 @@ module.exports = async function (app, qs, passport, async) {
         }
     });
 
-    // A parkrun results page through the proxy (parkrun blocks direct
-    // requests): { meta, parsed } (parkrunMetadata, the table), { missing }
-    // for an event not run yet; throws (err.refused) when parkrun says no.
-    async function fetchParkrunPage(url) {
-        const proxyUrl = `${process.env.PARKRUN_PROXY_URL}?url=${encodeURIComponent(url)}&key=${process.env.PARKRUN_PROXY_KEY}`;
-        const response = await axios.get(proxyUrl, {
-            headers: {
-                'User-Agent': SCRAPE_USER_AGENT,
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9'
-            },
-            timeout: 30000,
-            maxRedirects: 5,
-            validateStatus: status => status >= 200 && status < 500
-        });
-        const html = typeof response.data === 'string' ? response.data : '';
-        if (response.status === 404) return { missing: true };
-        if (response.status >= 400 || isBotChallenge(html) || /CAPTCHA|Access Denied/.test(html.slice(0, 20000))) {
-            const err = new Error('parkrun refused the request (HTTP ' + response.status + '). Try again later.');
-            err.refused = true;
-            throw err;
-        }
-        const meta = parkrunMetadata(html);
-        if (!meta || !meta.eventNumber || !meta.raceDay) return { missing: true };
-        return { meta, parsed: parseResultsTableFromHtml(html) };
-    }
+    // A parkrun results page: through the proxy, else directly
+    // (app/parkrunFetch.js)
+    const fetchParkrunPage = createParkrunFetcher({
+        get: axios.get,
+        proxyUrl: process.env.PARKRUN_PROXY_URL,
+        proxyKey: process.env.PARKRUN_PROXY_KEY,
+        headers: {
+            'User-Agent': SCRAPE_USER_AGENT,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9'
+        },
+        isBlocked: isBotChallenge,
+        parseTable: html => parseResultsTableFromHtml(html),
+        warn: message => console.warn(message)
+    });
 
     // One parkrun's results: its latest, or those of a date. The table as
     // /api/extract-table gives it, the event's own address, and whether that
@@ -4432,9 +4422,6 @@ module.exports = async function (app, qs, passport, async) {
         const body = req.body || {};
         const base = parkrunCheck.eventBase(body.url);
         if (!base) return res.status(400).json({ success: false, error: 'Not a parkrun results address' });
-        if (!process.env.PARKRUN_PROXY_URL) {
-            return res.status(503).json({ success: false, error: 'No parkrun proxy is configured (PARKRUN_PROXY_URL)' });
-        }
         const date = body.date;
         if (date !== undefined && date !== null && isNaN(parkrunCheck.dayTime(date))) {
             return res.status(400).json({ success: false, error: 'date must be YYYY-MM-DD' });
@@ -4465,7 +4452,7 @@ module.exports = async function (app, qs, passport, async) {
             ]);
             res.json({
                 success: true,
-                fetchedVia: 'parkrun-proxy',
+                fetchedVia: page.via,
                 source: 'parkrun',
                 headers: page.parsed.headers,
                 data: page.parsed.data,
@@ -4484,6 +4471,8 @@ module.exports = async function (app, qs, passport, async) {
 
     // Add this with other route definitions
     app.post('/api/extract-table', service.isAdminLoggedIn, async function (req, res) {
+        // Steps in the server log when DEBUG_TRACE is on (app/requestTrace.js)
+        const trace = req.trace || (() => {});
         try {
             const { url, htmlSource, tableIndex } = req.body;
 
@@ -4497,6 +4486,7 @@ module.exports = async function (app, qs, passport, async) {
                 // an Athlinks race: the runners, not a page
                 const athlinksPaste = athlinks.fromPaste(htmlSource);
                 if (athlinksPaste) {
+                    trace('Athlinks copy: ' + athlinksPaste.results.length + ' runners');
                     return res.json(Object.assign({
                         success: true,
                         fetchedVia: 'athlinks-bookmarklet',
@@ -4506,7 +4496,9 @@ module.exports = async function (app, qs, passport, async) {
                 // ...or its copy of a RunSignUp result set
                 const runsignupPaste = runsignup.fromPaste(htmlSource);
                 if (runsignupPaste) {
+                    trace('RunSignUp copy: ' + runsignupPaste.results.length + ' runners; asking the race API');
                     const rsu = await runsignup.fromPastePayload(runsignupPaste, axios.get, { 'User-Agent': SCRAPE_USER_AGENT });
+                    trace('table built: ' + rsu.data.length + ' rows' + (rsu.raceDay ? ', race day ' + rsu.raceDay : ', no race day'));
                     return res.json({
                         success: true,
                         fetchedVia: 'runsignup-bookmarklet',
@@ -4527,6 +4519,7 @@ module.exports = async function (app, qs, passport, async) {
                 // A bookmark copy that no longer reads (cut short, or pasted
                 // onto another): said plainly, not "no table in the HTML"
                 if (/^\s*\{\s*"mcrrc/.test(htmlSource) && !pagePaste(htmlSource)) {
+                    trace('damaged bookmark copy, starts ' + JSON.stringify(htmlSource.slice(0, 40)) + ', ends ' + JSON.stringify(htmlSource.slice(-40)));
                     return res.status(400).json({
                         success: false,
                         error: 'The pasted bookmark copy is incomplete or holds more than one copy. Clear the box, click the bookmark again on the results page, and paste once.'
@@ -4539,7 +4532,9 @@ module.exports = async function (app, qs, passport, async) {
                 const pageHtml = pageCopy ? pageCopy.html : htmlSource;
                 const pageUrl = pageCopy ? pageCopy.url : null;
 
+                trace((pageCopy ? 'page copy of ' + pageUrl : 'pasted HTML') + ': parsing the table');
                 const parsed = parseResultsTableFromHtml(pageHtml, tableIndex);
+                trace(parsed ? 'table parsed: ' + parsed.data.length + ' rows' : 'no table found');
                 if (!parsed) {
                     return res.status(400).json({
                         success: false,
@@ -4614,25 +4609,18 @@ module.exports = async function (app, qs, passport, async) {
                     total: rsu.total
                 });
             } else if (url.includes('parkrun.')) {
-                // Through the proxy (parkrun blocks direct requests), and read
+                // Through the proxy, else directly (fetchParkrunPage), and read
                 // the way the parkrun check reads it: parkrunMetadata for the
                 // event and its date (either way parkrun writes it), the
                 // generic parser for the table
-                if (!process.env.PARKRUN_PROXY_URL) {
-                    return res.status(503).json({
-                        success: false,
-                        error: 'No parkrun proxy is configured (PARKRUN_PROXY_URL). Paste the page source instead.'
-                    });
-                }
                 let page;
                 try {
                     page = await fetchParkrunPage(url);
                 } catch (err) {
-                    console.error('Proxy error for parkrun:', err.message);
+                    console.error('parkrun fetch failed:', err.message);
                     return res.status(502).json({
                         success: false,
-                        error: err.refused ? err.message + ' Or paste the page source.'
-                            : 'Failed to retrieve parkrun data through the proxy: ' + err.message
+                        error: err.refused ? err.message : 'Failed to retrieve the parkrun page: ' + err.message
                     });
                 }
                 if (page.missing) {
@@ -4647,7 +4635,7 @@ module.exports = async function (app, qs, passport, async) {
                 res.json({
                     success: true,
                     // How the page was fetched, shown to the admin
-                    fetchedVia: 'parkrun-proxy',
+                    fetchedVia: page.via,
                     source: 'parkrun',
                     headers: page.parsed.headers,
                     data: page.parsed.data,
@@ -4693,6 +4681,7 @@ module.exports = async function (app, qs, passport, async) {
                 });
             }
         } catch (error) {
+            trace('failed: ' + error.message);
             console.error('Error extracting table:', error);
             // A site blocking us is not a server fault, and the admin can act on
             // it (paste the HTML instead), so say so rather than "500".

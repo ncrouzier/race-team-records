@@ -132,6 +132,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             'jina': 'through r.jina.ai (the site blocked a direct request)',
             'runsignup-api': 'from the RunSignUp API',
             'parkrun-proxy': 'from parkrun through the proxy',
+            'parkrun-direct': 'from parkrun directly (the proxy was unavailable)',
             'athlinks-api': 'from the Athlinks API',
             'athlinks-bookmarklet': 'from the bookmark\'s copy of the Athlinks race',
             'runsignup-bookmarklet': 'from the bookmark\'s copy of the RunSignUp results',
@@ -141,6 +142,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         // No race date needed to load: many pages give theirs (parkrun,
         // RunSignUp, Athlinks), and the rest wait for it before matching
         // (canProcess), since the date decides who was on the team
+        var LOAD_TIMEOUT_MS = 120000;
         $scope.loadTable = function() {
             $scope.isLoading = true;
             $scope.distanceSuggestions = [];
@@ -153,7 +155,12 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                 : { url: $scope.url };
 
             $scope.resultSetChoice = null;
-            $http.post('/api/extract-table', data)
+            // Never a spinner for ever: a request that gets nowhere is given
+            // up after LOAD_TIMEOUT_MS. Its size and time go to the browser's
+            // console, to put next to the server's log when DEBUG_TRACE is on
+            var startedAt = Date.now();
+            var sentKb = data.htmlSource ? Math.round(data.htmlSource.length / 1024) : 0;
+            $http.post('/api/extract-table', data, { timeout: LOAD_TIMEOUT_MS })
                 .then(function(response) {
                     if (response.data.success) {
                         applyExtraction(response.data);
@@ -170,13 +177,16 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     $scope.isLoading = false;
                 })
                 .catch(function(response) {
+                    console.warn('[extract-table] failed after ' + (Date.now() - startedAt) + 'ms, HTTP ' +
+                        (response && response.status) + (sentKb ? ', ' + sentKb + ' KB pasted' : ''), response && response.data);
                     // No answer at all (status -1: the upload cut off, the
                     // connection dropped) has no data: say so, and stop the
                     // spinner rather than throw here and leave it turning
                     var error = response && response.data && response.data.error;
                     NotificationService.showNotifiction(false, error ||
                         (response && response.status > 0 ? 'The server answered HTTP ' + response.status + '.'
-                            : 'The request did not reach the server, or its answer never came back. Try again.'));
+                            : (Date.now() - startedAt >= LOAD_TIMEOUT_MS ? 'No answer from the server in ' + LOAD_TIMEOUT_MS / 1000 + ' seconds.'
+                            : 'The request did not reach the server, or its answer never came back.') + ' Try again.'));
                     $scope.tableData = null;
                     $scope.processedResults = null;
                     $scope.isLoading = false;
@@ -407,6 +417,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             item.status = 'checking';
             item.error = null;
             item.requests = null;
+            item.via = null;
             var body = { url: item.latestUrl };
             if (day) body.date = day;
             return $q.all([$http.post('/api/parkrun-check/latest', body), membersLoaded])
@@ -414,6 +425,9 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
                     var results = out[0].data;
                     // Pages fetched from parkrun for this check
                     item.requests = results.requests;
+                    // How the page came: through the proxy, or directly
+                    // when the proxy was down (app/parkrunFetch.js)
+                    item.via = results.fetchedVia || null;
                     if (results.noEvent) {
                         item.results = null;
                         item.status = 'noevent';

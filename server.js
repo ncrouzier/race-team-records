@@ -58,7 +58,17 @@ app.use(favicon(__dirname + '/public/images/favicon.ico'));
 // everyone out together. Left at 0 locally, where there is no proxy.
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
 
+// DEBUG_TRACE=on in .env: every /api request timed step by step in the log
+// (app/debug.js, app/requestTrace.js). Before the body parser, to time
+// reading the body. Off, nothing is added.
+const debug = require('./app/debug');
+const apiTrace = debug.enabled ? require('./app/requestTrace').createRequestTrace() : null;
+if (apiTrace) {
+    app.use('/api', apiTrace.start);
+    console.log('Debug traces on (DEBUG_TRACE): every /api request is timed in this log');
+}
 app.use(express.json({ limit: '50mb' }));
+if (apiTrace) app.use('/api', apiTrace.bodyRead, apiTrace.bodyFailed);
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(compression({

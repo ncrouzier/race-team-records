@@ -18,6 +18,12 @@ gets around it; the block is at the edge, before the origin sees the request.
 If all fail the endpoint returns **502** with a message naming what was tried,
 rather than a bare 500.
 
+parkrun pages (the parkrun check, and a parkrun address in the extractor) go
+through `app/parkrunFetch.js` instead: the proxy first, then **direct** when the
+proxy refuses or cannot be reached (an unreachable proxy is skipped for five
+minutes). Direct usually works from a home connection, not from the droplet.
+r.jina.ai is not tried: parkrun answers it with a "Human Verification" page.
+
 ## Option A — WAF custom rule + secret header (recommended)
 
 Needs access to the **mcrrc.org** Cloudflare dashboard.

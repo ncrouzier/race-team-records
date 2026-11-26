@@ -63,6 +63,8 @@ COPY --from=build /app/public/data ./public/data
 COPY --from=build /app/public/dist ./public/dist
 COPY --from=build /app/public/css ./public/css
 COPY --from=build /app/public/views ./public/views
+# The result extractor's bookmark is made from this script, fetched as is
+COPY --from=build /app/public/bookmarklets ./public/bookmarklets
 # The installed site's manifest, service worker and offline page sit at the
 # root of public/ (the worker's location sets its scope: the whole site), so
 # none of the folder copies above bring them in. Without the manifest, Chrome

@@ -143,6 +143,36 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
         // RunSignUp, Athlinks), and the rest wait for it before matching
         // (canProcess), since the date decides who was on the team
         var LOAD_TIMEOUT_MS = 120000;
+
+        // A big paste goes gzipped (the server's JSON reader inflates it):
+        // Firefox now and then stops sending a large upload about 1 KB short
+        // of its end, and the server waits for the rest until it gives up (a
+        // 502 after 60 s; seen with a 158 KB RunSignUp copy, never in Chrome
+        // or Safari). Under a third of the size (158 KB -> 45 KB) gets through,
+        // and sooner. Without CompressionStream, or if it fails, the paste
+        // goes as it is.
+        var GZIP_FROM_CHARS = 20000;
+        function postExtractTable(data) {
+            var config = { timeout: LOAD_TIMEOUT_MS };
+            if (!data.htmlSource || data.htmlSource.length < GZIP_FROM_CHARS || !window.CompressionStream) {
+                return $http.post('/api/extract-table', data, config);
+            }
+            var gzipped;
+            try {
+                gzipped = new window.Response(new window.Blob([JSON.stringify(data)]).stream()
+                    .pipeThrough(new window.CompressionStream('gzip'))).blob();
+            } catch (e) {
+                return $http.post('/api/extract-table', data, config);
+            }
+            return $q.when(gzipped).then(function (blob) {
+                return $http.post('/api/extract-table', blob, angular.extend(config, {
+                    headers: { 'Content-Type': 'application/json', 'Content-Encoding': 'gzip' }
+                }));
+            }, function () {
+                return $http.post('/api/extract-table', data, config);
+            });
+        }
+
         $scope.loadTable = function() {
             $scope.isLoading = true;
             $scope.distanceSuggestions = [];
@@ -160,7 +190,7 @@ angular.module('mcrrcApp.tools').controller('ResultExtractorController', [
             // console, to put next to the server's log when DEBUG_TRACE is on
             var startedAt = Date.now();
             var sentKb = data.htmlSource ? Math.round(data.htmlSource.length / 1024) : 0;
-            $http.post('/api/extract-table', data, { timeout: LOAD_TIMEOUT_MS })
+            postExtractTable(data)
                 .then(function(response) {
                     if (response.data.success) {
                         applyExtraction(response.data);

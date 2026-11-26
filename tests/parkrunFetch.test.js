@@ -60,12 +60,32 @@ describe('fetching a parkrun page', () => {
         const { fetch } = fetcher({ proxy: down, direct: ok(CHALLENGE) });
         await expect(fetch(URL)).rejects.toMatchObject({
             refused: true,
-            message: expect.stringMatching(/proxy could not be reached \(connect ETIMEDOUT\); parkrun refused the request made directly/)
+            message: expect.stringMatching(/proxy could not be reached \(connect ETIMEDOUT\); parkrun refused the request asked directly \(HTTP 200, \d+ characters, "Human Verification"\)/)
         });
     });
 
-    test('an event not run yet', async () => {
-        const { fetch } = fetcher({ proxy: () => Promise.resolve({ status: 404, data: '' }), direct: ok(PAGE) });
+    const NOT_FOUND = '<html><head><title>results | parkrun USA</title></head><body>Page not found</body></html>';
+    const CONSENT = '<html><head><title>Before you continue</title></head><body>cookies?</body></html>';
+
+    test('an event not run: parkrun\'s own 404', async () => {
+        const { fetch } = fetcher({ proxy: () => Promise.resolve({ status: 404, data: NOT_FOUND }), direct: ok(PAGE) });
         expect(await fetch(URL)).toEqual({ missing: true });
+    });
+
+    test('a page that is not results (a consent page, the proxy\'s own 404): the next way, never "no event"', async () => {
+        const proxyOwn404 = () => Promise.resolve({ status: 404, data: '<html><head><title>404 Not Found</title></head><body>nginx</body></html>' });
+        for (const proxy of [ok(CONSENT), proxyOwn404]) {
+            const { fetch, calls } = fetcher({ proxy, direct: ok(PAGE) });
+            expect((await fetch(URL)).via).toBe('parkrun-direct');
+            expect(calls.direct).toBe(1);
+        }
+    });
+
+    test('no way gives results: an error saying what each gave', async () => {
+        const { fetch } = fetcher({ proxy: ok(CONSENT), direct: ok('<html><head><title>Something else</title></head></html>') });
+        await expect(fetch(URL)).rejects.toMatchObject({
+            refused: true,
+            message: expect.stringMatching(/through the proxy was not a results page \(HTTP 200, \d+ characters, "Before you continue"\).*asked directly was not a results page/)
+        });
     });
 });
